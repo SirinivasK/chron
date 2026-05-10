@@ -3,7 +3,7 @@
   "name": "io.github.SirinivasK/chron",
   "description": "Timestamped audit log for every AI conversation — stored locally in SQLite, owned by you.",
   "repository": {
-    "url": "https://github.com/nivaya/chron",
+    "url": "https://github.com/sirinivask/chron",
     "source": "github"
   },
   "version": "0.1.7",
