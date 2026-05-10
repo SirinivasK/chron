@@ -1,0 +1,25 @@
+startCommand:
+  type: stdio
+
+configSchema:
+  type: object
+  properties:
+    dbPath:
+      type: string
+      description: "Path to SQLite database file (default: ~/.chron/chron.db)"
+    apiKey:
+      type: string
+      description: "Bearer token for HTTP mode (optional)"
+
+commandFunction: |-
+  (config) => ({
+    command: 'npx',
+    args: ['-y', 'chron-mcp'],
+    env: {
+      ...(config.dbPath ? { CHRON_DB_PATH: config.dbPath } : {}),
+      ...(config.apiKey ? { CHRON_API_KEY: config.apiKey } : {}),
+    }
+  })
+
+exampleConfig:
+  dbPath: ~/.chron/chron.db

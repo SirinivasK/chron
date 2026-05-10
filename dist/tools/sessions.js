@@ -27,7 +27,11 @@ function startSession(db) {
             };
         }
         catch (e) {
-            if (!e?.message?.includes('UNIQUE constraint failed'))
+            const isUnique = e?.message?.includes('UNIQUE constraint failed') ||
+                e?.code === 'SQLITE_CONSTRAINT_UNIQUE' ||
+                e?.cause?.message?.includes('UNIQUE constraint failed') ||
+                e?.cause?.extendedCode === 'SQLITE_CONSTRAINT_UNIQUE';
+            if (!isUnique)
                 throw e;
             const existing = await db.select().from(schema_1.sessions).where((0, drizzle_orm_1.eq)(schema_1.sessions.title, args.title)).limit(1);
             const session = existing[0];

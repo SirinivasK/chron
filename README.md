@@ -150,6 +150,23 @@ Chron ships with `skills/chron.skill.md` — a plain-text instruction file that 
 | `log_exchange` | Log a user/assistant pair atomically (for batch imports) |
 | `list_sessions` | List all sessions ordered by most recently active |
 | `get_session_history` | Retrieve the full timestamped log for a session |
+| `verify_session` | Verify the tamper-evident hash chain — detects any post-log edits |
+
+---
+
+## Tamper-evident hash chaining
+
+Every message is linked to the previous one via a SHA-256 chain:
+
+```
+content_hash = SHA256(session_id | role | content | created_at | prev_hash)
+```
+
+`verify_session` walks the chain and returns:
+- `valid: true` — no messages were modified after logging
+- `valid: false, first_break: <id>` — exact row ID of the first tampered message
+
+This turns your local log into a verifiable audit artifact. Any edit to a stored message — content, timestamp, or role — breaks the chain and is detected immediately.
 
 ---
 
