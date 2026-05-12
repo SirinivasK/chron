@@ -35,9 +35,20 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const stdio_js_1 = require("@modelcontextprotocol/sdk/server/stdio.js");
+const os_1 = require("os");
+const path_1 = require("path");
 const index_1 = require("./db/index");
 const server_1 = require("./server");
+const VERSION = '0.1.9';
+// --version: quick install check, safe to run anywhere
+if (process.argv[2] === '--version' || process.argv[2] === '-v') {
+    process.stdout.write(`chron-mcp ${VERSION}\n`);
+    process.exit(0);
+}
 async function main() {
+    const dbPath = process.env.CHRON_DB_PATH ?? (0, path_1.join)((0, os_1.homedir)(), '.chron', 'chron.db');
+    process.stderr.write(`chron-mcp ${VERSION} starting\n`);
+    process.stderr.write(`database: ${dbPath}\n`);
     const db = await (0, index_1.initDb)();
     const server = (0, server_1.createServer)(db);
     if (process.env.CHRON_TRANSPORT === 'http') {
@@ -47,6 +58,7 @@ async function main() {
     else {
         const transport = new stdio_js_1.StdioServerTransport();
         await server.connect(transport);
+        process.stderr.write('ready\n');
     }
 }
 main().catch((err) => {
