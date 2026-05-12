@@ -73,11 +73,37 @@ function configureClaudeCode() {
     // Try `claude mcp add` first — it's the official way
     try {
         (0, child_process_1.execSync)('claude mcp add chron -- npx -y chron-mcp', { stdio: 'pipe' });
-        return { tool: 'Claude Code', status: 'added' };
     }
     catch {
         // Fall back to writing settings.json directly
-        return configureTool('Claude Code', (0, path_1.join)((0, os_1.homedir)(), '.claude', 'settings.json'));
+        const result = configureTool('Claude Code', (0, path_1.join)((0, os_1.homedir)(), '.claude', 'settings.json'));
+        if (result.status === 'error')
+            return result;
+    }
+    // Also install the SessionStart hook so Claude auto-logs without manual tool calls
+    installClaudeCodeHook();
+    return { tool: 'Claude Code', status: 'added' };
+}
+function installClaudeCodeHook() {
+    // Copy skill file to ~/.chron/ so the hook can cat it
+    const skillSrc = (0, path_1.join)(__dirname, '..', 'skills', 'chron.skill.md');
+    const skillDst = (0, path_1.join)((0, os_1.homedir)(), '.chron', 'chron.skill.md');
+    if ((0, fs_1.existsSync)(skillSrc)) {
+        (0, fs_1.mkdirSync)((0, path_1.dirname)(skillDst), { recursive: true });
+        (0, fs_1.copyFileSync)(skillSrc, skillDst);
+    }
+    const settingsPath = (0, path_1.join)((0, os_1.homedir)(), '.claude', 'settings.json');
+    const settings = readJson(settingsPath);
+    if (!settings.hooks)
+        settings.hooks = {};
+    if (!settings.hooks.SessionStart)
+        settings.hooks.SessionStart = [];
+    const alreadyInstalled = settings.hooks.SessionStart.some((h) => Array.isArray(h.hooks) && h.hooks.some((c) => c.command?.includes('chron')));
+    if (!alreadyInstalled) {
+        settings.hooks.SessionStart.push({
+            hooks: [{ type: 'command', command: 'cat ~/.chron/chron.skill.md' }],
+        });
+        writeJson(settingsPath, settings);
     }
 }
 async function runSetup() {

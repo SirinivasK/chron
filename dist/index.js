@@ -39,7 +39,7 @@ const os_1 = require("os");
 const path_1 = require("path");
 const index_1 = require("./db/index");
 const server_1 = require("./server");
-const VERSION = '0.1.11';
+const VERSION = '0.1.12';
 // --version: quick install check, safe to run anywhere
 if (process.argv[2] === '--version' || process.argv[2] === '-v') {
     process.stdout.write(`chron-mcp ${VERSION}\n`);
