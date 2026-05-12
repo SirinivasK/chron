@@ -39,7 +39,7 @@ const os_1 = require("os");
 const path_1 = require("path");
 const index_1 = require("./db/index");
 const server_1 = require("./server");
-const VERSION = '0.1.10';
+const VERSION = '0.1.11';
 // --version: quick install check, safe to run anywhere
 if (process.argv[2] === '--version' || process.argv[2] === '-v') {
     process.stdout.write(`chron-mcp ${VERSION}\n`);
@@ -47,15 +47,31 @@ if (process.argv[2] === '--version' || process.argv[2] === '-v') {
 }
 async function main() {
     const dbPath = process.env.CHRON_DB_PATH ?? (0, path_1.join)((0, os_1.homedir)(), '.chron', 'chron.db');
-    // Running interactively in a terminal — not from an MCP client
+    // Running interactively in a terminal — auto-configure all detected MCP clients
     if (process.stdin.isTTY) {
-        process.stdout.write(`chron-mcp ${VERSION} ✓\n`);
-        process.stdout.write(`database: ${dbPath}\n\n`);
-        process.stdout.write(`Installation verified. Add to your MCP config:\n\n`);
-        process.stdout.write(`  Claude Code:    claude mcp add chron -- npx -y chron-mcp\n`);
-        process.stdout.write(`  Claude Desktop: add to claude_desktop_config.json\n`);
-        process.stdout.write(`  Cursor:         add to ~/.cursor/mcp.json\n\n`);
-        process.stdout.write(`See README: https://github.com/SirinivasK/chron\n`);
+        process.stdout.write(`chron-mcp ${VERSION}\n\n`);
+        const { runSetup } = await Promise.resolve().then(() => __importStar(require('./setup')));
+        const results = await runSetup();
+        const added = results.filter(r => r.status === 'added');
+        const already = results.filter(r => r.status === 'already');
+        const errors = results.filter(r => r.status === 'error');
+        for (const r of added)
+            process.stdout.write(`  ✓ ${r.tool} — configured\n`);
+        for (const r of already)
+            process.stdout.write(`  · ${r.tool} — already set up\n`);
+        for (const r of errors)
+            process.stdout.write(`  ✗ ${r.tool} — ${r.error}\n`);
+        if (results.length === 0) {
+            process.stdout.write(`  No supported MCP clients detected.\n`);
+            process.stdout.write(`  See README: https://github.com/SirinivasK/chron\n`);
+        }
+        else if (added.length > 0) {
+            process.stdout.write(`\nRestart ${added.map(r => r.tool).join(', ')} to activate chron.\n`);
+        }
+        else if (added.length === 0 && errors.length === 0) {
+            process.stdout.write(`\nAll detected clients already have chron. You're good to go.\n`);
+        }
+        process.stdout.write('\n');
         process.exit(0);
     }
     process.stderr.write(`chron-mcp ${VERSION} starting\n`);
