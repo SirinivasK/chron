@@ -1,6 +1,6 @@
 {
   "name": "chron-mcp",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Audit-grade timestamped logs for every AI conversation",
   "repository": {
     "type": "git",
