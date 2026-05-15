@@ -145,12 +145,15 @@ Chron ships with `skills/chron.skill.md` — a plain-text instruction file that 
 
 | Tool | Description |
 |---|---|
-| `start_session` | Create or resume a named audit session |
+| `init_session` | Initialize or resume a session — returns session_id, message count, and recent messages in one call |
+| `start_session` | Create a new named audit session (legacy — prefer `init_session`) |
 | `log_message` | Record a single message with the current local datetime |
 | `log_exchange` | Log a user/assistant pair atomically (for batch imports) |
 | `list_sessions` | List all sessions ordered by most recently active |
 | `get_session_history` | Retrieve the full timestamped log for a session |
 | `verify_session` | Verify the tamper-evident hash chain — detects any post-log edits |
+| `scan_prompt` | Scan text for secrets (API keys, credentials) before logging — returns masked detections |
+| `rehydrate_response` | Restore redacted placeholders in an assistant response back to their original values |
 
 ---
 
@@ -195,7 +198,7 @@ Point your MCP config at the URL:
 {
   "mcpServers": {
     "chron": {
-      "url": "https://your-server/mcp",
+      "url": "https://your-server/sse",
       "headers": {
         "Authorization": "Bearer your-key"
       }

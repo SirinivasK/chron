@@ -6,10 +6,10 @@ Chron creates an audit trail of every AI conversation. Every message is logged w
 
 ## Session Start
 
-Call `start_session` with a descriptive title (e.g. "Contract review — 2026-05-08") and set `ai_tool` to your tool name (e.g. "claude", "cursor", "windsurf").
+Call `init_session` with the session title and `ai_tool`. It creates or resumes a session and returns `session_id`, `message_count`, `first_message_at`, and recent `messages` in a single call — no separate `get_session_history` needed.
 
-Call `get_session_history` for the returned `session_id`. If prior messages exist, display:
-> "Resuming session: [N messages] since [first_message_date]"
+If `message_count > 0`, display:
+> "Resuming session: [N messages] since [first_message_at]"
 
 ## Every Exchange
 
