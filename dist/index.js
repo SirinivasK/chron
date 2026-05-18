@@ -9320,7 +9320,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash2 } = require("crypto");
+    var { randomBytes, createHash: createHash3 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL3 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -10000,7 +10000,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash2("sha1").update(key + GUID).digest("base64");
+        const digest = createHash3("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -10387,7 +10387,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash2 } = require("crypto");
+    var { createHash: createHash3 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -10696,7 +10696,7 @@ var require_websocket_server = __commonJS({
         }
         if (this._state > RUNNING)
           return abortHandshake(socket, 503);
-        const digest = createHash2("sha1").update(key + GUID).digest("base64");
+        const digest = createHash3("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -32535,6 +32535,92 @@ var init_time = __esm({
   }
 });
 
+// package.json
+var version4;
+var init_package = __esm({
+  "package.json"() {
+    version4 = "0.1.14";
+  }
+});
+
+// src/utils/relay.ts
+function getMachineId() {
+  if (!_machineId) {
+    _machineId = "sha256:" + (0, import_crypto3.createHash)("sha256").update((0, import_os2.hostname)()).digest("hex").slice(0, 16);
+  }
+  return _machineId;
+}
+function toLogScaleAttributes(payload) {
+  const attrs = {
+    event_type: payload.event_type,
+    session_id_prefix: payload.session.id_prefix,
+    ai_tool: payload.session.ai_tool ?? "",
+    os: process.platform,
+    chron_version: version4
+  };
+  if (payload.event_type === "message_logged") {
+    attrs.role = payload.message.role;
+  } else if (payload.event_type === "secret_detected") {
+    attrs.detection_type = payload.detection.type;
+    attrs.masked_value = payload.detection.masked_value;
+  }
+  return attrs;
+}
+function emitToLogScale(payload) {
+  const url = process.env.CHRON_LOGSCALE_URL;
+  const token = process.env.CHRON_LOGSCALE_TOKEN;
+  if (!url || !token)
+    return;
+  const body = JSON.stringify([{
+    tags: { host: (0, import_os2.hostname)(), source: "chron-mcp" },
+    events: [{ timestamp: payload.timestamp, attributes: toLogScaleAttributes(payload) }]
+  }]);
+  setImmediate(
+    () => fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body
+    }).catch(() => void 0)
+  );
+}
+function emitEvent(payload) {
+  const url = process.env.CHRON_RELAY_URL;
+  const token = process.env.CHRON_RELAY_TOKEN;
+  if (url && token) {
+    const event = {
+      schema_version: "1.0",
+      chron_version: version4,
+      machine_id: getMachineId(),
+      os: process.platform,
+      ...payload
+    };
+    setImmediate(
+      () => fetch(url, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(event)
+      }).catch(() => void 0)
+    );
+  }
+  emitToLogScale(payload);
+}
+var import_crypto3, import_os2, _machineId;
+var init_relay = __esm({
+  "src/utils/relay.ts"() {
+    "use strict";
+    import_crypto3 = require("crypto");
+    import_os2 = require("os");
+    init_package();
+    _machineId = null;
+  }
+});
+
 // src/tools/sessions.ts
 function startSession(db) {
   return async (args) => {
@@ -32548,6 +32634,7 @@ function startSession(db) {
         created_at: now,
         updated_at: now
       });
+      emitEvent({ event_type: "session_started", timestamp: now, session: { id_prefix: id.slice(0, 8), ai_tool: args.ai_tool ?? null } });
       return {
         content: [{
           type: "text",
@@ -32562,6 +32649,7 @@ function startSession(db) {
       const session = existing[0];
       const [countRow] = await db.select({ count: sql`count(*)` }).from(messages).where(eq(messages.session_id, session.id));
       await db.update(sessions).set({ updated_at: now }).where(eq(sessions.id, session.id));
+      emitEvent({ event_type: "session_started", timestamp: now, session: { id_prefix: session.id.slice(0, 8), ai_tool: session.ai_tool } });
       return {
         content: [{
           type: "text",
@@ -32600,6 +32688,7 @@ function initSession(db) {
       created = false;
       ai_tool = session.ai_tool;
     }
+    emitEvent({ event_type: "session_started", timestamp: now, session: { id_prefix: session_id.slice(0, 8), ai_tool } });
     const limit = args.limit ?? 10;
     const [countRow] = await db.select({
       count: sql`count(*)`,
@@ -32683,18 +32772,19 @@ var init_sessions = __esm({
     init_esm2();
     init_schema();
     init_time();
+    init_relay();
   }
 });
 
 // src/utils/hash.ts
 function computeContentHash(sessionId, role, content, createdAt, prevHash) {
-  return (0, import_crypto3.createHash)("sha256").update(`${sessionId}|${role}|${content}|${createdAt}|${prevHash ?? ""}`).digest("hex");
+  return (0, import_crypto4.createHash)("sha256").update(`${sessionId}|${role}|${content}|${createdAt}|${prevHash ?? ""}`).digest("hex");
 }
-var import_crypto3;
+var import_crypto4;
 var init_hash = __esm({
   "src/utils/hash.ts"() {
     "use strict";
-    import_crypto3 = require("crypto");
+    import_crypto4 = require("crypto");
   }
 });
 
@@ -32823,16 +32913,19 @@ async function writeDetections(db, session_id, message_id, content) {
   if (found.length === 0)
     return;
   const now = localISOString();
-  await db.insert(secrets_detected).values(
-    found.map((s) => ({
-      id: v4_default(),
-      session_id,
-      message_id,
-      type: s.type,
-      masked_value: maskValue(s.value),
-      detected_at: now
-    }))
-  );
+  const rows = found.map((s) => ({
+    id: v4_default(),
+    session_id,
+    message_id,
+    type: s.type,
+    masked_value: maskValue(s.value),
+    detected_at: now
+  }));
+  await db.insert(secrets_detected).values(rows);
+  const sessionIdPrefix = session_id.slice(0, 8);
+  for (const row of rows) {
+    emitEvent({ event_type: "secret_detected", timestamp: now, session: { id_prefix: sessionIdPrefix, ai_tool: null }, detection: { type: row.type, masked_value: row.masked_value } });
+  }
 }
 function isFkError(e) {
   return e?.message?.includes("FOREIGN KEY constraint failed") || e?.code === "SQLITE_CONSTRAINT_FOREIGNKEY" || e?.cause?.message?.includes("FOREIGN KEY constraint failed") || e?.cause?.extendedCode === "SQLITE_CONSTRAINT_FOREIGNKEY";
@@ -32842,6 +32935,7 @@ function logMessage(db) {
     let id;
     let now;
     let contentHash;
+    let sessionAiTool;
     try {
       const result = await db.transaction(async (tx) => {
         const last = await tx.select({ content_hash: messages.content_hash }).from(messages).where(eq(messages.session_id, args.session_id)).orderBy(desc(messages.created_at), desc(sql`rowid`)).limit(1);
@@ -32859,17 +32953,20 @@ function logMessage(db) {
           content_hash: hash
         });
         await tx.update(sessions).set({ updated_at: ts }).where(eq(sessions.id, args.session_id));
-        return { id: msgId, now: ts, contentHash: hash };
+        const [sessionRow] = await tx.select({ ai_tool: sessions.ai_tool }).from(sessions).where(eq(sessions.id, args.session_id)).limit(1);
+        return { id: msgId, now: ts, contentHash: hash, ai_tool: sessionRow?.ai_tool ?? null };
       });
       id = result.id;
       now = result.now;
       contentHash = result.contentHash;
+      sessionAiTool = result.ai_tool;
     } catch (e) {
       if (isFkError(e)) {
         return { content: [{ type: "text", text: `Session not found: ${args.session_id}` }], isError: true };
       }
       throw e;
     }
+    emitEvent({ event_type: "message_logged", timestamp: now, session: { id_prefix: args.session_id.slice(0, 8), ai_tool: sessionAiTool }, message: { role: args.role } });
     if (args.role === "user") {
       setImmediate(() => writeDetections(db, args.session_id, id, args.content).catch(() => void 0));
     }
@@ -32886,6 +32983,7 @@ function logExchange(db) {
     let assistantNow;
     let userHash;
     let assistantHash;
+    let sessionAiTool;
     try {
       const result = await db.transaction(async (tx) => {
         const last = await tx.select({ content_hash: messages.content_hash }).from(messages).where(eq(messages.session_id, args.session_id)).orderBy(desc(messages.created_at), desc(sql`rowid`)).limit(1);
@@ -32915,7 +33013,8 @@ function logExchange(db) {
           content_hash: aHash
         });
         await tx.update(sessions).set({ updated_at: aNow }).where(eq(sessions.id, args.session_id));
-        return { uId, aId, uNow, aNow, uHash, aHash };
+        const [sessionRow] = await tx.select({ ai_tool: sessions.ai_tool }).from(sessions).where(eq(sessions.id, args.session_id)).limit(1);
+        return { uId, aId, uNow, aNow, uHash, aHash, ai_tool: sessionRow?.ai_tool ?? null };
       });
       userId = result.uId;
       assistantId = result.aId;
@@ -32923,12 +33022,16 @@ function logExchange(db) {
       assistantNow = result.aNow;
       userHash = result.uHash;
       assistantHash = result.aHash;
+      sessionAiTool = result.ai_tool;
     } catch (e) {
       if (isFkError(e)) {
         return { content: [{ type: "text", text: `Session not found: ${args.session_id}` }], isError: true };
       }
       throw e;
     }
+    const idPrefix = args.session_id.slice(0, 8);
+    emitEvent({ event_type: "message_logged", timestamp: userNow, session: { id_prefix: idPrefix, ai_tool: sessionAiTool }, message: { role: "user" } });
+    emitEvent({ event_type: "message_logged", timestamp: assistantNow, session: { id_prefix: idPrefix, ai_tool: sessionAiTool }, message: { role: "assistant" } });
     setImmediate(() => writeDetections(db, args.session_id, userId, args.user_content).catch(() => void 0));
     return {
       content: [{
@@ -32954,6 +33057,7 @@ var init_messages = __esm({
     init_time();
     init_hash();
     init_detect();
+    init_relay();
   }
 });
 
@@ -33082,14 +33186,6 @@ var init_detect2 = __esm({
   }
 });
 
-// package.json
-var version4;
-var init_package = __esm({
-  "package.json"() {
-    version4 = "0.1.13";
-  }
-});
-
 // src/server.ts
 function createServer(db) {
   const server = new McpServer({
@@ -33208,7 +33304,7 @@ __export(setup_exports, {
   runSetup: () => runSetup
 });
 function configPath(...parts) {
-  return (0, import_path2.join)((0, import_os2.homedir)(), ...parts);
+  return (0, import_path2.join)((0, import_os3.homedir)(), ...parts);
 }
 function readJson(filePath) {
   if (!(0, import_fs2.existsSync)(filePath))
@@ -33246,7 +33342,7 @@ function configureClaudeCode() {
   try {
     (0, import_child_process.execSync)("claude mcp add chron -- npx -y chron-mcp", { stdio: "pipe" });
   } catch {
-    const result = configureTool("Claude Code", (0, import_path2.join)((0, import_os2.homedir)(), ".claude", "settings.json"));
+    const result = configureTool("Claude Code", (0, import_path2.join)((0, import_os3.homedir)(), ".claude", "settings.json"));
     if (result.status === "error")
       return result;
   }
@@ -33255,12 +33351,12 @@ function configureClaudeCode() {
 }
 function installClaudeCodeHook() {
   const skillSrc = (0, import_path2.join)(__dirname, "..", "skills", "chron.skill.md");
-  const skillDst = (0, import_path2.join)((0, import_os2.homedir)(), ".chron", "chron.skill.md");
+  const skillDst = (0, import_path2.join)((0, import_os3.homedir)(), ".chron", "chron.skill.md");
   if ((0, import_fs2.existsSync)(skillSrc)) {
     (0, import_fs2.mkdirSync)((0, import_path2.dirname)(skillDst), { recursive: true });
     (0, import_fs2.copyFileSync)(skillSrc, skillDst);
   }
-  const settingsPath = (0, import_path2.join)((0, import_os2.homedir)(), ".claude", "settings.json");
+  const settingsPath = (0, import_path2.join)((0, import_os3.homedir)(), ".claude", "settings.json");
   const settings = readJson(settingsPath);
   if (!settings.hooks)
     settings.hooks = {};
@@ -33284,12 +33380,12 @@ async function runSetup() {
   }
   return results.filter((r) => r.status !== "skipped");
 }
-var import_fs2, import_os2, import_path2, import_child_process, CHRON_ENTRY, TOOLS;
+var import_fs2, import_os3, import_path2, import_child_process, CHRON_ENTRY, TOOLS;
 var init_setup = __esm({
   "src/setup.ts"() {
     "use strict";
     import_fs2 = require("fs");
-    import_os2 = require("os");
+    import_os3 = require("os");
     import_path2 = require("path");
     import_child_process = require("child_process");
     CHRON_ENTRY = {
@@ -57090,17 +57186,17 @@ var require_request = __commonJS({
       return addrs;
     });
     defineGetter(req, "subdomains", function subdomains() {
-      var hostname2 = this.hostname;
-      if (!hostname2)
+      var hostname3 = this.hostname;
+      if (!hostname3)
         return [];
       var offset = this.app.get("subdomain offset");
-      var subdomains2 = !isIP(hostname2) ? hostname2.split(".").reverse() : [hostname2];
+      var subdomains2 = !isIP(hostname3) ? hostname3.split(".").reverse() : [hostname3];
       return subdomains2.slice(offset);
     });
     defineGetter(req, "path", function path() {
       return parse3(this).pathname;
     });
-    defineGetter(req, "hostname", function hostname2() {
+    defineGetter(req, "hostname", function hostname3() {
       var trust = this.app.get("trust proxy fn");
       var host = this.get("X-Forwarded-Host");
       if (!host || !trust(this.connection.remoteAddress, 0)) {
@@ -62419,7 +62515,7 @@ var StdioServerTransport = class {
 };
 
 // src/index.ts
-var import_os3 = require("os");
+var import_os4 = require("os");
 var import_path3 = require("path");
 
 // node_modules/@libsql/core/lib-esm/api.js
@@ -66420,8 +66516,8 @@ var HttpStream = class extends Stream {
     let promise;
     try {
       const request = createRequest();
-      const fetch = this.#fetch;
-      promise = fetch(request);
+      const fetch2 = this.#fetch;
+      promise = fetch2(request);
     } catch (error2) {
       promise = Promise.reject(error2);
     }
@@ -66641,11 +66737,11 @@ var HttpClient = class extends Client {
   }
 };
 async function findEndpoint(customFetch, clientUrl) {
-  const fetch = customFetch;
+  const fetch2 = customFetch;
   for (const endpoint of checkEndpoints) {
     const url = new URL(endpoint.versionPath, clientUrl);
     const request = new Request(url.toString(), { method: "GET" });
-    const response = await fetch(request);
+    const response = await fetch2(request);
     await response.arrayBuffer();
     if (response.ok) {
       return endpoint;
@@ -67896,7 +67992,7 @@ if (process.argv[2] === "--version" || process.argv[2] === "-v") {
   process.exit(0);
 }
 async function main() {
-  const dbPath = process.env.CHRON_DB_PATH ?? (0, import_path3.join)((0, import_os3.homedir)(), ".chron", "chron.db");
+  const dbPath = process.env.CHRON_DB_PATH ?? (0, import_path3.join)((0, import_os4.homedir)(), ".chron", "chron.db");
   if (process.stdin.isTTY) {
     process.stdout.write(`chron-mcp ${version4}
 

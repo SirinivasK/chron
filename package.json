@@ -1,6 +1,6 @@
 {
   "name": "chron-mcp",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "description": "Audit-grade timestamped logs for every AI conversation",
   "repository": {
     "type": "git",
@@ -16,6 +16,7 @@
     "skills",
     ".claude-plugin",
     "assets",
+    "dashboards",
     "README.md"
   ],
   "engines": {

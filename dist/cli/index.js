@@ -1184,7 +1184,7 @@ var init_sql = __esm({
         return new SQL([new StringChunk(str)]);
       }
       sql2.raw = raw;
-      function join3(chunks, separator) {
+      function join4(chunks, separator) {
         const result = [];
         for (const [i, chunk] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -1194,7 +1194,7 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql2.join = join3;
+      sql2.join = join4;
       function identifier(value) {
         return new Name(value);
       }
@@ -2806,7 +2806,7 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync = (path) => fs.readFileSync(path, "utf-8");
+    var readFileSync2 = (path) => fs.readFileSync(path, "utf-8");
     var readFile = (path) => new Promise((resolve, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
@@ -2818,7 +2818,7 @@ var require_filesystem = __commonJS({
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync,
+      readFileSync: readFileSync2,
       readFile
     };
   }
@@ -2830,7 +2830,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync2 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command2 = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
@@ -2911,7 +2911,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync(LDD_PATH);
+        const lddContent = readFileSync2(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -2968,7 +2968,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync(LDD_PATH);
+        const lddContent = readFileSync2(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -11068,8 +11068,8 @@ var init_stream3 = __esm({
         let promise;
         try {
           const request = createRequest();
-          const fetch = this.#fetch;
-          promise = fetch(request);
+          const fetch2 = this.#fetch;
+          promise = fetch2(request);
         } catch (error) {
           promise = Promise.reject(error);
         }
@@ -11136,11 +11136,11 @@ var init_stream3 = __esm({
 
 // node_modules/@libsql/hrana-client/lib-esm/http/client.js
 async function findEndpoint(customFetch, clientUrl) {
-  const fetch = customFetch;
+  const fetch2 = customFetch;
   for (const endpoint of checkEndpoints) {
     const url = new URL(endpoint.versionPath, clientUrl);
     const request = new Request(url.toString(), { method: "GET" });
-    const response = await fetch(request);
+    const response = await fetch2(request);
     await response.arrayBuffer();
     if (response.ok) {
       return endpoint;
@@ -14252,7 +14252,7 @@ var init_select2 = __esm({
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table))
             this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join3) => join3.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join4) => join4.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -15141,7 +15141,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join3) => join3.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join4) => join4.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -17026,6 +17026,250 @@ var init_secrets = __esm({
   }
 });
 
+// package.json
+var require_package = __commonJS({
+  "package.json"(exports2, module2) {
+    module2.exports = {
+      name: "chron-mcp",
+      version: "0.1.14",
+      mcpName: "io.github.sirinivask/chron",
+      description: "Audit-grade timestamped logs for every AI conversation",
+      repository: {
+        type: "git",
+        url: "https://github.com/sirinivask/chron.git"
+      },
+      main: "dist/index.js",
+      vitest: {
+        include: [
+          "tests/**/*.test.ts"
+        ],
+        globals: true
+      },
+      bin: {
+        "chron-mcp": "dist/index.js",
+        chron: "dist/cli/index.js"
+      },
+      files: [
+        "dist",
+        "skills",
+        ".claude-plugin",
+        "assets",
+        "dashboards",
+        "README.md"
+      ],
+      engines: {
+        node: ">=18"
+      },
+      scripts: {
+        build: "npx esbuild src/index.ts --bundle --format=cjs --outfile=dist/index.js --platform=node && chmod +x dist/index.js && npx esbuild src/cli/index.ts --bundle --format=cjs --outfile=dist/cli/index.js --platform=node && chmod +x dist/cli/index.js",
+        "build:cli": "npx esbuild src/cli/index.ts --bundle --format=cjs --outfile=dist/cli/index.js --platform=node && chmod +x dist/cli/index.js",
+        typecheck: "tsc --noEmit",
+        dev: "tsc --watch",
+        start: "node dist/index.js",
+        test: "vitest run",
+        "test:watch": "vitest",
+        prepublishOnly: "npm test && npm run build"
+      },
+      keywords: [
+        "mcp",
+        "ai",
+        "audit",
+        "logging",
+        "claude",
+        "cursor"
+      ],
+      license: "SEE LICENSE IN LICENSE",
+      dependencies: {
+        "@libsql/client": "^0.17.3",
+        "@modelcontextprotocol/sdk": "^1.12.0",
+        "drizzle-orm": "^0.45.2",
+        express: "^4.18.2",
+        uuid: "^11.1.1",
+        zod: "^3.22.4"
+      },
+      devDependencies: {
+        "@types/express": "^4.17.21",
+        "@types/node": "^20.0.0",
+        "@types/uuid": "^9.0.0",
+        "drizzle-kit": "^0.20.14",
+        typescript: "^5.4.5",
+        vitest: "^1.4.0"
+      }
+    };
+  }
+});
+
+// src/cli/connect.ts
+var connect_exports = {};
+__export(connect_exports, {
+  runConnect: () => runConnect
+});
+function prompt(rl, question) {
+  return new Promise((resolve) => rl.question(question, resolve));
+}
+function configPath() {
+  return (0, import_path3.join)((0, import_os3.homedir)(), ".chron", "config.json");
+}
+function loadConfig() {
+  try {
+    return JSON.parse((0, import_fs2.readFileSync)(configPath(), "utf8"));
+  } catch {
+    return {};
+  }
+}
+function saveConfig(data) {
+  const dir = (0, import_path3.join)((0, import_os3.homedir)(), ".chron");
+  (0, import_fs2.mkdirSync)(dir, { recursive: true });
+  (0, import_fs2.writeFileSync)(configPath(), JSON.stringify(data, null, 2), "utf8");
+}
+async function connectCrowdStrike() {
+  process.stdout.write(`
+${BOLD5}Connect Chron \u2192 CrowdStrike LogScale${RESET5}
+
+`);
+  process.stdout.write(`${DIM4}Events will be sent directly to your LogScale repository.
+`);
+  process.stdout.write(`No message content is transmitted \u2014 metadata only.${RESET5}
+
+`);
+  const rl = (0, import_readline.createInterface)({ input: process.stdin, output: process.stdout });
+  let url;
+  let token;
+  try {
+    url = (await prompt(rl, `  LogScale ingest URL  ${DIM4}(e.g. https://cloud.us.humio.com/api/v1/ingest/humio-structured)${RESET5}
+  ${CYAN4}>${RESET5} `)).trim();
+    if (!url.startsWith("https://")) {
+      process.stdout.write(`
+${RED}URL must start with https://${RESET5}
+`);
+      process.exit(1);
+    }
+    token = (await prompt(rl, `
+  LogScale ingest token
+  ${CYAN4}>${RESET5} `)).trim();
+    if (!token) {
+      process.stdout.write(`
+${RED}Token cannot be empty${RESET5}
+`);
+      process.exit(1);
+    }
+  } finally {
+    rl.close();
+  }
+  process.stdout.write(`
+${DIM4}Sending test event...${RESET5} `);
+  const testPayload = JSON.stringify([{
+    tags: { host: require("os").hostname(), source: "chron-mcp" },
+    events: [{
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      attributes: {
+        event_type: "connection_test",
+        chron_version: require_package().version,
+        os: process.platform,
+        message: "chron connect crowdstrike \u2014 test event"
+      }
+    }]
+  }]);
+  let ok = false;
+  let statusCode = 0;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: testPayload
+    });
+    statusCode = res.status;
+    ok = res.ok;
+  } catch (e) {
+    process.stdout.write(`${RED}failed${RESET5}
+`);
+    process.stderr.write(`  ${RED}Error: ${e.message}${RESET5}
+
+`);
+    process.exit(1);
+  }
+  if (!ok) {
+    process.stdout.write(`${RED}failed (HTTP ${statusCode})${RESET5}
+`);
+    process.stderr.write(`  ${RED}Check your URL and token, then try again.${RESET5}
+
+`);
+    process.exit(1);
+  }
+  process.stdout.write(`${GREEN}OK${RESET5}
+
+`);
+  const config = loadConfig();
+  config.logscale = { url, connected_at: (/* @__PURE__ */ new Date()).toISOString() };
+  saveConfig(config);
+  process.stdout.write(`${GREEN}${BOLD5}Connected!${RESET5} Test event appeared in LogScale.
+
+`);
+  process.stdout.write(`${BOLD5}Add these env vars to your MCP client config:${RESET5}
+
+`);
+  process.stdout.write(`  ${CYAN4}CHRON_LOGSCALE_URL${RESET5}   ${url}
+`);
+  process.stdout.write(`  ${CYAN4}CHRON_LOGSCALE_TOKEN${RESET5} ${DIM4}<your-token>${RESET5}
+
+`);
+  process.stdout.write(`${DIM4}For Claude Code \u2014 add to the "env" block of the chron entry in ~/.claude.json:${RESET5}
+
+`);
+  process.stdout.write(`  ${DIM4}"env": {
+`);
+  process.stdout.write(`    "CHRON_LOGSCALE_URL": "${url}",
+`);
+  process.stdout.write(`    "CHRON_LOGSCALE_TOKEN": "<your-token>"
+`);
+  process.stdout.write(`  }${RESET5}
+
+`);
+  process.stdout.write(`${DIM4}Connection saved to ~/.chron/config.json${RESET5}
+
+`);
+}
+async function runConnect(args2) {
+  const [subcommand] = args2;
+  switch (subcommand) {
+    case "crowdstrike":
+      await connectCrowdStrike();
+      break;
+    default: {
+      const name = subcommand ? `Unknown integration: ${subcommand}
+
+` : "";
+      process.stdout.write(
+        `${name}Usage: chron connect <integration>
+
+Integrations:
+  crowdstrike    Connect to CrowdStrike LogScale (direct ingest)
+`
+      );
+      process.exit(subcommand ? 1 : 0);
+    }
+  }
+}
+var import_readline, import_os3, import_path3, import_fs2, RESET5, BOLD5, DIM4, CYAN4, GREEN, RED;
+var init_connect = __esm({
+  "src/cli/connect.ts"() {
+    "use strict";
+    import_readline = require("readline");
+    import_os3 = require("os");
+    import_path3 = require("path");
+    import_fs2 = require("fs");
+    RESET5 = "\x1B[0m";
+    BOLD5 = "\x1B[1m";
+    DIM4 = "\x1B[2m";
+    CYAN4 = "\x1B[36m";
+    GREEN = "\x1B[32m";
+    RED = "\x1B[31m";
+  }
+});
+
 // src/cli/index.ts
 var [, , command, ...args] = process.argv;
 async function main() {
@@ -17055,6 +17299,11 @@ async function main() {
       await runSecrets2(args);
       break;
     }
+    case "connect": {
+      const { runConnect: runConnect2 } = await Promise.resolve().then(() => (init_connect(), connect_exports));
+      await runConnect2(args);
+      break;
+    }
     default: {
       const name = command ? `Unknown command: ${command}
 
@@ -17068,6 +17317,7 @@ Commands:
   export          Export a session as markdown
   secrets         List detected secrets across sessions
   settings        View current configuration
+  connect         Connect to a SIEM integration (crowdstrike)
 
 Options (history):
   --limit=<n>     Max sessions to show (default: 20)
