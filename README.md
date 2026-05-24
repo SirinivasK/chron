@@ -24,6 +24,8 @@ Chron fixes that. Every exchange is logged with a precise local datetime (includ
 
 ## Install
 
+**MCP server** (for Claude Desktop, Claude Code, Cursor, Windsurf):
+
 Add to your AI tool's MCP config:
 
 ```json
@@ -37,7 +39,43 @@ Add to your AI tool's MCP config:
 }
 ```
 
+**CLI** (for `chron history`, `chron connect`, `chron export`, etc.):
+
+```bash
+npm install -g chron-mcp
+```
+
+> `npx chron-mcp` starts the MCP server only — it does not put the `chron` CLI command in your PATH. You need a global install for the CLI.
+
 First run creates `~/.chron/chron.db` automatically. No database setup, no env vars, no migrations.
+
+---
+
+## CLI
+
+After `npm install -g chron-mcp`, the `chron` command is available globally:
+
+```
+Usage: chron <command> [options]
+
+Commands:
+  history         List sessions or show full log for a session
+  report          Aggregate audit stats across sessions
+  export          Export a session as markdown
+  secrets         List detected secrets across sessions
+  settings        View current configuration
+  connect         Connect to a SIEM integration (crowdstrike, sentinel, splunk)
+
+Options (history):
+  --limit=<n>     Max sessions to show (default: 20)
+  <id-prefix>     Show full log for the session with this ID prefix
+
+Options (report):
+  --since=<range> Filter by date: 7d, 30d, or YYYY-MM-DD (default: all time)
+
+Options (export / secrets):
+  <id-prefix>     Scope to a single session
+```
 
 ---
 
@@ -173,6 +211,261 @@ This turns your local log into a verifiable audit artifact. Any edit to a stored
 
 ---
 
+## CrowdStrike LogScale integration
+
+Stream AI session telemetry directly from developer machines into your CrowdStrike LogScale repository. No relay service — events go straight to your own LogScale instance.
+
+**What gets sent:** session starts, message counts (role only), and masked credential detections. Message content never leaves the machine.
+
+### Setup
+
+**1. Create a LogScale repository and ingest token**
+
+In Falcon console → **Log Management** → **Repositories** → **New repository** (name it `ChronAIEvents`).  
+Then **Settings** → **API Tokens** → **Add token** → select **Ingest** permission → copy the token.
+
+Your ingest URL follows this pattern:
+```
+https://<your-cluster>.humio.com/api/v1/ingest/humio-structured
+```
+
+**2. Install the CLI and run the onboarding wizard**
+
+```bash
+npm install -g chron-mcp
+chron connect crowdstrike
+# Paste your ingest URL and token when prompted
+# The wizard sends a test event and confirms before saving
+```
+
+**3. Add env vars to your MCP client config**
+
+The wizard prints the exact block to paste. For Claude Code, add to the `chron` entry in `~/.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "chron": {
+      "command": "npx",
+      "args": ["-y", "chron-mcp"],
+      "env": {
+        "CHRON_LOGSCALE_URL": "https://<your-cluster>.humio.com/api/v1/ingest/humio-structured",
+        "CHRON_LOGSCALE_TOKEN": "<your-ingest-token>"
+      }
+    }
+  }
+}
+```
+
+Restart your AI tool to pick up the new env vars.
+
+**4. Import the pre-built dashboard**
+
+In Falcon → **Log Management** → **Dashboards** → **Import**:
+```
+node_modules/chron-mcp/dashboards/logscale/chron-ai-activity.yaml
+```
+
+Full guide with SOC alert setup: [dashboards/logscale/README.md](dashboards/logscale/README.md)
+
+### Env vars
+
+| Env var | Description |
+|---|---|
+| `CHRON_LOGSCALE_URL` | LogScale ingest endpoint |
+| `CHRON_LOGSCALE_TOKEN` | LogScale ingest token |
+
+Both must be set for events to flow. If unset, the integration is silently disabled.
+
+---
+
+## Splunk integration
+
+Stream AI session telemetry into Splunk via HTTP Event Collector (HEC). Works with Splunk Enterprise, Splunk Cloud, and a local Docker instance.
+
+**What gets sent:** session starts, message counts (role only), and masked credential detections. Message content never leaves the machine.
+
+### Setup
+
+**Option A — Local Docker (fastest, no account needed)**
+
+```bash
+# Start a local Splunk instance (Apple Silicon: --platform linux/amd64 is required)
+docker run -d --name splunk-chron \
+  --platform linux/amd64 \
+  -p 8000:8000 -p 8088:8088 \
+  -e SPLUNK_START_ARGS=--accept-license \
+  -e SPLUNK_GENERAL_TERMS=--accept-sgt-current-at-splunk-com \
+  -e SPLUNK_PASSWORD=Admin1234! \
+  -e SPLUNK_HEC_TOKEN=chron-test-token \
+  splunk/splunk:latest
+
+# Wait ~2 minutes, then watch until ready:
+docker logs -f splunk-chron 2>&1 | grep -i "Ansible playbook complete"
+```
+
+**Option B — Splunk Enterprise or Cloud**
+
+Settings → **Data Inputs** → **HTTP Event Collector** → **New Token** → name it `chron-ingest` → source type `chron:event` → copy the token.
+
+**2. Install the CLI and run the onboarding wizard**
+
+```bash
+npm install -g chron-mcp
+chron connect splunk
+# For local Docker: URL = https://localhost:8088, Token = chron-test-token
+# TLS verification is skipped automatically for localhost (self-signed cert)
+```
+
+**3. Add env vars to your MCP client config**
+
+The wizard prints the exact block to paste. For Claude Code, add to `~/.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "chron": {
+      "command": "npx",
+      "args": ["-y", "chron-mcp"],
+      "env": {
+        "CHRON_SPLUNK_URL": "https://localhost:8088",
+        "CHRON_SPLUNK_TOKEN": "chron-test-token",
+        "CHRON_SPLUNK_INSECURE": "1"
+      }
+    }
+  }
+}
+```
+
+> Remove `CHRON_SPLUNK_INSECURE` for production Splunk instances with valid TLS certificates.
+
+Restart your AI tool to pick up the new env vars.
+
+**4. Search in Splunk**
+
+Open [http://localhost:8000](http://localhost:8000) → **Search & Reporting** → run:
+```
+sourcetype="chron:event"
+```
+
+Events appear in real time as you have AI conversations.
+
+Full guide with dashboard templates and alert setup: [dashboards/splunk/README.md](dashboards/splunk/README.md)
+
+### Env vars
+
+| Env var | Description |
+|---|---|
+| `CHRON_SPLUNK_URL` | Splunk HEC base URL, e.g. `https://localhost:8088` or `https://your-host:8088` |
+| `CHRON_SPLUNK_TOKEN` | HEC ingest token |
+| `CHRON_SPLUNK_INSECURE` | Set to `1` to skip TLS verification (local Docker with self-signed cert) |
+
+`CHRON_SPLUNK_URL` and `CHRON_SPLUNK_TOKEN` must both be set for events to flow.
+
+---
+
+## Microsoft Sentinel integration
+
+Stream AI session telemetry into your Microsoft Sentinel workspace via the Azure Monitor Logs Ingestion API. Events go directly from developer machines to your own Log Analytics workspace — no relay service.
+
+**What gets sent:** session starts, message counts (role only), and masked credential detections. Message content never leaves the machine.
+
+### Setup
+
+**1. Register an Azure App**
+
+Azure Portal → **Azure Active Directory** → **App registrations** → **New registration** → name it `chron-ingest`.  
+Note the **Application (client) ID** and **Directory (tenant) ID**.  
+Go to **Certificates & secrets** → **New client secret** → copy the value immediately.
+
+**2. Create a custom table in Log Analytics**
+
+Open your Log Analytics workspace → **Tables** → **Create** → **New custom log (DCR-based)** → name it `ChronEvents_CL`.
+
+Add these columns (in addition to the auto-added `TimeGenerated`):
+
+| Column | Type |
+|---|---|
+| `EventType` | string |
+| `SessionIdPrefix` | string |
+| `AiTool` | string |
+| `OS` | string |
+| `ChronVersion` | string |
+| `Computer` | string |
+| `Role` | string |
+| `DetectionType` | string |
+| `MaskedValue` | string |
+
+The wizard creates a **Data Collection Endpoint (DCE)** and **Data Collection Rule (DCR)** — note both.
+
+**3. Grant the App ingest permission**
+
+Open the DCR → **Access control (IAM)** → **Add role assignment** → Role: **Monitoring Metrics Publisher** → Member: the `chron-ingest` app.
+
+**4. Get the DCR Immutable ID**
+
+Open the DCR → **Overview** → **JSON view** → copy the `immutableId` field (starts with `dcr-`).
+
+**5. Install the CLI and run the onboarding wizard**
+
+```bash
+npm install -g chron-mcp
+chron connect sentinel
+# Enter tenant ID, client ID, client secret, DCE URL, DCR immutable ID, and stream name
+# The wizard authenticates with Azure AD and sends a test event before saving
+```
+
+**6. Add env vars to your MCP client config**
+
+The wizard prints the exact block to paste. For Claude Code, add to `~/.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "chron": {
+      "command": "npx",
+      "args": ["-y", "chron-mcp"],
+      "env": {
+        "CHRON_SENTINEL_TENANT_ID": "<your-tenant-id>",
+        "CHRON_SENTINEL_CLIENT_ID": "<your-client-id>",
+        "CHRON_SENTINEL_CLIENT_SECRET": "<your-client-secret>",
+        "CHRON_SENTINEL_DCE": "https://<your-dce>.ingest.monitor.azure.com",
+        "CHRON_SENTINEL_DCR_ID": "dcr-<your-immutable-id>",
+        "CHRON_SENTINEL_STREAM": "Custom-ChronEvents_CL"
+      }
+    }
+  }
+}
+```
+
+Restart your AI tool to pick up the new env vars.
+
+**7. Query in Sentinel**
+
+Sentinel → **Logs** → paste any query from `dashboards/sentinel/`:
+```kql
+ChronEvents_CL
+| where TimeGenerated > ago(24h)
+| summarize count() by EventType, AiTool
+```
+
+Full guide with KQL queries and alert rule setup: [dashboards/sentinel/README.md](dashboards/sentinel/README.md)
+
+### Env vars
+
+| Env var | Description |
+|---|---|
+| `CHRON_SENTINEL_TENANT_ID` | Azure AD tenant ID |
+| `CHRON_SENTINEL_CLIENT_ID` | App Registration client ID |
+| `CHRON_SENTINEL_CLIENT_SECRET` | App Registration client secret |
+| `CHRON_SENTINEL_DCE` | Data Collection Endpoint URL |
+| `CHRON_SENTINEL_DCR_ID` | DCR Immutable ID (starts with `dcr-`) |
+| `CHRON_SENTINEL_STREAM` | Stream name, e.g. `Custom-ChronEvents_CL` |
+
+All six must be set for events to flow. Token refresh is automatic (1-hour Azure AD tokens, refreshed 60s before expiry).
+
+---
+
 ## Configuration
 
 | Env var | Default | Description |
@@ -181,6 +474,18 @@ This turns your local log into a verifiable audit artifact. Any edit to a stored
 | `CHRON_TRANSPORT` | `stdio` | Set to `http` to enable HTTP+SSE mode |
 | `CHRON_API_KEY` | _(none)_ | Bearer token for HTTP mode |
 | `PORT` | `3001` | Port for HTTP mode |
+| `CHRON_LOGSCALE_URL` | _(none)_ | LogScale ingest endpoint (enables CrowdStrike integration) |
+| `CHRON_LOGSCALE_TOKEN` | _(none)_ | LogScale ingest token |
+| `CHRON_SENTINEL_TENANT_ID` | _(none)_ | Azure AD tenant ID (enables Sentinel integration) |
+| `CHRON_SENTINEL_CLIENT_ID` | _(none)_ | App Registration client ID |
+| `CHRON_SENTINEL_CLIENT_SECRET` | _(none)_ | App Registration client secret |
+| `CHRON_SENTINEL_DCE` | _(none)_ | Data Collection Endpoint URL |
+| `CHRON_SENTINEL_DCR_ID` | _(none)_ | DCR Immutable ID |
+| `CHRON_SENTINEL_STREAM` | _(none)_ | Stream name (e.g. `Custom-ChronEvents_CL`) |
+| `CHRON_SPLUNK_URL` | _(none)_ | Splunk HEC base URL (enables Splunk integration) |
+| `CHRON_SPLUNK_TOKEN` | _(none)_ | Splunk HEC ingest token |
+| `CHRON_RELAY_URL` | _(none)_ | Generic relay endpoint (any SIEM or webhook) |
+| `CHRON_RELAY_TOKEN` | _(none)_ | Bearer token for generic relay |
 
 ---
 

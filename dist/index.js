@@ -6402,7 +6402,7 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync2 = (path) => fs.readFileSync(path, "utf-8");
+    var readFileSync3 = (path) => fs.readFileSync(path, "utf-8");
     var readFile = (path) => new Promise((resolve, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
@@ -6414,7 +6414,7 @@ var require_filesystem = __commonJS({
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync2,
+      readFileSync: readFileSync3,
       readFile
     };
   }
@@ -6426,7 +6426,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync2 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync3 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
@@ -6507,7 +6507,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync2(LDD_PATH);
+        const lddContent = readFileSync3(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -6564,7 +6564,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync2(LDD_PATH);
+        const lddContent = readFileSync3(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -12014,7 +12014,7 @@ var init_sql = __esm({
         return new SQL([new StringChunk(str)]);
       }
       sql2.raw = raw;
-      function join4(chunks, separator) {
+      function join5(chunks, separator) {
         const result = [];
         for (const [i, chunk] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -12024,7 +12024,7 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql2.join = join4;
+      sql2.join = join5;
       function identifier(value) {
         return new Name(value);
       }
@@ -14955,7 +14955,7 @@ var init_select2 = __esm({
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table))
             this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join4) => join4.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join5) => join5.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -15844,7 +15844,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join4) => join4.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join5) => join5.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -32539,16 +32539,148 @@ var init_time = __esm({
 var version4;
 var init_package = __esm({
   "package.json"() {
-    version4 = "0.1.14";
+    version4 = "0.1.17";
   }
 });
 
 // src/utils/relay.ts
+function getSplunkConfig() {
+  const envUrl = process.env.CHRON_SPLUNK_URL;
+  const envToken = process.env.CHRON_SPLUNK_TOKEN;
+  if (envUrl && envToken) {
+    return { url: envUrl, token: envToken, insecure: process.env.CHRON_SPLUNK_INSECURE === "1" };
+  }
+  const now = Date.now();
+  if (now < _splunkCacheExpiry)
+    return _splunkCache;
+  _splunkCacheExpiry = now + 1e4;
+  try {
+    const cfg = JSON.parse((0, import_fs2.readFileSync)((0, import_path2.join)((0, import_os2.homedir)(), ".chron", "config.json"), "utf8"));
+    const s = cfg?.splunk;
+    _splunkCache = s?.url && s?.token ? { url: s.url, token: s.token, insecure: s.insecure ?? false } : null;
+  } catch {
+    _splunkCache = null;
+  }
+  if (_splunkCache?.insecure)
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  return _splunkCache;
+}
+async function getAzureToken(tenantId, clientId, clientSecret) {
+  const now = Date.now();
+  if (_azureTokenCache && _azureTokenCache.expiry > now + 6e4) {
+    return _azureTokenCache.token;
+  }
+  try {
+    const res = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: clientId,
+        client_secret: clientSecret,
+        scope: "https://monitor.azure.com/.default"
+      }).toString()
+    });
+    if (!res.ok)
+      return null;
+    const data = await res.json();
+    _azureTokenCache = { token: data.access_token, expiry: now + data.expires_in * 1e3 };
+    return data.access_token;
+  } catch {
+    return null;
+  }
+}
 function getMachineId() {
   if (!_machineId) {
     _machineId = "sha256:" + (0, import_crypto3.createHash)("sha256").update((0, import_os2.hostname)()).digest("hex").slice(0, 16);
   }
   return _machineId;
+}
+function toSplunkEvent(payload) {
+  const event = {
+    event_type: payload.event_type,
+    session_id_prefix: payload.session.id_prefix,
+    ai_tool: payload.session.ai_tool ?? "",
+    os: process.platform,
+    chron_version: version4
+  };
+  if (payload.event_type === "message_logged") {
+    event.role = payload.message.role;
+  } else if (payload.event_type === "secret_detected") {
+    event.detection_type = payload.detection.type;
+    event.masked_value = payload.detection.masked_value;
+  }
+  return {
+    time: new Date(payload.timestamp).getTime() / 1e3,
+    host: (0, import_os2.hostname)(),
+    source: "chron-mcp",
+    sourcetype: "chron:event",
+    event
+  };
+}
+function emitToSplunk(payload) {
+  const cfg = getSplunkConfig();
+  if (!cfg)
+    return;
+  const url = `${cfg.url.replace(/\/$/, "")}/services/collector/event`;
+  setImmediate(
+    () => fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Splunk ${cfg.token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(toSplunkEvent(payload))
+    }).catch(() => void 0)
+  );
+}
+function toSentinelRecord(payload) {
+  const record2 = {
+    TimeGenerated: payload.timestamp,
+    EventType: payload.event_type,
+    SessionIdPrefix: payload.session.id_prefix,
+    AiTool: payload.session.ai_tool ?? "",
+    OS: process.platform,
+    ChronVersion: version4,
+    Computer: (0, import_os2.hostname)(),
+    Role: "",
+    DetectionType: "",
+    MaskedValue: ""
+  };
+  if (payload.event_type === "message_logged") {
+    record2.Role = payload.message.role;
+  } else if (payload.event_type === "secret_detected") {
+    record2.DetectionType = payload.detection.type;
+    record2.MaskedValue = payload.detection.masked_value;
+  }
+  return record2;
+}
+function emitToSentinel(payload) {
+  const dce = process.env.CHRON_SENTINEL_DCE;
+  const dcrId = process.env.CHRON_SENTINEL_DCR_ID;
+  const stream = process.env.CHRON_SENTINEL_STREAM;
+  const tenantId = process.env.CHRON_SENTINEL_TENANT_ID;
+  const clientId = process.env.CHRON_SENTINEL_CLIENT_ID;
+  const clientSecret = process.env.CHRON_SENTINEL_CLIENT_SECRET;
+  if (!dce || !dcrId || !stream || !tenantId || !clientId || !clientSecret)
+    return;
+  setImmediate(async () => {
+    try {
+      const token = await getAzureToken(tenantId, clientId, clientSecret);
+      if (!token)
+        return;
+      const url = `${dce}/dataCollectionRules/${dcrId}/streams/${stream}?api-version=2023-01-01`;
+      await fetch(url, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify([toSentinelRecord(payload)])
+      });
+    } catch {
+    }
+  });
 }
 function toLogScaleAttributes(payload) {
   const attrs = {
@@ -32609,14 +32741,24 @@ function emitEvent(payload) {
     );
   }
   emitToLogScale(payload);
+  emitToSentinel(payload);
+  emitToSplunk(payload);
 }
-var import_crypto3, import_os2, _machineId;
+var import_fs2, import_path2, import_crypto3, import_os2, _splunkCache, _splunkCacheExpiry, _azureTokenCache, _machineId;
 var init_relay = __esm({
   "src/utils/relay.ts"() {
     "use strict";
+    import_fs2 = require("fs");
+    import_path2 = require("path");
     import_crypto3 = require("crypto");
     import_os2 = require("os");
     init_package();
+    if (process.env.CHRON_SPLUNK_INSECURE === "1") {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+    }
+    _splunkCache = null;
+    _splunkCacheExpiry = 0;
+    _azureTokenCache = null;
     _machineId = null;
   }
 });
@@ -33304,24 +33446,24 @@ __export(setup_exports, {
   runSetup: () => runSetup
 });
 function configPath(...parts) {
-  return (0, import_path2.join)((0, import_os3.homedir)(), ...parts);
+  return (0, import_path3.join)((0, import_os3.homedir)(), ...parts);
 }
 function readJson(filePath) {
-  if (!(0, import_fs2.existsSync)(filePath))
+  if (!(0, import_fs3.existsSync)(filePath))
     return {};
   try {
-    return JSON.parse((0, import_fs2.readFileSync)(filePath, "utf8"));
+    return JSON.parse((0, import_fs3.readFileSync)(filePath, "utf8"));
   } catch {
     return {};
   }
 }
 function writeJson(filePath, data) {
-  (0, import_fs2.mkdirSync)((0, import_path2.dirname)(filePath), { recursive: true });
-  (0, import_fs2.writeFileSync)(filePath, JSON.stringify(data, null, 2) + "\n", "utf8");
+  (0, import_fs3.mkdirSync)((0, import_path3.dirname)(filePath), { recursive: true });
+  (0, import_fs3.writeFileSync)(filePath, JSON.stringify(data, null, 2) + "\n", "utf8");
 }
 function configureTool(name, filePath) {
-  const dir = (0, import_path2.dirname)(filePath);
-  if (!(0, import_fs2.existsSync)(dir) && name !== "Claude Code") {
+  const dir = (0, import_path3.dirname)(filePath);
+  if (!(0, import_fs3.existsSync)(dir) && name !== "Claude Code") {
     return { tool: name, status: "skipped" };
   }
   try {
@@ -33342,7 +33484,7 @@ function configureClaudeCode() {
   try {
     (0, import_child_process.execSync)("claude mcp add chron -- npx -y chron-mcp", { stdio: "pipe" });
   } catch {
-    const result = configureTool("Claude Code", (0, import_path2.join)((0, import_os3.homedir)(), ".claude", "settings.json"));
+    const result = configureTool("Claude Code", (0, import_path3.join)((0, import_os3.homedir)(), ".claude", "settings.json"));
     if (result.status === "error")
       return result;
   }
@@ -33350,13 +33492,13 @@ function configureClaudeCode() {
   return { tool: "Claude Code", status: "added" };
 }
 function installClaudeCodeHook() {
-  const skillSrc = (0, import_path2.join)(__dirname, "..", "skills", "chron.skill.md");
-  const skillDst = (0, import_path2.join)((0, import_os3.homedir)(), ".chron", "chron.skill.md");
-  if ((0, import_fs2.existsSync)(skillSrc)) {
-    (0, import_fs2.mkdirSync)((0, import_path2.dirname)(skillDst), { recursive: true });
-    (0, import_fs2.copyFileSync)(skillSrc, skillDst);
+  const skillSrc = (0, import_path3.join)(__dirname, "..", "skills", "chron.skill.md");
+  const skillDst = (0, import_path3.join)((0, import_os3.homedir)(), ".chron", "chron.skill.md");
+  if ((0, import_fs3.existsSync)(skillSrc)) {
+    (0, import_fs3.mkdirSync)((0, import_path3.dirname)(skillDst), { recursive: true });
+    (0, import_fs3.copyFileSync)(skillSrc, skillDst);
   }
-  const settingsPath = (0, import_path2.join)((0, import_os3.homedir)(), ".claude", "settings.json");
+  const settingsPath = (0, import_path3.join)((0, import_os3.homedir)(), ".claude", "settings.json");
   const settings = readJson(settingsPath);
   if (!settings.hooks)
     settings.hooks = {};
@@ -33380,13 +33522,13 @@ async function runSetup() {
   }
   return results.filter((r) => r.status !== "skipped");
 }
-var import_fs2, import_os3, import_path2, import_child_process, CHRON_ENTRY, TOOLS;
+var import_fs3, import_os3, import_path3, import_child_process, CHRON_ENTRY, TOOLS;
 var init_setup = __esm({
   "src/setup.ts"() {
     "use strict";
-    import_fs2 = require("fs");
+    import_fs3 = require("fs");
     import_os3 = require("os");
-    import_path2 = require("path");
+    import_path3 = require("path");
     import_child_process = require("child_process");
     CHRON_ENTRY = {
       command: "npx",
@@ -33395,11 +33537,11 @@ var init_setup = __esm({
     TOOLS = [
       {
         name: "Claude Desktop",
-        path: process.platform === "win32" ? (0, import_path2.join)(process.env.APPDATA ?? "", "Claude", "claude_desktop_config.json") : configPath("Library", "Application Support", "Claude", "claude_desktop_config.json")
+        path: process.platform === "win32" ? (0, import_path3.join)(process.env.APPDATA ?? "", "Claude", "claude_desktop_config.json") : configPath("Library", "Application Support", "Claude", "claude_desktop_config.json")
       },
       {
         name: "Cursor",
-        path: process.platform === "win32" ? (0, import_path2.join)(process.env.APPDATA ?? "", "Cursor", "User", "globalStorage", "cursor.mcp", "mcp.json") : configPath(".cursor", "mcp.json")
+        path: process.platform === "win32" ? (0, import_path3.join)(process.env.APPDATA ?? "", "Cursor", "User", "globalStorage", "cursor.mcp", "mcp.json") : configPath(".cursor", "mcp.json")
       },
       {
         name: "Windsurf",
@@ -53587,7 +53729,7 @@ var require_view = __commonJS({
     var dirname3 = path.dirname;
     var basename = path.basename;
     var extname = path.extname;
-    var join4 = path.join;
+    var join5 = path.join;
     var resolve = path.resolve;
     module2.exports = View2;
     function View2(name, options) {
@@ -53635,12 +53777,12 @@ var require_view = __commonJS({
     };
     View2.prototype.resolve = function resolve2(dir, file) {
       var ext = this.ext;
-      var path2 = join4(dir, file);
+      var path2 = join5(dir, file);
       var stat = tryStat(path2);
       if (stat && stat.isFile()) {
         return path2;
       }
-      path2 = join4(dir, basename(file, ext), "index" + ext);
+      path2 = join5(dir, basename(file, ext), "index" + ext);
       stat = tryStat(path2);
       if (stat && stat.isFile()) {
         return path2;
@@ -54707,7 +54849,7 @@ var require_send = __commonJS({
     var Stream2 = require("stream");
     var util2 = require("util");
     var extname = path.extname;
-    var join4 = path.join;
+    var join5 = path.join;
     var normalize = path.normalize;
     var resolve = path.resolve;
     var sep = path.sep;
@@ -54926,7 +55068,7 @@ var require_send = __commonJS({
           return res;
         }
         parts = path2.split(sep);
-        path2 = normalize(join4(root, path2));
+        path2 = normalize(join5(root, path2));
       } else {
         if (UP_PATH_REGEXP.test(path2)) {
           debug('malicious path "%s"', path2);
@@ -55067,7 +55209,7 @@ var require_send = __commonJS({
             return self.onStatError(err);
           return self.error(404);
         }
-        var p = join4(path2, self._index[i]);
+        var p = join5(path2, self._index[i]);
         debug('stat "%s"', p);
         fs.stat(p, function(err2, stat) {
           if (err2)
@@ -62516,7 +62658,7 @@ var StdioServerTransport = class {
 
 // src/index.ts
 var import_os4 = require("os");
-var import_path3 = require("path");
+var import_path4 = require("path");
 
 // node_modules/@libsql/core/lib-esm/api.js
 var LibsqlError = class extends Error {
@@ -67992,7 +68134,7 @@ if (process.argv[2] === "--version" || process.argv[2] === "-v") {
   process.exit(0);
 }
 async function main() {
-  const dbPath = process.env.CHRON_DB_PATH ?? (0, import_path3.join)((0, import_os4.homedir)(), ".chron", "chron.db");
+  const dbPath = process.env.CHRON_DB_PATH ?? (0, import_path4.join)((0, import_os4.homedir)(), ".chron", "chron.db");
   if (process.stdin.isTTY) {
     process.stdout.write(`chron-mcp ${version4}
 

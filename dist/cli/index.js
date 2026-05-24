@@ -17031,7 +17031,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.14",
+      version: "0.1.17",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -17121,6 +17121,24 @@ function saveConfig(data) {
   const dir = (0, import_path3.join)((0, import_os3.homedir)(), ".chron");
   (0, import_fs2.mkdirSync)(dir, { recursive: true });
   (0, import_fs2.writeFileSync)(configPath(), JSON.stringify(data, null, 2), "utf8");
+}
+function patchClaudeJson(vars) {
+  const path = (0, import_path3.join)((0, import_os3.homedir)(), ".claude.json");
+  if (!(0, import_fs2.existsSync)(path))
+    return false;
+  try {
+    const raw = (0, import_fs2.readFileSync)(path, "utf8");
+    const doc = JSON.parse(raw);
+    const servers = doc.mcpServers ?? {};
+    const chron = servers.chron ?? {};
+    chron.env = { ...chron.env ?? {}, ...vars };
+    servers.chron = chron;
+    doc.mcpServers = servers;
+    (0, import_fs2.writeFileSync)(path, JSON.stringify(doc, null, 2), "utf8");
+    return true;
+  } catch {
+    return false;
+  }
 }
 async function connectCrowdStrike() {
   process.stdout.write(`
@@ -17232,11 +17250,287 @@ ${DIM4}Sending test event...${RESET5} `);
 
 `);
 }
+function isLocalhost(url) {
+  return url.includes("localhost") || url.includes("127.0.0.1") || url.includes("::1");
+}
+async function connectSplunk() {
+  process.stdout.write(`
+${BOLD5}Connect Chron \u2192 Splunk${RESET5}
+
+`);
+  process.stdout.write(`${DIM4}Chron will send session telemetry to your Splunk instance via HTTP Event
+`);
+  process.stdout.write(`Collector (HEC). Message content is never transmitted.${RESET5}
+
+`);
+  process.stdout.write(`${DIM4}Works with Splunk Enterprise, Splunk Cloud, and local Docker instances.
+`);
+  process.stdout.write(`See dashboards/splunk/README.md for setup steps.${RESET5}
+
+`);
+  process.stdout.write(`${DIM4}Note: Splunk 9.x Docker uses HTTPS on port 8088 with a self-signed cert.
+`);
+  process.stdout.write(`Use https://localhost:8088 \u2014 certificate verification is skipped for localhost.${RESET5}
+
+`);
+  const rl = (0, import_readline.createInterface)({ input: process.stdin, output: process.stdout });
+  let url, token;
+  try {
+    url = (await prompt(rl, `  Splunk HEC base URL  ${DIM4}(e.g. https://localhost:8088 or https://your.splunkcloud.com:8088)${RESET5}
+  ${CYAN4}>${RESET5} `)).trim();
+    token = (await prompt(rl, `
+  HEC token
+  ${CYAN4}>${RESET5} `)).trim();
+  } finally {
+    rl.close();
+  }
+  if (!url.startsWith("http")) {
+    process.stdout.write(`
+${RED}URL must start with http:// or https://${RESET5}
+`);
+    process.exit(1);
+  }
+  if (!token) {
+    process.stdout.write(`
+${RED}HEC token cannot be empty${RESET5}
+`);
+    process.exit(1);
+  }
+  if (isLocalhost(url)) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  }
+  process.stdout.write(`
+${DIM4}Sending test event...${RESET5} `);
+  const hecUrl = `${url.replace(/\/$/, "")}/services/collector/event`;
+  const testPayload = JSON.stringify({
+    time: Date.now() / 1e3,
+    host: require("os").hostname(),
+    source: "chron-mcp",
+    sourcetype: "chron:event",
+    event: {
+      event_type: "connection_test",
+      chron_version: require_package().version,
+      os: process.platform,
+      message: "chron connect splunk \u2014 test event"
+    }
+  });
+  try {
+    const res = await fetch(hecUrl, {
+      method: "POST",
+      headers: {
+        "Authorization": `Splunk ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: testPayload
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      process.stdout.write(`${RED}failed (HTTP ${res.status})${RESET5}
+`);
+      process.stderr.write(`  ${RED}${err}${RESET5}
+
+`);
+      process.exit(1);
+    }
+    process.stdout.write(`${GREEN}OK${RESET5}
+
+`);
+  } catch (e) {
+    process.stdout.write(`${RED}failed${RESET5}
+`);
+    process.stderr.write(`  ${RED}Error: ${e.message}${RESET5}
+
+`);
+    process.exit(1);
+  }
+  const config = loadConfig();
+  config.splunk = { url, token, insecure: isLocalhost(url), connected_at: (/* @__PURE__ */ new Date()).toISOString() };
+  saveConfig(config);
+  const splunkVars = { CHRON_SPLUNK_URL: url, CHRON_SPLUNK_TOKEN: token };
+  if (isLocalhost(url))
+    splunkVars.CHRON_SPLUNK_INSECURE = "1";
+  patchClaudeJson(splunkVars);
+  process.stdout.write(`${GREEN}${BOLD5}Connected!${RESET5} Splunk is receiving chron events.
+
+`);
+  process.stdout.write(`${DIM4}Config saved to ~/.chron/config.json \u2014 events will flow immediately in all running sessions.${RESET5}
+
+`);
+}
+async function connectSentinel() {
+  process.stdout.write(`
+${BOLD5}Connect Chron \u2192 Microsoft Sentinel${RESET5}
+
+`);
+  process.stdout.write(`${DIM4}Chron will send session telemetry to your Sentinel workspace via the
+`);
+  process.stdout.write(`Azure Monitor Logs Ingestion API. Message content is never transmitted.${RESET5}
+
+`);
+  process.stdout.write(`${DIM4}Prerequisites: Azure App Registration, Data Collection Endpoint (DCE),
+`);
+  process.stdout.write(`and a Data Collection Rule (DCR) pointing to a ChronEvents_CL custom table.
+`);
+  process.stdout.write(`See dashboards/sentinel/README.md for full setup steps.${RESET5}
+
+`);
+  const rl = (0, import_readline.createInterface)({ input: process.stdin, output: process.stdout });
+  let tenantId, clientId, clientSecret, dce, dcrId, stream;
+  try {
+    tenantId = (await prompt(rl, `  Azure Tenant ID  ${DIM4}(xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)${RESET5}
+  ${CYAN4}>${RESET5} `)).trim();
+    clientId = (await prompt(rl, `
+  App Registration Client ID
+  ${CYAN4}>${RESET5} `)).trim();
+    clientSecret = (await prompt(rl, `
+  Client Secret
+  ${CYAN4}>${RESET5} `)).trim();
+    dce = (await prompt(rl, `
+  Data Collection Endpoint URL  ${DIM4}(https://...)${RESET5}
+  ${CYAN4}>${RESET5} `)).trim();
+    dcrId = (await prompt(rl, `
+  DCR Immutable ID  ${DIM4}(dcr-xxxx)${RESET5}
+  ${CYAN4}>${RESET5} `)).trim();
+    stream = (await prompt(rl, `
+  Stream name  ${DIM4}(press Enter for Custom-ChronEvents_CL)${RESET5}
+  ${CYAN4}>${RESET5} `)).trim() || "Custom-ChronEvents_CL";
+  } finally {
+    rl.close();
+  }
+  if (!tenantId || !clientId || !clientSecret) {
+    process.stdout.write(`
+${RED}Tenant ID, Client ID, and Client Secret are all required.${RESET5}
+`);
+    process.exit(1);
+  }
+  if (!dce.startsWith("https://")) {
+    process.stdout.write(`
+${RED}DCE URL must start with https://${RESET5}
+`);
+    process.exit(1);
+  }
+  if (dcrId && !dcrId.startsWith("dcr-")) {
+    process.stdout.write(`
+${YELLOW3}Warning: DCR Immutable ID usually starts with "dcr-"${RESET5}
+`);
+  }
+  process.stdout.write(`
+${DIM4}Authenticating with Azure AD...${RESET5} `);
+  let accessToken;
+  try {
+    const tokenRes = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: clientId,
+        client_secret: clientSecret,
+        scope: "https://monitor.azure.com/.default"
+      }).toString()
+    });
+    if (!tokenRes.ok) {
+      const err = await tokenRes.text();
+      process.stdout.write(`${RED}failed (HTTP ${tokenRes.status})${RESET5}
+`);
+      process.stderr.write(`  ${RED}${err}${RESET5}
+
+`);
+      process.exit(1);
+    }
+    const tokenData = await tokenRes.json();
+    accessToken = tokenData.access_token;
+    process.stdout.write(`${GREEN}OK${RESET5}
+`);
+  } catch (e) {
+    process.stdout.write(`${RED}failed${RESET5}
+`);
+    process.stderr.write(`  ${RED}Error: ${e.message}${RESET5}
+
+`);
+    process.exit(1);
+  }
+  process.stdout.write(`${DIM4}Sending test event...${RESET5} `);
+  const ingestUrl = `${dce}/dataCollectionRules/${dcrId}/streams/${stream}?api-version=2023-01-01`;
+  const testRecord = {
+    TimeGenerated: (/* @__PURE__ */ new Date()).toISOString(),
+    EventType: "connection_test",
+    SessionIdPrefix: "test",
+    AiTool: "",
+    OS: process.platform,
+    ChronVersion: require_package().version,
+    Computer: require("os").hostname(),
+    Role: "",
+    DetectionType: "",
+    MaskedValue: ""
+  };
+  try {
+    const res = await fetch(ingestUrl, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify([testRecord])
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      process.stdout.write(`${RED}failed (HTTP ${res.status})${RESET5}
+`);
+      process.stderr.write(`  ${RED}${err}${RESET5}
+
+`);
+      process.exit(1);
+    }
+    process.stdout.write(`${GREEN}OK${RESET5}
+
+`);
+  } catch (e) {
+    process.stdout.write(`${RED}failed${RESET5}
+`);
+    process.stderr.write(`  ${RED}Error: ${e.message}${RESET5}
+
+`);
+    process.exit(1);
+  }
+  const config = loadConfig();
+  config.sentinel = { dce, dcrId, stream, tenantId, clientId, connected_at: (/* @__PURE__ */ new Date()).toISOString() };
+  saveConfig(config);
+  process.stdout.write(`${GREEN}${BOLD5}Connected!${RESET5} Test event sent to Sentinel workspace.
+
+`);
+  process.stdout.write(`${BOLD5}Add these env vars to your MCP client config:${RESET5}
+
+`);
+  process.stdout.write(`  ${CYAN4}CHRON_SENTINEL_TENANT_ID${RESET5}     ${tenantId}
+`);
+  process.stdout.write(`  ${CYAN4}CHRON_SENTINEL_CLIENT_ID${RESET5}     ${clientId}
+`);
+  process.stdout.write(`  ${CYAN4}CHRON_SENTINEL_CLIENT_SECRET${RESET5} ${DIM4}<your-client-secret>${RESET5}
+`);
+  process.stdout.write(`  ${CYAN4}CHRON_SENTINEL_DCE${RESET5}           ${dce}
+`);
+  process.stdout.write(`  ${CYAN4}CHRON_SENTINEL_DCR_ID${RESET5}        ${dcrId}
+`);
+  process.stdout.write(`  ${CYAN4}CHRON_SENTINEL_STREAM${RESET5}        ${stream}
+
+`);
+  process.stdout.write(`${DIM4}For Claude Code \u2014 add to the "env" block of the chron entry in ~/.claude.json.
+`);
+  process.stdout.write(`Connection saved to ~/.chron/config.json${RESET5}
+
+`);
+}
 async function runConnect(args2) {
   const [subcommand] = args2;
   switch (subcommand) {
     case "crowdstrike":
       await connectCrowdStrike();
+      break;
+    case "sentinel":
+      await connectSentinel();
+      break;
+    case "splunk":
+      await connectSplunk();
       break;
     default: {
       const name = subcommand ? `Unknown integration: ${subcommand}
@@ -17247,13 +17541,15 @@ async function runConnect(args2) {
 
 Integrations:
   crowdstrike    Connect to CrowdStrike LogScale (direct ingest)
+  sentinel       Connect to Microsoft Sentinel (Azure Monitor Logs Ingestion API)
+  splunk         Connect to Splunk via HTTP Event Collector (HEC)
 `
       );
       process.exit(subcommand ? 1 : 0);
     }
   }
 }
-var import_readline, import_os3, import_path3, import_fs2, RESET5, BOLD5, DIM4, CYAN4, GREEN, RED;
+var import_readline, import_os3, import_path3, import_fs2, RESET5, BOLD5, DIM4, CYAN4, GREEN, RED, YELLOW3;
 var init_connect = __esm({
   "src/cli/connect.ts"() {
     "use strict";
@@ -17267,6 +17563,7 @@ var init_connect = __esm({
     CYAN4 = "\x1B[36m";
     GREEN = "\x1B[32m";
     RED = "\x1B[31m";
+    YELLOW3 = "\x1B[33m";
   }
 });
 
@@ -17317,7 +17614,7 @@ Commands:
   export          Export a session as markdown
   secrets         List detected secrets across sessions
   settings        View current configuration
-  connect         Connect to a SIEM integration (crowdstrike)
+  connect         Connect to a SIEM integration (crowdstrike, sentinel, splunk)
 
 Options (history):
   --limit=<n>     Max sessions to show (default: 20)
