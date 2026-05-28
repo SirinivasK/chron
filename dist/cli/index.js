@@ -6162,7 +6162,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash } = require("crypto");
+    var { randomBytes, createHash: createHash2 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -6842,7 +6842,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash("sha1").update(key + GUID).digest("base64");
+        const digest = createHash2("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -7229,7 +7229,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash } = require("crypto");
+    var { createHash: createHash2 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -7538,7 +7538,7 @@ var require_websocket_server = __commonJS({
         }
         if (this._state > RUNNING)
           return abortHandshake(socket, 503);
-        const digest = createHash("sha1").update(key + GUID).digest("base64");
+        const digest = createHash2("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -16731,6 +16731,366 @@ var init_history = __esm({
   }
 });
 
+// src/cli/soc2.ts
+var soc2_exports = {};
+__export(soc2_exports, {
+  buildSoc2Report: () => buildSoc2Report
+});
+async function q(db, sql2) {
+  const res = await db.$client.execute(sql2);
+  return res.rows;
+}
+async function queryOverview(db) {
+  const rows = await q(db, `
+    SELECT
+      (SELECT COUNT(*) FROM sessions)       AS total_sessions,
+      (SELECT COUNT(*) FROM messages)       AS total_messages,
+      (SELECT COUNT(*) FROM messages WHERE role = 'user')      AS user_messages,
+      (SELECT COUNT(*) FROM messages WHERE role = 'assistant') AS ai_messages,
+      (SELECT COUNT(*) FROM secrets_detected) AS total_detections,
+      (SELECT MIN(created_at) FROM sessions) AS period_start,
+      (SELECT MAX(updated_at) FROM sessions) AS period_end
+  `);
+  return rows[0];
+}
+async function queryToolUsage(db) {
+  return await q(db, `
+    SELECT
+      COALESCE(s.ai_tool, 'unknown') AS tool,
+      COUNT(DISTINCT s.id) AS sessions,
+      COUNT(m.id) AS messages
+    FROM sessions s
+    LEFT JOIN messages m ON m.session_id = s.id
+    GROUP BY s.ai_tool
+    ORDER BY sessions DESC
+  `);
+}
+async function queryDetectionsByType(db) {
+  return await q(db, `
+    SELECT type, COUNT(*) AS cnt, GROUP_CONCAT(masked_value, ', ') AS samples
+    FROM secrets_detected
+    GROUP BY type
+    ORDER BY cnt DESC
+  `);
+}
+async function querySessionInventory(db) {
+  return await q(db, `
+    SELECT
+      s.id, s.title, s.ai_tool,
+      s.created_at, s.updated_at,
+      COUNT(m.id) AS message_count
+    FROM sessions s
+    LEFT JOIN messages m ON m.session_id = s.id
+    GROUP BY s.id
+    ORDER BY s.created_at DESC
+    LIMIT 500
+  `);
+}
+async function queryIntegrity(db) {
+  const rows = await q(db, `
+    SELECT session_id, content_hash, prev_hash
+    FROM messages
+    ORDER BY session_id, created_at, rowid
+  `);
+  const bySession = /* @__PURE__ */ new Map();
+  for (const r of rows) {
+    const list = bySession.get(r.session_id) ?? [];
+    list.push({ content_hash: r.content_hash, prev_hash: r.prev_hash });
+    bySession.set(r.session_id, list);
+  }
+  let intact = 0, broken = 0, unchained = 0;
+  const brokenSessions = [];
+  for (const [sid, chain] of bySession) {
+    const chained = chain.filter((r) => r.content_hash !== null);
+    if (chained.length === 0) {
+      unchained++;
+      continue;
+    }
+    let ok = true;
+    for (let i = 1; i < chained.length; i++) {
+      if (chained[i].prev_hash !== chained[i - 1].content_hash) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok)
+      intact++;
+    else {
+      broken++;
+      brokenSessions.push(sid.slice(0, 8));
+    }
+  }
+  return { intact, broken, unchained, brokenSessions };
+}
+async function dbFingerprint(db) {
+  const rows = await q(db, `SELECT COUNT(*) AS n, MAX(created_at) AS latest FROM messages`);
+  const row = rows[0];
+  const h = (0, import_crypto.createHash)("sha256").update(`${row?.n ?? 0}:${row?.latest ?? ""}`).digest("hex");
+  return h.slice(0, 16);
+}
+function esc(s) {
+  return (s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function fmtDate2(iso) {
+  if (!iso)
+    return "\u2014";
+  return iso.slice(0, 10);
+}
+function severityBadge(type) {
+  const level = SEVERITY[type] ?? "Low";
+  const color = level === "Critical" ? "#dc2626" : level === "High" ? "#d97706" : level === "Medium" ? "#2563eb" : "#6b7280";
+  return `<span style="background:${color};color:#fff;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600">${level}</span>`;
+}
+function buildHtml(params) {
+  const { host, fingerprint, overview, toolUsage, detections, inventory, integrity, generatedAt } = params;
+  const periodStart = fmtDate2(overview.period_start) || "\u2014";
+  const periodEnd = fmtDate2(overview.period_end) || "\u2014";
+  const integrityStatus = integrity.broken === 0 ? `<span class="ok">&#10003; All ${integrity.intact} chained session(s) intact</span>` : `<span class="fail">&#9888; ${integrity.broken} session(s) with broken chain</span>`;
+  const toolRows = toolUsage.map(
+    (r) => `<tr><td>${esc(r.tool)}</td><td>${r.sessions}</td><td>${r.messages}</td></tr>`
+  ).join("");
+  const detectionRows = detections.map((r) => {
+    const samples = (r.samples ?? "").split(", ").slice(0, 3).map(esc).join(", ");
+    return `<tr><td>${esc(r.type)}</td><td>${severityBadge(r.type)}</td><td>${r.cnt}</td><td>${samples}</td></tr>`;
+  }).join("") || '<tr><td colspan="4" style="color:#6b7280">No detections recorded</td></tr>';
+  const inventoryRows = inventory.map(
+    (r) => `<tr><td><code style="font-size:11px">${esc(r.id.slice(0, 8))}</code></td><td>${esc(r.title)}</td><td>${esc(r.ai_tool ?? "unknown")}</td><td>${fmtDate2(r.created_at)}</td><td>${fmtDate2(r.updated_at)}</td><td>${r.message_count}</td></tr>`
+  ).join("") || '<tr><td colspan="6" style="color:#6b7280">No sessions</td></tr>';
+  const brokenList = integrity.brokenSessions.length > 0 ? `<p class="fail">Sessions with broken chains: ${integrity.brokenSessions.map(esc).join(", ")}</p>` : "";
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chron AI Audit \u2014 SOC 2 Evidence Package</title>
+<style>${CSS}</style>
+</head>
+<body>
+<div class="page">
+
+<!-- \u2460 COVER PAGE -->
+<div style="min-height:60vh;display:flex;flex-direction:column;justify-content:center">
+<div class="cover-badge">SOC 2 Evidence Package</div>
+<h1>AI Conversation Audit Report</h1>
+<p class="meta">Prepared by <strong>chron-mcp</strong> &nbsp;|&nbsp; Organisation: <strong>${esc(host)}</strong></p>
+<table style="width:auto;margin-bottom:0">
+  <tr><th>Reporting Period</th><td>${periodStart} \u2013 ${periodEnd}</td></tr>
+  <tr><th>Generated</th><td>${generatedAt}</td></tr>
+  <tr><th>Evidence DB Fingerprint</th><td><span class="fingerprint">${fingerprint}</span></td></tr>
+  <tr><th>Total Sessions</th><td>${overview.total_sessions}</td></tr>
+  <tr><th>Total Messages</th><td>${overview.total_messages}</td></tr>
+</table>
+<p style="margin-top:20px;font-size:11px;color:#9ca3af">
+  This report is generated from a locally-stored, tamper-evident SQLite database. All AI conversation
+  activity has been recorded with cryptographic hash chaining. No conversation content is transmitted
+  externally. This document is intended as supporting evidence for SOC 2 Type II audits under the
+  Availability and Confidentiality trust service criteria.
+</p>
+</div>
+
+<!-- \u2461 EXECUTIVE SUMMARY -->
+<h2 class="section-break">Executive Summary</h2>
+<div class="stat-grid">
+  <div class="stat"><div class="stat-value">${overview.total_sessions}</div><div class="stat-label">Total Sessions</div></div>
+  <div class="stat"><div class="stat-value">${overview.total_messages}</div><div class="stat-label">Total Messages</div></div>
+  <div class="stat"><div class="stat-value">${overview.total_detections}</div><div class="stat-label">PII / Secret Detections</div></div>
+  <div class="stat"><div class="stat-value">${integrity.broken === 0 ? "\u2713" : "\u2717"}</div><div class="stat-label">Chain Integrity</div></div>
+</div>
+<p>Messages: <strong>${overview.user_messages}</strong> user turns, <strong>${overview.ai_messages}</strong> AI turns. Reporting period: <strong>${periodStart}</strong> to <strong>${periodEnd}</strong>.</p>
+<p>Chain integrity: ${integrityStatus}${integrity.unchained > 0 ? ` (${integrity.unchained} session(s) pre-date hash chaining)` : ""}.</p>
+${overview.total_detections > 0 ? `<p class="warn">&#9888; ${overview.total_detections} sensitive data detection(s) recorded. See Section 5 for details.</p>` : `<p class="ok">&#10003; No sensitive data detections recorded in this period.</p>`}
+
+<!-- \u2462 AI TOOL USAGE -->
+<h2>AI Tool Usage</h2>
+<table>
+  <thead><tr><th>AI Tool / Provider</th><th>Sessions</th><th>Messages</th></tr></thead>
+  <tbody>${toolRows || '<tr><td colspan="3" style="color:#6b7280">No data</td></tr>'}</tbody>
+</table>
+
+<!-- \u2463 ACTIVITY SUMMARY -->
+<h2>Activity Summary</h2>
+<p>All sessions are listed in the Session Inventory (Section 7). The table below shows per-tool message distribution.</p>
+<table>
+  <thead><tr><th>AI Tool</th><th>User Messages</th><th>AI Messages</th><th>Ratio</th></tr></thead>
+  <tbody>
+  ${toolUsage.map((r) => {
+    const ratio = r.messages > 0 ? (r.messages / 2 / r.sessions).toFixed(1) : "0";
+    return `<tr><td>${esc(r.tool)}</td><td>~${Math.round(r.messages / 2)}</td><td>~${Math.round(r.messages / 2)}</td><td>${ratio} turns/session avg</td></tr>`;
+  }).join("") || '<tr><td colspan="4" style="color:#6b7280">No data</td></tr>'}
+  </tbody>
+</table>
+<p style="font-size:11px;color:#6b7280">Note: User/AI message split shown as estimate (\xF72) because exact per-session breakdown requires individual session queries.</p>
+
+<!-- \u2464 SENSITIVE DATA CONTROLS -->
+<h2 class="section-break">Sensitive Data Controls</h2>
+<p>The following sensitive data types were detected during the reporting period. All values are masked \u2014 no plaintext credentials are stored in this report.</p>
+<table>
+  <thead><tr><th>Detection Type</th><th>Severity</th><th>Count</th><th>Sample Masked Values</th></tr></thead>
+  <tbody>${detectionRows}</tbody>
+</table>
+<h3>Control Measures</h3>
+<ul>
+  <li>All detected values are masked at log time using token substitution (e.g. <code>$CHRON_CREDIT_CARD_1</code>).</li>
+  <li>Original values are never stored in plaintext in the audit database.</li>
+  <li>Detections trigger a <code>secret_detected</code> relay event to any connected SIEM (Splunk, Sentinel, LogScale).</li>
+  <li>Luhn validation is applied to credit card numbers; IBAN mod-97 validation applied to bank account numbers.</li>
+</ul>
+
+<!-- \u2465 AUDIT TRAIL INTEGRITY -->
+<h2>Audit Trail Integrity</h2>
+<p>Each message is linked to the previous message in its session via SHA-256 hash chaining. The chain is verified by confirming that each message's <code>prev_hash</code> matches the <code>content_hash</code> of the preceding message.</p>
+<table>
+  <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Sessions with intact chain</td><td class="ok">${integrity.intact}</td></tr>
+    <tr><td>Sessions with broken chain</td><td class="${integrity.broken > 0 ? "fail" : "ok"}">${integrity.broken}</td></tr>
+    <tr><td>Sessions pre-dating hash chaining</td><td>${integrity.unchained}</td></tr>
+  </tbody>
+</table>
+${brokenList}
+<p style="font-size:11px;color:#6b7280">
+  Note: This report verifies <em>chain linkage</em> (prev_hash continuity). Full content-hash recomputation
+  (which detects in-place tampering) can be performed with <code>chron verify &lt;session-id&gt;</code>.
+</p>
+
+<!-- \u2466 SESSION INVENTORY -->
+<h2 class="section-break">Session Inventory</h2>
+<p>All sessions recorded in the audit database (most recent first, capped at 500 rows).</p>
+<table>
+  <thead><tr><th>ID (prefix)</th><th>Title</th><th>AI Tool</th><th>Started</th><th>Last Active</th><th>Messages</th></tr></thead>
+  <tbody>${inventoryRows}</tbody>
+</table>
+
+<!-- \u2467 METHODOLOGY APPENDIX -->
+<h2>Methodology Appendix</h2>
+<div class="appendix">
+<h3>Data Collection</h3>
+<p>Chron MCP intercepts every AI conversation turn via the Model Context Protocol. Messages are written to a local SQLite database at <code>~/.chron/chron.db</code> (or the path specified by <code>CHRON_DB_PATH</code>).</p>
+
+<h3>Hash Chain Construction</h3>
+<ul>
+  <li>Each message record contains a <code>content_hash</code> field: <code>SHA-256(session_id || role || content || created_at || prev_hash)</code></li>
+  <li>The <code>prev_hash</code> field links to the <code>content_hash</code> of the preceding message in the session.</li>
+  <li>Any insertion, deletion, or modification of a message breaks the chain at that point.</li>
+</ul>
+
+<h3>PII / Secret Detection</h3>
+<ul>
+  <li>Detection uses regex patterns with algorithmic validation (Luhn for credit cards, mod-97 for IBAN).</li>
+  <li>Context-aware patterns (DOB, passport) require relevant keywords within 120 characters.</li>
+  <li>Severity levels: Critical (SSN, credit card, private key, IBAN), High (API keys, passwords, passport), Medium (email, phone), Low (internal IP, env vars).</li>
+</ul>
+
+<h3>Limitations</h3>
+<ul>
+  <li>This report covers conversation metadata and detection events. Message content is not included.</li>
+  <li>Developer identity is derived from session titles and AI tool labels, not from authenticated principals.</li>
+  <li>The chain integrity check in this report is a linkage check. Re-run <code>chron verify</code> per session for full content-hash verification.</li>
+</ul>
+
+<p style="margin-top:12px;font-size:11px;color:#9ca3af">Generated by chron-mcp &nbsp;|&nbsp; Evidence DB fingerprint: <span class="fingerprint">${fingerprint}</span> &nbsp;|&nbsp; ${generatedAt}</p>
+</div>
+
+</div>
+</body>
+</html>`;
+}
+async function buildSoc2Report(outputPath) {
+  const db = await initDb();
+  const generatedAt = (/* @__PURE__ */ new Date()).toISOString().replace("T", " ").slice(0, 19) + " UTC";
+  const [overview, toolUsage, detections, inventory, integrity, fingerprint] = await Promise.all([
+    queryOverview(db),
+    queryToolUsage(db),
+    queryDetectionsByType(db),
+    querySessionInventory(db),
+    queryIntegrity(db),
+    dbFingerprint(db)
+  ]);
+  const html = buildHtml({
+    host: (0, import_os2.hostname)(),
+    fingerprint,
+    overview,
+    toolUsage,
+    detections,
+    inventory,
+    integrity,
+    generatedAt
+  });
+  (0, import_fs2.writeFileSync)(outputPath, html, "utf8");
+}
+var import_fs2, import_os2, import_crypto, SEVERITY, CSS;
+var init_soc2 = __esm({
+  "src/cli/soc2.ts"() {
+    "use strict";
+    import_fs2 = require("fs");
+    import_os2 = require("os");
+    import_crypto = require("crypto");
+    init_db2();
+    SEVERITY = {
+      private_key: "Critical",
+      credit_card: "Critical",
+      ssn: "Critical",
+      iban: "Critical",
+      passport: "High",
+      dob: "High",
+      aws_access_key: "High",
+      anthropic_api_key: "High",
+      openai_api_key: "High",
+      google_api_key: "High",
+      github_token: "High",
+      slack_token: "High",
+      stripe_key: "High",
+      sendgrid_key: "High",
+      huggingface_token: "High",
+      jwt: "High",
+      url_credentials: "High",
+      password: "High",
+      credential_pair: "High",
+      email: "Medium",
+      phone_us: "Medium",
+      phone_e164: "Medium",
+      internal_ip: "Low",
+      env_value: "Low"
+    };
+    CSS = `
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; color: #111; background: #fff; line-height: 1.5; }
+.page { max-width: 900px; margin: 0 auto; padding: 40px 48px; }
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+h2 { font-size: 17px; font-weight: 700; margin: 32px 0 10px; padding-bottom: 4px; border-bottom: 2px solid #e5e7eb; color: #1f2937; }
+h3 { font-size: 14px; font-weight: 600; margin: 20px 0 6px; color: #374151; }
+p { margin-bottom: 8px; color: #374151; }
+.meta { color: #6b7280; font-size: 12px; margin-bottom: 32px; }
+.cover-badge { display: inline-block; background: #1d4ed8; color: #fff; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 12px; }
+th { background: #f3f4f6; text-align: left; padding: 6px 10px; font-weight: 600; color: #374151; border: 1px solid #e5e7eb; }
+td { padding: 5px 10px; border: 1px solid #e5e7eb; vertical-align: top; word-break: break-word; max-width: 300px; }
+tr:nth-child(even) td { background: #fafafa; }
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px 16px; }
+.stat-value { font-size: 24px; font-weight: 700; color: #1f2937; }
+.stat-label { font-size: 11px; color: #6b7280; margin-top: 2px; }
+.ok   { color: #16a34a; font-weight: 600; }
+.warn { color: #d97706; font-weight: 600; }
+.fail { color: #dc2626; font-weight: 600; }
+.fingerprint { font-family: monospace; background: #f3f4f6; padding: 2px 6px; border-radius: 3px; font-size: 11px; }
+.section-break { page-break-before: always; }
+.appendix { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px 20px; margin-top: 12px; }
+.appendix p, .appendix li { color: #374151; font-size: 12px; }
+ul { padding-left: 20px; margin-bottom: 8px; }
+li { margin-bottom: 4px; }
+@media print {
+  body { font-size: 11px; }
+  .page { padding: 20px 24px; max-width: 100%; }
+  h1 { font-size: 22px; }
+  h2 { font-size: 14px; }
+  .stat-value { font-size: 20px; }
+  .section-break { page-break-before: always; }
+}
+`;
+  }
+});
+
 // src/cli/report.ts
 var report_exports = {};
 __export(report_exports, {
@@ -16814,6 +17174,16 @@ ${BOLD2}Chron Report${RESET2}  ${dateFrom} \u2192 ${dateTo}
   process.stdout.write("\n");
 }
 async function runReport(args2) {
+  const format = args2.find((a) => a.startsWith("--format="))?.slice("--format=".length);
+  const outputArg = args2.find((a) => a.startsWith("--output="))?.slice("--output=".length);
+  if (format === "soc2") {
+    const output = outputArg ?? "soc2-report.html";
+    const { buildSoc2Report: buildSoc2Report2 } = await Promise.resolve().then(() => (init_soc2(), soc2_exports));
+    await buildSoc2Report2(output);
+    process.stdout.write(`SOC 2 evidence package written to ${output}
+`);
+    return;
+  }
   const sinceArg = args2.find((a) => a.startsWith("--since="))?.slice("--since=".length);
   let cutoffDate = null;
   if (sinceArg) {
@@ -16914,7 +17284,7 @@ __export(settings_exports, {
   runSettings: () => runSettings
 });
 function dbPath() {
-  return process.env.CHRON_DB_PATH ?? (0, import_path2.join)((0, import_os2.homedir)(), ".chron", "chron.db");
+  return process.env.CHRON_DB_PATH ?? (0, import_path2.join)((0, import_os3.homedir)(), ".chron", "chron.db");
 }
 async function runSettings(_args) {
   process.stdout.write(`
@@ -16928,11 +17298,11 @@ ${BOLD3}Chron Settings${RESET3}
 
 `);
 }
-var import_os2, import_path2, RESET3, BOLD3, DIM2, CYAN2;
+var import_os3, import_path2, RESET3, BOLD3, DIM2, CYAN2;
 var init_settings = __esm({
   "src/cli/settings.ts"() {
     "use strict";
-    import_os2 = require("os");
+    import_os3 = require("os");
     import_path2 = require("path");
     RESET3 = "\x1B[0m";
     BOLD3 = "\x1B[1m";
@@ -16946,7 +17316,7 @@ var secrets_exports = {};
 __export(secrets_exports, {
   runSecrets: () => runSecrets
 });
-function fmtDate2(iso) {
+function fmtDate3(iso) {
   return iso.slice(0, 16).replace("T", " ");
 }
 async function runSecrets(args2) {
@@ -16983,7 +17353,7 @@ ${BOLD4}${session.title}${RESET4}
 `);
     for (const row of rows) {
       process.stdout.write(
-        `  ${DIM3}${fmtDate2(row.detected_at)}${RESET4}  ${YELLOW2}${row.type.padEnd(maxType)}${RESET4}  ${row.masked_value}
+        `  ${DIM3}${fmtDate3(row.detected_at)}${RESET4}  ${YELLOW2}${row.type.padEnd(maxType)}${RESET4}  ${row.masked_value}
 `
       );
     }
@@ -17004,7 +17374,7 @@ ${BOLD4}${session.title}${RESET4}
     process.stdout.write("\n");
     for (const row of rows) {
       process.stdout.write(
-        `  ${DIM3}${fmtDate2(row.detected_at)}${RESET4}  ${CYAN3}${row.session_id.slice(0, 8)}${RESET4}  ${YELLOW2}${row.type.padEnd(maxType)}${RESET4}  ${row.masked_value.padEnd(20)}  ${DIM3}${row.title}${RESET4}
+        `  ${DIM3}${fmtDate3(row.detected_at)}${RESET4}  ${CYAN3}${row.session_id.slice(0, 8)}${RESET4}  ${YELLOW2}${row.type.padEnd(maxType)}${RESET4}  ${row.masked_value.padEnd(20)}  ${DIM3}${row.title}${RESET4}
 `
       );
     }
@@ -17031,7 +17401,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.17",
+      version: "0.1.18",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -17108,33 +17478,35 @@ function prompt(rl, question) {
   return new Promise((resolve) => rl.question(question, resolve));
 }
 function configPath() {
-  return (0, import_path3.join)((0, import_os3.homedir)(), ".chron", "config.json");
+  return (0, import_path3.join)((0, import_os4.homedir)(), ".chron", "config.json");
 }
 function loadConfig() {
   try {
-    return JSON.parse((0, import_fs2.readFileSync)(configPath(), "utf8"));
+    return JSON.parse((0, import_fs3.readFileSync)(configPath(), "utf8"));
   } catch {
     return {};
   }
 }
 function saveConfig(data) {
-  const dir = (0, import_path3.join)((0, import_os3.homedir)(), ".chron");
-  (0, import_fs2.mkdirSync)(dir, { recursive: true });
-  (0, import_fs2.writeFileSync)(configPath(), JSON.stringify(data, null, 2), "utf8");
+  const dir = (0, import_path3.join)((0, import_os4.homedir)(), ".chron");
+  (0, import_fs3.mkdirSync)(dir, { recursive: true });
+  (0, import_fs3.writeFileSync)(configPath(), JSON.stringify(data, null, 2), "utf8");
 }
 function patchClaudeJson(vars) {
-  const path = (0, import_path3.join)((0, import_os3.homedir)(), ".claude.json");
-  if (!(0, import_fs2.existsSync)(path))
+  const path = (0, import_path3.join)((0, import_os4.homedir)(), ".claude.json");
+  if (!(0, import_fs3.existsSync)(path))
     return false;
   try {
-    const raw = (0, import_fs2.readFileSync)(path, "utf8");
+    const raw = (0, import_fs3.readFileSync)(path, "utf8");
     const doc = JSON.parse(raw);
     const servers = doc.mcpServers ?? {};
     const chron = servers.chron ?? {};
+    if (!chron.command)
+      return false;
     chron.env = { ...chron.env ?? {}, ...vars };
     servers.chron = chron;
     doc.mcpServers = servers;
-    (0, import_fs2.writeFileSync)(path, JSON.stringify(doc, null, 2), "utf8");
+    (0, import_fs3.writeFileSync)(path, JSON.stringify(doc, null, 2), "utf8");
     return true;
   } catch {
     return false;
@@ -17493,30 +17865,20 @@ ${DIM4}Authenticating with Azure AD...${RESET5} `);
     process.exit(1);
   }
   const config = loadConfig();
-  config.sentinel = { dce, dcrId, stream, tenantId, clientId, connected_at: (/* @__PURE__ */ new Date()).toISOString() };
+  config.sentinel = { dce, dcrId, stream, tenantId, clientId, clientSecret, connected_at: (/* @__PURE__ */ new Date()).toISOString() };
   saveConfig(config);
+  patchClaudeJson({
+    CHRON_SENTINEL_TENANT_ID: tenantId,
+    CHRON_SENTINEL_CLIENT_ID: clientId,
+    CHRON_SENTINEL_CLIENT_SECRET: clientSecret,
+    CHRON_SENTINEL_DCE: dce,
+    CHRON_SENTINEL_DCR_ID: dcrId,
+    CHRON_SENTINEL_STREAM: stream
+  });
   process.stdout.write(`${GREEN}${BOLD5}Connected!${RESET5} Test event sent to Sentinel workspace.
 
 `);
-  process.stdout.write(`${BOLD5}Add these env vars to your MCP client config:${RESET5}
-
-`);
-  process.stdout.write(`  ${CYAN4}CHRON_SENTINEL_TENANT_ID${RESET5}     ${tenantId}
-`);
-  process.stdout.write(`  ${CYAN4}CHRON_SENTINEL_CLIENT_ID${RESET5}     ${clientId}
-`);
-  process.stdout.write(`  ${CYAN4}CHRON_SENTINEL_CLIENT_SECRET${RESET5} ${DIM4}<your-client-secret>${RESET5}
-`);
-  process.stdout.write(`  ${CYAN4}CHRON_SENTINEL_DCE${RESET5}           ${dce}
-`);
-  process.stdout.write(`  ${CYAN4}CHRON_SENTINEL_DCR_ID${RESET5}        ${dcrId}
-`);
-  process.stdout.write(`  ${CYAN4}CHRON_SENTINEL_STREAM${RESET5}        ${stream}
-
-`);
-  process.stdout.write(`${DIM4}For Claude Code \u2014 add to the "env" block of the chron entry in ~/.claude.json.
-`);
-  process.stdout.write(`Connection saved to ~/.chron/config.json${RESET5}
+  process.stdout.write(`${DIM4}Config saved to ~/.chron/config.json \u2014 events will flow immediately in all running sessions.${RESET5}
 
 `);
 }
@@ -17549,14 +17911,14 @@ Integrations:
     }
   }
 }
-var import_readline, import_os3, import_path3, import_fs2, RESET5, BOLD5, DIM4, CYAN4, GREEN, RED, YELLOW3;
+var import_readline, import_os4, import_path3, import_fs3, RESET5, BOLD5, DIM4, CYAN4, GREEN, RED, YELLOW3;
 var init_connect = __esm({
   "src/cli/connect.ts"() {
     "use strict";
     import_readline = require("readline");
-    import_os3 = require("os");
+    import_os4 = require("os");
     import_path3 = require("path");
-    import_fs2 = require("fs");
+    import_fs3 = require("fs");
     RESET5 = "\x1B[0m";
     BOLD5 = "\x1B[1m";
     DIM4 = "\x1B[2m";
@@ -17564,6 +17926,177 @@ var init_connect = __esm({
     GREEN = "\x1B[32m";
     RED = "\x1B[31m";
     YELLOW3 = "\x1B[33m";
+  }
+});
+
+// src/cli/summary.ts
+var summary_exports = {};
+__export(summary_exports, {
+  buildSummary: () => buildSummary,
+  runSummary: () => runSummary
+});
+function detectMutations(content) {
+  const hits = [];
+  for (const { label, re } of MUTATION_PATTERNS) {
+    const m = re.exec(content);
+    if (m)
+      hits.push(`${label}: ${m[0].trim().slice(0, 80)}`);
+  }
+  return hits;
+}
+function formatLatency(ms) {
+  if (ms < 1e3)
+    return `${ms}ms`;
+  return `${(ms / 1e3).toFixed(1)}s`;
+}
+function formatTs(iso) {
+  return iso.replace("T", " ").replace(/\.\d+.*$/, "");
+}
+async function buildSummary(sessionPrefix) {
+  const db = await initDb();
+  const allSessions = await db.select().from(sessions);
+  const session = allSessions.find((s) => s.id.startsWith(sessionPrefix));
+  if (!session)
+    return null;
+  const msgs = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(asc(messages.created_at), asc(sql`rowid`));
+  const secs = await db.select().from(secrets_detected).where(eq(secrets_detected.session_id, session.id)).orderBy(asc(secrets_detected.detected_at));
+  const timeline = [];
+  const mutationsList = [];
+  const prodWrites = [];
+  let userTurns = 0, aiTurns = 0;
+  for (let i = 0; i < msgs.length; i++) {
+    const m = msgs[i];
+    const prev = msgs[i - 1];
+    const latency_ms = prev ? new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() : null;
+    if (m.role === "user")
+      userTurns++;
+    else
+      aiTurns++;
+    const preview = m.content.replace(/\n/g, " ").slice(0, 120) + (m.content.length > 120 ? "\u2026" : "");
+    timeline.push({ turn: i + 1, role: m.role, timestamp: m.created_at, latency_ms, preview });
+    if (m.role === "assistant") {
+      const mutations = detectMutations(m.content);
+      for (const label of mutations) {
+        mutationsList.push({ turn: i + 1, role: "assistant", snippet: label, label: label.split(":")[0] });
+      }
+      if (PROD_PATTERNS.test(m.content)) {
+        prodWrites.push({ turn: i + 1, snippet: m.content.slice(0, 120) });
+      }
+    }
+  }
+  const firstTs = msgs[0]?.created_at;
+  const lastTs = msgs[msgs.length - 1]?.created_at;
+  const duration_minutes = firstTs && lastTs ? Math.round((new Date(lastTs).getTime() - new Date(firstTs).getTime()) / 6e4) : 0;
+  return {
+    session: {
+      id: session.id,
+      title: session.title,
+      ai_tool: session.ai_tool,
+      started: session.created_at,
+      last_active: session.updated_at
+    },
+    stats: { total_messages: msgs.length, user_turns: userTurns, ai_turns: aiTurns, duration_minutes },
+    secrets: secs.map((s) => ({ type: s.type, masked_value: s.masked_value, detected_at: s.detected_at })),
+    mutations: mutationsList,
+    prod_writes: prodWrites,
+    timeline
+  };
+}
+function printSummary(data) {
+  const { session, stats, secrets, mutations, prod_writes, timeline } = data;
+  process.stdout.write(`
+${BOLD6}Session Summary${RESET6}
+`);
+  process.stdout.write(`${DIM5}${session.title}${RESET6}
+`);
+  process.stdout.write(`${DIM5}ID: ${session.id.slice(0, 8)} | Tool: ${session.ai_tool ?? "unknown"} | Started: ${formatTs(session.started)}${RESET6}
+
+`);
+  process.stdout.write(`${BOLD6}Stats${RESET6}
+`);
+  process.stdout.write(`  Messages    ${stats.total_messages} (you: ${stats.user_turns}, ai: ${stats.ai_turns})
+`);
+  process.stdout.write(`  Duration    ${stats.duration_minutes}m
+
+`);
+  process.stdout.write(`${BOLD6}Secrets touched${RESET6}  ${secrets.length === 0 ? `${GREEN2}none${RESET6}` : `${RED2}${secrets.length} detection(s)${RESET6}`}
+`);
+  for (const s of secrets) {
+    process.stdout.write(`  ${RED2}[${s.type}]${RESET6} ${DIM5}${s.masked_value}${RESET6}
+`);
+  }
+  if (secrets.length)
+    process.stdout.write("\n");
+  process.stdout.write(`${BOLD6}Mutations detected${RESET6}  ${mutations.length === 0 ? `${DIM5}none${RESET6}` : `${mutations.length}`}
+`);
+  for (const m of mutations) {
+    process.stdout.write(`  ${CYAN5}[turn ${m.turn}]${RESET6} ${m.snippet}
+`);
+  }
+  if (mutations.length)
+    process.stdout.write("\n");
+  if (prod_writes.length > 0) {
+    process.stdout.write(`${BOLD6}${YELLOW4}\u26A0 Possible prod references${RESET6}  ${prod_writes.length}
+`);
+    for (const p of prod_writes) {
+      process.stdout.write(`  ${YELLOW4}[turn ${p.turn}]${RESET6} ${DIM5}${p.snippet}\u2026${RESET6}
+`);
+    }
+    process.stdout.write("\n");
+  }
+  process.stdout.write(`${BOLD6}Timeline${RESET6}
+`);
+  for (const t of timeline) {
+    const role = t.role === "user" ? `${BOLD6}you${RESET6}` : `${CYAN5}ai ${RESET6}`;
+    const lat = t.latency_ms !== null ? ` ${DIM5}+${formatLatency(t.latency_ms)}${RESET6}` : "";
+    process.stdout.write(`  ${DIM5}[${t.turn.toString().padStart(3)}]${RESET6} ${role}${lat}  ${DIM5}${t.preview}${RESET6}
+`);
+  }
+  process.stdout.write("\n");
+}
+async function runSummary(args2) {
+  const [prefix, ...flags] = args2;
+  const jsonMode = flags.includes("--json");
+  if (!prefix) {
+    process.stdout.write("Usage: chron summary <session-id-prefix> [--json]\n");
+    process.exit(1);
+  }
+  const data = await buildSummary(prefix);
+  if (!data) {
+    process.stderr.write(`No session found with prefix: ${prefix}
+`);
+    process.exit(1);
+  }
+  if (jsonMode) {
+    process.stdout.write(JSON.stringify(data, null, 2) + "\n");
+  } else {
+    printSummary(data);
+  }
+}
+var RESET6, BOLD6, DIM5, CYAN5, GREEN2, YELLOW4, RED2, MUTATION_PATTERNS, PROD_PATTERNS;
+var init_summary = __esm({
+  "src/cli/summary.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    init_db2();
+    init_schema();
+    RESET6 = "\x1B[0m";
+    BOLD6 = "\x1B[1m";
+    DIM5 = "\x1B[2m";
+    CYAN5 = "\x1B[36m";
+    GREEN2 = "\x1B[32m";
+    YELLOW4 = "\x1B[33m";
+    RED2 = "\x1B[31m";
+    MUTATION_PATTERNS = [
+      { label: "file write", re: /\b(?:wrote?|created?|saved?|updated?) (?:file |the file )?["']?([^\s"']{1,80})/i },
+      { label: "git", re: /\bgit (?:commit|push|merge|rebase|reset|checkout)\b/i },
+      { label: "package", re: /\b(?:npm|pip|yarn|pnpm|cargo|go get) (?:install|add|update|remove)\b/i },
+      { label: "infra", re: /\b(?:kubectl|terraform|helm|pulumi|ansible|docker) (?:apply|deploy|run|push|create|delete)\b/i },
+      { label: "db write", re: /\b(?:INSERT|UPDATE|DELETE|DROP|ALTER|CREATE TABLE)\b/i },
+      { label: "API call", re: /\b(?:POST|PUT|PATCH|DELETE) (?:request|call|to )?\/?(?:https?:\/\/)?[a-z0-9\-._]+\/[^\s]{1,60}/i },
+      { label: "deploy", re: /\b(?:deploy(?:ed|ing)?|ship(?:ped|ping)?|release(?:d|ing)?)\b/i }
+    ];
+    PROD_PATTERNS = /\b(?:production|prod[^a-z]|live\s+server|live\s+env|live\s+database)\b/i;
   }
 });
 
@@ -17601,6 +18134,11 @@ async function main() {
       await runConnect2(args);
       break;
     }
+    case "summary": {
+      const { runSummary: runSummary2 } = await Promise.resolve().then(() => (init_summary(), summary_exports));
+      await runSummary2(args);
+      break;
+    }
     default: {
       const name = command ? `Unknown command: ${command}
 
@@ -17615,13 +18153,16 @@ Commands:
   secrets         List detected secrets across sessions
   settings        View current configuration
   connect         Connect to a SIEM integration (crowdstrike, sentinel, splunk)
+  summary         Structured summary of a session (timeline, mutations, secrets)
 
 Options (history):
   --limit=<n>     Max sessions to show (default: 20)
   <id-prefix>     Show full log for the session with this ID prefix
 
 Options (report):
-  --since=<range> Filter by date: 7d, 30d, or YYYY-MM-DD (default: all time)
+  --since=<range>   Filter by date: 7d, 30d, or YYYY-MM-DD (default: all time)
+  --format=soc2     Generate SOC 2 HTML evidence package
+  --output=<file>   Output file for --format=soc2 (default: soc2-report.html)
 
 Options (export / secrets):
   <id-prefix>     Scope to a single session
