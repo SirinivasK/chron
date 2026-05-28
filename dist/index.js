@@ -6890,7 +6890,7 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync3 = (path) => fs.readFileSync(path, "utf-8");
+    var readFileSync4 = (path) => fs.readFileSync(path, "utf-8");
     var readFile = (path) => new Promise((resolve, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
@@ -6902,7 +6902,7 @@ var require_filesystem = __commonJS({
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync3,
+      readFileSync: readFileSync4,
       readFile
     };
   }
@@ -6914,7 +6914,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync3 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync4 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
@@ -6995,7 +6995,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync3(LDD_PATH);
+        const lddContent = readFileSync4(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -7052,7 +7052,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync3(LDD_PATH);
+        const lddContent = readFileSync4(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -10246,7 +10246,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash3 } = require("crypto");
+    var { randomBytes, createHash: createHash4 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL3 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -10926,7 +10926,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash3("sha1").update(key + GUID).digest("base64");
+        const digest = createHash4("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -11313,7 +11313,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash3 } = require("crypto");
+    var { createHash: createHash4 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -11622,7 +11622,7 @@ var require_websocket_server = __commonJS({
         }
         if (this._state > RUNNING)
           return abortHandshake(socket, 503);
-        const digest = createHash3("sha1").update(key + GUID).digest("base64");
+        const digest = createHash4("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -17521,7 +17521,7 @@ var init_sql2 = __esm({
         return new SQL([new StringChunk(str)]);
       }
       sql2.raw = raw;
-      function join5(chunks, separator) {
+      function join6(chunks, separator) {
         const result = [];
         for (const [i, chunk] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -17531,7 +17531,7 @@ var init_sql2 = __esm({
         }
         return new SQL(result);
       }
-      sql2.join = join5;
+      sql2.join = join6;
       function identifier(value) {
         return new Name(value);
       }
@@ -20462,7 +20462,7 @@ var init_select2 = __esm({
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table))
             this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join5) => join5.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join6) => join6.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -21351,7 +21351,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join5) => join5.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join6) => join6.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -22751,7 +22751,9 @@ var init_schema = __esm({
       created_at: text("created_at").notNull(),
       updated_at: text("updated_at").notNull(),
       parent_session_id: text("parent_session_id"),
-      external_ref: text("external_ref")
+      external_ref: text("external_ref"),
+      public_key: text("public_key"),
+      signature: text("signature")
     });
     messages = sqliteTable("messages", {
       id: text("id").primaryKey(),
@@ -22812,6 +22814,12 @@ async function initDb(dbPath) {
   if (!sessCols.includes("external_ref")) {
     await client.execute("ALTER TABLE sessions ADD COLUMN external_ref TEXT");
   }
+  if (!sessCols.includes("public_key")) {
+    await client.execute("ALTER TABLE sessions ADD COLUMN public_key TEXT");
+  }
+  if (!sessCols.includes("signature")) {
+    await client.execute("ALTER TABLE sessions ADD COLUMN signature TEXT");
+  }
   return drizzle(client, { schema: schema_exports });
 }
 var import_os, import_fs, import_path, CREATE_SQL;
@@ -22832,7 +22840,9 @@ var init_db2 = __esm({
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     parent_session_id TEXT,
-    external_ref TEXT
+    external_ref TEXT,
+    public_key TEXT,
+    signature TEXT
   )`,
       `CREATE TABLE IF NOT EXISTS messages (
     id TEXT PRIMARY KEY,
@@ -38464,7 +38474,7 @@ var init_time = __esm({
 var version4;
 var init_package = __esm({
   "package.json"() {
-    version4 = "0.1.19";
+    version4 = "0.1.20";
   }
 });
 
@@ -38708,12 +38718,62 @@ var init_relay = __esm({
   }
 });
 
+// src/utils/signing.ts
+function keysDir() {
+  return (0, import_path3.join)((0, import_os3.homedir)(), ".chron", "keys");
+}
+function privKeyPath(sessionId) {
+  return (0, import_path3.join)(keysDir(), `${sessionId}.key`);
+}
+function pubKeyPath(sessionId) {
+  return (0, import_path3.join)(keysDir(), `${sessionId}.pub`);
+}
+function generateSessionKeypair(sessionId) {
+  const { privateKey, publicKey } = (0, import_crypto4.generateKeyPairSync)("ed25519", {
+    privateKeyEncoding: { type: "pkcs8", format: "pem" },
+    publicKeyEncoding: { type: "spki", format: "pem" }
+  });
+  const dir = keysDir();
+  (0, import_fs3.mkdirSync)(dir, { recursive: true });
+  (0, import_fs3.writeFileSync)(privKeyPath(sessionId), privateKey, { mode: 384 });
+  (0, import_fs3.writeFileSync)(pubKeyPath(sessionId), publicKey);
+  return publicKey;
+}
+function sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt) {
+  const input = `${sessionId}|${finalContentHash}|${messageCount}|${firstCreatedAt}`;
+  return (0, import_crypto4.createHash)("sha256").update(input).digest();
+}
+function verifySignature(publicKeyPem, signatureB64, sessionId, finalContentHash, messageCount, firstCreatedAt) {
+  try {
+    const digest = sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt);
+    const sigBuf = Buffer.from(signatureB64, "base64");
+    return (0, import_crypto4.verify)(null, digest, publicKeyPem, sigBuf);
+  } catch {
+    return false;
+  }
+}
+var import_crypto4, import_fs3, import_path3, import_os3;
+var init_signing = __esm({
+  "src/utils/signing.ts"() {
+    "use strict";
+    import_crypto4 = require("crypto");
+    import_fs3 = require("fs");
+    import_path3 = require("path");
+    import_os3 = require("os");
+  }
+});
+
 // src/tools/sessions.ts
 function startSession(db) {
   return async (args) => {
     const id = v4_default();
     const now = localISOString();
     try {
+      let publicKey = null;
+      try {
+        publicKey = generateSessionKeypair(id);
+      } catch {
+      }
       await db.insert(sessions).values({
         id,
         title: args.title,
@@ -38721,7 +38781,8 @@ function startSession(db) {
         created_at: now,
         updated_at: now,
         parent_session_id: args.parent_session_id ?? null,
-        external_ref: args.external_ref ?? null
+        external_ref: args.external_ref ?? null,
+        public_key: publicKey
       });
       emitEvent({ event_type: "session_started", timestamp: now, session: { id_prefix: id.slice(0, 8), ai_tool: args.ai_tool ?? null } });
       return {
@@ -38756,6 +38817,11 @@ function initSession(db) {
     let created;
     let ai_tool;
     try {
+      let publicKey = null;
+      try {
+        publicKey = generateSessionKeypair(id);
+      } catch {
+      }
       await db.insert(sessions).values({
         id,
         title: args.title,
@@ -38763,7 +38829,8 @@ function initSession(db) {
         created_at: now,
         updated_at: now,
         parent_session_id: args.parent_session_id ?? null,
-        external_ref: args.external_ref ?? null
+        external_ref: args.external_ref ?? null,
+        public_key: publicKey
       });
       session_id = id;
       created = true;
@@ -38864,6 +38931,7 @@ var init_sessions = __esm({
     init_schema();
     init_time();
     init_relay();
+    init_signing();
   }
 });
 
@@ -38871,13 +38939,13 @@ var init_sessions = __esm({
 function computeContentHash(sessionId, role, content, createdAt, prevHash, eventType) {
   const base = `${sessionId}|${role}|${content}|${createdAt}|${prevHash ?? ""}`;
   const input = eventType != null ? `${base}|${eventType}` : base;
-  return (0, import_crypto4.createHash)("sha256").update(input).digest("hex");
+  return (0, import_crypto5.createHash)("sha256").update(input).digest("hex");
 }
-var import_crypto4;
+var import_crypto5;
 var init_hash = __esm({
   "src/utils/hash.ts"() {
     "use strict";
-    import_crypto4 = require("crypto");
+    import_crypto5 = require("crypto");
   }
 });
 
@@ -39345,6 +39413,7 @@ var init_messages = __esm({
 // src/tools/verify.ts
 function verifySession(db) {
   return async (args) => {
+    const [sessionRow] = await db.select().from(sessions).where(eq(sessions.id, args.session_id)).limit(1);
     const rows = await db.select().from(messages).where(eq(messages.session_id, args.session_id)).orderBy(asc(messages.created_at), asc(sql`rowid`));
     const chained = rows.filter((r) => r.content_hash !== null);
     if (chained.length === 0) {
@@ -39376,10 +39445,23 @@ function verifySession(db) {
         };
       }
     }
+    let signature_valid = "unsigned";
+    if (sessionRow?.public_key && sessionRow?.signature) {
+      const finalHash = chained[chained.length - 1]?.content_hash ?? "";
+      const firstCreatedAt = rows[0]?.created_at ?? "";
+      signature_valid = verifySignature(
+        sessionRow.public_key,
+        sessionRow.signature,
+        args.session_id,
+        finalHash,
+        rows.length,
+        firstCreatedAt
+      );
+    }
     return {
       content: [{
         type: "text",
-        text: JSON.stringify({ valid: true, messages: rows.length, chained: chained.length })
+        text: JSON.stringify({ valid: true, messages: rows.length, chained: chained.length, signature_valid })
       }]
     };
   };
@@ -39390,6 +39472,7 @@ var init_verify = __esm({
     init_drizzle_orm();
     init_schema();
     init_hash();
+    init_signing();
   }
 });
 
@@ -39793,24 +39876,24 @@ __export(setup_exports, {
   runSetup: () => runSetup
 });
 function configPath(...parts) {
-  return (0, import_path3.join)((0, import_os3.homedir)(), ...parts);
+  return (0, import_path4.join)((0, import_os4.homedir)(), ...parts);
 }
 function readJson(filePath) {
-  if (!(0, import_fs3.existsSync)(filePath))
+  if (!(0, import_fs4.existsSync)(filePath))
     return {};
   try {
-    return JSON.parse((0, import_fs3.readFileSync)(filePath, "utf8"));
+    return JSON.parse((0, import_fs4.readFileSync)(filePath, "utf8"));
   } catch {
     return {};
   }
 }
 function writeJson(filePath, data) {
-  (0, import_fs3.mkdirSync)((0, import_path3.dirname)(filePath), { recursive: true });
-  (0, import_fs3.writeFileSync)(filePath, JSON.stringify(data, null, 2) + "\n", "utf8");
+  (0, import_fs4.mkdirSync)((0, import_path4.dirname)(filePath), { recursive: true });
+  (0, import_fs4.writeFileSync)(filePath, JSON.stringify(data, null, 2) + "\n", "utf8");
 }
 function configureTool(name, filePath) {
-  const dir = (0, import_path3.dirname)(filePath);
-  if (!(0, import_fs3.existsSync)(dir) && name !== "Claude Code") {
+  const dir = (0, import_path4.dirname)(filePath);
+  if (!(0, import_fs4.existsSync)(dir) && name !== "Claude Code") {
     return { tool: name, status: "skipped" };
   }
   try {
@@ -39831,7 +39914,7 @@ function configureClaudeCode() {
   try {
     (0, import_child_process.execSync)("claude mcp add chron -- npx -y chron-mcp", { stdio: "pipe" });
   } catch {
-    const result = configureTool("Claude Code", (0, import_path3.join)((0, import_os3.homedir)(), ".claude", "settings.json"));
+    const result = configureTool("Claude Code", (0, import_path4.join)((0, import_os4.homedir)(), ".claude", "settings.json"));
     if (result.status === "error")
       return result;
   }
@@ -39839,13 +39922,13 @@ function configureClaudeCode() {
   return { tool: "Claude Code", status: "added" };
 }
 function installClaudeCodeHook() {
-  const skillSrc = (0, import_path3.join)(__dirname, "..", "skills", "chron.skill.md");
-  const skillDst = (0, import_path3.join)((0, import_os3.homedir)(), ".chron", "chron.skill.md");
-  if ((0, import_fs3.existsSync)(skillSrc)) {
-    (0, import_fs3.mkdirSync)((0, import_path3.dirname)(skillDst), { recursive: true });
-    (0, import_fs3.copyFileSync)(skillSrc, skillDst);
+  const skillSrc = (0, import_path4.join)(__dirname, "..", "skills", "chron.skill.md");
+  const skillDst = (0, import_path4.join)((0, import_os4.homedir)(), ".chron", "chron.skill.md");
+  if ((0, import_fs4.existsSync)(skillSrc)) {
+    (0, import_fs4.mkdirSync)((0, import_path4.dirname)(skillDst), { recursive: true });
+    (0, import_fs4.copyFileSync)(skillSrc, skillDst);
   }
-  const settingsPath = (0, import_path3.join)((0, import_os3.homedir)(), ".claude", "settings.json");
+  const settingsPath = (0, import_path4.join)((0, import_os4.homedir)(), ".claude", "settings.json");
   const settings = readJson(settingsPath);
   if (!settings.hooks)
     settings.hooks = {};
@@ -39869,13 +39952,13 @@ async function runSetup() {
   }
   return results.filter((r) => r.status !== "skipped");
 }
-var import_fs3, import_os3, import_path3, import_child_process, CHRON_ENTRY, TOOLS;
+var import_fs4, import_os4, import_path4, import_child_process, CHRON_ENTRY, TOOLS;
 var init_setup = __esm({
   "src/setup.ts"() {
     "use strict";
-    import_fs3 = require("fs");
-    import_os3 = require("os");
-    import_path3 = require("path");
+    import_fs4 = require("fs");
+    import_os4 = require("os");
+    import_path4 = require("path");
     import_child_process = require("child_process");
     CHRON_ENTRY = {
       command: "npx",
@@ -39884,11 +39967,11 @@ var init_setup = __esm({
     TOOLS = [
       {
         name: "Claude Desktop",
-        path: process.platform === "win32" ? (0, import_path3.join)(process.env.APPDATA ?? "", "Claude", "claude_desktop_config.json") : configPath("Library", "Application Support", "Claude", "claude_desktop_config.json")
+        path: process.platform === "win32" ? (0, import_path4.join)(process.env.APPDATA ?? "", "Claude", "claude_desktop_config.json") : configPath("Library", "Application Support", "Claude", "claude_desktop_config.json")
       },
       {
         name: "Cursor",
-        path: process.platform === "win32" ? (0, import_path3.join)(process.env.APPDATA ?? "", "Cursor", "User", "globalStorage", "cursor.mcp", "mcp.json") : configPath(".cursor", "mcp.json")
+        path: process.platform === "win32" ? (0, import_path4.join)(process.env.APPDATA ?? "", "Cursor", "User", "globalStorage", "cursor.mcp", "mcp.json") : configPath(".cursor", "mcp.json")
       },
       {
         name: "Windsurf",
@@ -60076,7 +60159,7 @@ var require_view = __commonJS({
     var dirname3 = path.dirname;
     var basename = path.basename;
     var extname = path.extname;
-    var join5 = path.join;
+    var join6 = path.join;
     var resolve = path.resolve;
     module2.exports = View2;
     function View2(name, options) {
@@ -60124,12 +60207,12 @@ var require_view = __commonJS({
     };
     View2.prototype.resolve = function resolve2(dir, file) {
       var ext = this.ext;
-      var path2 = join5(dir, file);
+      var path2 = join6(dir, file);
       var stat = tryStat(path2);
       if (stat && stat.isFile()) {
         return path2;
       }
-      path2 = join5(dir, basename(file, ext), "index" + ext);
+      path2 = join6(dir, basename(file, ext), "index" + ext);
       stat = tryStat(path2);
       if (stat && stat.isFile()) {
         return path2;
@@ -61196,7 +61279,7 @@ var require_send = __commonJS({
     var Stream2 = require("stream");
     var util2 = require("util");
     var extname = path.extname;
-    var join5 = path.join;
+    var join6 = path.join;
     var normalize = path.normalize;
     var resolve = path.resolve;
     var sep = path.sep;
@@ -61415,7 +61498,7 @@ var require_send = __commonJS({
           return res;
         }
         parts = path2.split(sep);
-        path2 = normalize(join5(root, path2));
+        path2 = normalize(join6(root, path2));
       } else {
         if (UP_PATH_REGEXP.test(path2)) {
           debug('malicious path "%s"', path2);
@@ -61556,7 +61639,7 @@ var require_send = __commonJS({
             return self.onStatError(err);
           return self.error(404);
         }
-        var p = join5(path2, self._index[i]);
+        var p = join6(path2, self._index[i]);
         debug('stat "%s"', p);
         fs.stat(p, function(err2, stat) {
           if (err2)
@@ -69004,8 +69087,8 @@ var StdioServerTransport = class {
 };
 
 // src/index.ts
-var import_os4 = require("os");
-var import_path4 = require("path");
+var import_os5 = require("os");
+var import_path5 = require("path");
 init_db2();
 init_server3();
 init_package();
@@ -69015,7 +69098,7 @@ if (process.argv[2] === "--version" || process.argv[2] === "-v") {
   process.exit(0);
 }
 async function main() {
-  const dbPath = process.env.CHRON_DB_PATH ?? (0, import_path4.join)((0, import_os4.homedir)(), ".chron", "chron.db");
+  const dbPath = process.env.CHRON_DB_PATH ?? (0, import_path5.join)((0, import_os5.homedir)(), ".chron", "chron.db");
   if (process.stdin.isTTY) {
     process.stdout.write(`chron-mcp ${version4}
 

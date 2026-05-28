@@ -1184,7 +1184,7 @@ var init_sql = __esm({
         return new SQL([new StringChunk(str)]);
       }
       sql2.raw = raw;
-      function join4(chunks, separator) {
+      function join6(chunks, separator) {
         const result = [];
         for (const [i, chunk] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -1194,7 +1194,7 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql2.join = join4;
+      sql2.join = join6;
       function identifier(value) {
         return new Name(value);
       }
@@ -2806,7 +2806,7 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync2 = (path) => fs.readFileSync(path, "utf-8");
+    var readFileSync3 = (path) => fs.readFileSync(path, "utf-8");
     var readFile = (path) => new Promise((resolve, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
@@ -2818,7 +2818,7 @@ var require_filesystem = __commonJS({
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync2,
+      readFileSync: readFileSync3,
       readFile
     };
   }
@@ -2830,7 +2830,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync2 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync3 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command2 = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
@@ -2911,7 +2911,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync2(LDD_PATH);
+        const lddContent = readFileSync3(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -2968,7 +2968,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync2(LDD_PATH);
+        const lddContent = readFileSync3(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -6162,7 +6162,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash2 } = require("crypto");
+    var { randomBytes, createHash: createHash4 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -6842,7 +6842,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash2("sha1").update(key + GUID).digest("base64");
+        const digest = createHash4("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -7229,7 +7229,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash2 } = require("crypto");
+    var { createHash: createHash4 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -7538,7 +7538,7 @@ var require_websocket_server = __commonJS({
         }
         if (this._state > RUNNING)
           return abortHandshake(socket, 503);
-        const digest = createHash2("sha1").update(key + GUID).digest("base64");
+        const digest = createHash4("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -14252,7 +14252,7 @@ var init_select2 = __esm({
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table))
             this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join4) => join4.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join6) => join6.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -15141,7 +15141,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join4) => join4.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join6) => join6.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -16541,7 +16541,9 @@ var init_schema = __esm({
       created_at: text("created_at").notNull(),
       updated_at: text("updated_at").notNull(),
       parent_session_id: text("parent_session_id"),
-      external_ref: text("external_ref")
+      external_ref: text("external_ref"),
+      public_key: text("public_key"),
+      signature: text("signature")
     });
     messages = sqliteTable("messages", {
       id: text("id").primaryKey(),
@@ -16602,6 +16604,12 @@ async function initDb(dbPath2) {
   if (!sessCols.includes("external_ref")) {
     await client.execute("ALTER TABLE sessions ADD COLUMN external_ref TEXT");
   }
+  if (!sessCols.includes("public_key")) {
+    await client.execute("ALTER TABLE sessions ADD COLUMN public_key TEXT");
+  }
+  if (!sessCols.includes("signature")) {
+    await client.execute("ALTER TABLE sessions ADD COLUMN signature TEXT");
+  }
   return drizzle(client, { schema: schema_exports });
 }
 var import_os, import_fs, import_path, CREATE_SQL;
@@ -16622,7 +16630,9 @@ var init_db2 = __esm({
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     parent_session_id TEXT,
-    external_ref TEXT
+    external_ref TEXT,
+    public_key TEXT,
+    signature TEXT
   )`,
       `CREATE TABLE IF NOT EXISTS messages (
     id TEXT PRIMARY KEY,
@@ -16824,14 +16834,14 @@ async function queryIntegrity(db) {
       unchained++;
       continue;
     }
-    let ok = true;
+    let ok2 = true;
     for (let i = 1; i < chained.length; i++) {
       if (chained[i].prev_hash !== chained[i - 1].content_hash) {
-        ok = false;
+        ok2 = false;
         break;
       }
     }
-    if (ok)
+    if (ok2)
       intact++;
     else {
       broken++;
@@ -17419,7 +17429,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.19",
+      version: "0.1.20",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -17578,7 +17588,7 @@ ${DIM4}Sending test event...${RESET5} `);
       }
     }]
   }]);
-  let ok = false;
+  let ok2 = false;
   let statusCode = 0;
   try {
     const res = await fetch(url, {
@@ -17590,7 +17600,7 @@ ${DIM4}Sending test event...${RESET5} `);
       body: testPayload
     });
     statusCode = res.status;
-    ok = res.ok;
+    ok2 = res.ok;
   } catch (e) {
     process.stdout.write(`${RED}failed${RESET5}
 `);
@@ -17599,7 +17609,7 @@ ${DIM4}Sending test event...${RESET5} `);
 `);
     process.exit(1);
   }
-  if (!ok) {
+  if (!ok2) {
     process.stdout.write(`${RED}failed (HTTP ${statusCode})${RESET5}
 `);
     process.stderr.write(`  ${RED}Check your URL and token, then try again.${RESET5}
@@ -18118,6 +18128,254 @@ var init_summary = __esm({
   }
 });
 
+// src/utils/signing.ts
+function keysDir() {
+  return (0, import_path4.join)((0, import_os5.homedir)(), ".chron", "keys");
+}
+function privKeyPath(sessionId) {
+  return (0, import_path4.join)(keysDir(), `${sessionId}.key`);
+}
+function sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt) {
+  const input = `${sessionId}|${finalContentHash}|${messageCount}|${firstCreatedAt}`;
+  return (0, import_crypto2.createHash)("sha256").update(input).digest();
+}
+function signSession(sessionId, finalContentHash, messageCount, firstCreatedAt) {
+  const privPath = privKeyPath(sessionId);
+  if (!(0, import_fs4.existsSync)(privPath)) {
+    throw new Error(`Private key not found: ${privPath}`);
+  }
+  const privateKey = (0, import_fs4.readFileSync)(privPath, "utf8");
+  const digest = sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt);
+  const sig = (0, import_crypto2.sign)(null, digest, privateKey);
+  return sig.toString("base64");
+}
+function verifySignature(publicKeyPem, signatureB64, sessionId, finalContentHash, messageCount, firstCreatedAt) {
+  try {
+    const digest = sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt);
+    const sigBuf = Buffer.from(signatureB64, "base64");
+    return (0, import_crypto2.verify)(null, digest, publicKeyPem, sigBuf);
+  } catch {
+    return false;
+  }
+}
+var import_crypto2, import_fs4, import_path4, import_os5;
+var init_signing = __esm({
+  "src/utils/signing.ts"() {
+    "use strict";
+    import_crypto2 = require("crypto");
+    import_fs4 = require("fs");
+    import_path4 = require("path");
+    import_os5 = require("os");
+  }
+});
+
+// src/cli/sign.ts
+var sign_exports = {};
+__export(sign_exports, {
+  runSign: () => runSign
+});
+async function runSign(args2) {
+  const prefix = args2[0];
+  if (!prefix) {
+    process.stderr.write("Usage: chron sign <session-id-prefix>\n");
+    process.exit(1);
+  }
+  const db = await initDb();
+  const allSessions = await db.select().from(sessions);
+  const session = allSessions.find((s) => s.id.startsWith(prefix));
+  if (!session) {
+    process.stderr.write(`Session not found: ${prefix}
+`);
+    process.exit(1);
+  }
+  if (!session.public_key) {
+    process.stderr.write(`Session ${session.id.slice(0, 8)} has no public key \u2014 was it created before v0.1.19?
+`);
+    process.exit(1);
+  }
+  if (!(0, import_fs6.existsSync)(privKeyPath(session.id))) {
+    process.stderr.write(`Private key not found: ${privKeyPath(session.id)}
+`);
+    process.stderr.write("The key is stored on the machine where the session was created.\n");
+    process.exit(1);
+  }
+  const [countRow] = await db.select({
+    count: sql`count(*)`,
+    first_created_at: sql`min(${messages.created_at})`
+  }).from(messages).where(eq(messages.session_id, session.id));
+  const messageCount = countRow?.count ?? 0;
+  const firstCreatedAt = countRow?.first_created_at ?? "";
+  if (messageCount === 0) {
+    process.stderr.write("Session has no messages \u2014 nothing to sign.\n");
+    process.exit(1);
+  }
+  const lastMsg = await db.select({ content_hash: messages.content_hash }).from(messages).where(eq(messages.session_id, session.id)).orderBy(asc(sql`rowid`)).limit(1e3);
+  const finalContentHash = lastMsg[lastMsg.length - 1]?.content_hash ?? "";
+  if (!finalContentHash) {
+    process.stderr.write("Session has no hash chain \u2014 cannot sign.\n");
+    process.exit(1);
+  }
+  const signature = signSession(session.id, finalContentHash, messageCount, firstCreatedAt);
+  await db.update(sessions).set({ signature }).where(eq(sessions.id, session.id));
+  const sigData = {
+    chron_signature: "v1",
+    session_id: session.id,
+    session_title: session.title,
+    public_key_pem: session.public_key,
+    message_count: messageCount,
+    first_message_at: firstCreatedAt,
+    final_content_hash: finalContentHash,
+    signature,
+    signed_at: (/* @__PURE__ */ new Date()).toISOString()
+  };
+  const sigFile = (0, import_path5.join)(process.cwd(), `${session.id.slice(0, 8)}.chron.sig`);
+  (0, import_fs5.writeFileSync)(sigFile, JSON.stringify(sigData, null, 2));
+  process.stdout.write(`Signed session ${session.id.slice(0, 8)}
+`);
+  process.stdout.write(`  messages : ${messageCount}
+`);
+  process.stdout.write(`  final hash: ${finalContentHash.slice(0, 16)}\u2026
+`);
+  process.stdout.write(`  sig file : ${sigFile}
+`);
+}
+var import_fs5, import_path5, import_fs6;
+var init_sign = __esm({
+  "src/cli/sign.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    import_fs5 = require("fs");
+    import_path5 = require("path");
+    init_db2();
+    init_schema();
+    init_signing();
+    import_fs6 = require("fs");
+  }
+});
+
+// src/utils/hash.ts
+function computeContentHash(sessionId, role, content, createdAt, prevHash, eventType) {
+  const base = `${sessionId}|${role}|${content}|${createdAt}|${prevHash ?? ""}`;
+  const input = eventType != null ? `${base}|${eventType}` : base;
+  return (0, import_crypto3.createHash)("sha256").update(input).digest("hex");
+}
+var import_crypto3;
+var init_hash = __esm({
+  "src/utils/hash.ts"() {
+    "use strict";
+    import_crypto3 = require("crypto");
+  }
+});
+
+// src/cli/verify.ts
+var verify_exports = {};
+__export(verify_exports, {
+  runVerify: () => runVerify
+});
+function ok(msg) {
+  process.stdout.write(`  ${GREEN3}\u2713${RESET7} ${msg}
+`);
+}
+function fail(msg) {
+  process.stdout.write(`  ${RED3}\u2717${RESET7} ${msg}
+`);
+}
+function warn(msg) {
+  process.stdout.write(`  ${YELLOW5}!${RESET7} ${msg}
+`);
+}
+async function runVerify(args2) {
+  const prefix = args2[0];
+  if (!prefix) {
+    process.stderr.write("Usage: chron verify <session-id-prefix>\n");
+    process.exit(1);
+  }
+  const db = await initDb();
+  const allSessions = await db.select().from(sessions);
+  const session = allSessions.find((s) => s.id.startsWith(prefix));
+  if (!session) {
+    process.stderr.write(`Session not found: ${prefix}
+`);
+    process.exit(1);
+  }
+  process.stdout.write(`
+${BOLD7}Verifying session ${session.id.slice(0, 8)}${RESET7} \u2014 ${session.title}
+
+`);
+  const rows = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(asc(messages.created_at), asc(sql`rowid`));
+  process.stdout.write(`${BOLD7}Hash chain${RESET7} (${rows.length} messages)
+`);
+  const chained = rows.filter((r) => r.content_hash !== null);
+  let chainOk = true;
+  if (chained.length === 0) {
+    warn("No chained messages \u2014 session pre-dates hash chaining");
+  } else {
+    for (let i = 0; i < chained.length; i++) {
+      const row = chained[i];
+      const expectedPrev = i === 0 ? null : chained[i - 1].content_hash;
+      if (row.prev_hash !== expectedPrev) {
+        fail(`Row ${i + 1} (${row.id.slice(0, 8)}): prev_hash mismatch \u2014 chain broken`);
+        chainOk = false;
+        break;
+      }
+      const expected = computeContentHash(row.session_id, row.role, row.content, row.created_at, row.prev_hash, row.event_type ?? void 0);
+      if (row.content_hash !== expected) {
+        fail(`Row ${i + 1} (${row.id.slice(0, 8)}): content_hash mismatch \u2014 row tampered`);
+        chainOk = false;
+        break;
+      }
+    }
+    if (chainOk)
+      ok(`All ${chained.length} hashes valid`);
+  }
+  process.stdout.write(`
+${BOLD7}Signature${RESET7}
+`);
+  if (!session.public_key) {
+    warn("No public key \u2014 session was created before signing support (v0.1.19)");
+  } else if (!session.signature) {
+    warn("Not yet signed \u2014 run: chron sign " + session.id.slice(0, 8));
+  } else {
+    const finalHash = chained[chained.length - 1]?.content_hash ?? "";
+    const firstCreatedAt = rows[0]?.created_at ?? "";
+    const sigValid = verifySignature(
+      session.public_key,
+      session.signature,
+      session.id,
+      finalHash,
+      rows.length,
+      firstCreatedAt
+    );
+    if (sigValid) {
+      ok("Ed25519 signature valid");
+      process.stdout.write(`  ${DIM6}public key: ${session.public_key.split("\n")[1]?.slice(0, 40)}\u2026${RESET7}
+`);
+    } else {
+      fail("Ed25519 signature INVALID \u2014 session data may have been altered after signing");
+    }
+  }
+  process.stdout.write("\n");
+  const allOk = chainOk && (session.signature ? true : true);
+  process.exit(allOk ? 0 : 1);
+}
+var RESET7, BOLD7, GREEN3, RED3, DIM6, YELLOW5;
+var init_verify = __esm({
+  "src/cli/verify.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    init_db2();
+    init_schema();
+    init_hash();
+    init_signing();
+    RESET7 = "\x1B[0m";
+    BOLD7 = "\x1B[1m";
+    GREEN3 = "\x1B[32m";
+    RED3 = "\x1B[31m";
+    DIM6 = "\x1B[2m";
+    YELLOW5 = "\x1B[33m";
+  }
+});
+
 // src/cli/index.ts
 var [, , command, ...args] = process.argv;
 async function main() {
@@ -18157,6 +18415,16 @@ async function main() {
       await runSummary2(args);
       break;
     }
+    case "sign": {
+      const { runSign: runSign2 } = await Promise.resolve().then(() => (init_sign(), sign_exports));
+      await runSign2(args);
+      break;
+    }
+    case "verify": {
+      const { runVerify: runVerify2 } = await Promise.resolve().then(() => (init_verify(), verify_exports));
+      await runVerify2(args);
+      break;
+    }
     default: {
       const name = command ? `Unknown command: ${command}
 
@@ -18172,6 +18440,8 @@ Commands:
   settings        View current configuration
   connect         Connect to a SIEM integration (crowdstrike, sentinel, splunk)
   summary         Structured summary of a session (timeline, mutations, secrets)
+  sign            Sign a session with its Ed25519 key \u2014 produces a .chron.sig file
+  verify          Verify a session's hash chain and Ed25519 signature
 
 Options (history):
   --limit=<n>     Max sessions to show (default: 20)
@@ -18182,7 +18452,7 @@ Options (report):
   --format=soc2     Generate SOC 2 HTML evidence package
   --output=<file>   Output file for --format=soc2 (default: soc2-report.html)
 
-Options (export / secrets):
+Options (export / secrets / sign / verify):
   <id-prefix>     Scope to a single session
 `
       );
