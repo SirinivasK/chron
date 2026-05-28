@@ -16539,7 +16539,9 @@ var init_schema = __esm({
       title: text("title").notNull().unique(),
       ai_tool: text("ai_tool"),
       created_at: text("created_at").notNull(),
-      updated_at: text("updated_at").notNull()
+      updated_at: text("updated_at").notNull(),
+      parent_session_id: text("parent_session_id"),
+      external_ref: text("external_ref")
     });
     messages = sqliteTable("messages", {
       id: text("id").primaryKey(),
@@ -16548,7 +16550,9 @@ var init_schema = __esm({
       content: text("content").notNull(),
       created_at: text("created_at").notNull(),
       prev_hash: text("prev_hash"),
-      content_hash: text("content_hash")
+      content_hash: text("content_hash"),
+      // NULL = pre-migration row (treated as 'message'); set for all new rows
+      event_type: text("event_type")
     });
     secrets_detected = sqliteTable("secrets_detected", {
       id: text("id").primaryKey(),
@@ -16579,13 +16583,24 @@ async function initDb(dbPath2) {
   for (const sql2 of CREATE_SQL) {
     await client.execute(sql2);
   }
-  const tableInfo = await client.execute("PRAGMA table_info(messages)");
-  const columns = tableInfo.rows.map((r) => r[1]);
-  if (!columns.includes("prev_hash")) {
+  const msgInfo = await client.execute("PRAGMA table_info(messages)");
+  const msgCols = msgInfo.rows.map((r) => r[1]);
+  if (!msgCols.includes("prev_hash")) {
     await client.execute("ALTER TABLE messages ADD COLUMN prev_hash TEXT");
   }
-  if (!columns.includes("content_hash")) {
+  if (!msgCols.includes("content_hash")) {
     await client.execute("ALTER TABLE messages ADD COLUMN content_hash TEXT");
+  }
+  if (!msgCols.includes("event_type")) {
+    await client.execute("ALTER TABLE messages ADD COLUMN event_type TEXT");
+  }
+  const sessInfo = await client.execute("PRAGMA table_info(sessions)");
+  const sessCols = sessInfo.rows.map((r) => r[1]);
+  if (!sessCols.includes("parent_session_id")) {
+    await client.execute("ALTER TABLE sessions ADD COLUMN parent_session_id TEXT");
+  }
+  if (!sessCols.includes("external_ref")) {
+    await client.execute("ALTER TABLE sessions ADD COLUMN external_ref TEXT");
   }
   return drizzle(client, { schema: schema_exports });
 }
@@ -16605,7 +16620,9 @@ var init_db2 = __esm({
     title TEXT NOT NULL UNIQUE,
     ai_tool TEXT,
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    parent_session_id TEXT,
+    external_ref TEXT
   )`,
       `CREATE TABLE IF NOT EXISTS messages (
     id TEXT PRIMARY KEY,
@@ -16615,6 +16632,7 @@ var init_db2 = __esm({
     created_at TEXT NOT NULL,
     prev_hash TEXT,
     content_hash TEXT,
+    event_type TEXT,
     FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
   )`,
       `CREATE TABLE IF NOT EXISTS secrets_detected (
@@ -17401,7 +17419,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.18",
+      version: "0.1.19",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {

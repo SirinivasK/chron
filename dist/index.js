@@ -22749,7 +22749,9 @@ var init_schema = __esm({
       title: text("title").notNull().unique(),
       ai_tool: text("ai_tool"),
       created_at: text("created_at").notNull(),
-      updated_at: text("updated_at").notNull()
+      updated_at: text("updated_at").notNull(),
+      parent_session_id: text("parent_session_id"),
+      external_ref: text("external_ref")
     });
     messages = sqliteTable("messages", {
       id: text("id").primaryKey(),
@@ -22758,7 +22760,9 @@ var init_schema = __esm({
       content: text("content").notNull(),
       created_at: text("created_at").notNull(),
       prev_hash: text("prev_hash"),
-      content_hash: text("content_hash")
+      content_hash: text("content_hash"),
+      // NULL = pre-migration row (treated as 'message'); set for all new rows
+      event_type: text("event_type")
     });
     secrets_detected = sqliteTable("secrets_detected", {
       id: text("id").primaryKey(),
@@ -22789,13 +22793,24 @@ async function initDb(dbPath) {
   for (const sql2 of CREATE_SQL) {
     await client.execute(sql2);
   }
-  const tableInfo = await client.execute("PRAGMA table_info(messages)");
-  const columns = tableInfo.rows.map((r) => r[1]);
-  if (!columns.includes("prev_hash")) {
+  const msgInfo = await client.execute("PRAGMA table_info(messages)");
+  const msgCols = msgInfo.rows.map((r) => r[1]);
+  if (!msgCols.includes("prev_hash")) {
     await client.execute("ALTER TABLE messages ADD COLUMN prev_hash TEXT");
   }
-  if (!columns.includes("content_hash")) {
+  if (!msgCols.includes("content_hash")) {
     await client.execute("ALTER TABLE messages ADD COLUMN content_hash TEXT");
+  }
+  if (!msgCols.includes("event_type")) {
+    await client.execute("ALTER TABLE messages ADD COLUMN event_type TEXT");
+  }
+  const sessInfo = await client.execute("PRAGMA table_info(sessions)");
+  const sessCols = sessInfo.rows.map((r) => r[1]);
+  if (!sessCols.includes("parent_session_id")) {
+    await client.execute("ALTER TABLE sessions ADD COLUMN parent_session_id TEXT");
+  }
+  if (!sessCols.includes("external_ref")) {
+    await client.execute("ALTER TABLE sessions ADD COLUMN external_ref TEXT");
   }
   return drizzle(client, { schema: schema_exports });
 }
@@ -22815,7 +22830,9 @@ var init_db2 = __esm({
     title TEXT NOT NULL UNIQUE,
     ai_tool TEXT,
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    parent_session_id TEXT,
+    external_ref TEXT
   )`,
       `CREATE TABLE IF NOT EXISTS messages (
     id TEXT PRIMARY KEY,
@@ -22825,6 +22842,7 @@ var init_db2 = __esm({
     created_at TEXT NOT NULL,
     prev_hash TEXT,
     content_hash TEXT,
+    event_type TEXT,
     FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
   )`,
       `CREATE TABLE IF NOT EXISTS secrets_detected (
@@ -38446,7 +38464,7 @@ var init_time = __esm({
 var version4;
 var init_package = __esm({
   "package.json"() {
-    version4 = "0.1.18";
+    version4 = "0.1.19";
   }
 });
 
@@ -38701,7 +38719,9 @@ function startSession(db) {
         title: args.title,
         ai_tool: args.ai_tool ?? null,
         created_at: now,
-        updated_at: now
+        updated_at: now,
+        parent_session_id: args.parent_session_id ?? null,
+        external_ref: args.external_ref ?? null
       });
       emitEvent({ event_type: "session_started", timestamp: now, session: { id_prefix: id.slice(0, 8), ai_tool: args.ai_tool ?? null } });
       return {
@@ -38741,7 +38761,9 @@ function initSession(db) {
         title: args.title,
         ai_tool: args.ai_tool ?? null,
         created_at: now,
-        updated_at: now
+        updated_at: now,
+        parent_session_id: args.parent_session_id ?? null,
+        external_ref: args.external_ref ?? null
       });
       session_id = id;
       created = true;
@@ -38846,8 +38868,10 @@ var init_sessions = __esm({
 });
 
 // src/utils/hash.ts
-function computeContentHash(sessionId, role, content, createdAt, prevHash) {
-  return (0, import_crypto4.createHash)("sha256").update(`${sessionId}|${role}|${content}|${createdAt}|${prevHash ?? ""}`).digest("hex");
+function computeContentHash(sessionId, role, content, createdAt, prevHash, eventType) {
+  const base = `${sessionId}|${role}|${content}|${createdAt}|${prevHash ?? ""}`;
+  const input = eventType != null ? `${base}|${eventType}` : base;
+  return (0, import_crypto4.createHash)("sha256").update(input).digest("hex");
 }
 var import_crypto4;
 var init_hash = __esm({
@@ -39150,32 +39174,37 @@ async function writeDetections(db, session_id, message_id, content) {
 function isFkError(e) {
   return e?.message?.includes("FOREIGN KEY constraint failed") || e?.code === "SQLITE_CONSTRAINT_FOREIGNKEY" || e?.cause?.message?.includes("FOREIGN KEY constraint failed") || e?.cause?.extendedCode === "SQLITE_CONSTRAINT_FOREIGNKEY";
 }
+async function insertMessage(db, session_id, role, content, event_type) {
+  return db.transaction(async (tx) => {
+    const last = await tx.select({ content_hash: messages.content_hash }).from(messages).where(eq(messages.session_id, session_id)).orderBy(desc(messages.created_at), desc(sql`rowid`)).limit(1);
+    const ts = localISOString();
+    const msgId = v4_default();
+    const prevHash = last[0]?.content_hash ?? null;
+    const hash = computeContentHash(session_id, role, content, ts, prevHash, event_type);
+    await tx.insert(messages).values({
+      id: msgId,
+      session_id,
+      role,
+      content,
+      created_at: ts,
+      prev_hash: prevHash,
+      content_hash: hash,
+      event_type
+    });
+    await tx.update(sessions).set({ updated_at: ts }).where(eq(sessions.id, session_id));
+    const [sessionRow] = await tx.select({ ai_tool: sessions.ai_tool }).from(sessions).where(eq(sessions.id, session_id)).limit(1);
+    return { id: msgId, now: ts, contentHash: hash, ai_tool: sessionRow?.ai_tool ?? null };
+  });
+}
 function logMessage(db) {
   return async (args) => {
+    const eventType = args.event_type ?? "message";
     let id;
     let now;
     let contentHash;
     let sessionAiTool;
     try {
-      const result = await db.transaction(async (tx) => {
-        const last = await tx.select({ content_hash: messages.content_hash }).from(messages).where(eq(messages.session_id, args.session_id)).orderBy(desc(messages.created_at), desc(sql`rowid`)).limit(1);
-        const ts = localISOString();
-        const msgId = v4_default();
-        const prevHash = last[0]?.content_hash ?? null;
-        const hash = computeContentHash(args.session_id, args.role, args.content, ts, prevHash);
-        await tx.insert(messages).values({
-          id: msgId,
-          session_id: args.session_id,
-          role: args.role,
-          content: args.content,
-          created_at: ts,
-          prev_hash: prevHash,
-          content_hash: hash
-        });
-        await tx.update(sessions).set({ updated_at: ts }).where(eq(sessions.id, args.session_id));
-        const [sessionRow] = await tx.select({ ai_tool: sessions.ai_tool }).from(sessions).where(eq(sessions.id, args.session_id)).limit(1);
-        return { id: msgId, now: ts, contentHash: hash, ai_tool: sessionRow?.ai_tool ?? null };
-      });
+      const result = await insertMessage(db, args.session_id, args.role, args.content, eventType);
       id = result.id;
       now = result.now;
       contentHash = result.contentHash;
@@ -39187,7 +39216,7 @@ function logMessage(db) {
       throw e;
     }
     emitEvent({ event_type: "message_logged", timestamp: now, session: { id_prefix: args.session_id.slice(0, 8), ai_tool: sessionAiTool }, message: { role: args.role } });
-    if (args.role === "user") {
+    if (args.role === "user" && eventType === "message") {
       setImmediate(() => writeDetections(db, args.session_id, id, args.content).catch(() => void 0));
     }
     return {
@@ -39195,15 +39224,45 @@ function logMessage(db) {
     };
   };
 }
+function logToolCall(db) {
+  return async (args) => {
+    const toolCallId = args.tool_call_id ?? v4_default();
+    const content = JSON.stringify({ tool_name: args.tool_name, input: args.tool_input, tool_call_id: toolCallId });
+    let result;
+    try {
+      result = await insertMessage(db, args.session_id, "assistant", content, "tool_call");
+    } catch (e) {
+      if (isFkError(e)) {
+        return { content: [{ type: "text", text: `Session not found: ${args.session_id}` }], isError: true };
+      }
+      throw e;
+    }
+    return {
+      content: [{ type: "text", text: JSON.stringify({ message_id: result.id, tool_call_id: toolCallId, created_at: result.now, content_hash: result.contentHash }) }]
+    };
+  };
+}
+function logToolResult(db) {
+  return async (args) => {
+    const content = JSON.stringify({ tool_call_id: args.tool_call_id, output: args.output, exit_code: args.exit_code ?? null });
+    let result;
+    try {
+      result = await insertMessage(db, args.session_id, "user", content, "tool_result");
+    } catch (e) {
+      if (isFkError(e)) {
+        return { content: [{ type: "text", text: `Session not found: ${args.session_id}` }], isError: true };
+      }
+      throw e;
+    }
+    return {
+      content: [{ type: "text", text: JSON.stringify({ message_id: result.id, tool_call_id: args.tool_call_id, created_at: result.now, content_hash: result.contentHash }) }]
+    };
+  };
+}
 function logExchange(db) {
   return async (args) => {
-    let userId;
-    let assistantId;
-    let userNow;
-    let assistantNow;
-    let userHash;
-    let assistantHash;
-    let sessionAiTool;
+    let userId, assistantId, userNow, assistantNow;
+    let userHash, assistantHash, sessionAiTool;
     try {
       const result = await db.transaction(async (tx) => {
         const last = await tx.select({ content_hash: messages.content_hash }).from(messages).where(eq(messages.session_id, args.session_id)).orderBy(desc(messages.created_at), desc(sql`rowid`)).limit(1);
@@ -39212,8 +39271,8 @@ function logExchange(db) {
         const aNow = localISOString();
         const aId = v4_default();
         const prevHash = last[0]?.content_hash ?? null;
-        const uHash = computeContentHash(args.session_id, "user", args.user_content, uNow, prevHash);
-        const aHash = computeContentHash(args.session_id, "assistant", args.assistant_content, aNow, uHash);
+        const uHash = computeContentHash(args.session_id, "user", args.user_content, uNow, prevHash, "message");
+        const aHash = computeContentHash(args.session_id, "assistant", args.assistant_content, aNow, uHash, "message");
         await tx.insert(messages).values({
           id: uId,
           session_id: args.session_id,
@@ -39221,7 +39280,8 @@ function logExchange(db) {
           content: args.user_content,
           created_at: uNow,
           prev_hash: prevHash,
-          content_hash: uHash
+          content_hash: uHash,
+          event_type: "message"
         });
         await tx.insert(messages).values({
           id: aId,
@@ -39230,7 +39290,8 @@ function logExchange(db) {
           content: args.assistant_content,
           created_at: aNow,
           prev_hash: uHash,
-          content_hash: aHash
+          content_hash: aHash,
+          event_type: "message"
         });
         await tx.update(sessions).set({ updated_at: aNow }).where(eq(sessions.id, args.session_id));
         const [sessionRow] = await tx.select({ ai_tool: sessions.ai_tool }).from(sessions).where(eq(sessions.id, args.session_id)).limit(1);
@@ -39305,7 +39366,7 @@ function verifySession(db) {
           }]
         };
       }
-      const expected = computeContentHash(row.session_id, row.role, row.content, row.created_at, row.prev_hash);
+      const expected = computeContentHash(row.session_id, row.role, row.content, row.created_at, row.prev_hash, row.event_type ?? void 0);
       if (row.content_hash !== expected) {
         return {
           content: [{
@@ -39591,7 +39652,9 @@ function createServer(db) {
     {
       title: external_exports.string().describe('Descriptive session title, e.g. "Contract review \u2014 2026-05-08"'),
       ai_tool: external_exports.string().optional().describe('AI tool name: "claude", "cursor", "windsurf", etc.'),
-      limit: external_exports.number().int().positive().optional().describe("Number of recent messages to return (default: 10)")
+      limit: external_exports.number().int().positive().optional().describe("Number of recent messages to return (default: 10)"),
+      parent_session_id: external_exports.string().optional().describe("Parent session ID if this is a subagent session spawned by another session"),
+      external_ref: external_exports.string().optional().describe('External ticket/PR reference, e.g. "jira:ENG-123" or "github:org/repo#456"')
     },
     initSession(db)
   );
@@ -39600,7 +39663,9 @@ function createServer(db) {
     "Create a new audit session or resume an existing one by title. Call this at the start of every conversation.",
     {
       title: external_exports.string().describe('Descriptive session title, e.g. "Contract review \u2014 2026-05-08"'),
-      ai_tool: external_exports.string().optional().describe('AI tool name: "claude", "cursor", "windsurf", etc.')
+      ai_tool: external_exports.string().optional().describe('AI tool name: "claude", "cursor", "windsurf", etc.'),
+      parent_session_id: external_exports.string().optional().describe("Parent session ID if this is a subagent session"),
+      external_ref: external_exports.string().optional().describe('External ticket/PR reference, e.g. "jira:ENG-123"')
     },
     startSession(db)
   );
@@ -39613,6 +39678,28 @@ function createServer(db) {
       content: external_exports.string().describe("Full message text")
     },
     logMessage(db)
+  );
+  server.tool(
+    "log_tool_call",
+    "Record an AI tool invocation as a first-class audit event (event_type=tool_call). Call immediately before executing a tool. Returns tool_call_id to pass to log_tool_result.",
+    {
+      session_id: external_exports.string().describe("Session ID"),
+      tool_name: external_exports.string().describe('Name of the tool being called (e.g. "Edit", "Bash", "WebFetch")'),
+      tool_input: external_exports.record(external_exports.unknown()).describe("Tool input parameters as an object"),
+      tool_call_id: external_exports.string().optional().describe("Optional ID to link this call to its result. Generated automatically if omitted.")
+    },
+    logToolCall(db)
+  );
+  server.tool(
+    "log_tool_result",
+    "Record the result of a tool call as a first-class audit event (event_type=tool_result). Call immediately after receiving tool output. Links back to log_tool_call via tool_call_id.",
+    {
+      session_id: external_exports.string().describe("Session ID"),
+      tool_call_id: external_exports.string().describe("tool_call_id returned by log_tool_call"),
+      output: external_exports.string().describe("Tool output (stdout, file content, API response, etc.)"),
+      exit_code: external_exports.number().int().optional().describe("Exit code for shell tools (0 = success)")
+    },
+    logToolResult(db)
   );
   server.tool(
     "log_exchange",
