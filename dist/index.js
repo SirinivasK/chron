@@ -6434,15 +6434,15 @@ var init_base64 = __esm({
     _mkUriSafe = (src) => src.replace(/=/g, "").replace(/[+\/]/g, (m0) => m0 == "+" ? "-" : "_");
     _tidyB64 = (s) => s.replace(/[^A-Za-z0-9\+\/]/g, "");
     btoaPolyfill = (bin) => {
-      let u32, c0, c1, c2, asc3 = "";
+      let u32, c0, c1, c2, asc2 = "";
       const pad = bin.length % 3;
       for (let i = 0; i < bin.length; ) {
         if ((c0 = bin.charCodeAt(i++)) > 255 || (c1 = bin.charCodeAt(i++)) > 255 || (c2 = bin.charCodeAt(i++)) > 255)
           throw new TypeError("invalid character found");
         u32 = c0 << 16 | c1 << 8 | c2;
-        asc3 += b64chs[u32 >> 18 & 63] + b64chs[u32 >> 12 & 63] + b64chs[u32 >> 6 & 63] + b64chs[u32 & 63];
+        asc2 += b64chs[u32 >> 18 & 63] + b64chs[u32 >> 12 & 63] + b64chs[u32 >> 6 & 63] + b64chs[u32 & 63];
       }
-      return pad ? asc3.slice(0, pad - 3) + "===".substring(pad) : asc3;
+      return pad ? asc2.slice(0, pad - 3) + "===".substring(pad) : asc2;
     };
     _btoa = typeof btoa === "function" ? (bin) => btoa(bin) : _hasBuffer ? (bin) => Buffer.from(bin, "binary").toString("base64") : btoaPolyfill;
     _fromUint8Array = _hasBuffer ? (u8a) => Buffer.from(u8a).toString("base64") : (u8a) => {
@@ -6481,15 +6481,15 @@ var init_base64 = __esm({
       }
     };
     btou = (b) => b.replace(re_btou, cb_btou);
-    atobPolyfill = (asc3) => {
-      asc3 = asc3.replace(/\s+/g, "");
-      if (!b64re.test(asc3))
+    atobPolyfill = (asc2) => {
+      asc2 = asc2.replace(/\s+/g, "");
+      if (!b64re.test(asc2))
         throw new TypeError("malformed base64.");
-      asc3 += "==".slice(2 - (asc3.length & 3));
+      asc2 += "==".slice(2 - (asc2.length & 3));
       let u24, r1, r2;
       let binArray = [];
-      for (let i = 0; i < asc3.length; ) {
-        u24 = b64tab[asc3.charAt(i++)] << 18 | b64tab[asc3.charAt(i++)] << 12 | (r1 = b64tab[asc3.charAt(i++)]) << 6 | (r2 = b64tab[asc3.charAt(i++)]);
+      for (let i = 0; i < asc2.length; ) {
+        u24 = b64tab[asc2.charAt(i++)] << 18 | b64tab[asc2.charAt(i++)] << 12 | (r1 = b64tab[asc2.charAt(i++)]) << 6 | (r2 = b64tab[asc2.charAt(i++)]);
         if (r1 === 64) {
           binArray.push(_fromCC(u24 >> 16 & 255));
         } else if (r2 === 64) {
@@ -6500,7 +6500,7 @@ var init_base64 = __esm({
       }
       return binArray.join("");
     };
-    _atob = typeof atob === "function" ? (asc3) => atob(_tidyB64(asc3)) : _hasBuffer ? (asc3) => Buffer.from(asc3, "base64").toString("binary") : atobPolyfill;
+    _atob = typeof atob === "function" ? (asc2) => atob(_tidyB64(asc2)) : _hasBuffer ? (asc2) => Buffer.from(asc2, "base64").toString("binary") : atobPolyfill;
     _toUint8Array = _hasBuffer ? (a) => _U8Afrom(Buffer.from(a, "base64")) : (a) => _U8Afrom(_atob(a).split("").map((c) => c.charCodeAt(0)));
     toUint8Array = (a) => _toUint8Array(_unURI(a));
     _decode = _hasBuffer ? (a) => Buffer.from(a, "base64").toString("utf8") : _TD ? (a) => _TD.decode(_toUint8Array(a)) : (a) => btou(_atob(a));
@@ -22753,7 +22753,8 @@ var init_schema = __esm({
       parent_session_id: text("parent_session_id"),
       external_ref: text("external_ref"),
       public_key: text("public_key"),
-      signature: text("signature")
+      signature: text("signature"),
+      metadata: text("metadata")
     });
     messages = sqliteTable("messages", {
       id: text("id").primaryKey(),
@@ -22820,6 +22821,9 @@ async function initDb(dbPath) {
   if (!sessCols.includes("signature")) {
     await client.execute("ALTER TABLE sessions ADD COLUMN signature TEXT");
   }
+  if (!sessCols.includes("metadata")) {
+    await client.execute("ALTER TABLE sessions ADD COLUMN metadata TEXT");
+  }
   return drizzle(client, { schema: schema_exports });
 }
 var import_os, import_fs, import_path, CREATE_SQL;
@@ -22842,7 +22846,8 @@ var init_db2 = __esm({
     parent_session_id TEXT,
     external_ref TEXT,
     public_key TEXT,
-    signature TEXT
+    signature TEXT,
+    metadata TEXT
   )`,
       `CREATE TABLE IF NOT EXISTS messages (
     id TEXT PRIMARY KEY,
@@ -38474,7 +38479,7 @@ var init_time = __esm({
 var version4;
 var init_package = __esm({
   "package.json"() {
-    version4 = "0.1.20";
+    version4 = "0.1.24";
   }
 });
 
@@ -38763,7 +38768,83 @@ var init_signing = __esm({
   }
 });
 
+// src/utils/ntp.ts
+function queryNtpUdp(server, timeout) {
+  return new Promise((resolve, reject) => {
+    const client = (0, import_dgram.createSocket)("udp4");
+    const timer = setTimeout(() => {
+      try {
+        client.close();
+      } catch {
+      }
+      reject(new Error("NTP timeout"));
+    }, timeout);
+    const t1 = Date.now();
+    const packet = Buffer.alloc(48, 0);
+    packet[0] = 27;
+    client.once("message", (msg) => {
+      clearTimeout(timer);
+      try {
+        client.close();
+      } catch {
+      }
+      if (msg.length < 48) {
+        reject(new Error("Short NTP response"));
+        return;
+      }
+      const t4 = Date.now();
+      const secs = msg.readUInt32BE(40);
+      const frac = msg.readUInt32BE(44);
+      const t3 = (secs - NTP_OFFSET) * 1e3 + frac / 4294967296 * 1e3;
+      const offset_ms = Math.round(t3 - (t1 + t4) / 2);
+      resolve({ offset_ms });
+    });
+    client.once("error", (err) => {
+      clearTimeout(timer);
+      try {
+        client.close();
+      } catch {
+      }
+      reject(err);
+    });
+    client.send(packet, 0, 48, 123, server, (err) => {
+      if (err) {
+        clearTimeout(timer);
+        try {
+          client.close();
+        } catch {
+        }
+        reject(err);
+      }
+    });
+  });
+}
+async function checkNtpSync(server = "pool.ntp.org", timeout = 2e3) {
+  try {
+    const { offset_ms } = await queryNtpUdp(server, timeout);
+    const status = Math.abs(offset_ms) <= 1e3 ? "synchronized" : "not_synchronized";
+    return { clock_sync_status: status, clock_offset_ms: offset_ms, ntp_server: server };
+  } catch {
+    return { clock_sync_status: "unknown", ntp_server: server };
+  }
+}
+var import_dgram, NTP_OFFSET;
+var init_ntp = __esm({
+  "src/utils/ntp.ts"() {
+    "use strict";
+    import_dgram = require("dgram");
+    NTP_OFFSET = 2208988800;
+  }
+});
+
 // src/tools/sessions.ts
+function attachNtpMetadata(db, sessionId) {
+  setImmediate(() => {
+    checkNtpSync().then((result) => {
+      db.update(sessions).set({ metadata: JSON.stringify(result) }).where(eq(sessions.id, sessionId)).catch(() => void 0);
+    }).catch(() => void 0);
+  });
+}
 function startSession(db) {
   return async (args) => {
     const id = v4_default();
@@ -38784,6 +38865,7 @@ function startSession(db) {
         external_ref: args.external_ref ?? null,
         public_key: publicKey
       });
+      attachNtpMetadata(db, id);
       emitEvent({ event_type: "session_started", timestamp: now, session: { id_prefix: id.slice(0, 8), ai_tool: args.ai_tool ?? null } });
       return {
         content: [{
@@ -38835,6 +38917,7 @@ function initSession(db) {
       session_id = id;
       created = true;
       ai_tool = args.ai_tool ?? null;
+      attachNtpMetadata(db, id);
     } catch (e) {
       const isUnique = e?.message?.includes("UNIQUE constraint failed") || e?.code === "SQLITE_CONSTRAINT_UNIQUE" || e?.cause?.message?.includes("UNIQUE constraint failed") || e?.cause?.extendedCode === "SQLITE_CONSTRAINT_UNIQUE";
       if (!isUnique)
@@ -38932,6 +39015,7 @@ var init_sessions = __esm({
     init_time();
     init_relay();
     init_signing();
+    init_ntp();
   }
 });
 
@@ -39397,6 +39481,23 @@ function logExchange(db) {
     };
   };
 }
+function logCodeChange(db) {
+  return async (args) => {
+    const content = JSON.stringify({ file_path: args.file_path, operation: args.operation, diff: args.diff });
+    let result;
+    try {
+      result = await insertMessage(db, args.session_id, "assistant", content, "code_change");
+    } catch (e) {
+      if (isFkError(e)) {
+        return { content: [{ type: "text", text: `Session not found: ${args.session_id}` }], isError: true };
+      }
+      throw e;
+    }
+    return {
+      content: [{ type: "text", text: JSON.stringify({ message_id: result.id, created_at: result.now, content_hash: result.contentHash }) }]
+    };
+  };
+}
 var init_messages = __esm({
   "src/tools/messages.ts"() {
     "use strict";
@@ -39458,10 +39559,17 @@ function verifySession(db) {
         firstCreatedAt
       );
     }
+    let clock_attestation = null;
+    if (sessionRow?.metadata) {
+      try {
+        clock_attestation = JSON.parse(sessionRow.metadata);
+      } catch {
+      }
+    }
     return {
       content: [{
         type: "text",
-        text: JSON.stringify({ valid: true, messages: rows.length, chained: chained.length, signature_valid })
+        text: JSON.stringify({ valid: true, messages: rows.length, chained: chained.length, signature_valid, clock_attestation })
       }]
     };
   };
@@ -39783,6 +39891,17 @@ function createServer(db) {
       exit_code: external_exports.number().int().optional().describe("Exit code for shell tools (0 = success)")
     },
     logToolResult(db)
+  );
+  server.tool(
+    "log_code_change",
+    "Record a file edit as a first-class audit event (event_type=code_change). Call after every Edit or Write tool call with the unified diff. Diff content is included in the hash chain.",
+    {
+      session_id: external_exports.string().describe("Session ID"),
+      file_path: external_exports.string().describe("Path of the file that was changed"),
+      diff: external_exports.string().describe("Unified diff string (before/after)"),
+      operation: external_exports.enum(["create", "edit", "delete"]).describe("Type of file operation")
+    },
+    logCodeChange(db)
   );
   server.tool(
     "log_exchange",

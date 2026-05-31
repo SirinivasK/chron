@@ -1184,7 +1184,7 @@ var init_sql = __esm({
         return new SQL([new StringChunk(str)]);
       }
       sql2.raw = raw;
-      function join6(chunks, separator) {
+      function join9(chunks, separator) {
         const result = [];
         for (const [i, chunk] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -1194,7 +1194,7 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql2.join = join6;
+      sql2.join = join9;
       function identifier(value) {
         return new Name(value);
       }
@@ -2806,7 +2806,7 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync3 = (path) => fs.readFileSync(path, "utf-8");
+    var readFileSync6 = (path) => fs.readFileSync(path, "utf-8");
     var readFile = (path) => new Promise((resolve, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
@@ -2818,7 +2818,7 @@ var require_filesystem = __commonJS({
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync3,
+      readFileSync: readFileSync6,
       readFile
     };
   }
@@ -2830,7 +2830,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync3 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync6 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command2 = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
@@ -2911,7 +2911,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync3(LDD_PATH);
+        const lddContent = readFileSync6(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -2968,7 +2968,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync3(LDD_PATH);
+        const lddContent = readFileSync6(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -2995,33 +2995,33 @@ var require_detect_libc = __commonJS({
       }
       return null;
     };
-    var version3 = async () => {
-      let version4 = null;
+    var version4 = async () => {
+      let version5 = null;
       if (isLinux()) {
-        version4 = await versionFromFilesystem();
-        if (!version4) {
-          version4 = versionFromReport();
+        version5 = await versionFromFilesystem();
+        if (!version5) {
+          version5 = versionFromReport();
         }
-        if (!version4) {
+        if (!version5) {
           const out = await safeCommand();
-          version4 = versionFromCommand(out);
+          version5 = versionFromCommand(out);
         }
       }
-      return version4;
+      return version5;
     };
     var versionSync = () => {
-      let version4 = null;
+      let version5 = null;
       if (isLinux()) {
-        version4 = versionFromFilesystemSync();
-        if (!version4) {
-          version4 = versionFromReport();
+        version5 = versionFromFilesystemSync();
+        if (!version5) {
+          version5 = versionFromReport();
         }
-        if (!version4) {
+        if (!version5) {
           const out = safeCommandSync();
-          version4 = versionFromCommand(out);
+          version5 = versionFromCommand(out);
         }
       }
-      return version4;
+      return version5;
     };
     module2.exports = {
       GLIBC,
@@ -3030,7 +3030,7 @@ var require_detect_libc = __commonJS({
       familySync,
       isNonGlibcLinux,
       isNonGlibcLinuxSync,
-      version: version3,
+      version: version4,
       versionSync
     };
   }
@@ -6162,7 +6162,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash4 } = require("crypto");
+    var { randomBytes, createHash: createHash6 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -6842,7 +6842,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash4("sha1").update(key + GUID).digest("base64");
+        const digest = createHash6("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -7229,7 +7229,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash4 } = require("crypto");
+    var { createHash: createHash6 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -7429,7 +7429,7 @@ var require_websocket_server = __commonJS({
         socket.on("error", socketOnError);
         const key = req.headers["sec-websocket-key"];
         const upgrade = req.headers.upgrade;
-        const version3 = +req.headers["sec-websocket-version"];
+        const version4 = +req.headers["sec-websocket-version"];
         if (req.method !== "GET") {
           const message = "Invalid HTTP method";
           abortHandshakeOrEmitwsClientError(this, req, socket, 405, message);
@@ -7445,7 +7445,7 @@ var require_websocket_server = __commonJS({
           abortHandshakeOrEmitwsClientError(this, req, socket, 400, message);
           return;
         }
-        if (version3 !== 13 && version3 !== 8) {
+        if (version4 !== 13 && version4 !== 8) {
           const message = "Missing or invalid Sec-WebSocket-Version header";
           abortHandshakeOrEmitwsClientError(this, req, socket, 400, message, {
             "Sec-WebSocket-Version": "13, 8"
@@ -7489,7 +7489,7 @@ var require_websocket_server = __commonJS({
         }
         if (this.options.verifyClient) {
           const info = {
-            origin: req.headers[`${version3 === 8 ? "sec-websocket-origin" : "origin"}`],
+            origin: req.headers[`${version4 === 8 ? "sec-websocket-origin" : "origin"}`],
             secure: !!(req.socket.authorized || req.socket.encrypted),
             req
           };
@@ -7538,7 +7538,7 @@ var require_websocket_server = __commonJS({
         }
         if (this._state > RUNNING)
           return abortHandshake(socket, 503);
-        const digest = createHash4("sha1").update(key + GUID).digest("base64");
+        const digest = createHash6("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -11306,7 +11306,7 @@ var init_lib_esm = __esm({
 });
 
 // node_modules/@libsql/client/lib-esm/hrana.js
-async function executeHranaBatch(mode, version3, batch, hranaStmts, disableForeignKeys = false) {
+async function executeHranaBatch(mode, version4, batch, hranaStmts, disableForeignKeys = false) {
   if (disableForeignKeys) {
     batch.step().run("PRAGMA foreign_keys=off");
   }
@@ -11315,7 +11315,7 @@ async function executeHranaBatch(mode, version3, batch, hranaStmts, disableForei
   let lastStep = beginStep;
   const stmtPromises = hranaStmts.map((hranaStmt) => {
     const stmtStep = batch.step().condition(BatchCond.ok(lastStep));
-    if (version3 >= 3) {
+    if (version4 >= 3) {
       stmtStep.condition(BatchCond.not(BatchCond.isAutocommit(batch)));
     }
     const stmtPromise = stmtStep.query(hranaStmt);
@@ -11323,7 +11323,7 @@ async function executeHranaBatch(mode, version3, batch, hranaStmts, disableForei
     return stmtPromise;
   });
   const commitStep = batch.step().condition(BatchCond.ok(lastStep));
-  if (version3 >= 3) {
+  if (version4 >= 3) {
     commitStep.condition(BatchCond.not(BatchCond.isAutocommit(batch)));
   }
   const commitPromise = commitStep.run("COMMIT");
@@ -11426,9 +11426,9 @@ var init_hrana = __esm({
       // BEGIN statement yet.
       #started;
       /** @private */
-      constructor(mode, version3) {
+      constructor(mode, version4) {
         this.#mode = mode;
-        this.#version = version3;
+        this.#version = version4;
         this.#started = void 0;
       }
       execute(stmt) {
@@ -11859,10 +11859,10 @@ var init_ws = __esm({
               return stmt;
             });
             const hranaStmts = normalizedStmts.map(stmtToHrana);
-            const version3 = await streamState.conn.client.getVersion();
+            const version4 = await streamState.conn.client.getVersion();
             streamState.conn.sqlCache.apply(hranaStmts);
-            const batch = streamState.stream.batch(version3 >= 3);
-            const resultsPromise = executeHranaBatch(mode, version3, batch, hranaStmts);
+            const batch = streamState.stream.batch(version4 >= 3);
+            const resultsPromise = executeHranaBatch(mode, version4, batch, hranaStmts);
             const results = await resultsPromise;
             return results;
           } catch (e) {
@@ -11877,9 +11877,9 @@ var init_ws = __esm({
           const streamState = await this.#openStream();
           try {
             const hranaStmts = stmts.map(stmtToHrana);
-            const version3 = await streamState.conn.client.getVersion();
-            const batch = streamState.stream.batch(version3 >= 3);
-            const resultsPromise = executeHranaBatch("deferred", version3, batch, hranaStmts, true);
+            const version4 = await streamState.conn.client.getVersion();
+            const batch = streamState.stream.batch(version4 >= 3);
+            const resultsPromise = executeHranaBatch("deferred", version4, batch, hranaStmts, true);
             const results = await resultsPromise;
             return results;
           } catch (e) {
@@ -11893,8 +11893,8 @@ var init_ws = __esm({
         return this.limit(async () => {
           const streamState = await this.#openStream();
           try {
-            const version3 = await streamState.conn.client.getVersion();
-            return new WsTransaction(this, streamState, mode, version3);
+            const version4 = await streamState.conn.client.getVersion();
+            return new WsTransaction(this, streamState, mode, version4);
           } catch (e) {
             this._closeStream(streamState);
             throw mapHranaError(e);
@@ -12001,8 +12001,8 @@ var init_ws = __esm({
           this.#futureConnState = void 0;
         }
         const next = this.#openConn();
-        const version3 = await next.client.getVersion();
-        next.useSqlCache = version3 >= 2;
+        const version4 = await next.client.getVersion();
+        next.useSqlCache = version4 >= 2;
         if (next.useSqlCache) {
           next.sqlCache.capacity = sqlCacheCapacity;
         }
@@ -12034,8 +12034,8 @@ var init_ws = __esm({
       #client;
       #streamState;
       /** @private */
-      constructor(client, state, mode, version3) {
-        super(mode, version3);
+      constructor(client, state, mode, version4) {
+        super(mode, version4);
         this.#client = client;
         this.#streamState = state;
       }
@@ -12152,14 +12152,14 @@ var init_http = __esm({
               return stmt;
             });
             const hranaStmts = normalizedStmts.map(stmtToHrana);
-            const version3 = await this.#client.getVersion();
+            const version4 = await this.#client.getVersion();
             let resultsPromise;
             const stream = this.#client.openStream();
             try {
               const sqlCache = new SqlCache(stream, sqlCacheCapacity2);
               sqlCache.apply(hranaStmts);
               const batch = stream.batch(false);
-              resultsPromise = executeHranaBatch(mode, version3, batch, hranaStmts);
+              resultsPromise = executeHranaBatch(mode, version4, batch, hranaStmts);
             } finally {
               stream.closeGracefully();
             }
@@ -12174,12 +12174,12 @@ var init_http = __esm({
         return this.limit(async () => {
           try {
             const hranaStmts = stmts.map(stmtToHrana);
-            const version3 = await this.#client.getVersion();
+            const version4 = await this.#client.getVersion();
             let resultsPromise;
             const stream = this.#client.openStream();
             try {
               const batch = stream.batch(false);
-              resultsPromise = executeHranaBatch("deferred", version3, batch, hranaStmts, true);
+              resultsPromise = executeHranaBatch("deferred", version4, batch, hranaStmts, true);
             } finally {
               stream.closeGracefully();
             }
@@ -12193,8 +12193,8 @@ var init_http = __esm({
       async transaction(mode = "write") {
         return this.limit(async () => {
           try {
-            const version3 = await this.#client.getVersion();
-            return new HttpTransaction(this.#client.openStream(), mode, version3);
+            const version4 = await this.#client.getVersion();
+            return new HttpTransaction(this.#client.openStream(), mode, version4);
           } catch (e) {
             throw mapHranaError(e);
           }
@@ -12240,8 +12240,8 @@ var init_http = __esm({
       #stream;
       #sqlCache;
       /** @private */
-      constructor(stream, mode, version3) {
-        super(mode, version3);
+      constructor(stream, mode, version4) {
+        super(mode, version4);
         this.#stream = stream;
         this.#sqlCache = new SqlCache(stream, sqlCacheCapacity2);
       }
@@ -14252,7 +14252,7 @@ var init_select2 = __esm({
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table))
             this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join6) => join6.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join9) => join9.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -15141,7 +15141,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join6) => join6.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join9) => join9.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -16543,7 +16543,8 @@ var init_schema = __esm({
       parent_session_id: text("parent_session_id"),
       external_ref: text("external_ref"),
       public_key: text("public_key"),
-      signature: text("signature")
+      signature: text("signature"),
+      metadata: text("metadata")
     });
     messages = sqliteTable("messages", {
       id: text("id").primaryKey(),
@@ -16610,6 +16611,9 @@ async function initDb(dbPath2) {
   if (!sessCols.includes("signature")) {
     await client.execute("ALTER TABLE sessions ADD COLUMN signature TEXT");
   }
+  if (!sessCols.includes("metadata")) {
+    await client.execute("ALTER TABLE sessions ADD COLUMN metadata TEXT");
+  }
   return drizzle(client, { schema: schema_exports });
 }
 var import_os, import_fs, import_path, CREATE_SQL;
@@ -16632,7 +16636,8 @@ var init_db2 = __esm({
     parent_session_id TEXT,
     external_ref TEXT,
     public_key TEXT,
-    signature TEXT
+    signature TEXT,
+    metadata TEXT
   )`,
       `CREATE TABLE IF NOT EXISTS messages (
     id TEXT PRIMARY KEY,
@@ -16678,16 +16683,23 @@ function fmtTimestamp(iso) {
   const tz = !m[3] || m[3] === "Z" ? "+00:00" : m[3];
   return `${m[1]} ${m[2]} ${tz}`;
 }
-async function printList(limit) {
+async function printList(limit, refFilter) {
   const db = await initDb();
-  const rows = await db.select({
+  let rows = await db.select({
     id: sessions.id,
     title: sessions.title,
     updated_at: sessions.updated_at,
+    external_ref: sessions.external_ref,
     message_count: sql`count(${messages.id})`
-  }).from(sessions).leftJoin(messages, eq(messages.session_id, sessions.id)).groupBy(sessions.id).orderBy(desc(sessions.updated_at)).limit(limit);
+  }).from(sessions).leftJoin(messages, eq(messages.session_id, sessions.id)).groupBy(sessions.id).orderBy(desc(sessions.updated_at)).limit(refFilter ? 1e4 : limit);
+  if (refFilter) {
+    rows = rows.filter((r) => r.external_ref?.startsWith(refFilter) ?? false);
+    rows = rows.slice(0, limit);
+  }
   if (rows.length === 0) {
-    process.stdout.write("No sessions found.\n");
+    const msg = refFilter ? `No sessions linked to ref: ${refFilter}
+` : "No sessions found.\n";
+    process.stdout.write(msg);
     return;
   }
   process.stdout.write("\n");
@@ -16695,8 +16707,9 @@ async function printList(limit) {
     const date = fmtDate(row.updated_at);
     const prefix = row.id.slice(0, 8);
     const count = String(row.message_count).padStart(3);
+    const ref = row.external_ref ? `  ${DIM}[${row.external_ref}]${RESET}` : "";
     process.stdout.write(
-      `  ${DIM}${date}${RESET}  ${CYAN}${prefix}${RESET}  ${BOLD}${count} msgs${RESET}  ${row.title}
+      `  ${DIM}${date}${RESET}  ${CYAN}${prefix}${RESET}  ${BOLD}${count} msgs${RESET}  ${row.title}${ref}
 `
     );
   }
@@ -16726,25 +16739,66 @@ ${BOLD}${session.title}${RESET}
 `);
   for (const msg of msgs) {
     const ts = fmtTimestamp(msg.created_at);
-    const roleColor = msg.role === "user" ? YELLOW : CYAN;
-    process.stdout.write(`${DIM}[${ts}]${RESET} ${BOLD}${roleColor}${msg.role}${RESET}
+    if (msg.event_type === "code_change") {
+      try {
+        const payload = JSON.parse(msg.content);
+        const opColor = payload.operation === "delete" ? YELLOW : payload.operation === "create" ? GREEN : CYAN;
+        process.stdout.write(`${DIM}[${ts}]${RESET} ${BOLD}${MAGENTA}code_change${RESET}  ${opColor}${payload.operation ?? ""}${RESET}  ${payload.file_path ?? ""}
 `);
-    process.stdout.write(`${msg.content}
+        if (payload.diff) {
+          const lines = payload.diff.split("\n").slice(0, 20);
+          for (const line of lines) {
+            const color = line.startsWith("+") ? GREEN : line.startsWith("-") ? YELLOW : DIM;
+            process.stdout.write(`${color}${line}${RESET}
+`);
+          }
+          const total = payload.diff.split("\n").length;
+          if (total > 20)
+            process.stdout.write(`${DIM}  \u2026 ${total - 20} more lines${RESET}
+`);
+        }
+        process.stdout.write("\n");
+      } catch {
+        process.stdout.write(`${DIM}[${ts}]${RESET} ${BOLD}${MAGENTA}code_change${RESET}
+${msg.content}
 
 `);
+      }
+    } else if (msg.event_type === "tool_call" || msg.event_type === "tool_result") {
+      try {
+        const payload = JSON.parse(msg.content);
+        const label = msg.event_type === "tool_call" ? `${BOLD}${CYAN}tool_call${RESET}  ${payload.tool_name ?? ""}` : `${BOLD}${DIM}tool_result${RESET}  id:${payload.tool_call_id?.slice(0, 8) ?? ""}`;
+        process.stdout.write(`${DIM}[${ts}]${RESET} ${label}
+
+`);
+      } catch {
+        process.stdout.write(`${DIM}[${ts}]${RESET} ${BOLD}${CYAN}${msg.event_type}${RESET}
+${msg.content}
+
+`);
+      }
+    } else {
+      const roleColor = msg.role === "user" ? YELLOW : CYAN;
+      process.stdout.write(`${DIM}[${ts}]${RESET} ${BOLD}${roleColor}${msg.role}${RESET}
+`);
+      process.stdout.write(`${msg.content}
+
+`);
+    }
   }
 }
 async function runHistory(args2) {
   const limitArg = args2.find((a) => a.startsWith("--limit="));
   const limit = limitArg ? parseInt(limitArg.split("=")[1], 10) : 20;
+  const refArg = args2.find((a) => a.startsWith("--ref="))?.split("=").slice(1).join("=");
   const positional = args2.filter((a) => !a.startsWith("--"));
   if (positional.length === 0) {
-    await printList(limit);
+    await printList(limit, refArg);
   } else {
     await printDetail(positional[0]);
   }
 }
-var RESET, BOLD, DIM, CYAN, YELLOW;
+var RESET, BOLD, DIM, CYAN, YELLOW, GREEN, MAGENTA;
 var init_history = __esm({
   "src/cli/history.ts"() {
     "use strict";
@@ -16756,6 +16810,8 @@ var init_history = __esm({
     DIM = "\x1B[2m";
     CYAN = "\x1B[36m";
     YELLOW = "\x1B[33m";
+    GREEN = "\x1B[32m";
+    MAGENTA = "\x1B[35m";
   }
 });
 
@@ -17137,15 +17193,15 @@ function parseSince(arg) {
   }
   throw new Error(`Invalid --since value: "${arg}". Use 7d, 30d, or YYYY-MM-DD.`);
 }
-async function buildReport(db, cutoffDate) {
+async function buildReport(db, cutoffDate2) {
   const allSessions = await db.select({
     id: sessions.id,
     ai_tool: sessions.ai_tool,
     updated_at: sessions.updated_at
   }).from(sessions);
-  const filtered = cutoffDate ? allSessions.filter((s) => s.updated_at >= cutoffDate) : allSessions;
+  const filtered = cutoffDate2 ? allSessions.filter((s) => s.updated_at >= cutoffDate2) : allSessions;
   const dateTo = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-  const dateFrom = cutoffDate ?? (filtered.length > 0 ? filtered.map((s) => s.updated_at).sort()[0].slice(0, 10) : dateTo);
+  const dateFrom = cutoffDate2 ?? (filtered.length > 0 ? filtered.map((s) => s.updated_at).sort()[0].slice(0, 10) : dateTo);
   if (filtered.length === 0) {
     return { dateFrom, dateTo, sessionCount: 0, providerCounts: {}, userMessages: 0, aiMessages: 0, secretsTotal: 0, byType: [] };
   }
@@ -17213,10 +17269,10 @@ async function runReport(args2) {
     return;
   }
   const sinceArg = args2.find((a) => a.startsWith("--since="))?.slice("--since=".length);
-  let cutoffDate = null;
+  let cutoffDate2 = null;
   if (sinceArg) {
     try {
-      cutoffDate = parseSince(sinceArg);
+      cutoffDate2 = parseSince(sinceArg);
     } catch (err) {
       process.stderr.write(`${err instanceof Error ? err.message : String(err)}
 `);
@@ -17224,7 +17280,7 @@ async function runReport(args2) {
     }
   }
   const db = await initDb();
-  const data = await buildReport(db, cutoffDate);
+  const data = await buildReport(db, cutoffDate2);
   printReport(data);
 }
 var RESET2, BOLD2;
@@ -17236,6 +17292,271 @@ var init_report = __esm({
     init_schema();
     RESET2 = "\x1B[0m";
     BOLD2 = "\x1B[1m";
+  }
+});
+
+// src/utils/signing.ts
+function keysDir() {
+  return (0, import_path2.join)((0, import_os3.homedir)(), ".chron", "keys");
+}
+function privKeyPath(sessionId) {
+  return (0, import_path2.join)(keysDir(), `${sessionId}.key`);
+}
+function sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt) {
+  const input = `${sessionId}|${finalContentHash}|${messageCount}|${firstCreatedAt}`;
+  return (0, import_crypto2.createHash)("sha256").update(input).digest();
+}
+function signSession(sessionId, finalContentHash, messageCount, firstCreatedAt) {
+  const privPath = privKeyPath(sessionId);
+  if (!(0, import_fs3.existsSync)(privPath)) {
+    throw new Error(`Private key not found: ${privPath}`);
+  }
+  const privateKey = (0, import_fs3.readFileSync)(privPath, "utf8");
+  const digest = sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt);
+  const sig = (0, import_crypto2.sign)(null, digest, privateKey);
+  return sig.toString("base64");
+}
+function verifySignature(publicKeyPem, signatureB64, sessionId, finalContentHash, messageCount, firstCreatedAt) {
+  try {
+    const digest = sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt);
+    const sigBuf = Buffer.from(signatureB64, "base64");
+    return (0, import_crypto2.verify)(null, digest, publicKeyPem, sigBuf);
+  } catch {
+    return false;
+  }
+}
+function signBuffer(sessionId, data) {
+  const privateKey = (0, import_fs3.readFileSync)(privKeyPath(sessionId), "utf8");
+  const digest = (0, import_crypto2.createHash)("sha256").update(data).digest();
+  const sig = (0, import_crypto2.sign)(null, digest, privateKey);
+  return sig.toString("base64");
+}
+function verifyBufferSignature(publicKeyPem, signatureB64, data) {
+  try {
+    const digest = (0, import_crypto2.createHash)("sha256").update(data).digest();
+    const sigBuf = Buffer.from(signatureB64, "base64");
+    return (0, import_crypto2.verify)(null, digest, publicKeyPem, sigBuf);
+  } catch {
+    return false;
+  }
+}
+var import_crypto2, import_fs3, import_path2, import_os3;
+var init_signing = __esm({
+  "src/utils/signing.ts"() {
+    "use strict";
+    import_crypto2 = require("crypto");
+    import_fs3 = require("fs");
+    import_path2 = require("path");
+    import_os3 = require("os");
+  }
+});
+
+// package.json
+var require_package = __commonJS({
+  "package.json"(exports2, module2) {
+    module2.exports = {
+      name: "chron-mcp",
+      version: "0.1.24",
+      mcpName: "io.github.sirinivask/chron",
+      description: "Audit-grade timestamped logs for every AI conversation",
+      repository: {
+        type: "git",
+        url: "https://github.com/sirinivask/chron.git"
+      },
+      main: "dist/index.js",
+      vitest: {
+        include: [
+          "tests/**/*.test.ts"
+        ],
+        globals: true
+      },
+      bin: {
+        "chron-mcp": "dist/index.js",
+        chron: "dist/cli/index.js"
+      },
+      files: [
+        "dist",
+        "skills",
+        ".claude-plugin",
+        "assets",
+        "dashboards",
+        "README.md"
+      ],
+      engines: {
+        node: ">=18"
+      },
+      scripts: {
+        build: "npx esbuild src/index.ts --bundle --format=cjs --outfile=dist/index.js --platform=node && chmod +x dist/index.js && npx esbuild src/cli/index.ts --bundle --format=cjs --outfile=dist/cli/index.js --platform=node && chmod +x dist/cli/index.js",
+        "build:cli": "npx esbuild src/cli/index.ts --bundle --format=cjs --outfile=dist/cli/index.js --platform=node && chmod +x dist/cli/index.js",
+        typecheck: "tsc --noEmit",
+        dev: "tsc --watch",
+        start: "node dist/index.js",
+        test: "vitest run",
+        "test:watch": "vitest",
+        prepublishOnly: "npm test && npm run build"
+      },
+      keywords: [
+        "mcp",
+        "ai",
+        "audit",
+        "logging",
+        "claude",
+        "cursor"
+      ],
+      license: "SEE LICENSE IN LICENSE",
+      dependencies: {
+        "@libsql/client": "^0.17.3",
+        "@modelcontextprotocol/sdk": "^1.12.0",
+        "drizzle-orm": "^0.45.2",
+        express: "^4.18.2",
+        uuid: "^11.1.1",
+        zod: "^3.22.4"
+      },
+      devDependencies: {
+        "@types/express": "^4.17.21",
+        "@types/node": "^20.0.0",
+        "@types/uuid": "^9.0.0",
+        "drizzle-kit": "^0.20.14",
+        typescript: "^5.4.5",
+        vitest: "^1.4.0"
+      }
+    };
+  }
+});
+
+// src/cli/export-bundle.ts
+var export_bundle_exports = {};
+__export(export_bundle_exports, {
+  runExportBundle: () => runExportBundle
+});
+function sha256file(filePath) {
+  const content = (0, import_fs4.readFileSync)(filePath);
+  return (0, import_crypto3.createHash)("sha256").update(content).digest("hex");
+}
+function parseSince2(s) {
+  if (s.endsWith("d")) {
+    const days = parseInt(s, 10);
+    const d = /* @__PURE__ */ new Date();
+    d.setDate(d.getDate() - days);
+    return d.toISOString().slice(0, 10);
+  }
+  return s;
+}
+async function runExportBundle(args2) {
+  const sessionArg = args2.find((a) => a.startsWith("--session="))?.split("=").slice(1).join("=");
+  const sinceArg = args2.find((a) => a.startsWith("--since="))?.split("=").slice(1).join("=");
+  const outputPath = args2.find((a) => a.startsWith("--output="))?.split("=").slice(1).join("=") ?? "bundle.chron.tar.gz";
+  const db = await initDb();
+  const allSessions = await db.select().from(sessions);
+  let filtered = allSessions;
+  if (sessionArg) {
+    filtered = allSessions.filter((s) => s.id.startsWith(sessionArg));
+    if (filtered.length === 0) {
+      process.stderr.write(`Session not found: ${sessionArg}
+`);
+      process.exit(1);
+    }
+  }
+  if (sinceArg) {
+    const cutoff = parseSince2(sinceArg);
+    filtered = filtered.filter((s) => s.created_at >= cutoff);
+  }
+  if (filtered.length === 0) {
+    process.stderr.write("No sessions matched the filter.\n");
+    process.exit(1);
+  }
+  const sessionIds = filtered.map((s) => s.id);
+  const tempDir = (0, import_path3.join)((0, import_os4.tmpdir)(), `chron-bundle-${Date.now()}`);
+  (0, import_fs4.mkdirSync)(tempDir, { recursive: true });
+  const pubkeysDir = (0, import_path3.join)(tempDir, "pubkeys");
+  (0, import_fs4.mkdirSync)(pubkeysDir);
+  try {
+    (0, import_fs4.writeFileSync)((0, import_path3.join)(tempDir, "sessions.json"), JSON.stringify(filtered, null, 2));
+    const msgsPath = (0, import_path3.join)(tempDir, "messages.jsonl");
+    const msgsStream = (0, import_fs4.createWriteStream)(msgsPath);
+    for (const sid of sessionIds) {
+      const msgs = await db.select().from(messages).where(eq(messages.session_id, sid)).orderBy(asc(messages.created_at), asc(sql`rowid`));
+      for (const m of msgs)
+        msgsStream.write(JSON.stringify(m) + "\n");
+    }
+    await new Promise((resolve) => msgsStream.end(resolve));
+    const secretsPath = (0, import_path3.join)(tempDir, "secrets.jsonl");
+    const secretsStream = (0, import_fs4.createWriteStream)(secretsPath);
+    for (const sid of sessionIds) {
+      const secs = await db.select().from(secrets_detected).where(eq(secrets_detected.session_id, sid));
+      for (const s of secs)
+        secretsStream.write(JSON.stringify(s) + "\n");
+    }
+    await new Promise((resolve) => secretsStream.end(resolve));
+    for (const s of filtered) {
+      if (s.public_key) {
+        (0, import_fs4.writeFileSync)((0, import_path3.join)(pubkeysDir, `${s.id}.pub`), s.public_key);
+      }
+    }
+    const fileHashes = {
+      "sessions.json": sha256file((0, import_path3.join)(tempDir, "sessions.json")),
+      "messages.jsonl": sha256file(msgsPath),
+      "secrets.jsonl": sha256file(secretsPath)
+    };
+    for (const s of filtered) {
+      if (s.public_key) {
+        fileHashes[`pubkeys/${s.id}.pub`] = sha256file((0, import_path3.join)(pubkeysDir, `${s.id}.pub`));
+      }
+    }
+    const manifest = {
+      chron_bundle: "v1",
+      generated_at: (/* @__PURE__ */ new Date()).toISOString(),
+      chron_version: import_package.version,
+      machine_id: (0, import_os4.hostname)(),
+      sessions: sessionIds,
+      files: fileHashes
+    };
+    const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2));
+    (0, import_fs4.writeFileSync)((0, import_path3.join)(tempDir, "manifest.json"), manifestBytes);
+    let signed = false;
+    if (filtered.length === 1) {
+      const s = filtered[0];
+      if (s.public_key && (0, import_fs4.existsSync)(privKeyPath(s.id))) {
+        try {
+          const sig = signBuffer(s.id, manifestBytes);
+          (0, import_fs4.writeFileSync)((0, import_path3.join)(tempDir, "manifest.sig"), JSON.stringify({
+            chron_sig: "v1",
+            session_id: s.id,
+            algorithm: "Ed25519-SHA256",
+            signature: sig
+          }, null, 2));
+          signed = true;
+        } catch {
+        }
+      }
+    }
+    const absOutput = outputPath.startsWith("/") ? outputPath : (0, import_path3.join)(process.cwd(), outputPath);
+    (0, import_child_process.execSync)(`tar -czf "${absOutput}" -C "${tempDir}" .`);
+    const sessionWord = filtered.length === 1 ? "session" : "sessions";
+    process.stdout.write(`Bundle: ${absOutput}
+`);
+    process.stdout.write(`  ${filtered.length} ${sessionWord} | signed: ${signed ? "yes (Ed25519)" : "no"}
+`);
+    process.stdout.write(`  Verify: chron verify --bundle="${absOutput}"
+`);
+  } finally {
+    (0, import_fs4.rmSync)(tempDir, { recursive: true, force: true });
+  }
+}
+var import_fs4, import_path3, import_os4, import_crypto3, import_child_process, import_package;
+var init_export_bundle = __esm({
+  "src/cli/export-bundle.ts"() {
+    "use strict";
+    import_fs4 = require("fs");
+    import_path3 = require("path");
+    import_os4 = require("os");
+    import_crypto3 = require("crypto");
+    import_child_process = require("child_process");
+    init_drizzle_orm();
+    init_db2();
+    init_schema();
+    init_signing();
+    import_package = __toESM(require_package());
   }
 });
 
@@ -17252,9 +17573,16 @@ function fmtTimestamp2(iso) {
   return `${m[1]} ${m[2]} ${tz}`;
 }
 async function runExport(args2) {
+  if (args2.includes("--signed")) {
+    const { runExportBundle: runExportBundle2 } = await Promise.resolve().then(() => (init_export_bundle(), export_bundle_exports));
+    await runExportBundle2(args2.filter((a) => a !== "--signed"));
+    return;
+  }
   const prefix = args2.find((a) => !a.startsWith("--"));
   if (!prefix) {
-    process.stderr.write("Usage: chron export <session-id-prefix>\n");
+    process.stderr.write(
+      "Usage: chron export <session-id-prefix>\n       chron export --signed [--session=<id>] [--since=<range>] [--output=<file>]\n"
+    );
     process.exit(1);
   }
   const db = await initDb();
@@ -17312,7 +17640,7 @@ __export(settings_exports, {
   runSettings: () => runSettings
 });
 function dbPath() {
-  return process.env.CHRON_DB_PATH ?? (0, import_path2.join)((0, import_os3.homedir)(), ".chron", "chron.db");
+  return process.env.CHRON_DB_PATH ?? (0, import_path4.join)((0, import_os5.homedir)(), ".chron", "chron.db");
 }
 async function runSettings(_args) {
   process.stdout.write(`
@@ -17326,12 +17654,12 @@ ${BOLD3}Chron Settings${RESET3}
 
 `);
 }
-var import_os3, import_path2, RESET3, BOLD3, DIM2, CYAN2;
+var import_os5, import_path4, RESET3, BOLD3, DIM2, CYAN2;
 var init_settings = __esm({
   "src/cli/settings.ts"() {
     "use strict";
-    import_os3 = require("os");
-    import_path2 = require("path");
+    import_os5 = require("os");
+    import_path4 = require("path");
     RESET3 = "\x1B[0m";
     BOLD3 = "\x1B[1m";
     DIM2 = "\x1B[2m";
@@ -17424,79 +17752,6 @@ var init_secrets = __esm({
   }
 });
 
-// package.json
-var require_package = __commonJS({
-  "package.json"(exports2, module2) {
-    module2.exports = {
-      name: "chron-mcp",
-      version: "0.1.20",
-      mcpName: "io.github.sirinivask/chron",
-      description: "Audit-grade timestamped logs for every AI conversation",
-      repository: {
-        type: "git",
-        url: "https://github.com/sirinivask/chron.git"
-      },
-      main: "dist/index.js",
-      vitest: {
-        include: [
-          "tests/**/*.test.ts"
-        ],
-        globals: true
-      },
-      bin: {
-        "chron-mcp": "dist/index.js",
-        chron: "dist/cli/index.js"
-      },
-      files: [
-        "dist",
-        "skills",
-        ".claude-plugin",
-        "assets",
-        "dashboards",
-        "README.md"
-      ],
-      engines: {
-        node: ">=18"
-      },
-      scripts: {
-        build: "npx esbuild src/index.ts --bundle --format=cjs --outfile=dist/index.js --platform=node && chmod +x dist/index.js && npx esbuild src/cli/index.ts --bundle --format=cjs --outfile=dist/cli/index.js --platform=node && chmod +x dist/cli/index.js",
-        "build:cli": "npx esbuild src/cli/index.ts --bundle --format=cjs --outfile=dist/cli/index.js --platform=node && chmod +x dist/cli/index.js",
-        typecheck: "tsc --noEmit",
-        dev: "tsc --watch",
-        start: "node dist/index.js",
-        test: "vitest run",
-        "test:watch": "vitest",
-        prepublishOnly: "npm test && npm run build"
-      },
-      keywords: [
-        "mcp",
-        "ai",
-        "audit",
-        "logging",
-        "claude",
-        "cursor"
-      ],
-      license: "SEE LICENSE IN LICENSE",
-      dependencies: {
-        "@libsql/client": "^0.17.3",
-        "@modelcontextprotocol/sdk": "^1.12.0",
-        "drizzle-orm": "^0.45.2",
-        express: "^4.18.2",
-        uuid: "^11.1.1",
-        zod: "^3.22.4"
-      },
-      devDependencies: {
-        "@types/express": "^4.17.21",
-        "@types/node": "^20.0.0",
-        "@types/uuid": "^9.0.0",
-        "drizzle-kit": "^0.20.14",
-        typescript: "^5.4.5",
-        vitest: "^1.4.0"
-      }
-    };
-  }
-});
-
 // src/cli/connect.ts
 var connect_exports = {};
 __export(connect_exports, {
@@ -17506,26 +17761,26 @@ function prompt(rl, question) {
   return new Promise((resolve) => rl.question(question, resolve));
 }
 function configPath() {
-  return (0, import_path3.join)((0, import_os4.homedir)(), ".chron", "config.json");
+  return (0, import_path5.join)((0, import_os6.homedir)(), ".chron", "config.json");
 }
 function loadConfig() {
   try {
-    return JSON.parse((0, import_fs3.readFileSync)(configPath(), "utf8"));
+    return JSON.parse((0, import_fs5.readFileSync)(configPath(), "utf8"));
   } catch {
     return {};
   }
 }
 function saveConfig(data) {
-  const dir = (0, import_path3.join)((0, import_os4.homedir)(), ".chron");
-  (0, import_fs3.mkdirSync)(dir, { recursive: true });
-  (0, import_fs3.writeFileSync)(configPath(), JSON.stringify(data, null, 2), "utf8");
+  const dir = (0, import_path5.join)((0, import_os6.homedir)(), ".chron");
+  (0, import_fs5.mkdirSync)(dir, { recursive: true });
+  (0, import_fs5.writeFileSync)(configPath(), JSON.stringify(data, null, 2), "utf8");
 }
 function patchClaudeJson(vars) {
-  const path = (0, import_path3.join)((0, import_os4.homedir)(), ".claude.json");
-  if (!(0, import_fs3.existsSync)(path))
+  const path = (0, import_path5.join)((0, import_os6.homedir)(), ".claude.json");
+  if (!(0, import_fs5.existsSync)(path))
     return false;
   try {
-    const raw = (0, import_fs3.readFileSync)(path, "utf8");
+    const raw = (0, import_fs5.readFileSync)(path, "utf8");
     const doc = JSON.parse(raw);
     const servers = doc.mcpServers ?? {};
     const chron = servers.chron ?? {};
@@ -17534,7 +17789,7 @@ function patchClaudeJson(vars) {
     chron.env = { ...chron.env ?? {}, ...vars };
     servers.chron = chron;
     doc.mcpServers = servers;
-    (0, import_fs3.writeFileSync)(path, JSON.stringify(doc, null, 2), "utf8");
+    (0, import_fs5.writeFileSync)(path, JSON.stringify(doc, null, 2), "utf8");
     return true;
   } catch {
     return false;
@@ -17617,13 +17872,13 @@ ${DIM4}Sending test event...${RESET5} `);
 `);
     process.exit(1);
   }
-  process.stdout.write(`${GREEN}OK${RESET5}
+  process.stdout.write(`${GREEN2}OK${RESET5}
 
 `);
   const config = loadConfig();
   config.logscale = { url, connected_at: (/* @__PURE__ */ new Date()).toISOString() };
   saveConfig(config);
-  process.stdout.write(`${GREEN}${BOLD5}Connected!${RESET5} Test event appeared in LogScale.
+  process.stdout.write(`${GREEN2}${BOLD5}Connected!${RESET5} Test event appeared in LogScale.
 
 `);
   process.stdout.write(`${BOLD5}Add these env vars to your MCP client config:${RESET5}
@@ -17732,7 +17987,7 @@ ${DIM4}Sending test event...${RESET5} `);
 `);
       process.exit(1);
     }
-    process.stdout.write(`${GREEN}OK${RESET5}
+    process.stdout.write(`${GREEN2}OK${RESET5}
 
 `);
   } catch (e) {
@@ -17750,7 +18005,7 @@ ${DIM4}Sending test event...${RESET5} `);
   if (isLocalhost(url))
     splunkVars.CHRON_SPLUNK_INSECURE = "1";
   patchClaudeJson(splunkVars);
-  process.stdout.write(`${GREEN}${BOLD5}Connected!${RESET5} Splunk is receiving chron events.
+  process.stdout.write(`${GREEN2}${BOLD5}Connected!${RESET5} Splunk is receiving chron events.
 
 `);
   process.stdout.write(`${DIM4}Config saved to ~/.chron/config.json \u2014 events will flow immediately in all running sessions.${RESET5}
@@ -17839,7 +18094,7 @@ ${DIM4}Authenticating with Azure AD...${RESET5} `);
     }
     const tokenData = await tokenRes.json();
     accessToken = tokenData.access_token;
-    process.stdout.write(`${GREEN}OK${RESET5}
+    process.stdout.write(`${GREEN2}OK${RESET5}
 `);
   } catch (e) {
     process.stdout.write(`${RED}failed${RESET5}
@@ -17881,7 +18136,7 @@ ${DIM4}Authenticating with Azure AD...${RESET5} `);
 `);
       process.exit(1);
     }
-    process.stdout.write(`${GREEN}OK${RESET5}
+    process.stdout.write(`${GREEN2}OK${RESET5}
 
 `);
   } catch (e) {
@@ -17903,7 +18158,7 @@ ${DIM4}Authenticating with Azure AD...${RESET5} `);
     CHRON_SENTINEL_DCR_ID: dcrId,
     CHRON_SENTINEL_STREAM: stream
   });
-  process.stdout.write(`${GREEN}${BOLD5}Connected!${RESET5} Test event sent to Sentinel workspace.
+  process.stdout.write(`${GREEN2}${BOLD5}Connected!${RESET5} Test event sent to Sentinel workspace.
 
 `);
   process.stdout.write(`${DIM4}Config saved to ~/.chron/config.json \u2014 events will flow immediately in all running sessions.${RESET5}
@@ -17939,19 +18194,19 @@ Integrations:
     }
   }
 }
-var import_readline, import_os4, import_path3, import_fs3, RESET5, BOLD5, DIM4, CYAN4, GREEN, RED, YELLOW3;
+var import_readline, import_os6, import_path5, import_fs5, RESET5, BOLD5, DIM4, CYAN4, GREEN2, RED, YELLOW3;
 var init_connect = __esm({
   "src/cli/connect.ts"() {
     "use strict";
     import_readline = require("readline");
-    import_os4 = require("os");
-    import_path3 = require("path");
-    import_fs3 = require("fs");
+    import_os6 = require("os");
+    import_path5 = require("path");
+    import_fs5 = require("fs");
     RESET5 = "\x1B[0m";
     BOLD5 = "\x1B[1m";
     DIM4 = "\x1B[2m";
     CYAN4 = "\x1B[36m";
-    GREEN = "\x1B[32m";
+    GREEN2 = "\x1B[32m";
     RED = "\x1B[31m";
     YELLOW3 = "\x1B[33m";
   }
@@ -18047,7 +18302,7 @@ ${BOLD6}Session Summary${RESET6}
   process.stdout.write(`  Duration    ${stats.duration_minutes}m
 
 `);
-  process.stdout.write(`${BOLD6}Secrets touched${RESET6}  ${secrets.length === 0 ? `${GREEN2}none${RESET6}` : `${RED2}${secrets.length} detection(s)${RESET6}`}
+  process.stdout.write(`${BOLD6}Secrets touched${RESET6}  ${secrets.length === 0 ? `${GREEN3}none${RESET6}` : `${RED2}${secrets.length} detection(s)${RESET6}`}
 `);
   for (const s of secrets) {
     process.stdout.write(`  ${RED2}[${s.type}]${RESET6} ${DIM5}${s.masked_value}${RESET6}
@@ -18101,7 +18356,7 @@ async function runSummary(args2) {
     printSummary(data);
   }
 }
-var RESET6, BOLD6, DIM5, CYAN5, GREEN2, YELLOW4, RED2, MUTATION_PATTERNS, PROD_PATTERNS;
+var RESET6, BOLD6, DIM5, CYAN5, GREEN3, YELLOW4, RED2, MUTATION_PATTERNS, PROD_PATTERNS;
 var init_summary = __esm({
   "src/cli/summary.ts"() {
     "use strict";
@@ -18112,7 +18367,7 @@ var init_summary = __esm({
     BOLD6 = "\x1B[1m";
     DIM5 = "\x1B[2m";
     CYAN5 = "\x1B[36m";
-    GREEN2 = "\x1B[32m";
+    GREEN3 = "\x1B[32m";
     YELLOW4 = "\x1B[33m";
     RED2 = "\x1B[31m";
     MUTATION_PATTERNS = [
@@ -18128,44 +18383,104 @@ var init_summary = __esm({
   }
 });
 
-// src/utils/signing.ts
-function keysDir() {
-  return (0, import_path4.join)((0, import_os5.homedir)(), ".chron", "keys");
-}
-function privKeyPath(sessionId) {
-  return (0, import_path4.join)(keysDir(), `${sessionId}.key`);
-}
-function sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt) {
-  const input = `${sessionId}|${finalContentHash}|${messageCount}|${firstCreatedAt}`;
-  return (0, import_crypto2.createHash)("sha256").update(input).digest();
-}
-function signSession(sessionId, finalContentHash, messageCount, firstCreatedAt) {
-  const privPath = privKeyPath(sessionId);
-  if (!(0, import_fs4.existsSync)(privPath)) {
-    throw new Error(`Private key not found: ${privPath}`);
-  }
-  const privateKey = (0, import_fs4.readFileSync)(privPath, "utf8");
-  const digest = sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt);
-  const sig = (0, import_crypto2.sign)(null, digest, privateKey);
-  return sig.toString("base64");
-}
-function verifySignature(publicKeyPem, signatureB64, sessionId, finalContentHash, messageCount, firstCreatedAt) {
+// src/cli/prune.ts
+var prune_exports = {};
+__export(prune_exports, {
+  runPrune: () => runPrune
+});
+function configRetentionDays() {
+  const configPath2 = (0, import_path6.join)((0, import_os7.homedir)(), ".chron", "config.json");
+  if (!(0, import_fs6.existsSync)(configPath2))
+    return null;
   try {
-    const digest = sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt);
-    const sigBuf = Buffer.from(signatureB64, "base64");
-    return (0, import_crypto2.verify)(null, digest, publicKeyPem, sigBuf);
+    const cfg = JSON.parse((0, import_fs6.readFileSync)(configPath2, "utf8"));
+    const v = Number(cfg.retention_days);
+    return isNaN(v) ? null : v;
   } catch {
-    return false;
+    return null;
   }
 }
-var import_crypto2, import_fs4, import_path4, import_os5;
-var init_signing = __esm({
-  "src/utils/signing.ts"() {
+function cutoffDate(days) {
+  const d = /* @__PURE__ */ new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+async function runPrune(args2) {
+  const dryRun = args2.includes("--dry-run");
+  const confirm = args2.includes("--confirm");
+  const olderArg = args2.find((a) => a.startsWith("--older-than="))?.split("=")[1];
+  if (!dryRun && !confirm) {
+    process.stderr.write(
+      "Usage: chron prune --older-than=<n>d [--dry-run | --confirm]\n\n  --dry-run   Show what would be deleted without deleting\n  --confirm   Actually delete (required for real deletion)\n\nExample: chron prune --older-than=90d --dry-run\n"
+    );
+    process.exit(1);
+  }
+  let days;
+  if (olderArg) {
+    days = parseInt(olderArg, 10);
+    if (isNaN(days) || days <= 0) {
+      process.stderr.write(`Invalid --older-than value: ${olderArg} (expected e.g. 90d)
+`);
+      process.exit(1);
+    }
+  } else {
+    const cfg = configRetentionDays();
+    if (!cfg) {
+      process.stderr.write(
+        "No --older-than specified and no retention_days in ~/.chron/config.json\n"
+      );
+      process.exit(1);
+    }
+    days = cfg;
+    process.stdout.write(`Using retention_days=${days} from config
+`);
+  }
+  const cutoff = cutoffDate(days);
+  const db = await initDb();
+  const stale = await db.select({
+    id: sessions.id,
+    title: sessions.title,
+    updated_at: sessions.updated_at,
+    msg_count: sql`count(${messages.id})`
+  }).from(sessions).leftJoin(messages, sql`${messages.session_id} = ${sessions.id}`).where(lt(sessions.updated_at, cutoff)).groupBy(sessions.id);
+  if (stale.length === 0) {
+    process.stdout.write(`No sessions older than ${days}d (cutoff: ${cutoff}).
+`);
+    return;
+  }
+  const totalMsgs = stale.reduce((s, r) => s + Number(r.msg_count), 0);
+  process.stdout.write(`
+Sessions to prune (last active before ${cutoff}):
+
+`);
+  for (const row of stale) {
+    process.stdout.write(`  ${row.updated_at.slice(0, 10)}  ${row.id.slice(0, 8)}  ${row.msg_count} msgs  ${row.title}
+`);
+  }
+  process.stdout.write(`
+  Total: ${stale.length} session(s), ${totalMsgs} message(s)
+
+`);
+  if (dryRun) {
+    process.stdout.write("Dry run \u2014 nothing deleted. Re-run with --confirm to delete.\n");
+    return;
+  }
+  for (const row of stale) {
+    await db.delete(sessions).where(sql`${sessions.id} = ${row.id}`);
+  }
+  process.stdout.write(`Pruned ${stale.length} session(s) and ${totalMsgs} message(s).
+`);
+}
+var import_fs6, import_path6, import_os7;
+var init_prune = __esm({
+  "src/cli/prune.ts"() {
     "use strict";
-    import_crypto2 = require("crypto");
-    import_fs4 = require("fs");
-    import_path4 = require("path");
-    import_os5 = require("os");
+    init_drizzle_orm();
+    import_fs6 = require("fs");
+    import_path6 = require("path");
+    import_os7 = require("os");
+    init_db2();
+    init_schema();
   }
 });
 
@@ -18193,7 +18508,7 @@ async function runSign(args2) {
 `);
     process.exit(1);
   }
-  if (!(0, import_fs6.existsSync)(privKeyPath(session.id))) {
+  if (!(0, import_fs8.existsSync)(privKeyPath(session.id))) {
     process.stderr.write(`Private key not found: ${privKeyPath(session.id)}
 `);
     process.stderr.write("The key is stored on the machine where the session was created.\n");
@@ -18228,8 +18543,8 @@ async function runSign(args2) {
     signature,
     signed_at: (/* @__PURE__ */ new Date()).toISOString()
   };
-  const sigFile = (0, import_path5.join)(process.cwd(), `${session.id.slice(0, 8)}.chron.sig`);
-  (0, import_fs5.writeFileSync)(sigFile, JSON.stringify(sigData, null, 2));
+  const sigFile = (0, import_path7.join)(process.cwd(), `${session.id.slice(0, 8)}.chron.sig`);
+  (0, import_fs7.writeFileSync)(sigFile, JSON.stringify(sigData, null, 2));
   process.stdout.write(`Signed session ${session.id.slice(0, 8)}
 `);
   process.stdout.write(`  messages : ${messageCount}
@@ -18239,17 +18554,17 @@ async function runSign(args2) {
   process.stdout.write(`  sig file : ${sigFile}
 `);
 }
-var import_fs5, import_path5, import_fs6;
+var import_fs7, import_path7, import_fs8;
 var init_sign = __esm({
   "src/cli/sign.ts"() {
     "use strict";
     init_drizzle_orm();
-    import_fs5 = require("fs");
-    import_path5 = require("path");
+    import_fs7 = require("fs");
+    import_path7 = require("path");
     init_db2();
     init_schema();
     init_signing();
-    import_fs6 = require("fs");
+    import_fs8 = require("fs");
   }
 });
 
@@ -18257,13 +18572,13 @@ var init_sign = __esm({
 function computeContentHash(sessionId, role, content, createdAt, prevHash, eventType) {
   const base = `${sessionId}|${role}|${content}|${createdAt}|${prevHash ?? ""}`;
   const input = eventType != null ? `${base}|${eventType}` : base;
-  return (0, import_crypto3.createHash)("sha256").update(input).digest("hex");
+  return (0, import_crypto4.createHash)("sha256").update(input).digest("hex");
 }
-var import_crypto3;
+var import_crypto4;
 var init_hash = __esm({
   "src/utils/hash.ts"() {
     "use strict";
-    import_crypto3 = require("crypto");
+    import_crypto4 = require("crypto");
   }
 });
 
@@ -18273,7 +18588,7 @@ __export(verify_exports, {
   runVerify: () => runVerify
 });
 function ok(msg) {
-  process.stdout.write(`  ${GREEN3}\u2713${RESET7} ${msg}
+  process.stdout.write(`  ${GREEN4}\u2713${RESET7} ${msg}
 `);
 }
 function fail(msg) {
@@ -18284,10 +18599,90 @@ function warn(msg) {
   process.stdout.write(`  ${YELLOW5}!${RESET7} ${msg}
 `);
 }
+async function runVerifyBundle(bundlePath) {
+  process.stdout.write(`
+${BOLD7}Verifying bundle${RESET7} ${bundlePath}
+
+`);
+  const tempDir = (0, import_path8.join)((0, import_os8.tmpdir)(), `chron-verify-${Date.now()}`);
+  (0, import_fs9.mkdirSync)(tempDir, { recursive: true });
+  try {
+    (0, import_child_process2.execSync)(`tar -xzf "${bundlePath}" -C "${tempDir}"`, { stdio: "pipe" });
+  } catch {
+    process.stderr.write(`Failed to extract bundle: ${bundlePath}
+`);
+    (0, import_fs9.rmSync)(tempDir, { recursive: true, force: true });
+    process.exit(1);
+  }
+  let allOk = true;
+  try {
+    const manifestPath = (0, import_path8.join)(tempDir, "manifest.json");
+    const manifestBytes = (0, import_fs9.readFileSync)(manifestPath);
+    const manifest = JSON.parse(manifestBytes.toString());
+    process.stdout.write(`${BOLD7}Manifest${RESET7} (${manifest.sessions.length} session(s), generated ${manifest.generated_at})
+`);
+    process.stdout.write(`
+${BOLD7}File integrity${RESET7}
+`);
+    for (const [rel, expectedHash] of Object.entries(manifest.files)) {
+      const filePath = (0, import_path8.join)(tempDir, rel);
+      try {
+        const content = (0, import_fs9.readFileSync)(filePath);
+        const actual = (0, import_fs9.createHash)("sha256").update(content).digest("hex");
+        if (actual === expectedHash) {
+          ok(rel);
+        } else {
+          fail(`${rel} \u2014 SHA256 mismatch (tampered)`);
+          allOk = false;
+        }
+      } catch {
+        fail(`${rel} \u2014 file missing from bundle`);
+        allOk = false;
+      }
+    }
+    process.stdout.write(`
+${BOLD7}Signature${RESET7}
+`);
+    const sigPath = (0, import_path8.join)(tempDir, "manifest.sig");
+    let sigFile = null;
+    try {
+      sigFile = JSON.parse((0, import_fs9.readFileSync)(sigPath).toString());
+    } catch {
+      warn("No manifest.sig \u2014 bundle was not signed");
+    }
+    if (sigFile?.session_id && sigFile?.signature) {
+      const pubKeyPath = (0, import_path8.join)(tempDir, "pubkeys", `${sigFile.session_id}.pub`);
+      try {
+        const pubKey = (0, import_fs9.readFileSync)(pubKeyPath, "utf8");
+        const valid = verifyBufferSignature(pubKey, sigFile.signature, manifestBytes);
+        if (valid) {
+          ok(`Ed25519 signature valid (session ${sigFile.session_id.slice(0, 8)})`);
+        } else {
+          fail("Ed25519 signature INVALID \u2014 manifest was altered after signing");
+          allOk = false;
+        }
+      } catch {
+        fail(`Public key not found for session ${sigFile.session_id.slice(0, 8)}`);
+        allOk = false;
+      }
+    }
+    process.stdout.write("\n");
+  } finally {
+    (0, import_fs9.rmSync)(tempDir, { recursive: true, force: true });
+  }
+  process.exit(allOk ? 0 : 1);
+}
 async function runVerify(args2) {
-  const prefix = args2[0];
+  const bundleArg = args2.find((a) => a.startsWith("--bundle="))?.split("=").slice(1).join("=");
+  if (bundleArg) {
+    await runVerifyBundle(bundleArg);
+    return;
+  }
+  const prefix = args2.find((a) => !a.startsWith("--"));
   if (!prefix) {
-    process.stderr.write("Usage: chron verify <session-id-prefix>\n");
+    process.stderr.write(
+      "Usage: chron verify <session-id-prefix>\n       chron verify --bundle=<bundle.chron.tar.gz>\n"
+    );
     process.exit(1);
   }
   const db = await initDb();
@@ -18329,6 +18724,27 @@ ${BOLD7}Verifying session ${session.id.slice(0, 8)}${RESET7} \u2014 ${session.ti
       ok(`All ${chained.length} hashes valid`);
   }
   process.stdout.write(`
+${BOLD7}Clock attestation${RESET7}
+`);
+  if (session.metadata) {
+    try {
+      const meta = JSON.parse(session.metadata);
+      const status = meta.clock_sync_status ?? "unknown";
+      if (status === "synchronized") {
+        const offset = meta.clock_offset_ms !== void 0 ? ` (offset: ${meta.clock_offset_ms > 0 ? "+" : ""}${meta.clock_offset_ms}ms)` : "";
+        ok(`Clock synchronized via NTP${offset}`);
+      } else if (status === "not_synchronized") {
+        fail(`Clock NOT synchronized with NTP \u2014 timing analysis unreliable`);
+      } else {
+        warn("Clock sync status unknown (NTP check failed or offline)");
+      }
+    } catch {
+      warn("Could not parse session metadata");
+    }
+  } else {
+    warn("No clock attestation \u2014 session created before NTP support (v0.1.24)");
+  }
+  process.stdout.write(`
 ${BOLD7}Signature${RESET7}
 `);
   if (!session.public_key) {
@@ -18358,18 +18774,22 @@ ${BOLD7}Signature${RESET7}
   const allOk = chainOk && (session.signature ? true : true);
   process.exit(allOk ? 0 : 1);
 }
-var RESET7, BOLD7, GREEN3, RED3, DIM6, YELLOW5;
+var import_fs9, import_path8, import_os8, import_child_process2, RESET7, BOLD7, GREEN4, RED3, DIM6, YELLOW5;
 var init_verify = __esm({
   "src/cli/verify.ts"() {
     "use strict";
     init_drizzle_orm();
+    import_fs9 = require("fs");
+    import_path8 = require("path");
+    import_os8 = require("os");
+    import_child_process2 = require("child_process");
     init_db2();
     init_schema();
     init_hash();
     init_signing();
     RESET7 = "\x1B[0m";
     BOLD7 = "\x1B[1m";
-    GREEN3 = "\x1B[32m";
+    GREEN4 = "\x1B[32m";
     RED3 = "\x1B[31m";
     DIM6 = "\x1B[2m";
     YELLOW5 = "\x1B[33m";
@@ -18415,6 +18835,11 @@ async function main() {
       await runSummary2(args);
       break;
     }
+    case "prune": {
+      const { runPrune: runPrune2 } = await Promise.resolve().then(() => (init_prune(), prune_exports));
+      await runPrune2(args);
+      break;
+    }
     case "sign": {
       const { runSign: runSign2 } = await Promise.resolve().then(() => (init_sign(), sign_exports));
       await runSign2(args);
@@ -18442,9 +18867,11 @@ Commands:
   summary         Structured summary of a session (timeline, mutations, secrets)
   sign            Sign a session with its Ed25519 key \u2014 produces a .chron.sig file
   verify          Verify a session's hash chain and Ed25519 signature
+  prune           Delete sessions older than a retention cutoff
 
 Options (history):
   --limit=<n>     Max sessions to show (default: 20)
+  --ref=<value>   Filter by external_ref prefix (e.g. --ref=jira: or --ref=jira:ENG-123)
   <id-prefix>     Show full log for the session with this ID prefix
 
 Options (report):
@@ -18452,8 +18879,21 @@ Options (report):
   --format=soc2     Generate SOC 2 HTML evidence package
   --output=<file>   Output file for --format=soc2 (default: soc2-report.html)
 
-Options (export / secrets / sign / verify):
-  <id-prefix>     Scope to a single session
+Options (export):
+  <id-prefix>       Markdown export for a single session
+  --signed          Tamper-evident bundle (JSONL + manifest + Ed25519 sig)
+  --session=<id>    Filter bundle to a single session
+  --since=<range>   Filter bundle by date: 7d, 30d, or YYYY-MM-DD
+  --output=<file>   Output path (default: bundle.chron.tar.gz)
+
+Options (verify):
+  <id-prefix>       Verify a session's hash chain + Ed25519 signature
+  --bundle=<file>   Verify a signed bundle offline (no DB needed)
+
+Options (prune):
+  --older-than=<n>d  Cutoff in days (falls back to retention_days in config)
+  --dry-run          Show what would be deleted without deleting
+  --confirm          Required flag to actually delete
 `
       );
       process.exit(command ? 1 : 0);
