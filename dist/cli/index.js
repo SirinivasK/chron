@@ -18235,8 +18235,8 @@ function formatLatency(ms) {
 function formatTs(iso) {
   return iso.replace("T", " ").replace(/\.\d+.*$/, "");
 }
-async function buildSummary(sessionPrefix) {
-  const db = await initDb();
+async function buildSummary(sessionPrefix, existingDb) {
+  const db = existingDb ?? await initDb();
   const allSessions = await db.select().from(sessions);
   const session = allSessions.find((s) => s.id.startsWith(sessionPrefix));
   if (!session)

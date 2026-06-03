@@ -39698,8 +39698,8 @@ function detectMutations(content) {
   }
   return hits;
 }
-async function buildSummary(sessionPrefix) {
-  const db = await initDb();
+async function buildSummary(sessionPrefix, existingDb) {
+  const db = existingDb ?? await initDb();
   const allSessions = await db.select().from(sessions);
   const session = allSessions.find((s) => s.id.startsWith(sessionPrefix));
   if (!session)
@@ -39771,7 +39771,7 @@ var init_summary = __esm({
 // src/tools/summary.ts
 function summarizeSession(_db) {
   return async (args) => {
-    const data = await buildSummary(args.session_id);
+    const data = await buildSummary(args.session_id, _db);
     if (!data) {
       return {
         content: [{
