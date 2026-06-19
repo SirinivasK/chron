@@ -1,10 +1,10 @@
 <div align="center">
   <img src="assets/chron-icon-png-transperent.png" alt="Chron" width="96" />
   <h1>Chron</h1>
-  <p>A timestamped audit trail for every AI conversation — stored locally, owned by you.</p>
+  <p>Local-first, tamper-evident audit trails for AI conversations, tool calls, code changes, and secrets.</p>
 </div>
 
-AI tools show when you sent a message. Chron logs when the AI responded too — and keeps a permanent, queryable record of every exchange across every tool you use.
+AI tools show when you sent a message. Chron logs when the AI responded too — and keeps a permanent, queryable, tamper-evident record of the AI work happening across your tools.
 
 Works with Claude Desktop, Claude Code, Cursor, Windsurf, and any MCP-compatible AI tool.
 
@@ -16,9 +16,29 @@ AI tools produce no audit trail by default. You cannot answer:
 - What did the AI say, and when exactly?
 - How long did the AI take to respond?
 - What was the full conversation that produced this output?
+- Which tool calls, command results, and code diffs happened during the session?
+- Did a secret or credential get pasted into an AI prompt?
+- Has this audit record been edited after the fact?
 - What did I ask Claude last week about this codebase?
 
-Chron fixes that. Every exchange is logged with a precise local datetime (including timezone offset) to a SQLite file you own. No cloud, no vendor lock-in, no data leaving your machine.
+Chron fixes that. Every exchange is logged with a precise local datetime (including timezone offset) to a SQLite file you own. It can hash-chain every event, sign sessions with Ed25519, detect secrets/PII, produce SOC 2 evidence, and stream metadata-only events to your SIEM. No cloud, no vendor lock-in, no message content leaving your machine.
+
+---
+
+## What Chron captures
+
+Chron stores a local audit trail of:
+
+- User and assistant messages
+- Tool calls and tool results
+- Code changes with file path, operation, and unified diff
+- Session start/resume metadata, including parent session and external refs
+- Secret/PII detections with masked values
+- Hash-chain integrity data
+- Optional Ed25519 session signatures
+- Optional NTP clock attestation metadata
+
+Chron's SIEM integrations send only metadata: session starts, role-only message events, and masked secret detections. Message content and raw secret values stay local.
 
 ---
 
@@ -49,6 +69,18 @@ npm install -g chron-mcp
 
 First run creates `~/.chron/chron.db` automatically. No database setup, no env vars, no migrations.
 
+Check your setup:
+
+```bash
+chron doctor
+```
+
+For CI or automation:
+
+```bash
+chron doctor --json
+```
+
 ---
 
 ## CLI
@@ -65,17 +97,56 @@ Commands:
   secrets         List detected secrets across sessions
   settings        View current configuration
   connect         Connect to a SIEM integration (crowdstrike, sentinel, splunk)
+  summary         Structured summary of a session (timeline, mutations, secrets)
+  sign            Sign a session with its Ed25519 key — produces a .chron.sig file
+  verify          Verify a session's hash chain and Ed25519 signature
+  prune           Delete sessions older than a retention cutoff
+  doctor          Check your Chron setup — Node version, DB, MCP configs, SIEM
 
 Options (history):
   --limit=<n>     Max sessions to show (default: 20)
+  --ref=<value>   Filter by external_ref prefix (e.g. --ref=jira:ENG-123)
   <id-prefix>     Show full log for the session with this ID prefix
 
 Options (report):
-  --since=<range> Filter by date: 7d, 30d, or YYYY-MM-DD (default: all time)
+  --since=<range>   Filter by date: 7d, 30d, or YYYY-MM-DD (default: all time)
+  --format=soc2     Generate SOC 2 HTML evidence package
+  --output=<file>   Output file for --format=soc2
 
-Options (export / secrets):
-  <id-prefix>     Scope to a single session
+Options (export):
+  <id-prefix>       Markdown export for a single session
+  --signed          Tamper-evident bundle (JSONL + manifest + Ed25519 sig)
+  --session=<id>    Filter bundle to a single session
+  --since=<range>   Filter bundle by date: 7d, 30d, or YYYY-MM-DD
+  --output=<file>   Output path (default: bundle.chron.tar.gz)
+
+Options (verify):
+  <id-prefix>       Verify a session's hash chain + Ed25519 signature
+  --bundle=<file>   Verify a signed bundle offline (no DB needed)
+
+Options (prune):
+  --older-than=<n>d  Cutoff in days (falls back to retention_days in config)
+  --dry-run          Show what would be deleted without deleting
+  --confirm          Required flag to actually delete
+
+Options (doctor):
+  --json             Machine-readable JSON output
 ```
+
+### `chron doctor`
+
+`chron doctor` validates the pieces that make Chron useful in real life:
+
+- Node.js version (v18+ required)
+- Local Chron version vs npm latest
+- `npx chron-mcp --version`
+- DB directory and key directory write access
+- Claude Desktop, Claude Code, Cursor, and Windsurf MCP config presence
+- Whether Chron is configured in each MCP client
+- Optional HTTP mode health check on `/health`
+- Splunk, Sentinel, and LogScale configuration via env vars or `~/.chron/config.json`
+
+Warnings for optional integrations do not fail the command. Real failures exit with code `1`.
 
 ---
 
@@ -186,21 +257,26 @@ Chron ships with `skills/chron.skill.md` — a plain-text instruction file that 
 | `init_session` | Initialize or resume a session — returns session_id, message count, and recent messages in one call |
 | `start_session` | Create a new named audit session (legacy — prefer `init_session`) |
 | `log_message` | Record a single message with the current local datetime |
+| `log_tool_call` | Record an AI tool invocation as an audit event |
+| `log_tool_result` | Record tool output and link it to a tool call |
+| `log_code_change` | Record a file edit with operation and unified diff |
 | `log_exchange` | Log a user/assistant pair atomically (for batch imports) |
 | `list_sessions` | List all sessions ordered by most recently active |
 | `get_session_history` | Retrieve the full timestamped log for a session |
 | `verify_session` | Verify the tamper-evident hash chain — detects any post-log edits |
 | `scan_prompt` | Scan text for secrets (API keys, credentials) before logging — returns masked detections |
 | `rehydrate_response` | Restore redacted placeholders in an assistant response back to their original values |
+| `delete_session` | Delete a session and cascade its messages/secrets |
+| `summarize_session` | Return a timeline summary with latency, mutations, secrets, and prod references |
 
 ---
 
-## Tamper-evident hash chaining
+## Integrity and signing
 
-Every message is linked to the previous one via a SHA-256 chain:
+Every new audit event is linked to the previous one via a SHA-256 chain:
 
 ```
-content_hash = SHA256(session_id | role | content | created_at | prev_hash)
+content_hash = SHA256(session_id | role | content | created_at | prev_hash | event_type)
 ```
 
 `verify_session` walks the chain and returns:
@@ -208,6 +284,58 @@ content_hash = SHA256(session_id | role | content | created_at | prev_hash)
 - `valid: false, first_break: <id>` — exact row ID of the first tampered message
 
 This turns your local log into a verifiable audit artifact. Any edit to a stored message — content, timestamp, or role — breaks the chain and is detected immediately.
+
+Chron also generates an Ed25519 keypair per new session when possible. The private key stays under `~/.chron/keys`. Use:
+
+```bash
+chron sign <session-id-prefix>
+chron verify <session-id-prefix>
+```
+
+For portable evidence:
+
+```bash
+chron export --signed --session=<session-id-prefix> --output=evidence.chron.tar.gz
+chron verify --bundle=evidence.chron.tar.gz
+```
+
+`chron verify` also reports NTP clock attestation metadata for sessions created with clock-check support.
+
+---
+
+## Secrets and PII detection
+
+Chron can detect and mask:
+
+- API keys: OpenAI, Anthropic, AWS, Google, GitHub, Slack, Stripe, SendGrid, HuggingFace
+- Private keys, JWTs, URL credentials, password assignments, env-style secrets
+- Credit cards, IBANs, SSNs, DOBs, passports
+- Email addresses, US/E.164 phone numbers, internal RFC-1918 IPs
+
+Use:
+
+```bash
+chron secrets
+chron secrets <session-id-prefix>
+```
+
+MCP tools can also call `scan_prompt` before sending content to an AI tool. Redaction uses `$CHRON_*` placeholders and `rehydrate_response` can restore values from the returned token map.
+
+---
+
+## Reports and evidence
+
+```bash
+chron history
+chron summary <session-id-prefix>
+chron report --since=30d
+chron report --format=soc2 --output=soc2-report.html
+chron export <session-id-prefix>
+chron export --signed --since=30d --output=bundle.chron.tar.gz
+chron prune --older-than=90d --dry-run
+```
+
+The SOC 2 report and signed bundles are designed for audit review, legal hold, and incident reconstruction without sending conversation content to Chron infrastructure.
 
 ---
 
@@ -484,6 +612,7 @@ All six must be set for events to flow. Token refresh is automatic (1-hour Azure
 | `CHRON_SENTINEL_STREAM` | _(none)_ | Stream name (e.g. `Custom-ChronEvents_CL`) |
 | `CHRON_SPLUNK_URL` | _(none)_ | Splunk HEC base URL (enables Splunk integration) |
 | `CHRON_SPLUNK_TOKEN` | _(none)_ | Splunk HEC ingest token |
+| `CHRON_SPLUNK_INSECURE` | _(none)_ | Set to `1` to skip TLS verification for local Splunk/self-signed certs |
 | `CHRON_RELAY_URL` | _(none)_ | Generic relay endpoint (any SIEM or webhook) |
 | `CHRON_RELAY_TOKEN` | _(none)_ | Bearer token for generic relay |
 

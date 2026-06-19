@@ -1184,7 +1184,7 @@ var init_sql = __esm({
         return new SQL([new StringChunk(str)]);
       }
       sql2.raw = raw;
-      function join9(chunks, separator) {
+      function join10(chunks, separator) {
         const result = [];
         for (const [i, chunk] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -1194,7 +1194,7 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql2.join = join9;
+      sql2.join = join10;
       function identifier(value) {
         return new Name(value);
       }
@@ -2806,7 +2806,7 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync6 = (path) => fs.readFileSync(path, "utf-8");
+    var readFileSync7 = (path) => fs.readFileSync(path, "utf-8");
     var readFile = (path) => new Promise((resolve, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
@@ -2818,7 +2818,7 @@ var require_filesystem = __commonJS({
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync6,
+      readFileSync: readFileSync7,
       readFile
     };
   }
@@ -2830,7 +2830,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync6 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync7 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command2 = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
@@ -2911,7 +2911,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync6(LDD_PATH);
+        const lddContent = readFileSync7(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -2968,7 +2968,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync6(LDD_PATH);
+        const lddContent = readFileSync7(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -3553,9 +3553,9 @@ function executeStmt(db, stmt, intMode) {
       const lastInsertRowid = void 0;
       return new ResultSetImpl(columns, columnTypes, rows, rowsAffected, lastInsertRowid);
     } else {
-      const info = sqlStmt.run(args2);
-      const rowsAffected = info.changes;
-      const lastInsertRowid = BigInt(info.lastInsertRowid);
+      const info2 = sqlStmt.run(args2);
+      const rowsAffected = info2.changes;
+      const lastInsertRowid = BigInt(info2.lastInsertRowid);
       return new ResultSetImpl([], [], [], rowsAffected, lastInsertRowid);
     }
   } catch (e) {
@@ -7488,13 +7488,13 @@ var require_websocket_server = __commonJS({
           }
         }
         if (this.options.verifyClient) {
-          const info = {
+          const info2 = {
             origin: req.headers[`${version4 === 8 ? "sec-websocket-origin" : "origin"}`],
             secure: !!(req.socket.authorized || req.socket.encrypted),
             req
           };
           if (this.options.verifyClient.length === 2) {
-            this.options.verifyClient(info, (verified, code, message, headers) => {
+            this.options.verifyClient(info2, (verified, code, message, headers) => {
               if (!verified) {
                 return abortHandshake(socket, code || 401, message, headers);
               }
@@ -7510,7 +7510,7 @@ var require_websocket_server = __commonJS({
             });
             return;
           }
-          if (!this.options.verifyClient(info))
+          if (!this.options.verifyClient(info2))
             return abortHandshake(socket, 401);
         }
         this.completeUpgrade(extensions, key, protocols, req, socket, head, cb);
@@ -14252,7 +14252,7 @@ var init_select2 = __esm({
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table))
             this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join9) => join9.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join10) => join10.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -15141,7 +15141,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join9) => join9.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join10) => join10.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -16575,8 +16575,8 @@ function getDbPath() {
     return envPath;
   return (0, import_path.join)((0, import_os.homedir)(), ".chron", "chron.db");
 }
-async function initDb(dbPath2) {
-  const path = dbPath2 ?? getDbPath();
+async function initDb(dbPath3) {
+  const path = dbPath3 ?? getDbPath();
   if (!path.startsWith(":")) {
     (0, import_fs.mkdirSync)((0, import_path.dirname)(path), { recursive: true });
   }
@@ -16890,14 +16890,14 @@ async function queryIntegrity(db) {
       unchained++;
       continue;
     }
-    let ok2 = true;
+    let ok3 = true;
     for (let i = 1; i < chained.length; i++) {
       if (chained[i].prev_hash !== chained[i - 1].content_hash) {
-        ok2 = false;
+        ok3 = false;
         break;
       }
     }
-    if (ok2)
+    if (ok3)
       intact++;
     else {
       broken++;
@@ -17356,7 +17356,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.24",
+      version: "0.1.25",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -17843,7 +17843,7 @@ ${DIM4}Sending test event...${RESET5} `);
       }
     }]
   }]);
-  let ok2 = false;
+  let ok3 = false;
   let statusCode = 0;
   try {
     const res = await fetch(url, {
@@ -17855,7 +17855,7 @@ ${DIM4}Sending test event...${RESET5} `);
       body: testPayload
     });
     statusCode = res.status;
-    ok2 = res.ok;
+    ok3 = res.ok;
   } catch (e) {
     process.stdout.write(`${RED}failed${RESET5}
 `);
@@ -17864,7 +17864,7 @@ ${DIM4}Sending test event...${RESET5} `);
 `);
     process.exit(1);
   }
-  if (!ok2) {
+  if (!ok3) {
     process.stdout.write(`${RED}failed (HTTP ${statusCode})${RESET5}
 `);
     process.stderr.write(`  ${RED}Check your URL and token, then try again.${RESET5}
@@ -18796,6 +18796,352 @@ var init_verify = __esm({
   }
 });
 
+// src/cli/doctor.ts
+var doctor_exports = {};
+__export(doctor_exports, {
+  runDoctor: () => runDoctor
+});
+function ok2(label, detail = "") {
+  process.stdout.write(`  ${GREEN5}\u2713${RESET8} ${label}${detail ? `  ${DIM7}${detail}${RESET8}` : ""}
+`);
+}
+function fail2(label, detail = "") {
+  process.stdout.write(`  ${RED4}\u2717${RESET8} ${label}${detail ? `  ${DIM7}${detail}${RESET8}` : ""}
+`);
+}
+function warn2(label, detail = "") {
+  process.stdout.write(`  ${YELLOW6}!${RESET8} ${label}${detail ? `  ${DIM7}${detail}${RESET8}` : ""}
+`);
+}
+function info(label, detail = "") {
+  process.stdout.write(`  ${CYAN6}\xB7${RESET8} ${label}${detail ? `  ${DIM7}${detail}${RESET8}` : ""}
+`);
+}
+function section(title) {
+  process.stdout.write(`
+${BOLD8}${title}${RESET8}
+`);
+}
+function canWrite(dir) {
+  try {
+    (0, import_fs10.accessSync)(dir, import_fs10.constants.W_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+function testWriteFile(path) {
+  const probe = path + ".chron-probe";
+  try {
+    (0, import_fs10.writeFileSync)(probe, "ok");
+    (0, import_fs10.unlinkSync)(probe);
+    return true;
+  } catch {
+    return false;
+  }
+}
+function dbPath2() {
+  return process.env.CHRON_DB_PATH ?? (0, import_path9.join)((0, import_os9.homedir)(), ".chron", "chron.db");
+}
+function keysDir2() {
+  return (0, import_path9.join)((0, import_os9.homedir)(), ".chron", "keys");
+}
+function loadConfig2() {
+  try {
+    return JSON.parse((0, import_fs10.readFileSync)((0, import_path9.join)((0, import_os9.homedir)(), ".chron", "config.json"), "utf8"));
+  } catch {
+    return {};
+  }
+}
+function mcpConfigs() {
+  const home = (0, import_os9.homedir)();
+  const plat = (0, import_os9.platform)();
+  const candidates = [
+    {
+      name: "Claude Desktop",
+      path: plat === "win32" ? (0, import_path9.join)(process.env.APPDATA ?? (0, import_path9.join)(home, "AppData", "Roaming"), "Claude", "claude_desktop_config.json") : (0, import_path9.join)(home, "Library", "Application Support", "Claude", "claude_desktop_config.json")
+    },
+    { name: "Claude Code", path: (0, import_path9.join)(home, ".claude.json") },
+    { name: "Cursor", path: (0, import_path9.join)(home, ".cursor", "mcp.json") },
+    { name: "Windsurf", path: (0, import_path9.join)(home, ".codeium", "windsurf", "mcp_config.json") }
+  ];
+  return candidates.map((c) => {
+    if (!(0, import_fs10.existsSync)(c.path)) {
+      return { name: c.name, path: c.path, exists: false, chronConfigured: null };
+    }
+    try {
+      const raw = JSON.parse((0, import_fs10.readFileSync)(c.path, "utf8"));
+      const servers = raw.mcpServers ?? {};
+      const configured = Object.keys(servers).some(
+        (k) => k === "chron" || k === "chron-mcp" || String(servers[k]?.command ?? "").includes("chron")
+      );
+      return { name: c.name, path: c.path, exists: true, chronConfigured: configured };
+    } catch {
+      return { name: c.name, path: c.path, exists: true, chronConfigured: null, note: "Could not parse config" };
+    }
+  });
+}
+function npmLatestVersion() {
+  try {
+    return (0, import_child_process3.execSync)("npm view chron-mcp version --json 2>/dev/null", { timeout: 8e3 }).toString().trim().replace(/"/g, "");
+  } catch {
+    return null;
+  }
+}
+function npxWorks() {
+  try {
+    (0, import_child_process3.execSync)("npx chron-mcp --version 2>/dev/null", { timeout: 8e3 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+async function httpHealthCheck(port = 3001) {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2e3);
+    const res = await fetch(`http://localhost:${port}/health`, { signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok)
+      return { running: false };
+    const body = await res.json();
+    return { running: true, version: body.version };
+  } catch {
+    return { running: false };
+  }
+}
+async function runDoctor(args2) {
+  const jsonMode = args2.includes("--json");
+  const port = parseInt(process.env.PORT ?? "3001", 10);
+  const results = [];
+  if (!jsonMode)
+    process.stdout.write(`
+${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}
+`);
+  if (!jsonMode)
+    section("Runtime");
+  const nodeVer = process.version.replace("v", "");
+  const [nodeMajor] = nodeVer.split(".").map(Number);
+  const nodeOk = (nodeMajor ?? 0) >= 18;
+  results.push({ pass: nodeOk, label: `Node.js ${process.version}`, fix: nodeOk ? void 0 : "Upgrade Node.js to v18 or newer: https://nodejs.org" });
+  if (!jsonMode)
+    (nodeOk ? ok2 : fail2)(`Node.js ${process.version}`, nodeOk ? "" : "requires \u2265 18");
+  const latestVersion = npmLatestVersion();
+  if (latestVersion) {
+    const upToDate = import_package2.version === latestVersion;
+    results.push({
+      pass: upToDate,
+      label: `chron-mcp ${import_package2.version}${upToDate ? "" : ` (latest: ${latestVersion})`}`,
+      fix: upToDate ? void 0 : `npm install -g chron-mcp@latest`
+    });
+    if (!jsonMode)
+      (upToDate ? ok2 : warn2)(`chron-mcp ${import_package2.version}`, upToDate ? "up to date" : `latest is ${latestVersion} \u2014 run: npm install -g chron-mcp@latest`);
+  } else {
+    results.push({ pass: "warn", label: `chron-mcp ${import_package2.version}`, detail: "Could not reach npm to check for updates" });
+    if (!jsonMode)
+      warn2(`chron-mcp ${import_package2.version}`, "could not check npm for updates");
+  }
+  const npxOk = npxWorks();
+  results.push({ pass: npxOk, label: "npx chron-mcp --version", fix: npxOk ? void 0 : "Run: npm install -g chron-mcp" });
+  if (!jsonMode)
+    (npxOk ? ok2 : fail2)("npx chron-mcp --version", npxOk ? "works" : "failed \u2014 run: npm install -g chron-mcp");
+  if (!jsonMode)
+    section("Storage");
+  const db = dbPath2();
+  const dbDir = (0, import_path9.join)(db, "..");
+  const dbDirExists = (0, import_fs10.existsSync)(dbDir);
+  if (!dbDirExists) {
+    try {
+      (0, import_fs10.mkdirSync)(dbDir, { recursive: true });
+    } catch {
+    }
+  }
+  const dbWritable = testWriteFile(dbDir);
+  const dbExists = (0, import_fs10.existsSync)(db);
+  results.push({
+    pass: dbWritable,
+    label: `DB directory: ${dbDir}`,
+    detail: dbExists ? "database found" : "no database yet (will be created on first use)",
+    fix: dbWritable ? void 0 : `mkdir -p "${dbDir}" && chmod 700 "${dbDir}"`
+  });
+  if (!jsonMode)
+    (dbWritable ? ok2 : fail2)(`DB: ${db}`, dbExists ? "found" : "not yet created \u2014 will init on first use");
+  if (!dbWritable && !jsonMode)
+    info("fix", `mkdir -p "${dbDir}" && chmod 700 "${dbDir}"`);
+  const keys = keysDir2();
+  const keysExist = (0, import_fs10.existsSync)(keys);
+  if (!keysExist) {
+    try {
+      (0, import_fs10.mkdirSync)(keys, { recursive: true });
+    } catch {
+    }
+  }
+  const keysWritable = canWrite(keys);
+  results.push({
+    pass: keysWritable,
+    label: `Keys directory: ${keys}`,
+    fix: keysWritable ? void 0 : `mkdir -p "${keys}" && chmod 700 "${keys}"`
+  });
+  if (!jsonMode)
+    (keysWritable ? ok2 : fail2)(`Keys: ${keys}`, keysWritable ? "" : "not writable \u2014 Ed25519 signing will fail");
+  if (!jsonMode)
+    section("MCP Tool Configurations");
+  const tools = mcpConfigs();
+  const foundTools = tools.filter((t) => t.exists);
+  if (foundTools.length === 0) {
+    results.push({ pass: "warn", label: "No MCP tool config files found", fix: "Install Claude Desktop or Claude Code and add chron to mcpServers" });
+    if (!jsonMode)
+      warn2("No MCP tool config files detected (Claude Desktop, Claude Code, Cursor, Windsurf)");
+  }
+  for (const t of tools) {
+    if (!t.exists) {
+      results.push({ pass: "skip", label: `${t.name}: not installed` });
+      if (!jsonMode)
+        info(`${t.name}`, "not installed");
+      continue;
+    }
+    if (t.chronConfigured === null) {
+      results.push({ pass: "warn", label: `${t.name}: config parse error`, detail: t.note });
+      if (!jsonMode)
+        warn2(`${t.name}`, t.note ?? "config parse error");
+    } else if (t.chronConfigured) {
+      results.push({ pass: true, label: `${t.name}: chron configured` });
+      if (!jsonMode)
+        ok2(`${t.name}`, "chron configured");
+    } else {
+      results.push({
+        pass: "warn",
+        label: `${t.name}: chron NOT in mcpServers`,
+        fix: `Add chron to mcpServers in ${t.path}
+      See: https://github.com/sirinivask/chron#installation`
+      });
+      if (!jsonMode)
+        warn2(`${t.name}`, `chron not in mcpServers \u2014 add it to ${t.path}`);
+    }
+  }
+  if (!jsonMode)
+    section("HTTP Mode");
+  const health = await httpHealthCheck(port);
+  if (health.running) {
+    results.push({ pass: true, label: `HTTP server responding on port ${port}`, detail: health.version ? `v${health.version}` : void 0 });
+    if (!jsonMode)
+      ok2(`HTTP /health on port ${port}`, health.version ? `v${health.version}` : "");
+  } else {
+    results.push({ pass: "skip", label: `HTTP server not running on port ${port}`, detail: "optional \u2014 only needed for ChatGPT / non-stdio MCP clients" });
+    if (!jsonMode)
+      info(`HTTP server not running on port ${port}`, "optional \u2014 start with CHRON_TRANSPORT=http npx chron-mcp");
+  }
+  if (!jsonMode)
+    section("SIEM Integrations");
+  const config = loadConfig2();
+  const siems = [
+    {
+      name: "Splunk",
+      envOk: !!(process.env.CHRON_SPLUNK_URL && process.env.CHRON_SPLUNK_TOKEN),
+      cfgOk: !!(config.splunk && config.splunk.url)
+    },
+    {
+      name: "Microsoft Sentinel",
+      envOk: !!(process.env.CHRON_SENTINEL_DCE && process.env.CHRON_SENTINEL_CLIENT_ID),
+      cfgOk: !!(config.sentinel && config.sentinel.dce)
+    },
+    {
+      name: "CrowdStrike LogScale",
+      envOk: !!(process.env.CHRON_LOGSCALE_URL && process.env.CHRON_LOGSCALE_TOKEN),
+      cfgOk: !!(config.logscale && config.logscale.url)
+    }
+  ];
+  let anySiem = false;
+  for (const s of siems) {
+    if (s.envOk || s.cfgOk) {
+      anySiem = true;
+      results.push({ pass: true, label: `${s.name} connected`, detail: s.envOk ? "via env" : "via ~/.chron/config.json" });
+      if (!jsonMode)
+        ok2(`${s.name}`, s.envOk ? "via env vars" : "via ~/.chron/config.json");
+    } else {
+      results.push({ pass: "skip", label: `${s.name}: not configured`, detail: "optional" });
+      if (!jsonMode)
+        info(`${s.name}`, "not configured \u2014 run: chron connect splunk / sentinel / crowdstrike");
+    }
+  }
+  if (!anySiem && !jsonMode) {
+    process.stdout.write(`  ${DIM7}No SIEM configured. Events will only be stored locally.${RESET8}
+`);
+  }
+  const failures = results.filter((r) => r.pass === false);
+  const warnings = results.filter((r) => r.pass === "warn");
+  if (!jsonMode) {
+    process.stdout.write("\n");
+    if (failures.length === 0 && warnings.length === 0) {
+      process.stdout.write(`${GREEN5}${BOLD8}All checks passed.${RESET8} Chron is correctly set up.
+
+`);
+    } else {
+      if (failures.length > 0) {
+        process.stdout.write(`${RED4}${BOLD8}${failures.length} issue(s) need attention:${RESET8}
+`);
+        for (const f of failures) {
+          process.stdout.write(`  ${RED4}\u2717${RESET8} ${f.label}
+`);
+          if (f.fix)
+            process.stdout.write(`    ${DIM7}\u2192 ${f.fix}${RESET8}
+`);
+        }
+        process.stdout.write("\n");
+      }
+      if (warnings.length > 0) {
+        process.stdout.write(`${YELLOW6}${BOLD8}${warnings.length} warning(s):${RESET8}
+`);
+        for (const w of warnings) {
+          process.stdout.write(`  ${YELLOW6}!${RESET8} ${w.label}
+`);
+          if (w.fix)
+            process.stdout.write(`    ${DIM7}\u2192 ${w.fix}${RESET8}
+`);
+        }
+        process.stdout.write("\n");
+      }
+    }
+  }
+  if (jsonMode) {
+    process.stdout.write(JSON.stringify({
+      chron_version: import_package2.version,
+      node_version: process.version,
+      checks: results.map((r) => ({
+        label: r.label,
+        pass: r.pass,
+        detail: r.detail,
+        fix: r.fix
+      })),
+      summary: {
+        failures: failures.length,
+        warnings: warnings.length,
+        ok: results.filter((r) => r.pass === true).length,
+        skipped: results.filter((r) => r.pass === "skip").length
+      }
+    }, null, 2) + "\n");
+  }
+  process.exit(failures.length > 0 ? 1 : 0);
+}
+var import_os9, import_path9, import_fs10, import_child_process3, import_package2, RESET8, BOLD8, DIM7, GREEN5, RED4, YELLOW6, CYAN6;
+var init_doctor = __esm({
+  "src/cli/doctor.ts"() {
+    "use strict";
+    import_os9 = require("os");
+    import_path9 = require("path");
+    import_fs10 = require("fs");
+    import_child_process3 = require("child_process");
+    import_package2 = __toESM(require_package());
+    RESET8 = "\x1B[0m";
+    BOLD8 = "\x1B[1m";
+    DIM7 = "\x1B[2m";
+    GREEN5 = "\x1B[32m";
+    RED4 = "\x1B[31m";
+    YELLOW6 = "\x1B[33m";
+    CYAN6 = "\x1B[36m";
+  }
+});
+
 // src/cli/index.ts
 var [, , command, ...args] = process.argv;
 async function main() {
@@ -18850,6 +19196,11 @@ async function main() {
       await runVerify2(args);
       break;
     }
+    case "doctor": {
+      const { runDoctor: runDoctor2 } = await Promise.resolve().then(() => (init_doctor(), doctor_exports));
+      await runDoctor2(args);
+      break;
+    }
     default: {
       const name = command ? `Unknown command: ${command}
 
@@ -18868,6 +19219,7 @@ Commands:
   sign            Sign a session with its Ed25519 key \u2014 produces a .chron.sig file
   verify          Verify a session's hash chain and Ed25519 signature
   prune           Delete sessions older than a retention cutoff
+  doctor          Check your Chron setup \u2014 Node version, DB, MCP configs, SIEM
 
 Options (history):
   --limit=<n>     Max sessions to show (default: 20)
@@ -18894,6 +19246,9 @@ Options (prune):
   --older-than=<n>d  Cutoff in days (falls back to retention_days in config)
   --dry-run          Show what would be deleted without deleting
   --confirm          Required flag to actually delete
+
+Options (doctor):
+  --json             Machine-readable JSON output
 `
       );
       process.exit(command ? 1 : 0);
