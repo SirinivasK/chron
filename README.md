@@ -102,6 +102,7 @@ Commands:
   verify          Verify a session's hash chain and Ed25519 signature
   prune           Delete sessions older than a retention cutoff
   doctor          Check your Chron setup — Node version, DB, MCP configs, SIEM
+  import          Import conversations from external AI tools into Chron
 
 Options (history):
   --limit=<n>     Max sessions to show (default: 20)
@@ -131,6 +132,9 @@ Options (prune):
 
 Options (doctor):
   --json             Machine-readable JSON output
+
+Options (import):
+  chatgpt <file>     Import from ChatGPT export (.zip or conversations.json)
 ```
 
 ### `chron doctor`
@@ -640,6 +644,34 @@ Point your MCP config at the URL:
   }
 }
 ```
+
+---
+
+## ChatGPT import
+
+Bring your existing ChatGPT history into Chron's tamper-evident audit trail.
+
+```bash
+# From a ChatGPT data export ZIP
+chron import chatgpt ~/Downloads/chatgpt-export.zip
+
+# Or from an extracted conversations.json
+chron import chatgpt ~/Downloads/conversations.json
+```
+
+**How to get your ChatGPT export:**
+ChatGPT → Settings → Data Controls → Export data → wait for email → download the ZIP.
+
+**What gets imported:**
+- One Chron session per conversation, with `ai_tool=chatgpt`
+- Original message timestamps from the export
+- `external_ref=chatgpt:<conversation_id>` on every session (visible in `chron history`)
+- Full SHA-256 hash chain across all imported messages
+- Secret detection runs on all user messages
+
+**Re-running is safe** — already-imported conversations are skipped by `external_ref` match.
+
+After import, sessions appear in `chron history` and `chron verify` works on them the same as any natively-logged session.
 
 ---
 

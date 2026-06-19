@@ -1184,7 +1184,7 @@ var init_sql = __esm({
         return new SQL([new StringChunk(str)]);
       }
       sql2.raw = raw;
-      function join10(chunks, separator) {
+      function join11(chunks, separator) {
         const result = [];
         for (const [i, chunk] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -1194,7 +1194,7 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql2.join = join10;
+      sql2.join = join11;
       function identifier(value) {
         return new Name(value);
       }
@@ -2806,7 +2806,7 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync7 = (path) => fs.readFileSync(path, "utf-8");
+    var readFileSync8 = (path) => fs.readFileSync(path, "utf-8");
     var readFile = (path) => new Promise((resolve, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
@@ -2818,7 +2818,7 @@ var require_filesystem = __commonJS({
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync7,
+      readFileSync: readFileSync8,
       readFile
     };
   }
@@ -2830,7 +2830,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync7 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync8 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command2 = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
@@ -2911,7 +2911,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync7(LDD_PATH);
+        const lddContent = readFileSync8(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -2968,7 +2968,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync7(LDD_PATH);
+        const lddContent = readFileSync8(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -5265,7 +5265,7 @@ var require_sender = __commonJS({
   "node_modules/ws/lib/sender.js"(exports2, module2) {
     "use strict";
     var { Duplex } = require("stream");
-    var { randomFillSync } = require("crypto");
+    var { randomFillSync: randomFillSync2 } = require("crypto");
     var PerMessageDeflate2 = require_permessage_deflate();
     var { EMPTY_BUFFER, kWebSocket, NOOP } = require_constants();
     var { isBlob, isValidStatusCode } = require_validation();
@@ -5337,7 +5337,7 @@ var require_sender = __commonJS({
               if (randomPool === void 0) {
                 randomPool = Buffer.alloc(RANDOM_POOL_SIZE);
               }
-              randomFillSync(randomPool, 0, RANDOM_POOL_SIZE);
+              randomFillSync2(randomPool, 0, RANDOM_POOL_SIZE);
               randomPoolPointer = 0;
             }
             mask[0] = randomPool[randomPoolPointer++];
@@ -14252,7 +14252,7 @@ var init_select2 = __esm({
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table))
             this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join10) => join10.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join11) => join11.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -15141,7 +15141,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join10) => join10.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join11) => join11.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -17302,6 +17302,20 @@ function keysDir() {
 function privKeyPath(sessionId) {
   return (0, import_path2.join)(keysDir(), `${sessionId}.key`);
 }
+function pubKeyPath(sessionId) {
+  return (0, import_path2.join)(keysDir(), `${sessionId}.pub`);
+}
+function generateSessionKeypair(sessionId) {
+  const { privateKey, publicKey } = (0, import_crypto2.generateKeyPairSync)("ed25519", {
+    privateKeyEncoding: { type: "pkcs8", format: "pem" },
+    publicKeyEncoding: { type: "spki", format: "pem" }
+  });
+  const dir = keysDir();
+  (0, import_fs3.mkdirSync)(dir, { recursive: true });
+  (0, import_fs3.writeFileSync)(privKeyPath(sessionId), privateKey, { mode: 384 });
+  (0, import_fs3.writeFileSync)(pubKeyPath(sessionId), publicKey);
+  return publicKey;
+}
 function sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt) {
   const input = `${sessionId}|${finalContentHash}|${messageCount}|${firstCreatedAt}`;
   return (0, import_crypto2.createHash)("sha256").update(input).digest();
@@ -17356,7 +17370,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.25",
+      version: "0.1.26",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -18651,9 +18665,9 @@ ${BOLD7}Signature${RESET7}
       warn("No manifest.sig \u2014 bundle was not signed");
     }
     if (sigFile?.session_id && sigFile?.signature) {
-      const pubKeyPath = (0, import_path8.join)(tempDir, "pubkeys", `${sigFile.session_id}.pub`);
+      const pubKeyPath2 = (0, import_path8.join)(tempDir, "pubkeys", `${sigFile.session_id}.pub`);
       try {
-        const pubKey = (0, import_fs9.readFileSync)(pubKeyPath, "utf8");
+        const pubKey = (0, import_fs9.readFileSync)(pubKeyPath2, "utf8");
         const valid = verifyBufferSignature(pubKey, sigFile.signature, manifestBytes);
         if (valid) {
           ok(`Ed25519 signature valid (session ${sigFile.session_id.slice(0, 8)})`);
@@ -19142,6 +19156,618 @@ var init_doctor = __esm({
   }
 });
 
+// node_modules/uuid/dist/esm/stringify.js
+function unsafeStringify(arr, offset = 0) {
+  return (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
+}
+var byteToHex;
+var init_stringify = __esm({
+  "node_modules/uuid/dist/esm/stringify.js"() {
+    byteToHex = [];
+    for (let i = 0; i < 256; ++i) {
+      byteToHex.push((i + 256).toString(16).slice(1));
+    }
+  }
+});
+
+// node_modules/uuid/dist/esm/rng.js
+function rng() {
+  if (poolPtr > rnds8Pool.length - 16) {
+    (0, import_crypto5.randomFillSync)(rnds8Pool);
+    poolPtr = 0;
+  }
+  return rnds8Pool.slice(poolPtr, poolPtr += 16);
+}
+var import_crypto5, rnds8Pool, poolPtr;
+var init_rng = __esm({
+  "node_modules/uuid/dist/esm/rng.js"() {
+    import_crypto5 = require("crypto");
+    rnds8Pool = new Uint8Array(256);
+    poolPtr = rnds8Pool.length;
+  }
+});
+
+// node_modules/uuid/dist/esm/native.js
+var import_crypto6, native_default;
+var init_native = __esm({
+  "node_modules/uuid/dist/esm/native.js"() {
+    import_crypto6 = require("crypto");
+    native_default = { randomUUID: import_crypto6.randomUUID };
+  }
+});
+
+// node_modules/uuid/dist/esm/v4.js
+function v4(options, buf, offset) {
+  if (native_default.randomUUID && !buf && !options) {
+    return native_default.randomUUID();
+  }
+  options = options || {};
+  const rnds = options.random ?? options.rng?.() ?? rng();
+  if (rnds.length < 16) {
+    throw new Error("Random bytes length must be >= 16");
+  }
+  rnds[6] = rnds[6] & 15 | 64;
+  rnds[8] = rnds[8] & 63 | 128;
+  if (buf) {
+    offset = offset || 0;
+    if (offset < 0 || offset + 16 > buf.length) {
+      throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
+    }
+    for (let i = 0; i < 16; ++i) {
+      buf[offset + i] = rnds[i];
+    }
+    return buf;
+  }
+  return unsafeStringify(rnds);
+}
+var v4_default;
+var init_v4 = __esm({
+  "node_modules/uuid/dist/esm/v4.js"() {
+    init_native();
+    init_rng();
+    init_stringify();
+    v4_default = v4;
+  }
+});
+
+// node_modules/uuid/dist/esm/index.js
+var init_esm = __esm({
+  "node_modules/uuid/dist/esm/index.js"() {
+    init_v4();
+  }
+});
+
+// src/utils/detect.ts
+function luhnCheck(value) {
+  const digits = value.replace(/\D/g, "");
+  let sum = 0;
+  let alt = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let n = parseInt(digits[i], 10);
+    if (alt) {
+      n *= 2;
+      if (n > 9)
+        n -= 9;
+    }
+    sum += n;
+    alt = !alt;
+  }
+  return sum % 10 === 0;
+}
+function ibanCheck(value) {
+  const normalized = value.replace(/\s/g, "").toUpperCase();
+  if (normalized.length < 15 || normalized.length > 34)
+    return false;
+  const rearranged = normalized.slice(4) + normalized.slice(0, 4);
+  const numeric2 = rearranged.replace(/[A-Z]/g, (c) => String(c.charCodeAt(0) - 55));
+  let remainder = 0;
+  for (const ch of numeric2) {
+    remainder = (remainder * 10 + parseInt(ch, 10)) % 97;
+  }
+  return remainder === 1;
+}
+function contextMatches(kw, input, idx) {
+  const lo = Math.max(0, idx - CONTEXT_WINDOW);
+  const hi = Math.min(input.length, idx + CONTEXT_WINDOW);
+  return kw.test(input.slice(lo, hi));
+}
+function annotate(s) {
+  return {
+    ...s,
+    severity: SEVERITY2[s.type] ?? "low",
+    category: CATEGORY[s.type] ?? "other"
+  };
+}
+function scanForSecrets(input) {
+  const withPriority = [];
+  for (let i = 0; i < PATTERNS.length; i++) {
+    const { type, regex, validate } = PATTERNS[i];
+    regex.lastIndex = 0;
+    let match;
+    while ((match = regex.exec(input)) !== null) {
+      if (validate && !validate(match[0], input, match.index))
+        continue;
+      withPriority.push({
+        type,
+        value: match[0],
+        start: match.index,
+        end: match.index + match[0].length,
+        priority: i
+      });
+    }
+  }
+  withPriority.sort((a, b) => a.priority - b.priority || a.start - b.start);
+  let deduped = deduplicateOverlaps(withPriority);
+  const pairs = detectCredentialPairs(input, deduped);
+  if (pairs.length > 0) {
+    for (const pair of pairs) {
+      deduped.push({ ...pair, priority: -1 });
+    }
+    deduped.sort((a, b) => a.priority - b.priority || a.start - b.start);
+    deduped = deduplicateOverlaps(deduped);
+  }
+  deduped.sort((a, b) => a.start - b.start);
+  return deduped.map(({ priority: _p, ...s }) => annotate(s));
+}
+function looksLikePassword(s) {
+  if (s.length < 8)
+    return false;
+  const hasUpper = /[A-Z]/.test(s);
+  const hasLower = /[a-z]/.test(s);
+  const hasDigit = /[0-9]/.test(s);
+  const hasSpecial = /[@!#$%^&*\-_+=?]/.test(s);
+  const score = [hasUpper, hasLower, hasDigit, hasSpecial].filter(Boolean).length;
+  return score >= 3;
+}
+function detectCredentialPairs(input, _existing) {
+  const results = [];
+  EMAIL_RE.lastIndex = 0;
+  let match;
+  while ((match = EMAIL_RE.exec(input)) !== null) {
+    const emailStart = match.index;
+    const emailEnd = match.index + match[0].length;
+    const charBefore = emailStart > 0 ? input[emailStart - 1] : "";
+    if (charBefore === "@" || charBefore === ":")
+      continue;
+    const windowStart = Math.max(0, emailStart - PAIR_WINDOW);
+    const windowEnd = Math.min(input.length, emailEnd + PAIR_WINDOW);
+    const surrounding = input.slice(windowStart, windowEnd);
+    const tokens = surrounding.match(/\S+/g) ?? [];
+    for (const token of tokens) {
+      if (token === match[0])
+        continue;
+      if (!looksLikePassword(token))
+        continue;
+      const tokenAbsoluteStart = windowStart + surrounding.indexOf(token);
+      const pairStart = Math.min(emailStart, tokenAbsoluteStart);
+      const pairEnd = Math.max(emailEnd, tokenAbsoluteStart + token.length);
+      results.push({
+        type: "credential_pair",
+        value: input.slice(pairStart, pairEnd),
+        start: pairStart,
+        end: pairEnd
+      });
+      break;
+    }
+  }
+  return results;
+}
+function deduplicateOverlaps(secrets) {
+  const kept = [];
+  for (const candidate of secrets) {
+    const overlaps = kept.some((k) => candidate.start < k.end && candidate.end > k.start);
+    if (!overlaps)
+      kept.push(candidate);
+  }
+  return kept;
+}
+var CONTEXT_WINDOW, DOB_KEYWORDS, PASS_KEYWORDS, SSN_KEYWORDS, PATTERNS, SEVERITY2, CATEGORY, EMAIL_RE, PAIR_WINDOW;
+var init_detect = __esm({
+  "src/utils/detect.ts"() {
+    "use strict";
+    CONTEXT_WINDOW = 120;
+    DOB_KEYWORDS = /\b(?:dob|date\s+of\s+birth|birth\s+date|born\s+on|birthday)\b/i;
+    PASS_KEYWORDS = /\b(?:passport|travel\s+document|document\s+no(?:\.|\b))\b/i;
+    SSN_KEYWORDS = /\b(?:ssn|social\s+security|tin\b)\b/i;
+    PATTERNS = [
+      // Private key blocks (must come first — multiline, unambiguous)
+      { type: "private_key", regex: /-----BEGIN [A-Z ]+ PRIVATE KEY-----[\s\S]+?-----END [A-Z ]+ PRIVATE KEY-----/g },
+      // Cloud / AI provider keys
+      { type: "aws_access_key", regex: /AKIA[0-9A-Z]{16}/g },
+      { type: "anthropic_api_key", regex: /sk-ant-api\d{2}-[a-zA-Z0-9\-_]{40,}/g },
+      { type: "openai_api_key", regex: /sk-proj-[a-zA-Z0-9\-_]{20,}/g },
+      { type: "google_api_key", regex: /AIza[0-9A-Za-z\-_]{35}/g },
+      // SaaS API keys
+      { type: "github_token", regex: /gh[pousr]_[a-zA-Z0-9]{30,}/g },
+      { type: "slack_token", regex: /xox[bpas]-[0-9]{8,13}-[0-9]{8,13}-[a-zA-Z0-9]{20,}/g },
+      { type: "stripe_key", regex: /sk_(live|test)_[a-zA-Z0-9]{24,}/g },
+      { type: "sendgrid_key", regex: /SG\.[a-zA-Z0-9\-_]{22,}\.[a-zA-Z0-9\-_]{22,}/g },
+      { type: "huggingface_token", regex: /hf_[a-zA-Z0-9]{30,}/g },
+      // Auth / session tokens
+      { type: "jwt", regex: /eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+/g },
+      // Credentials in URLs (before env_value so it wins on connection strings)
+      { type: "url_credentials", regex: /\w+:\/\/[^:@\s\/]{1,64}:[^@\s]{4,}@[^\s]/g },
+      // Passwords in key=value and JSON
+      { type: "password", regex: /(?:password|passwd|pwd)["']?\s*[=:]\s*["']?([^\s"',]{6,})/gi },
+      // PII — financial
+      {
+        type: "credit_card",
+        regex: /\b\d{4}[\s\-]\d{4}[\s\-]\d{4}[\s\-]\d{4}\b/g,
+        validate: (v) => luhnCheck(v)
+      },
+      {
+        type: "iban",
+        regex: /\b[A-Z]{2}\d{2}[A-Z0-9]{4,30}\b/g,
+        validate: (v) => ibanCheck(v)
+      },
+      // PII — identity (context-aware)
+      {
+        type: "ssn",
+        regex: /\b\d{3}-\d{2}-\d{4}\b/g,
+        validate: (_v, input, idx) => {
+          if (contextMatches(SSN_KEYWORDS, input, idx))
+            return true;
+          const surrounding = input.slice(Math.max(0, idx - 20), idx + 20);
+          if (/(?:19|20)\d{2}/.test(surrounding))
+            return false;
+          return true;
+        }
+      },
+      {
+        type: "dob",
+        regex: /\b(?:0?[1-9]|1[0-2])[-\/](?:0?[1-9]|[12]\d|3[01])[-\/](?:19|20)\d{2}\b/g,
+        validate: (_v, input, idx) => contextMatches(DOB_KEYWORDS, input, idx)
+      },
+      {
+        type: "passport",
+        regex: /\b[A-Z]\d{8}\b/g,
+        validate: (_v, input, idx) => contextMatches(PASS_KEYWORDS, input, idx)
+      },
+      // PII — contact
+      { type: "email", regex: /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g },
+      {
+        type: "phone_us",
+        // Requires area code starting 2-9 (excludes version numbers, dates, plain 7-digit numbers)
+        regex: /\b(?:\+?1[-.\s]?)?\(?([2-9][0-9]{2})\)?[-.\s]([2-9][0-9]{2})[-.\s]([0-9]{4})\b/g
+      },
+      {
+        type: "phone_e164",
+        // E.164 international (non-US, min 8 digits after +)
+        regex: /\+(?!1[^0-9])(?:[2-9][0-9]{1}|[1][^1])[0-9]{6,12}\b/g
+      },
+      // Network — internal RFC-1918 addresses
+      {
+        type: "internal_ip",
+        regex: /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b/g
+      },
+      // Generic env assignment (lowest priority — catches remaining secrets)
+      { type: "env_value", regex: /\b[A-Z][A-Z0-9_]{2,}=[^\s]{8,}/g }
+    ];
+    SEVERITY2 = {
+      private_key: "critical",
+      credit_card: "critical",
+      ssn: "critical",
+      iban: "critical",
+      aws_access_key: "high",
+      anthropic_api_key: "high",
+      openai_api_key: "high",
+      google_api_key: "high",
+      github_token: "high",
+      slack_token: "high",
+      stripe_key: "high",
+      sendgrid_key: "high",
+      huggingface_token: "high",
+      jwt: "high",
+      url_credentials: "high",
+      password: "high",
+      credential_pair: "high",
+      passport: "high",
+      dob: "high",
+      email: "medium",
+      phone_us: "medium",
+      phone_e164: "medium",
+      internal_ip: "low",
+      env_value: "low"
+    };
+    CATEGORY = {
+      private_key: "credential",
+      credit_card: "financial",
+      ssn: "identity",
+      iban: "financial",
+      passport: "identity",
+      dob: "identity",
+      aws_access_key: "credential",
+      anthropic_api_key: "credential",
+      openai_api_key: "credential",
+      google_api_key: "credential",
+      github_token: "credential",
+      slack_token: "credential",
+      stripe_key: "credential",
+      sendgrid_key: "credential",
+      huggingface_token: "credential",
+      jwt: "credential",
+      url_credentials: "credential",
+      password: "credential",
+      credential_pair: "credential",
+      email: "contact",
+      phone_us: "contact",
+      phone_e164: "contact",
+      internal_ip: "network",
+      env_value: "credential"
+    };
+    EMAIL_RE = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
+    PAIR_WINDOW = 100;
+  }
+});
+
+// src/cli/import.ts
+var import_exports = {};
+__export(import_exports, {
+  importGptConversations: () => importGptConversations,
+  runImport: () => runImport
+});
+function unixToIso(ts) {
+  if (!ts)
+    return (/* @__PURE__ */ new Date()).toISOString().replace("Z", "+00:00");
+  return new Date(ts * 1e3).toISOString().replace("Z", "+00:00");
+}
+function extractText(content) {
+  if (!content)
+    return "";
+  if (!content.parts)
+    return "";
+  return content.parts.filter((p) => typeof p === "string" && p.trim().length > 0).join("\n").trim();
+}
+function maskValue(v) {
+  return v.length > 8 ? v.slice(0, 4) + "****" + v.slice(-4) : "****";
+}
+function linearize(mapping) {
+  const root = Object.values(mapping).find((n) => n.parent === null || !mapping[n.parent ?? ""]);
+  if (!root)
+    return [];
+  const path = [];
+  let current = root;
+  while (current) {
+    path.push(current);
+    const lastChildId = current.children[current.children.length - 1];
+    current = lastChildId ? mapping[lastChildId] : void 0;
+  }
+  return path;
+}
+function messagesFromConversation(conv) {
+  const nodes = linearize(conv.mapping);
+  const result = [];
+  for (const node of nodes) {
+    const msg = node.message;
+    if (!msg)
+      continue;
+    const role = msg.author.role;
+    if (role !== "user" && role !== "assistant")
+      continue;
+    const text2 = extractText(msg.content);
+    if (!text2)
+      continue;
+    result.push({ role, content: text2, ts: unixToIso(msg.create_time) });
+  }
+  return result;
+}
+function findFile(dir, name) {
+  for (const entry of (0, import_fs11.readdirSync)(dir)) {
+    const full = (0, import_path10.join)(dir, entry);
+    try {
+      if ((0, import_fs11.statSync)(full).isDirectory()) {
+        const found = findFile(full, name);
+        if (found)
+          return found;
+      } else if (entry === name) {
+        return full;
+      }
+    } catch {
+    }
+  }
+  return null;
+}
+async function importGptConversations(db, conversations) {
+  let imported = 0;
+  let skipped = 0;
+  let totalMessages = 0;
+  let totalSecrets = 0;
+  const errors = [];
+  for (const conv of conversations) {
+    const externalRef = `chatgpt:${conv.id}`;
+    const displayTitle = (conv.title ?? "Untitled").slice(0, 60);
+    const [existing] = await db.select({ id: sessions.id }).from(sessions).where(eq(sessions.external_ref, externalRef)).limit(1);
+    if (existing) {
+      skipped++;
+      continue;
+    }
+    const msgs = messagesFromConversation(conv);
+    if (msgs.length === 0) {
+      skipped++;
+      continue;
+    }
+    try {
+      let sessionSecrets = 0;
+      await db.transaction(async (tx) => {
+        let baseTitle = (conv.title ?? "Untitled ChatGPT conversation").slice(0, 500);
+        const [titleConflict] = await tx.select({ id: sessions.id }).from(sessions).where(eq(sessions.title, baseTitle)).limit(1);
+        if (titleConflict) {
+          baseTitle = `${baseTitle} (${conv.id.slice(0, 8)})`.slice(0, 500);
+        }
+        const sessionId = v4_default();
+        let publicKey = null;
+        try {
+          publicKey = generateSessionKeypair(sessionId);
+        } catch {
+        }
+        await tx.insert(sessions).values({
+          id: sessionId,
+          title: baseTitle,
+          ai_tool: "chatgpt",
+          created_at: unixToIso(conv.create_time),
+          updated_at: unixToIso(conv.update_time),
+          external_ref: externalRef,
+          parent_session_id: null,
+          public_key: publicKey
+        });
+        let prevHash = null;
+        for (const m of msgs) {
+          const msgId = v4_default();
+          const hash = computeContentHash(sessionId, m.role, m.content, m.ts, prevHash, "message");
+          await tx.insert(messages).values({
+            id: msgId,
+            session_id: sessionId,
+            role: m.role,
+            content: m.content,
+            created_at: m.ts,
+            prev_hash: prevHash,
+            content_hash: hash,
+            event_type: "message"
+          });
+          if (m.role === "user") {
+            const found = scanForSecrets(m.content);
+            if (found.length > 0) {
+              const now = (/* @__PURE__ */ new Date()).toISOString().replace("Z", "+00:00");
+              await tx.insert(secrets_detected).values(
+                found.map((s) => ({
+                  id: v4_default(),
+                  session_id: sessionId,
+                  message_id: msgId,
+                  type: s.type,
+                  masked_value: maskValue(s.value),
+                  detected_at: now
+                }))
+              );
+              sessionSecrets += found.length;
+              totalSecrets += found.length;
+            }
+          }
+          prevHash = hash;
+        }
+      });
+      totalMessages += msgs.length;
+      imported++;
+    } catch (err) {
+      errors.push({ title: displayTitle, error: err?.message ?? String(err) });
+    }
+  }
+  return { imported, skipped, totalMessages, totalSecrets, errors };
+}
+async function importConversations(filePath) {
+  const db = await initDb();
+  let raw;
+  let tempDir = null;
+  const ext = (0, import_path10.extname)(filePath).toLowerCase();
+  if (ext === ".zip") {
+    tempDir = (0, import_path10.join)((0, import_os10.tmpdir)(), `chron-import-${Date.now()}`);
+    (0, import_fs11.mkdirSync)(tempDir, { recursive: true });
+    try {
+      (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "conversations.json", "-d", tempDir], { stdio: "pipe" });
+    } catch {
+      try {
+        (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "-d", tempDir], { stdio: "pipe" });
+      } catch {
+        process.stderr.write(`Failed to extract ${filePath}. Make sure 'unzip' is installed.
+`);
+        (0, import_fs11.rmSync)(tempDir, { recursive: true, force: true });
+        process.exit(1);
+      }
+    }
+    const found = findFile(tempDir, "conversations.json");
+    if (!found) {
+      process.stderr.write(`conversations.json not found inside the ZIP.
+`);
+      (0, import_fs11.rmSync)(tempDir, { recursive: true, force: true });
+      process.exit(1);
+    }
+    raw = (0, import_fs11.readFileSync)(found, "utf8");
+  } else if (ext === ".json") {
+    raw = (0, import_fs11.readFileSync)(filePath, "utf8");
+  } else {
+    process.stderr.write(`Unsupported file type: ${ext}. Pass a .zip export or a conversations.json file.
+`);
+    process.exit(1);
+  }
+  let conversations;
+  try {
+    conversations = JSON.parse(raw);
+    if (!Array.isArray(conversations))
+      throw new Error("Expected a JSON array");
+  } catch {
+    process.stderr.write(`Failed to parse conversations JSON.
+`);
+    if (tempDir)
+      (0, import_fs11.rmSync)(tempDir, { recursive: true, force: true });
+    process.exit(1);
+  }
+  process.stdout.write(`
+${BOLD9}chron import chatgpt${RESET9}  ${DIM8}${filePath}${RESET9}
+`);
+  process.stdout.write(`${DIM8}${conversations.length} conversation(s) found${RESET9}
+
+`);
+  const result = await importGptConversations(db, conversations);
+  for (const e of result.errors) {
+    process.stderr.write(`  ${YELLOW7}!${RESET9} Failed to import "${e.title}": ${e.error}
+`);
+  }
+  if (tempDir)
+    (0, import_fs11.rmSync)(tempDir, { recursive: true, force: true });
+  process.stdout.write("\n");
+  process.stdout.write(`${BOLD9}Done.${RESET9}  `);
+  process.stdout.write(`${GREEN6}${result.imported} imported${RESET9}`);
+  if (result.skipped > 0)
+    process.stdout.write(`  ${DIM8}${result.skipped} skipped (already in DB)${RESET9}`);
+  process.stdout.write(`  ${CYAN7}${result.totalMessages} messages total${RESET9}`);
+  if (result.totalSecrets > 0)
+    process.stdout.write(`  ${YELLOW7}${result.totalSecrets} secret(s) detected${RESET9}`);
+  if (result.errors.length > 0)
+    process.stdout.write(`  ${YELLOW7}${result.errors.length} error(s)${RESET9}`);
+  process.stdout.write("\n\n");
+  process.stdout.write(`${DIM8}Run 'chron history' to browse imported sessions.${RESET9}
+
+`);
+}
+async function runImport(args2) {
+  const [subcommand, filePath] = args2;
+  if (subcommand !== "chatgpt" || !filePath) {
+    process.stderr.write(
+      "Usage: chron import chatgpt <file>\n\n  <file>  Path to ChatGPT export ZIP (chatgpt-export-*.zip)\n          or extracted conversations.json\n\nExample:\n  chron import chatgpt ~/Downloads/chatgpt-export.zip\n  chron import chatgpt ~/Downloads/conversations.json\n"
+    );
+    process.exit(1);
+  }
+  const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
+  if (!(0, import_fs11.existsSync)(resolved)) {
+    process.stderr.write(`File not found: ${resolved}
+`);
+    process.exit(1);
+  }
+  await importConversations(resolved);
+}
+var import_fs11, import_path10, import_os10, import_child_process4, RESET9, BOLD9, DIM8, GREEN6, YELLOW7, CYAN7;
+var init_import = __esm({
+  "src/cli/import.ts"() {
+    "use strict";
+    import_fs11 = require("fs");
+    import_path10 = require("path");
+    import_os10 = require("os");
+    import_child_process4 = require("child_process");
+    init_drizzle_orm();
+    init_esm();
+    init_db2();
+    init_schema();
+    init_hash();
+    init_detect();
+    init_signing();
+    RESET9 = "\x1B[0m";
+    BOLD9 = "\x1B[1m";
+    DIM8 = "\x1B[2m";
+    GREEN6 = "\x1B[32m";
+    YELLOW7 = "\x1B[33m";
+    CYAN7 = "\x1B[36m";
+  }
+});
+
 // src/cli/index.ts
 var [, , command, ...args] = process.argv;
 async function main() {
@@ -19201,6 +19827,11 @@ async function main() {
       await runDoctor2(args);
       break;
     }
+    case "import": {
+      const { runImport: runImport2 } = await Promise.resolve().then(() => (init_import(), import_exports));
+      await runImport2(args);
+      break;
+    }
     default: {
       const name = command ? `Unknown command: ${command}
 
@@ -19220,6 +19851,7 @@ Commands:
   verify          Verify a session's hash chain and Ed25519 signature
   prune           Delete sessions older than a retention cutoff
   doctor          Check your Chron setup \u2014 Node version, DB, MCP configs, SIEM
+  import          Import conversations from external AI tools
 
 Options (history):
   --limit=<n>     Max sessions to show (default: 20)
@@ -19249,6 +19881,9 @@ Options (prune):
 
 Options (doctor):
   --json             Machine-readable JSON output
+
+Options (import):
+  chatgpt <file>     Import from ChatGPT export (.zip or conversations.json)
 `
       );
       process.exit(command ? 1 : 0);
