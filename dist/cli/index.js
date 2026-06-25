@@ -16582,6 +16582,7 @@ async function initDb(dbPath3) {
   }
   const client = createClient({ url: path.startsWith(":") ? path : `file:${path}` });
   await client.execute("PRAGMA journal_mode = WAL");
+  await client.execute("PRAGMA busy_timeout = 5000");
   await client.execute("PRAGMA foreign_keys = ON");
   for (const sql2 of CREATE_SQL) {
     await client.execute(sql2);
@@ -17032,12 +17033,16 @@ ${overview.total_detections > 0 ? `<p class="warn">&#9888; ${overview.total_dete
   </tbody>
 </table>
 ${brokenList}
-<p style="font-size:11px;color:#6b7280">
-  Note: This report verifies <em>chain linkage</em> (prev_hash continuity). Full content-hash recomputation
-  (which detects in-place tampering) can be performed with <code>chron verify &lt;session-id&gt;</code>.
-</p>
+	<p style="font-size:11px;color:#6b7280">
+	  Note: This report verifies <em>chain linkage</em> (prev_hash continuity). Full content-hash recomputation
+	  (which detects in-place tampering) can be performed with <code>chron verify &lt;session-id&gt;</code>.
+	</p>
+	<p class="governance-note">
+	  For formal AI governance, CLAIIM extends Chron evidence with agent identity, policy gates,
+	  approvals, and runtime ALLOW/DENY enforcement. See <a href="https://claiim.io/preview">https://claiim.io/preview</a>.
+	</p>
 
-<!-- \u2466 SESSION INVENTORY -->
+	<!-- \u2466 SESSION INVENTORY -->
 <h2 class="section-break">Session Inventory</h2>
 <p>All sessions recorded in the audit database (most recent first, capped at 500 rows).</p>
 <table>
@@ -17161,6 +17166,7 @@ tr:nth-child(even) td { background: #fafafa; }
 .section-break { page-break-before: always; }
 .appendix { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px 20px; margin-top: 12px; }
 .appendix p, .appendix li { color: #374151; font-size: 12px; }
+.governance-note { background: #f8fafc; border: 1px solid #dbeafe; border-left: 4px solid #2563eb; border-radius: 4px; padding: 12px 14px; margin: 14px 0 20px; font-size: 12px; color: #374151; }
 ul { padding-left: 20px; margin-bottom: 8px; }
 li { margin-bottom: 4px; }
 @media print {
@@ -17370,7 +17376,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.26",
+      version: "0.1.28",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -18179,6 +18185,93 @@ ${DIM4}Authenticating with Azure AD...${RESET5} `);
 
 `);
 }
+function codexGlobalConfigPath() {
+  return (0, import_path5.join)((0, import_os6.homedir)(), ".codex", "config.toml");
+}
+function isChronInCodexConfig(content) {
+  return content.includes("[mcp_servers.chron]");
+}
+function appendChronToToml(content) {
+  return content.trimEnd() + "\n" + CODEX_MCP_BLOCK;
+}
+async function connectCodex() {
+  process.stdout.write(`
+${BOLD5}Connect Chron \u2192 Codex${RESET5}
+
+`);
+  const globalPath = codexGlobalConfigPath();
+  const projectPath = (0, import_path5.join)(process.cwd(), ".codex", "config.toml");
+  const hasGlobal = (0, import_fs5.existsSync)(globalPath);
+  const hasProject = (0, import_fs5.existsSync)(projectPath);
+  let targetPath;
+  let isProject = false;
+  if (hasGlobal && hasProject) {
+    process.stdout.write(`${DIM4}Found both global and project Codex configs.${RESET5}
+`);
+    process.stdout.write(`${DIM4}  Global:  ${globalPath}${RESET5}
+`);
+    process.stdout.write(`${DIM4}  Project: ${projectPath}${RESET5}
+
+`);
+    const rl = (0, import_readline.createInterface)({ input: process.stdin, output: process.stdout });
+    const choice = await new Promise(
+      (resolve) => rl.question(`  Add Chron to (g)lobal or (p)roject config? [g/p]: `, resolve)
+    );
+    rl.close();
+    isProject = choice.trim().toLowerCase() === "p";
+    targetPath = isProject ? projectPath : globalPath;
+  } else if (hasProject) {
+    targetPath = projectPath;
+    isProject = true;
+  } else if (hasGlobal) {
+    targetPath = globalPath;
+  } else {
+    process.stdout.write(`${YELLOW3}!${RESET5} Codex config not found. Creating ${globalPath}
+
+`);
+    (0, import_fs5.mkdirSync)((0, import_path5.join)((0, import_os6.homedir)(), ".codex"), { recursive: true });
+    (0, import_fs5.writeFileSync)(globalPath, CODEX_MCP_BLOCK.trimStart());
+    process.stdout.write(`${GREEN2}\u2713${RESET5} Created ${globalPath} with Chron MCP config.
+`);
+    _printCodexNextSteps();
+    return;
+  }
+  const existing = (0, import_fs5.readFileSync)(targetPath, "utf8");
+  if (isChronInCodexConfig(existing)) {
+    process.stdout.write(`${GREEN2}\u2713${RESET5} Chron MCP is already configured in ${targetPath}
+
+`);
+    _printCodexNextSteps();
+    return;
+  }
+  const updated = appendChronToToml(existing);
+  (0, import_fs5.writeFileSync)(targetPath, updated, "utf8");
+  process.stdout.write(`${GREEN2}\u2713${RESET5} Added Chron MCP to ${targetPath}
+
+`);
+  _printCodexNextSteps();
+}
+function _printCodexNextSteps() {
+  process.stdout.write(`${BOLD5}Next steps:${RESET5}
+
+`);
+  process.stdout.write(`  1. Restart Codex to pick up the new MCP server.
+`);
+  process.stdout.write(`  2. Ask Codex to start a Chron session:
+`);
+  process.stdout.write(`     ${DIM4}"Use init_session to start a Chron audit session for this work."${RESET5}
+`);
+  process.stdout.write(`  3. Verify setup:
+`);
+  process.stdout.write(`     ${CYAN4}chron doctor${RESET5}
+
+`);
+  process.stdout.write(`${DIM4}Codex will automatically call log_tool_call, log_tool_result, and
+`);
+  process.stdout.write(`log_code_change during its work once the session is started.${RESET5}
+
+`);
+}
 async function runConnect(args2) {
   const [subcommand] = args2;
   switch (subcommand) {
@@ -18191,6 +18284,9 @@ async function runConnect(args2) {
     case "splunk":
       await connectSplunk();
       break;
+    case "codex":
+      await connectCodex();
+      break;
     default: {
       const name = subcommand ? `Unknown integration: ${subcommand}
 
@@ -18199,6 +18295,7 @@ async function runConnect(args2) {
         `${name}Usage: chron connect <integration>
 
 Integrations:
+  codex          Add Chron MCP to Codex config (global or project)
   crowdstrike    Connect to CrowdStrike LogScale (direct ingest)
   sentinel       Connect to Microsoft Sentinel (Azure Monitor Logs Ingestion API)
   splunk         Connect to Splunk via HTTP Event Collector (HEC)
@@ -18208,7 +18305,7 @@ Integrations:
     }
   }
 }
-var import_readline, import_os6, import_path5, import_fs5, RESET5, BOLD5, DIM4, CYAN4, GREEN2, RED, YELLOW3;
+var import_readline, import_os6, import_path5, import_fs5, RESET5, BOLD5, DIM4, CYAN4, GREEN2, RED, YELLOW3, CODEX_MCP_BLOCK;
 var init_connect = __esm({
   "src/cli/connect.ts"() {
     "use strict";
@@ -18223,6 +18320,11 @@ var init_connect = __esm({
     GREEN2 = "\x1B[32m";
     RED = "\x1B[31m";
     YELLOW3 = "\x1B[33m";
+    CODEX_MCP_BLOCK = `
+[mcp_servers.chron]
+command = "npx"
+args = ["-y", "chron-mcp"]
+`;
   }
 });
 
@@ -18545,7 +18647,15 @@ async function runSign(args2) {
     process.exit(1);
   }
   const signature = signSession(session.id, finalContentHash, messageCount, firstCreatedAt);
-  await db.update(sessions).set({ signature }).where(eq(sessions.id, session.id));
+  try {
+    await db.update(sessions).set({ signature }).where(eq(sessions.id, session.id));
+  } catch (err) {
+    const cause = err?.cause ?? err;
+    process.stderr.write(`Failed to save signature: ${cause?.message ?? err.message}
+`);
+    process.stderr.write("Tip: if the Chron MCP server is running, it may hold a write lock. Retry or stop the MCP server first.\n");
+    process.exit(1);
+  }
   const sigData = {
     chron_signature: "v1",
     session_id: session.id,
@@ -18870,7 +18980,7 @@ function loadConfig2() {
 function mcpConfigs() {
   const home = (0, import_os9.homedir)();
   const plat = (0, import_os9.platform)();
-  const candidates = [
+  const jsonCandidates = [
     {
       name: "Claude Desktop",
       path: plat === "win32" ? (0, import_path9.join)(process.env.APPDATA ?? (0, import_path9.join)(home, "AppData", "Roaming"), "Claude", "claude_desktop_config.json") : (0, import_path9.join)(home, "Library", "Application Support", "Claude", "claude_desktop_config.json")
@@ -18879,7 +18989,7 @@ function mcpConfigs() {
     { name: "Cursor", path: (0, import_path9.join)(home, ".cursor", "mcp.json") },
     { name: "Windsurf", path: (0, import_path9.join)(home, ".codeium", "windsurf", "mcp_config.json") }
   ];
-  return candidates.map((c) => {
+  const results = jsonCandidates.map((c) => {
     if (!(0, import_fs10.existsSync)(c.path)) {
       return { name: c.name, path: c.path, exists: false, chronConfigured: null };
     }
@@ -18894,6 +19004,22 @@ function mcpConfigs() {
       return { name: c.name, path: c.path, exists: true, chronConfigured: null, note: "Could not parse config" };
     }
   });
+  const codexGlobal = (0, import_path9.join)(home, ".codex", "config.toml");
+  const codexProject = (0, import_path9.join)(process.cwd(), ".codex", "config.toml");
+  for (const p of [codexGlobal, codexProject]) {
+    if (!(0, import_fs10.existsSync)(p)) {
+      results.push({ name: p === codexGlobal ? "Codex (global)" : "Codex (project)", path: p, exists: false, chronConfigured: null });
+    } else {
+      try {
+        const content = (0, import_fs10.readFileSync)(p, "utf8");
+        const configured = content.includes("[mcp_servers.chron]");
+        results.push({ name: p === codexGlobal ? "Codex (global)" : "Codex (project)", path: p, exists: true, chronConfigured: configured });
+      } catch {
+        results.push({ name: p === codexGlobal ? "Codex (global)" : "Codex (project)", path: p, exists: true, chronConfigured: null, note: "Could not read config" });
+      }
+    }
+  }
+  return results;
 }
 function npmLatestVersion() {
   try {
@@ -19023,14 +19149,16 @@ ${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}
       if (!jsonMode)
         ok2(`${t.name}`, "chron configured");
     } else {
+      const isCodex = t.name.startsWith("Codex");
+      const fixHint = isCodex ? `chron connect codex` : `Add chron to mcpServers in ${t.path}
+      See: https://github.com/sirinivask/chron#installation`;
       results.push({
         pass: "warn",
-        label: `${t.name}: chron NOT in mcpServers`,
-        fix: `Add chron to mcpServers in ${t.path}
-      See: https://github.com/sirinivask/chron#installation`
+        label: `${t.name}: chron not configured`,
+        fix: fixHint
       });
       if (!jsonMode)
-        warn2(`${t.name}`, `chron not in mcpServers \u2014 add it to ${t.path}`);
+        warn2(`${t.name}`, isCodex ? "chron not in MCP servers \u2014 run: chron connect codex" : `chron not in mcpServers \u2014 add it to ${t.path}`);
     }
   }
   if (!jsonMode)
@@ -19090,6 +19218,9 @@ ${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}
       process.stdout.write(`${GREEN5}${BOLD8}All checks passed.${RESET8} Chron is correctly set up.
 
 `);
+      process.stdout.write(`${DIM7}Team AI governance: CLAIIM adds runtime ALLOW/DENY gates on top of Chron proof \u2014 ${CLAIIM_PREVIEW_URL}${RESET8}
+
+`);
     } else {
       if (failures.length > 0) {
         process.stdout.write(`${RED4}${BOLD8}${failures.length} issue(s) need attention:${RESET8}
@@ -19137,7 +19268,7 @@ ${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}
   }
   process.exit(failures.length > 0 ? 1 : 0);
 }
-var import_os9, import_path9, import_fs10, import_child_process3, import_package2, RESET8, BOLD8, DIM7, GREEN5, RED4, YELLOW6, CYAN6;
+var import_os9, import_path9, import_fs10, import_child_process3, import_package2, RESET8, BOLD8, DIM7, GREEN5, RED4, YELLOW6, CYAN6, CLAIIM_PREVIEW_URL;
 var init_doctor = __esm({
   "src/cli/doctor.ts"() {
     "use strict";
@@ -19153,6 +19284,7 @@ var init_doctor = __esm({
     RED4 = "\x1B[31m";
     YELLOW6 = "\x1B[33m";
     CYAN6 = "\x1B[36m";
+    CLAIIM_PREVIEW_URL = "https://claiim.io/preview";
   }
 });
 
@@ -19845,7 +19977,7 @@ Commands:
   export          Export a session as markdown
   secrets         List detected secrets across sessions
   settings        View current configuration
-  connect         Connect to a SIEM integration (crowdstrike, sentinel, splunk)
+  connect         Connect to a SIEM or AI tool (codex, crowdstrike, sentinel, splunk)
   summary         Structured summary of a session (timeline, mutations, secrets)
   sign            Sign a session with its Ed25519 key \u2014 produces a .chron.sig file
   verify          Verify a session's hash chain and Ed25519 signature

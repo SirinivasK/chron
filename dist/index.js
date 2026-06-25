@@ -22792,6 +22792,7 @@ async function initDb(dbPath) {
   }
   const client = createClient({ url: path.startsWith(":") ? path : `file:${path}` });
   await client.execute("PRAGMA journal_mode = WAL");
+  await client.execute("PRAGMA busy_timeout = 5000");
   await client.execute("PRAGMA foreign_keys = ON");
   for (const sql2 of CREATE_SQL) {
     await client.execute(sql2);
@@ -38479,7 +38480,7 @@ var init_time = __esm({
 var version4;
 var init_package = __esm({
   "package.json"() {
-    version4 = "0.1.26";
+    version4 = "0.1.28";
   }
 });
 
@@ -38837,6 +38838,31 @@ var init_ntp = __esm({
   }
 });
 
+// src/utils/terminal.ts
+function terminalAudit(message) {
+  const setting = process.env.CHRON_TERMINAL_AUDIT;
+  if (setting && DISABLE_VALUES.has(setting.toLowerCase()))
+    return;
+  process.stderr.write(`[chron] ${message}
+`);
+}
+function formatDuration(ms) {
+  if (ms < 1e3)
+    return `${ms}ms`;
+  if (ms < 6e4)
+    return `${(ms / 1e3).toFixed(1)}s`;
+  const minutes = Math.floor(ms / 6e4);
+  const seconds = Math.round(ms % 6e4 / 1e3);
+  return `${minutes}m ${seconds}s`;
+}
+var DISABLE_VALUES;
+var init_terminal = __esm({
+  "src/utils/terminal.ts"() {
+    "use strict";
+    DISABLE_VALUES = /* @__PURE__ */ new Set(["0", "false", "off", "no"]);
+  }
+});
+
 // src/tools/sessions.ts
 function attachNtpMetadata(db, sessionId) {
   setImmediate(() => {
@@ -38867,6 +38893,7 @@ function startSession(db) {
       });
       attachNtpMetadata(db, id);
       emitEvent({ event_type: "session_started", timestamp: now, session: { id_prefix: id.slice(0, 8), ai_tool: args.ai_tool ?? null } });
+      terminalAudit(`session ${id.slice(0, 8)} started at ${now} (${args.ai_tool ?? "unknown"}: ${args.title})`);
       return {
         content: [{
           type: "text",
@@ -38882,6 +38909,7 @@ function startSession(db) {
       const [countRow] = await db.select({ count: sql`count(*)` }).from(messages).where(eq(messages.session_id, session.id));
       await db.update(sessions).set({ updated_at: now }).where(eq(sessions.id, session.id));
       emitEvent({ event_type: "session_started", timestamp: now, session: { id_prefix: session.id.slice(0, 8), ai_tool: session.ai_tool } });
+      terminalAudit(`session ${session.id.slice(0, 8)} resumed at ${now} (${session.ai_tool ?? "unknown"}: ${session.title})`);
       return {
         content: [{
           type: "text",
@@ -38918,6 +38946,7 @@ function initSession(db) {
       created = true;
       ai_tool = args.ai_tool ?? null;
       attachNtpMetadata(db, id);
+      terminalAudit(`session ${id.slice(0, 8)} started at ${now} (${ai_tool ?? "unknown"}: ${args.title})`);
     } catch (e) {
       const isUnique = e?.message?.includes("UNIQUE constraint failed") || e?.code === "SQLITE_CONSTRAINT_UNIQUE" || e?.cause?.message?.includes("UNIQUE constraint failed") || e?.cause?.extendedCode === "SQLITE_CONSTRAINT_UNIQUE";
       if (!isUnique)
@@ -38928,6 +38957,7 @@ function initSession(db) {
       session_id = session.id;
       created = false;
       ai_tool = session.ai_tool;
+      terminalAudit(`session ${session.id.slice(0, 8)} resumed at ${now} (${ai_tool ?? "unknown"}: ${session.title})`);
     }
     emitEvent({ event_type: "session_started", timestamp: now, session: { id_prefix: session_id.slice(0, 8), ai_tool } });
     const limit = args.limit ?? 10;
@@ -39016,6 +39046,7 @@ var init_sessions = __esm({
     init_relay();
     init_signing();
     init_ntp();
+    init_terminal();
   }
 });
 
@@ -39328,7 +39359,7 @@ function isFkError(e) {
 }
 async function insertMessage(db, session_id, role, content, event_type) {
   return db.transaction(async (tx) => {
-    const last = await tx.select({ content_hash: messages.content_hash }).from(messages).where(eq(messages.session_id, session_id)).orderBy(desc(messages.created_at), desc(sql`rowid`)).limit(1);
+    const last = await tx.select({ content_hash: messages.content_hash, created_at: messages.created_at }).from(messages).where(eq(messages.session_id, session_id)).orderBy(desc(messages.created_at), desc(sql`rowid`)).limit(1);
     const ts = localISOString();
     const msgId = v4_default();
     const prevHash = last[0]?.content_hash ?? null;
@@ -39345,7 +39376,13 @@ async function insertMessage(db, session_id, role, content, event_type) {
     });
     await tx.update(sessions).set({ updated_at: ts }).where(eq(sessions.id, session_id));
     const [sessionRow] = await tx.select({ ai_tool: sessions.ai_tool }).from(sessions).where(eq(sessions.id, session_id)).limit(1);
-    return { id: msgId, now: ts, contentHash: hash, ai_tool: sessionRow?.ai_tool ?? null };
+    return {
+      id: msgId,
+      now: ts,
+      contentHash: hash,
+      ai_tool: sessionRow?.ai_tool ?? null,
+      previous_created_at: last[0]?.created_at ?? null
+    };
   });
 }
 function logMessage(db) {
@@ -39361,6 +39398,9 @@ function logMessage(db) {
       now = result.now;
       contentHash = result.contentHash;
       sessionAiTool = result.ai_tool;
+      const elapsed = result.previous_created_at ? ` (+${formatDuration(new Date(now).getTime() - new Date(result.previous_created_at).getTime())})` : "";
+      const marker = args.role === "user" ? "user start" : "assistant end";
+      terminalAudit(`${marker} ${now}${elapsed} session ${args.session_id.slice(0, 8)}`);
     } catch (e) {
       if (isFkError(e)) {
         return { content: [{ type: "text", text: `Session not found: ${args.session_id}` }], isError: true };
@@ -39508,6 +39548,7 @@ var init_messages = __esm({
     init_hash();
     init_detect();
     init_relay();
+    init_terminal();
   }
 });
 

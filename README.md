@@ -40,6 +40,8 @@ Chron stores a local audit trail of:
 
 Chron's SIEM integrations send only metadata: session starts, role-only message events, and masked secret detections. Message content and raw secret values stay local.
 
+Need runtime policy enforcement for AI agents? CLAIIM adds agent identity, approval workflows, and ALLOW/DENY gates on top of Chron proof. Try the public preview: https://claiim.io/preview
+
 ---
 
 ## Install
