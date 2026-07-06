@@ -22825,6 +22825,14 @@ async function initDb(dbPath) {
   if (!sessCols.includes("metadata")) {
     await client.execute("ALTER TABLE sessions ADD COLUMN metadata TEXT");
   }
+  const ftsCount = await client.execute("SELECT count(*) as n FROM messages_fts");
+  const msgCount = await client.execute("SELECT count(*) as n FROM messages");
+  if (Number(ftsCount.rows[0][0]) < Number(msgCount.rows[0][0])) {
+    await client.execute("DELETE FROM messages_fts");
+    await client.execute(
+      "INSERT INTO messages_fts(rowid, content, session_id) SELECT rowid, content, session_id FROM messages"
+    );
+  }
   return drizzle(client, { schema: schema_exports });
 }
 var import_os, import_fs, import_path, CREATE_SQL;
@@ -22874,7 +22882,21 @@ var init_db2 = __esm({
       `CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_title ON sessions(title)`,
       `CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_session_id ON secrets_detected(session_id)`,
-      `CREATE INDEX IF NOT EXISTS idx_secrets_detected_message_id ON secrets_detected(message_id)`
+      `CREATE INDEX IF NOT EXISTS idx_secrets_detected_message_id ON secrets_detected(message_id)`,
+      `CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
+    content,
+    session_id UNINDEXED,
+    tokenize = 'porter unicode61'
+  )`,
+      `CREATE TRIGGER IF NOT EXISTS messages_fts_ai
+    AFTER INSERT ON messages BEGIN
+      INSERT INTO messages_fts(rowid, content, session_id)
+      VALUES (new.rowid, new.content, new.session_id);
+    END`,
+      `CREATE TRIGGER IF NOT EXISTS messages_fts_ad
+    AFTER DELETE ON messages BEGIN
+      DELETE FROM messages_fts WHERE rowid = old.rowid;
+    END`
     ];
   }
 });
@@ -38480,7 +38502,7 @@ var init_time = __esm({
 var version4;
 var init_package = __esm({
   "package.json"() {
-    version4 = "0.1.28";
+    version4 = "0.1.29";
   }
 });
 
@@ -38839,9 +38861,22 @@ var init_ntp = __esm({
 });
 
 // src/utils/terminal.ts
-function terminalAudit(message) {
-  const setting = process.env.CHRON_TERMINAL_AUDIT;
-  if (setting && DISABLE_VALUES.has(setting.toLowerCase()))
+function resolvedLevel() {
+  const raw = (process.env.CHRON_LOG_LEVEL ?? "").toLowerCase();
+  if (raw === "off" || raw === "false" || raw === "0")
+    return "off";
+  if (raw === "summary")
+    return "summary";
+  const legacy = process.env.CHRON_TERMINAL_AUDIT;
+  if (legacy && DISABLE_VALUES.has(legacy.toLowerCase()))
+    return "off";
+  return "verbose";
+}
+function terminalAudit(message, level = "message") {
+  const mode = resolvedLevel();
+  if (mode === "off")
+    return;
+  if (mode === "summary" && level === "message")
     return;
   process.stderr.write(`[chron] ${message}
 `);
@@ -38893,7 +38928,7 @@ function startSession(db) {
       });
       attachNtpMetadata(db, id);
       emitEvent({ event_type: "session_started", timestamp: now, session: { id_prefix: id.slice(0, 8), ai_tool: args.ai_tool ?? null } });
-      terminalAudit(`session ${id.slice(0, 8)} started at ${now} (${args.ai_tool ?? "unknown"}: ${args.title})`);
+      terminalAudit(`session ${id.slice(0, 8)} started at ${now} (${args.ai_tool ?? "unknown"}: ${args.title})`, "session");
       return {
         content: [{
           type: "text",
@@ -38909,7 +38944,7 @@ function startSession(db) {
       const [countRow] = await db.select({ count: sql`count(*)` }).from(messages).where(eq(messages.session_id, session.id));
       await db.update(sessions).set({ updated_at: now }).where(eq(sessions.id, session.id));
       emitEvent({ event_type: "session_started", timestamp: now, session: { id_prefix: session.id.slice(0, 8), ai_tool: session.ai_tool } });
-      terminalAudit(`session ${session.id.slice(0, 8)} resumed at ${now} (${session.ai_tool ?? "unknown"}: ${session.title})`);
+      terminalAudit(`session ${session.id.slice(0, 8)} resumed at ${now} (${session.ai_tool ?? "unknown"}: ${session.title})`, "session");
       return {
         content: [{
           type: "text",
@@ -38946,7 +38981,7 @@ function initSession(db) {
       created = true;
       ai_tool = args.ai_tool ?? null;
       attachNtpMetadata(db, id);
-      terminalAudit(`session ${id.slice(0, 8)} started at ${now} (${ai_tool ?? "unknown"}: ${args.title})`);
+      terminalAudit(`session ${id.slice(0, 8)} started at ${now} (${ai_tool ?? "unknown"}: ${args.title})`, "session");
     } catch (e) {
       const isUnique = e?.message?.includes("UNIQUE constraint failed") || e?.code === "SQLITE_CONSTRAINT_UNIQUE" || e?.cause?.message?.includes("UNIQUE constraint failed") || e?.cause?.extendedCode === "SQLITE_CONSTRAINT_UNIQUE";
       if (!isUnique)
@@ -38957,7 +38992,7 @@ function initSession(db) {
       session_id = session.id;
       created = false;
       ai_tool = session.ai_tool;
-      terminalAudit(`session ${session.id.slice(0, 8)} resumed at ${now} (${ai_tool ?? "unknown"}: ${session.title})`);
+      terminalAudit(`session ${session.id.slice(0, 8)} resumed at ${now} (${ai_tool ?? "unknown"}: ${session.title})`, "session");
     }
     emitEvent({ event_type: "session_started", timestamp: now, session: { id_prefix: session_id.slice(0, 8), ai_tool } });
     const limit = args.limit ?? 10;
@@ -39872,6 +39907,73 @@ var init_summary2 = __esm({
   }
 });
 
+// src/tools/search.ts
+async function runSearch(db, query, limit = 10) {
+  const client = db.$client;
+  let rows;
+  try {
+    const result = await client.execute({
+      sql: `
+        SELECT
+          messages_fts.session_id                                          AS session_id,
+          snippet(messages_fts, 0, '>>>', '<<<', '\u2026', 24)                 AS excerpt,
+          s.title                                                           AS title,
+          s.ai_tool                                                         AS ai_tool,
+          s.updated_at                                                      AS updated_at
+        FROM messages_fts
+        JOIN sessions s ON s.id = messages_fts.session_id
+        WHERE messages_fts MATCH ?
+        ORDER BY rank
+        LIMIT ?
+      `,
+      args: [query, limit * 5]
+      // over-fetch so we can group into limit distinct sessions
+    });
+    rows = result.rows;
+  } catch {
+    return [];
+  }
+  const map = /* @__PURE__ */ new Map();
+  for (const r of rows) {
+    const sid = String(r.session_id ?? "");
+    if (!sid)
+      continue;
+    if (!map.has(sid)) {
+      map.set(sid, {
+        session_id: sid,
+        title: String(r.title ?? ""),
+        ai_tool: r.ai_tool != null ? String(r.ai_tool) : null,
+        updated_at: String(r.updated_at ?? ""),
+        match_count: 0,
+        excerpts: []
+      });
+    }
+    const entry = map.get(sid);
+    entry.match_count++;
+    if (entry.excerpts.length < 3)
+      entry.excerpts.push(String(r.excerpt ?? ""));
+    if (map.size >= limit && entry.match_count > 1)
+      break;
+  }
+  return Array.from(map.values()).slice(0, limit);
+}
+function searchSessions(db) {
+  return async (args) => {
+    const results = await runSearch(db, args.query, args.limit ?? 10);
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({ query: args.query, total: results.length, results })
+      }]
+    };
+  };
+}
+var init_search = __esm({
+  "src/tools/search.ts"() {
+    "use strict";
+  }
+});
+
 // src/server.ts
 function createServer(db) {
   const server = new McpServer({
@@ -39996,6 +40098,15 @@ function createServer(db) {
     deleteSession(db)
   );
   server.tool(
+    "search_sessions",
+    'Full-text search across all logged AI conversations. Returns matching sessions with excerpts. Uses SQLite FTS5 with porter stemming \u2014 supports phrases ("exact match"), boolean (term1 OR term2), and prefix (migrat*).',
+    {
+      query: external_exports.string().describe('FTS5 search query, e.g. "database migration" or "auth bug" or "deploy OR release"'),
+      limit: external_exports.number().int().positive().optional().describe("Max sessions to return (default: 10)")
+    },
+    searchSessions(db)
+  );
+  server.tool(
     "summarize_session",
     "Return a structured summary of a session: timeline with latencies, mutations detected, secrets touched, and possible prod-account references. Useful for compliance review and change-control evidence.",
     {
@@ -40025,6 +40136,7 @@ var init_server3 = __esm({
     init_verify();
     init_detect2();
     init_summary2();
+    init_search();
     init_package();
     roleEnum = external_exports.enum(["user", "assistant"]);
   }

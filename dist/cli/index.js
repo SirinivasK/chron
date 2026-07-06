@@ -16615,6 +16615,14 @@ async function initDb(dbPath3) {
   if (!sessCols.includes("metadata")) {
     await client.execute("ALTER TABLE sessions ADD COLUMN metadata TEXT");
   }
+  const ftsCount = await client.execute("SELECT count(*) as n FROM messages_fts");
+  const msgCount = await client.execute("SELECT count(*) as n FROM messages");
+  if (Number(ftsCount.rows[0][0]) < Number(msgCount.rows[0][0])) {
+    await client.execute("DELETE FROM messages_fts");
+    await client.execute(
+      "INSERT INTO messages_fts(rowid, content, session_id) SELECT rowid, content, session_id FROM messages"
+    );
+  }
   return drizzle(client, { schema: schema_exports });
 }
 var import_os, import_fs, import_path, CREATE_SQL;
@@ -16664,8 +16672,78 @@ var init_db2 = __esm({
       `CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_title ON sessions(title)`,
       `CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_session_id ON secrets_detected(session_id)`,
-      `CREATE INDEX IF NOT EXISTS idx_secrets_detected_message_id ON secrets_detected(message_id)`
+      `CREATE INDEX IF NOT EXISTS idx_secrets_detected_message_id ON secrets_detected(message_id)`,
+      `CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
+    content,
+    session_id UNINDEXED,
+    tokenize = 'porter unicode61'
+  )`,
+      `CREATE TRIGGER IF NOT EXISTS messages_fts_ai
+    AFTER INSERT ON messages BEGIN
+      INSERT INTO messages_fts(rowid, content, session_id)
+      VALUES (new.rowid, new.content, new.session_id);
+    END`,
+      `CREATE TRIGGER IF NOT EXISTS messages_fts_ad
+    AFTER DELETE ON messages BEGIN
+      DELETE FROM messages_fts WHERE rowid = old.rowid;
+    END`
     ];
+  }
+});
+
+// src/tools/search.ts
+async function runSearch(db, query, limit = 10) {
+  const client = db.$client;
+  let rows;
+  try {
+    const result = await client.execute({
+      sql: `
+        SELECT
+          messages_fts.session_id                                          AS session_id,
+          snippet(messages_fts, 0, '>>>', '<<<', '\u2026', 24)                 AS excerpt,
+          s.title                                                           AS title,
+          s.ai_tool                                                         AS ai_tool,
+          s.updated_at                                                      AS updated_at
+        FROM messages_fts
+        JOIN sessions s ON s.id = messages_fts.session_id
+        WHERE messages_fts MATCH ?
+        ORDER BY rank
+        LIMIT ?
+      `,
+      args: [query, limit * 5]
+      // over-fetch so we can group into limit distinct sessions
+    });
+    rows = result.rows;
+  } catch {
+    return [];
+  }
+  const map = /* @__PURE__ */ new Map();
+  for (const r of rows) {
+    const sid = String(r.session_id ?? "");
+    if (!sid)
+      continue;
+    if (!map.has(sid)) {
+      map.set(sid, {
+        session_id: sid,
+        title: String(r.title ?? ""),
+        ai_tool: r.ai_tool != null ? String(r.ai_tool) : null,
+        updated_at: String(r.updated_at ?? ""),
+        match_count: 0,
+        excerpts: []
+      });
+    }
+    const entry = map.get(sid);
+    entry.match_count++;
+    if (entry.excerpts.length < 3)
+      entry.excerpts.push(String(r.excerpt ?? ""));
+    if (map.size >= limit && entry.match_count > 1)
+      break;
+  }
+  return Array.from(map.values()).slice(0, limit);
+}
+var init_search = __esm({
+  "src/tools/search.ts"() {
+    "use strict";
   }
 });
 
@@ -16788,12 +16866,43 @@ ${msg.content}
     }
   }
 }
+async function printSearch(query, limit) {
+  const db = await initDb();
+  const results = await runSearch(db, query, limit);
+  if (results.length === 0) {
+    process.stdout.write(`No sessions match: ${query}
+`);
+    return;
+  }
+  process.stdout.write(`
+${BOLD}Search: ${query}${RESET}  ${DIM}(${results.length} session${results.length === 1 ? "" : "s"})${RESET}
+
+`);
+  for (const r of results) {
+    const date = fmtDate(r.updated_at);
+    const prefix = r.session_id.slice(0, 8);
+    const hits = `${r.match_count} hit${r.match_count === 1 ? "" : "s"}`;
+    process.stdout.write(
+      `  ${DIM}${date}${RESET}  ${CYAN}${prefix}${RESET}  ${BOLD}${hits}${RESET}  ${r.title}
+`
+    );
+    for (const excerpt of r.excerpts) {
+      const highlighted = excerpt.replace(/>>>/g, YELLOW).replace(/<<</g, RESET);
+      process.stdout.write(`    ${DIM}\u2026${RESET} ${highlighted}
+`);
+    }
+    process.stdout.write("\n");
+  }
+}
 async function runHistory(args2) {
   const limitArg = args2.find((a) => a.startsWith("--limit="));
   const limit = limitArg ? parseInt(limitArg.split("=")[1], 10) : 20;
   const refArg = args2.find((a) => a.startsWith("--ref="))?.split("=").slice(1).join("=");
+  const searchArg = args2.find((a) => a.startsWith("--search="))?.split("=").slice(1).join("=");
   const positional = args2.filter((a) => !a.startsWith("--"));
-  if (positional.length === 0) {
+  if (searchArg) {
+    await printSearch(searchArg, limit);
+  } else if (positional.length === 0) {
     await printList(limit, refArg);
   } else {
     await printDetail(positional[0]);
@@ -16806,6 +16915,7 @@ var init_history = __esm({
     init_drizzle_orm();
     init_db2();
     init_schema();
+    init_search();
     RESET = "\x1B[0m";
     BOLD = "\x1B[1m";
     DIM = "\x1B[2m";
@@ -17376,7 +17486,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.28",
+      version: "0.1.29",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -19986,9 +20096,10 @@ Commands:
   import          Import conversations from external AI tools
 
 Options (history):
-  --limit=<n>     Max sessions to show (default: 20)
-  --ref=<value>   Filter by external_ref prefix (e.g. --ref=jira: or --ref=jira:ENG-123)
-  <id-prefix>     Show full log for the session with this ID prefix
+  --limit=<n>       Max sessions to show (default: 20)
+  --search=<query>  Full-text search across all sessions (FTS5: phrases, boolean, prefix*)
+  --ref=<value>     Filter by external_ref prefix
+  <id-prefix>       Show full log for the session with this ID prefix
 
 Options (report):
   --since=<range>   Filter by date: 7d, 30d, or YYYY-MM-DD (default: all time)
