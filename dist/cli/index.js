@@ -6162,7 +6162,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash6 } = require("crypto");
+    var { randomBytes, createHash: createHash7 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -6842,7 +6842,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash6("sha1").update(key + GUID).digest("base64");
+        const digest = createHash7("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -7229,7 +7229,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash6 } = require("crypto");
+    var { createHash: createHash7 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -7538,7 +7538,7 @@ var require_websocket_server = __commonJS({
         }
         if (this._state > RUNNING)
           return abortHandshake(socket, 503);
-        const digest = createHash6("sha1").update(key + GUID).digest("base64");
+        const digest = createHash7("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -16526,10 +16526,11 @@ var init_libsql = __esm({
 var schema_exports = {};
 __export(schema_exports, {
   messages: () => messages,
+  review_findings: () => review_findings,
   secrets_detected: () => secrets_detected,
   sessions: () => sessions
 });
-var sessions, messages, secrets_detected;
+var sessions, messages, secrets_detected, review_findings;
 var init_schema = __esm({
   "src/db/schema.ts"() {
     "use strict";
@@ -16564,6 +16565,16 @@ var init_schema = __esm({
       type: text("type").notNull(),
       masked_value: text("masked_value").notNull(),
       detected_at: text("detected_at").notNull()
+    });
+    review_findings = sqliteTable("review_findings", {
+      id: text("id").primaryKey(),
+      rule_id: text("rule_id").notNull(),
+      session_id: text("session_id").notNull().references(() => sessions.id),
+      status: text("status", { enum: ["open", "accepted", "dismissed", "resolved"] }).notNull(),
+      note: text("note"),
+      reviewed_at: text("reviewed_at"),
+      created_at: text("created_at").notNull(),
+      updated_at: text("updated_at").notNull()
     });
   }
 });
@@ -16669,10 +16680,23 @@ var init_db2 = __esm({
     FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
     FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE
   )`,
+      `CREATE TABLE IF NOT EXISTS review_findings (
+    id TEXT PRIMARY KEY,
+    rule_id TEXT NOT NULL,
+    session_id TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('open', 'accepted', 'dismissed', 'resolved')),
+    note TEXT,
+    reviewed_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+  )`,
       `CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_title ON sessions(title)`,
       `CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_session_id ON secrets_detected(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_message_id ON secrets_detected(message_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_review_findings_session_id ON review_findings(session_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_review_findings_status ON review_findings(status)`,
       `CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
     content,
     session_id UNINDEXED,
@@ -17486,7 +17510,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.30",
+      version: "0.1.31",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -20038,10 +20062,10 @@ var init_rules = __esm({
         id: "soc2.cc6_1.cc6_6.secret_detected",
         framework: "soc2",
         controls: ["CC6.1", "CC6.6"],
-        severity: "critical",
-        description: "AI session contained a detected secret or credential",
-        finding: "A sensitive credential or secret was detected in an AI session.",
-        not_claiming: "This is not evidence of a breach. Chron masks all detected values at log time \u2014 no plaintext credentials are stored.",
+        severity: "high",
+        description: "AI session contained detected sensitive data or credentials",
+        finding: "Sensitive data or a credential was detected in an AI session.",
+        not_claiming: "This is not evidence of a breach or credential compromise. Chron masks detected values at log time \u2014 no plaintext values are stored.",
         suggested_evidence: [
           "Confirm no plaintext credential was committed to version control",
           "Rotate the credential if it was a live secret",
@@ -20110,6 +20134,91 @@ var init_rules = __esm({
   }
 });
 
+// src/review/workflow.ts
+function findingId(ruleId, sessionId) {
+  return (0, import_crypto7.createHash)("sha256").update(`${ruleId}:${sessionId}`).digest("hex");
+}
+async function hydrateFindingStatuses(db, findings) {
+  if (findings.length === 0)
+    return findings;
+  const client = db.$client;
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  for (const finding of findings) {
+    await client.execute({
+      sql: `INSERT INTO review_findings (id, rule_id, session_id, status, created_at, updated_at)
+            VALUES (?, ?, ?, 'open', ?, ?)
+            ON CONFLICT(id) DO NOTHING`,
+      args: [finding.id, finding.rule_id, finding.session_id, now, now]
+    });
+  }
+  const rows = await loadFindingStates(client, findings.map((f) => f.id));
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  return findings.map((finding) => {
+    const state = byId.get(finding.id);
+    return {
+      ...finding,
+      status: state?.status ?? "open",
+      note: state?.note ?? null,
+      reviewed_at: state?.reviewed_at ?? null
+    };
+  });
+}
+async function updateFindingStatus(db, idOrPrefix, status, note) {
+  const client = db.$client;
+  const id = await resolveFindingId(client, idOrPrefix);
+  const reviewedAt = (/* @__PURE__ */ new Date()).toISOString();
+  await client.execute({
+    sql: `UPDATE review_findings
+          SET status = ?, note = ?, reviewed_at = ?, updated_at = ?
+          WHERE id = ?`,
+    args: [status, note ?? null, reviewedAt, reviewedAt, id]
+  });
+  const rows = await loadFindingStates(client, [id]);
+  return rows[0];
+}
+async function resolveFindingId(client, idOrPrefix) {
+  const prefix = idOrPrefix.trim();
+  if (!prefix)
+    throw new Error("Finding id is required");
+  const result = await client.execute({
+    sql: `SELECT id FROM review_findings WHERE id LIKE ? ORDER BY id LIMIT 2`,
+    args: [`${prefix}%`]
+  });
+  if (result.rows.length === 0) {
+    throw new Error(`Finding not found: ${prefix}. Run "chron review --framework=soc2" first to register current findings.`);
+  }
+  if (result.rows.length > 1) {
+    throw new Error(`Finding id prefix is ambiguous: ${prefix}. Use more characters.`);
+  }
+  return String(result.rows[0].id);
+}
+async function loadFindingStates(client, ids) {
+  if (ids.length === 0)
+    return [];
+  const placeholders = ids.map(() => "?").join(", ");
+  const result = await client.execute({
+    sql: `SELECT id, rule_id, session_id, status, note, reviewed_at
+          FROM review_findings
+          WHERE id IN (${placeholders})`,
+    args: ids
+  });
+  return result.rows.map((row) => ({
+    id: String(row.id),
+    rule_id: String(row.rule_id),
+    session_id: String(row.session_id),
+    status: String(row.status),
+    note: row.note == null ? null : String(row.note),
+    reviewed_at: row.reviewed_at == null ? null : String(row.reviewed_at)
+  }));
+}
+var import_crypto7;
+var init_workflow = __esm({
+  "src/review/workflow.ts"() {
+    "use strict";
+    import_crypto7 = require("crypto");
+  }
+});
+
 // src/review/engine.ts
 async function runReview(db, rules, since) {
   const client = db.$client;
@@ -20126,6 +20235,27 @@ async function runReview(db, rules, since) {
     (a, b) => (SEVERITY_ORDER[a.severity] ?? 99) - (SEVERITY_ORDER[b.severity] ?? 99) || a.last_occurred_at.localeCompare(b.last_occurred_at)
   );
   return findings;
+}
+function higherSeverity(a, b) {
+  return (SEVERITY_ORDER[a] ?? 99) <= (SEVERITY_ORDER[b] ?? 99) ? a : b;
+}
+function suggestedEvidenceForSecret(type, rule) {
+  const severity = SECRET_SEVERITY[type] ?? rule.severity;
+  if (severity === "medium") {
+    return [
+      "Confirm the personal or contact data was necessary for the AI session",
+      "Verify no unnecessary personal data was committed to version control",
+      "Document handling or remediation if the data was not required"
+    ];
+  }
+  if (severity === "low") {
+    return [
+      "Review whether the detected value contains secret material",
+      "Confirm no plaintext credential was committed to version control",
+      "Document why the value is acceptable or remediate it"
+    ];
+  }
+  return rule.suggested_evidence;
 }
 async function matchCodeChanges(client, rule, map, since) {
   if (rule.match.type !== "code_change_path")
@@ -20160,10 +20290,14 @@ async function matchCodeChanges(client, rule, map, since) {
     const evidenceItem = `code_change: ${filePath || "unknown path"}`;
     if (!map.has(mapKey)) {
       map.set(mapKey, {
+        id: findingId(rule.id, sessionId),
         rule_id: rule.id,
         framework: rule.framework,
         controls: rule.controls,
         severity: rule.severity,
+        status: "open",
+        note: null,
+        reviewed_at: null,
         session_id: sessionId,
         session_prefix: sessionId.slice(0, 8),
         session_title: String(row.title ?? ""),
@@ -20200,13 +20334,20 @@ async function matchSecrets(client, rule, map, since) {
     const sessionId = String(row.session_id ?? "");
     const mapKey = `${rule.id}::${sessionId}`;
     const occurredAt = String(row.detected_at ?? "");
-    const evidenceItem = `secret_detected: ${row.type} (${row.masked_value})`;
+    const type = String(row.type ?? "");
+    const severity = SECRET_SEVERITY[type] ?? rule.severity;
+    const suggestedEvidence = suggestedEvidenceForSecret(type, rule);
+    const evidenceItem = `secret_detected: ${type} (${row.masked_value})`;
     if (!map.has(mapKey)) {
       map.set(mapKey, {
+        id: findingId(rule.id, sessionId),
         rule_id: rule.id,
         framework: rule.framework,
         controls: rule.controls,
-        severity: rule.severity,
+        severity,
+        status: "open",
+        note: null,
+        reviewed_at: null,
         session_id: sessionId,
         session_prefix: sessionId.slice(0, 8),
         session_title: String(row.title ?? ""),
@@ -20216,10 +20357,15 @@ async function matchSecrets(client, rule, map, since) {
         last_occurred_at: occurredAt,
         finding: rule.finding,
         not_claiming: rule.not_claiming,
-        suggested_evidence: rule.suggested_evidence
+        suggested_evidence: suggestedEvidence
       });
     }
     const finding = map.get(mapKey);
+    const previousSeverity = finding.severity;
+    finding.severity = higherSeverity(finding.severity, severity);
+    if (finding.severity !== previousSeverity || finding.suggested_evidence.length === 0) {
+      finding.suggested_evidence = suggestedEvidence;
+    }
     if (!finding.evidence_items.includes(evidenceItem)) {
       finding.evidence_items.push(evidenceItem);
     }
@@ -20227,11 +20373,38 @@ async function matchSecrets(client, rule, map, since) {
       finding.last_occurred_at = occurredAt;
   }
 }
-var SEVERITY_ORDER;
+var SEVERITY_ORDER, SECRET_SEVERITY;
 var init_engine = __esm({
   "src/review/engine.ts"() {
     "use strict";
+    init_workflow();
     SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
+    SECRET_SEVERITY = {
+      private_key: "critical",
+      credit_card: "critical",
+      ssn: "critical",
+      iban: "critical",
+      aws_access_key: "high",
+      anthropic_api_key: "high",
+      openai_api_key: "high",
+      google_api_key: "high",
+      github_token: "high",
+      slack_token: "high",
+      stripe_key: "high",
+      sendgrid_key: "high",
+      huggingface_token: "high",
+      jwt: "high",
+      url_credentials: "high",
+      password: "high",
+      credential_pair: "high",
+      passport: "high",
+      dob: "high",
+      email: "medium",
+      phone_us: "medium",
+      phone_e164: "medium",
+      internal_ip: "low",
+      env_value: "low"
+    };
   }
 });
 
@@ -20240,16 +20413,22 @@ var review_exports = {};
 __export(review_exports, {
   runReview: () => runReview2
 });
-function printFindings(findings, framework, sessionCount) {
+function printFindings(findings, framework, sessionCount, showAll) {
   const controlsHit = new Set(findings.flatMap((f) => f.controls));
-  process.stdout.write(`
-${BOLD10}Chron Review${RESET10}  ${CYAN8}${framework.toUpperCase()}${RESET10}  ${DIM9}${sessionCount} session(s) reviewed${RESET10}
+  process.stdout.write(
+    `
+${BOLD10}Chron Review${RESET10}  ${CYAN8}${framework.toUpperCase()}${RESET10}  ${DIM9}${sessionCount} session(s) reviewed${showAll ? " \xB7 all statuses" : " \xB7 open findings"}${RESET10}
 
-`);
+`
+  );
   if (findings.length === 0) {
-    process.stdout.write(`${DIM9}No findings. No sessions matched any control review criteria.${RESET10}
+    process.stdout.write(
+      showAll ? `${DIM9}No findings. No sessions matched any control review criteria.${RESET10}
 
-`);
+` : `${DIM9}No open findings. Use --all to include accepted, dismissed, and resolved findings.${RESET10}
+
+`
+    );
     return;
   }
   process.stdout.write(
@@ -20265,12 +20444,16 @@ It is not a certification of compliance or evidence of any violation.${RESET10}
   );
   for (const f of findings) {
     const sevColor = SEV_COLOR[f.severity] ?? DIM9;
+    const statusColor = STATUS_COLOR[f.status] ?? DIM9;
     const controls = f.controls.join(", ");
     const sev = f.severity.toUpperCase().padEnd(8);
+    const status = f.status.toUpperCase().padEnd(9);
     process.stdout.write(
-      `  ${sevColor}${BOLD10}${sev}${RESET10}  ${MAGENTA2}${controls.padEnd(16)}${RESET10}  ${CYAN8}${f.session_prefix}${RESET10}  ${f.session_title}
+      `  ${sevColor}${BOLD10}${sev}${RESET10}  ${statusColor}${status}${RESET10}  ${MAGENTA2}${controls.padEnd(16)}${RESET10}  ${CYAN8}${f.session_prefix}${RESET10}  ${f.session_title}
 `
     );
+    process.stdout.write(`    ${DIM9}id: ${f.id.slice(0, 16)}${RESET10}
+`);
     process.stdout.write(`    ${f.finding}
 `);
     for (const item of f.evidence_items.slice(0, 5)) {
@@ -20283,6 +20466,9 @@ It is not a certification of compliance or evidence of any violation.${RESET10}
     }
     process.stdout.write(`    ${DIM9}Suggested: ${f.suggested_evidence[0]}${RESET10}
 `);
+    if (f.note)
+      process.stdout.write(`    ${DIM9}Note: ${f.note}${RESET10}
+`);
     process.stdout.write("\n");
   }
 }
@@ -20292,24 +20478,31 @@ function esc2(s) {
 function badgeHtml(severity) {
   return `<span class="badge badge-${esc2(severity)}">${esc2(severity.toUpperCase())}</span>`;
 }
+function statusBadgeHtml(status) {
+  return `<span class="status-badge status-${esc2(status)}">${esc2(status.toUpperCase())}</span>`;
+}
 function buildReviewHtml(params) {
   const { framework, host, generatedAt, sessionCount, findings } = params;
   const controlsHit = new Set(findings.flatMap((f) => f.controls));
   const bySeverity = { critical: 0, high: 0, medium: 0, low: 0 };
   for (const f of findings)
     bySeverity[f.severity] = (bySeverity[f.severity] ?? 0) + 1;
-  const findingCards = findings.length === 0 ? '<p style="color:#6b7280">No findings. No sessions matched any control review criteria.</p>' : findings.map((f) => `
+  const findingCards = findings.length === 0 ? '<p style="color:#6b7280">No findings matched this report scope.</p>' : findings.map((f) => `
 <div class="finding-card">
   <div class="finding-header">
     ${badgeHtml(f.severity)}
+    ${statusBadgeHtml(f.status)}
     <span class="finding-controls">${esc2(f.controls.join(", "))}</span>
     <span style="flex:1"></span>
     <span class="finding-session">${esc2(f.session_prefix)}</span>
     <span style="font-size:12px;color:#374151">${esc2(f.session_title)}</span>
   </div>
   <div class="finding-body">
+    <div style="font-family:monospace;font-size:11px;color:#6b7280;margin-bottom:5px">Finding ID: ${esc2(f.id)}</div>
     <div class="finding-text">${esc2(f.finding)}</div>
     <div class="finding-disclaimer">${esc2(f.not_claiming)}</div>
+    ${f.note ? `<div style="font-size:11px;color:#374151;margin-bottom:8px"><strong>Reviewer note:</strong> ${esc2(f.note)}</div>` : ""}
+    ${f.reviewed_at ? `<div style="font-size:11px;color:#6b7280;margin-bottom:8px">Reviewed: ${esc2(f.reviewed_at)}</div>` : ""}
     <strong style="font-size:11px;color:#374151">Evidence in session:</strong>
     <ul class="evidence-list">
       ${f.evidence_items.map((e) => `<li>${esc2(e)}</li>`).join("")}
@@ -20395,17 +20588,28 @@ ${findingCards}
 </body>
 </html>`;
 }
-async function countSessions(db) {
+async function countSessions(db, since) {
   const client = db.$client;
-  const result = await client.execute("SELECT COUNT(*) AS n FROM sessions");
+  const result = await client.execute(
+    since ? {
+      sql: `SELECT COUNT(*) AS n FROM sessions WHERE updated_at >= ?`,
+      args: [since]
+    } : "SELECT COUNT(*) AS n FROM sessions"
+  );
   return Number(result.rows[0].n ?? 0);
 }
 async function runReview2(args2) {
+  const action = args2[0];
+  if (action === "accept" || action === "dismiss" || action === "resolve") {
+    await runReviewAction(action, args2.slice(1));
+    return;
+  }
   const frameworkArg = args2.find((a) => a.startsWith("--framework="))?.slice("--framework=".length)?.toLowerCase();
   const outputArg = args2.find((a) => a.startsWith("--output="))?.slice("--output=".length);
   const sinceArg = args2.find((a) => a.startsWith("--since="))?.slice("--since=".length);
+  const showAll = args2.includes("--all");
   if (!frameworkArg) {
-    process.stderr.write("Usage: chron review --framework=soc2 [--since=<range>] [--output=<file>]\n");
+    process.stderr.write("Usage: chron review --framework=soc2 [--since=<range>] [--all] [--output=<file>]\n");
     process.exit(1);
   }
   const rules = FRAMEWORKS[frameworkArg];
@@ -20425,11 +20629,13 @@ async function runReview2(args2) {
     }
   }
   const db = await initDb();
-  const [findings, sessionCount] = await Promise.all([
+  const [rawFindings, sessionCount] = await Promise.all([
     runReview(db, rules, since),
-    countSessions(db)
+    countSessions(db, since)
   ]);
-  printFindings(findings, frameworkArg, sessionCount);
+  const allFindings = await hydrateFindingStatuses(db, rawFindings);
+  const findings = showAll ? allFindings : allFindings.filter((f) => f.status === "open");
+  printFindings(findings, frameworkArg, sessionCount, showAll);
   if (outputArg) {
     const generatedAt = (/* @__PURE__ */ new Date()).toISOString().replace("T", " ").slice(0, 19) + " UTC";
     const html = buildReviewHtml({
@@ -20444,7 +20650,34 @@ async function runReview2(args2) {
 `);
   }
 }
-var import_fs12, import_os11, RESET10, BOLD10, DIM9, RED5, YELLOW8, CYAN8, MAGENTA2, SEV_COLOR, REPORT_CSS;
+async function runReviewAction(action, args2) {
+  const id = args2.find((a) => !a.startsWith("--"));
+  const note = args2.find((a) => a.startsWith("--note="))?.slice("--note=".length);
+  if (!id) {
+    process.stderr.write(`Usage: chron review ${action} <finding-id> [--note=<text>]
+`);
+    process.exit(1);
+  }
+  const statusByAction = {
+    accept: "accepted",
+    dismiss: "dismissed",
+    resolve: "resolved"
+  };
+  const status = statusByAction[action];
+  const db = await initDb();
+  try {
+    const row = await updateFindingStatus(db, id, status, note);
+    process.stdout.write(
+      `Finding ${row.id.slice(0, 16)} ${status}${note ? ` with note: ${note}` : ""}
+`
+    );
+  } catch (err) {
+    process.stderr.write(`${err instanceof Error ? err.message : String(err)}
+`);
+    process.exit(1);
+  }
+}
+var import_fs12, import_os11, RESET10, BOLD10, DIM9, RED5, YELLOW8, CYAN8, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS;
 var init_review = __esm({
   "src/cli/review.ts"() {
     "use strict";
@@ -20454,6 +20687,7 @@ var init_review = __esm({
     init_report();
     init_rules();
     init_engine();
+    init_workflow();
     RESET10 = "\x1B[0m";
     BOLD10 = "\x1B[1m";
     DIM9 = "\x1B[2m";
@@ -20466,6 +20700,12 @@ var init_review = __esm({
       high: YELLOW8,
       medium: CYAN8,
       low: DIM9
+    };
+    STATUS_COLOR = {
+      open: YELLOW8,
+      accepted: CYAN8,
+      dismissed: DIM9,
+      resolved: CYAN8
     };
     REPORT_CSS = `
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -20490,6 +20730,11 @@ tr:nth-child(even) td { background: #fafafa; }
 .badge-high { background:#d97706; }
 .badge-medium { background:#2563eb; }
 .badge-low { background:#6b7280; }
+.status-badge { display:inline-block; padding:1px 7px; border-radius:3px; font-size:11px; font-weight:600; border:1px solid #d1d5db; color:#374151; background:#fff; }
+.status-open { border-color:#f59e0b; color:#92400e; background:#fffbeb; }
+.status-accepted { border-color:#38bdf8; color:#075985; background:#f0f9ff; }
+.status-dismissed { border-color:#d1d5db; color:#6b7280; background:#f9fafb; }
+.status-resolved { border-color:#34d399; color:#065f46; background:#ecfdf5; }
 .disclaimer { background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 4px; padding: 12px 14px; margin: 14px 0 20px; font-size: 12px; color: #374151; }
 .finding-card { border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 14px; overflow: hidden; }
 .finding-header { display:flex; align-items:center; gap:10px; padding:10px 14px; background:#f9fafb; border-bottom:1px solid #e5e7eb; }
@@ -20642,7 +20887,11 @@ Options (import):
 Options (review):
   --framework=<name>  Framework to review against: soc2
   --since=<range>     Limit to sessions since: 7d, 30d, or YYYY-MM-DD
+  --all               Include accepted, dismissed, and resolved findings
   --output=<file>     Write HTML report to file (printable to PDF from browser)
+  accept <id>         Mark a finding as accepted; supports --note=<text>
+  dismiss <id>        Mark a finding as dismissed; supports --note=<text>
+  resolve <id>        Mark a finding as resolved; supports --note=<text>
 `
       );
       process.exit(command ? 1 : 0);
