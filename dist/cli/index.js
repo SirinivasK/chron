@@ -17486,7 +17486,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.29",
+      version: "0.1.30",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -20010,6 +20010,511 @@ var init_import = __esm({
   }
 });
 
+// src/review/rules.ts
+var SOC2_RULES, FRAMEWORKS;
+var init_rules = __esm({
+  "src/review/rules.ts"() {
+    "use strict";
+    SOC2_RULES = [
+      {
+        id: "soc2.cc6_1.ai_access_control_change",
+        framework: "soc2",
+        controls: ["CC6.1"],
+        severity: "high",
+        description: "AI touched access-control-related code",
+        finding: "AI modified code in an access-control-sensitive path.",
+        not_claiming: "This is not evidence of a security failure or SOC 2 non-compliance.",
+        suggested_evidence: [
+          "PR approval with human reviewer",
+          "Change ticket linked to the work",
+          "Manager or security team sign-off"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["auth", "iam", "rbac", "permission", "policy", "acl", "role", "login", "jwt", "oauth", "saml", "sso", "mfa", "access_control"]
+        }
+      },
+      {
+        id: "soc2.cc6_1.cc6_6.secret_detected",
+        framework: "soc2",
+        controls: ["CC6.1", "CC6.6"],
+        severity: "critical",
+        description: "AI session contained a detected secret or credential",
+        finding: "A sensitive credential or secret was detected in an AI session.",
+        not_claiming: "This is not evidence of a breach. Chron masks all detected values at log time \u2014 no plaintext credentials are stored.",
+        suggested_evidence: [
+          "Confirm no plaintext credential was committed to version control",
+          "Rotate the credential if it was a live secret",
+          "Document the detection and resolution in the change log"
+        ],
+        match: { type: "secret_detected" }
+      },
+      {
+        id: "soc2.cc7_2.cc8_1.ai_infra_change",
+        framework: "soc2",
+        controls: ["CC7.2", "CC8.1"],
+        severity: "high",
+        description: "AI executed or modified deployment or infrastructure files",
+        finding: "AI modified infrastructure or deployment configuration.",
+        not_claiming: "This is not evidence of an unauthorized change.",
+        suggested_evidence: [
+          "Change ticket or approval record",
+          "Pipeline approval gate log",
+          "Human review of the infrastructure diff"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: [".tf", "terraform", "dockerfile", "docker-compose", "kubernetes", "k8s", "helm", "ansible", ".github/workflow", "cloudformation", "pipeline", "deploy"]
+        }
+      },
+      {
+        id: "soc2.cc7_2.ai_monitoring_change",
+        framework: "soc2",
+        controls: ["CC7.2"],
+        severity: "high",
+        description: "AI changed logging, monitoring, alerting, or security tooling",
+        finding: "AI modified logging, monitoring, or security alerting code or configuration.",
+        not_claiming: "This is not evidence that monitoring was disabled or circumvented.",
+        suggested_evidence: [
+          "Confirm monitoring coverage was not reduced",
+          "Human review of the change",
+          "Change ticket"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["logging", "monitoring", "alerting", "splunk", "datadog", "prometheus", "grafana", "cloudwatch", "sentry", "pagerduty", "audit_log", "audit-log", "logger"]
+        }
+      },
+      {
+        id: "soc2.cc6_1.cc6_7.ai_data_handling_change",
+        framework: "soc2",
+        controls: ["CC6.1", "CC6.7"],
+        severity: "medium",
+        description: "AI changed data retention, deletion, export, or encryption logic",
+        finding: "AI modified data handling, retention, or privacy-related code.",
+        not_claiming: "This is not evidence of a data handling violation.",
+        suggested_evidence: [
+          "Privacy or data officer review",
+          "Change ticket documenting the business reason",
+          "Confirm compliance with data retention policy"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["retention", "encrypt", "decrypt", "gdpr", "privacy", "anonymize", "redact", "purge", "archive", "backup"]
+        }
+      }
+    ];
+    FRAMEWORKS = {
+      soc2: SOC2_RULES
+    };
+  }
+});
+
+// src/review/engine.ts
+async function runReview(db, rules, since) {
+  const client = db.$client;
+  const map = /* @__PURE__ */ new Map();
+  for (const rule of rules) {
+    if (rule.match.type === "code_change_path") {
+      await matchCodeChanges(client, rule, map, since);
+    } else if (rule.match.type === "secret_detected") {
+      await matchSecrets(client, rule, map, since);
+    }
+  }
+  const findings = Array.from(map.values());
+  findings.sort(
+    (a, b) => (SEVERITY_ORDER[a.severity] ?? 99) - (SEVERITY_ORDER[b.severity] ?? 99) || a.last_occurred_at.localeCompare(b.last_occurred_at)
+  );
+  return findings;
+}
+async function matchCodeChanges(client, rule, map, since) {
+  if (rule.match.type !== "code_change_path")
+    return;
+  const keywords = rule.match.path_contains;
+  const result = await client.execute(
+    since ? {
+      sql: `SELECT m.id, m.session_id, m.content, m.created_at, s.title, s.ai_tool
+              FROM messages m JOIN sessions s ON s.id = m.session_id
+              WHERE m.event_type = 'code_change' AND m.created_at >= ?
+              ORDER BY m.created_at`,
+      args: [since]
+    } : `SELECT m.id, m.session_id, m.content, m.created_at, s.title, s.ai_tool
+       FROM messages m JOIN sessions s ON s.id = m.session_id
+       WHERE m.event_type = 'code_change'
+       ORDER BY m.created_at`
+  );
+  for (const row of result.rows) {
+    const content = String(row.content ?? "");
+    let filePath = "";
+    try {
+      const parsed = JSON.parse(content);
+      filePath = (parsed.file_path ?? parsed.path ?? "").toLowerCase();
+    } catch {
+      filePath = content.toLowerCase();
+    }
+    if (!keywords.some((kw) => filePath.includes(kw.toLowerCase())))
+      continue;
+    const sessionId = String(row.session_id ?? "");
+    const mapKey = `${rule.id}::${sessionId}`;
+    const occurredAt = String(row.created_at ?? "");
+    const evidenceItem = `code_change: ${filePath || "unknown path"}`;
+    if (!map.has(mapKey)) {
+      map.set(mapKey, {
+        rule_id: rule.id,
+        framework: rule.framework,
+        controls: rule.controls,
+        severity: rule.severity,
+        session_id: sessionId,
+        session_prefix: sessionId.slice(0, 8),
+        session_title: String(row.title ?? ""),
+        ai_tool: row.ai_tool != null ? String(row.ai_tool) : null,
+        evidence_items: [],
+        first_occurred_at: occurredAt,
+        last_occurred_at: occurredAt,
+        finding: rule.finding,
+        not_claiming: rule.not_claiming,
+        suggested_evidence: rule.suggested_evidence
+      });
+    }
+    const finding = map.get(mapKey);
+    if (!finding.evidence_items.includes(evidenceItem)) {
+      finding.evidence_items.push(evidenceItem);
+    }
+    if (occurredAt > finding.last_occurred_at)
+      finding.last_occurred_at = occurredAt;
+  }
+}
+async function matchSecrets(client, rule, map, since) {
+  const result = await client.execute(
+    since ? {
+      sql: `SELECT sd.session_id, sd.type, sd.masked_value, sd.detected_at, s.title, s.ai_tool
+              FROM secrets_detected sd JOIN sessions s ON s.id = sd.session_id
+              WHERE sd.detected_at >= ?
+              ORDER BY sd.detected_at`,
+      args: [since]
+    } : `SELECT sd.session_id, sd.type, sd.masked_value, sd.detected_at, s.title, s.ai_tool
+       FROM secrets_detected sd JOIN sessions s ON s.id = sd.session_id
+       ORDER BY sd.detected_at`
+  );
+  for (const row of result.rows) {
+    const sessionId = String(row.session_id ?? "");
+    const mapKey = `${rule.id}::${sessionId}`;
+    const occurredAt = String(row.detected_at ?? "");
+    const evidenceItem = `secret_detected: ${row.type} (${row.masked_value})`;
+    if (!map.has(mapKey)) {
+      map.set(mapKey, {
+        rule_id: rule.id,
+        framework: rule.framework,
+        controls: rule.controls,
+        severity: rule.severity,
+        session_id: sessionId,
+        session_prefix: sessionId.slice(0, 8),
+        session_title: String(row.title ?? ""),
+        ai_tool: row.ai_tool != null ? String(row.ai_tool) : null,
+        evidence_items: [],
+        first_occurred_at: occurredAt,
+        last_occurred_at: occurredAt,
+        finding: rule.finding,
+        not_claiming: rule.not_claiming,
+        suggested_evidence: rule.suggested_evidence
+      });
+    }
+    const finding = map.get(mapKey);
+    if (!finding.evidence_items.includes(evidenceItem)) {
+      finding.evidence_items.push(evidenceItem);
+    }
+    if (occurredAt > finding.last_occurred_at)
+      finding.last_occurred_at = occurredAt;
+  }
+}
+var SEVERITY_ORDER;
+var init_engine = __esm({
+  "src/review/engine.ts"() {
+    "use strict";
+    SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
+  }
+});
+
+// src/cli/review.ts
+var review_exports = {};
+__export(review_exports, {
+  runReview: () => runReview2
+});
+function printFindings(findings, framework, sessionCount) {
+  const controlsHit = new Set(findings.flatMap((f) => f.controls));
+  process.stdout.write(`
+${BOLD10}Chron Review${RESET10}  ${CYAN8}${framework.toUpperCase()}${RESET10}  ${DIM9}${sessionCount} session(s) reviewed${RESET10}
+
+`);
+  if (findings.length === 0) {
+    process.stdout.write(`${DIM9}No findings. No sessions matched any control review criteria.${RESET10}
+
+`);
+    return;
+  }
+  process.stdout.write(
+    `${BOLD10}${findings.length}${RESET10} finding${findings.length === 1 ? "" : "s"}  across  ${BOLD10}${controlsHit.size}${RESET10} control${controlsHit.size === 1 ? "" : "s"}
+
+`
+  );
+  process.stdout.write(
+    `${DIM9}This report identifies AI-session evidence that may require control-owner review.
+It is not a certification of compliance or evidence of any violation.${RESET10}
+
+`
+  );
+  for (const f of findings) {
+    const sevColor = SEV_COLOR[f.severity] ?? DIM9;
+    const controls = f.controls.join(", ");
+    const sev = f.severity.toUpperCase().padEnd(8);
+    process.stdout.write(
+      `  ${sevColor}${BOLD10}${sev}${RESET10}  ${MAGENTA2}${controls.padEnd(16)}${RESET10}  ${CYAN8}${f.session_prefix}${RESET10}  ${f.session_title}
+`
+    );
+    process.stdout.write(`    ${f.finding}
+`);
+    for (const item of f.evidence_items.slice(0, 5)) {
+      process.stdout.write(`    ${DIM9}\u2022 ${item}${RESET10}
+`);
+    }
+    if (f.evidence_items.length > 5) {
+      process.stdout.write(`    ${DIM9}  \u2026 ${f.evidence_items.length - 5} more event(s)${RESET10}
+`);
+    }
+    process.stdout.write(`    ${DIM9}Suggested: ${f.suggested_evidence[0]}${RESET10}
+`);
+    process.stdout.write("\n");
+  }
+}
+function esc2(s) {
+  return (s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function badgeHtml(severity) {
+  return `<span class="badge badge-${esc2(severity)}">${esc2(severity.toUpperCase())}</span>`;
+}
+function buildReviewHtml(params) {
+  const { framework, host, generatedAt, sessionCount, findings } = params;
+  const controlsHit = new Set(findings.flatMap((f) => f.controls));
+  const bySeverity = { critical: 0, high: 0, medium: 0, low: 0 };
+  for (const f of findings)
+    bySeverity[f.severity] = (bySeverity[f.severity] ?? 0) + 1;
+  const findingCards = findings.length === 0 ? '<p style="color:#6b7280">No findings. No sessions matched any control review criteria.</p>' : findings.map((f) => `
+<div class="finding-card">
+  <div class="finding-header">
+    ${badgeHtml(f.severity)}
+    <span class="finding-controls">${esc2(f.controls.join(", "))}</span>
+    <span style="flex:1"></span>
+    <span class="finding-session">${esc2(f.session_prefix)}</span>
+    <span style="font-size:12px;color:#374151">${esc2(f.session_title)}</span>
+  </div>
+  <div class="finding-body">
+    <div class="finding-text">${esc2(f.finding)}</div>
+    <div class="finding-disclaimer">${esc2(f.not_claiming)}</div>
+    <strong style="font-size:11px;color:#374151">Evidence in session:</strong>
+    <ul class="evidence-list">
+      ${f.evidence_items.map((e) => `<li>${esc2(e)}</li>`).join("")}
+    </ul>
+    <strong style="font-size:11px;color:#374151">Suggested review actions:</strong>
+    <ul class="suggested-list">
+      ${f.suggested_evidence.map((s) => `<li>${esc2(s)}</li>`).join("")}
+    </ul>
+  </div>
+</div>`).join("");
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chron Review \u2014 ${esc2(framework.toUpperCase())} Controls</title>
+<style>${REPORT_CSS}</style>
+</head>
+<body>
+<div class="page">
+
+<div style="min-height:50vh;display:flex;flex-direction:column;justify-content:center">
+  <div class="cover-badge">${esc2(framework.toUpperCase())} Control Review</div>
+  <h1>Chron Review Report</h1>
+  <p class="meta">Generated by <strong>chron review</strong> &nbsp;|&nbsp; Host: <strong>${esc2(host)}</strong></p>
+  <table style="width:auto;margin-bottom:0">
+    <tr><th>Framework</th><td>${esc2(framework.toUpperCase())} Trust Services Criteria</td></tr>
+    <tr><th>Generated</th><td>${esc2(generatedAt)}</td></tr>
+    <tr><th>Sessions Reviewed</th><td>${sessionCount}</td></tr>
+    <tr><th>Findings</th><td>${findings.length}</td></tr>
+    <tr><th>Controls Flagged</th><td>${controlsHit.size > 0 ? Array.from(controlsHit).sort().join(", ") : "None"}</td></tr>
+  </table>
+</div>
+
+<div class="disclaimer">
+  <strong>Important:</strong> This report identifies AI-session evidence that may require control-owner review.
+  It is not a certification of compliance, a SOC 2 opinion, or evidence of any control failure.
+  Each finding is a potential review item \u2014 not a violation. A licensed CPA conducting a SOC 2 examination
+  must evaluate whether your controls were suitably designed and operated effectively over the audit period.
+</div>
+
+<h2>Summary</h2>
+<div class="stat-grid">
+  <div class="stat"><div class="stat-value">${sessionCount}</div><div class="stat-label">Sessions Reviewed</div></div>
+  <div class="stat"><div class="stat-value">${findings.length}</div><div class="stat-label">Findings</div></div>
+  <div class="stat"><div class="stat-value">${controlsHit.size}</div><div class="stat-label">Controls Flagged</div></div>
+</div>
+${bySeverity.critical > 0 ? `<p><span class="badge badge-critical">CRITICAL</span> &nbsp;${bySeverity.critical} finding(s) require immediate attention.</p>` : ""}
+
+<h2>Findings</h2>
+${findingCards}
+
+<h2>Methodology</h2>
+<div class="appendix">
+  <h3>What this report does</h3>
+  <p>Chron Review evaluates AI session logs against a deterministic rule pack aligned to the AICPA Trust Services Criteria.
+  Rules match on structured event types (<code>code_change</code>, <code>secret_detected</code>) recorded by the Chron MCP server
+  during live AI conversations.</p>
+
+  <h3>Rule pack: ${esc2(framework.toUpperCase())} (v1)</h3>
+  <ul>
+    <li><strong>CC6.1</strong> \u2014 AI touched access-control code (auth, IAM, RBAC, permissions, login, JWT, OAuth, SAML, SSO)</li>
+    <li><strong>CC6.1 / CC6.6</strong> \u2014 Sensitive credential detected in AI session (masked at log time, no plaintext stored)</li>
+    <li><strong>CC7.2 / CC8.1</strong> \u2014 AI modified infrastructure or deployment configuration (Terraform, Docker, Kubernetes, pipelines)</li>
+    <li><strong>CC7.2</strong> \u2014 AI modified logging, monitoring, or alerting code</li>
+    <li><strong>CC6.1 / CC6.7</strong> \u2014 AI modified data retention, deletion, export, or encryption logic</li>
+  </ul>
+
+  <h3>What this report does not do</h3>
+  <ul>
+    <li>Does not evaluate whether your controls were suitably designed or operated effectively (that is the auditor's role).</li>
+    <li>Does not access code repositories, CI/CD systems, identity providers, or any environment outside the Chron audit database.</li>
+    <li>Does not make any compliance determination. All findings use the language "potential review item."</li>
+    <li>Does not cover CC1\u2013CC5 (governance, communication, risk assessment) \u2014 these require policy documents, board records, and cannot be evaluated from session logs.</li>
+  </ul>
+
+  <p style="margin-top:12px;font-size:11px;color:#9ca3af">
+    Generated by chron review &nbsp;|&nbsp; ${esc2(generatedAt)} &nbsp;|&nbsp; Host: ${esc2(host)}
+  </p>
+</div>
+
+</div>
+</body>
+</html>`;
+}
+async function countSessions(db) {
+  const client = db.$client;
+  const result = await client.execute("SELECT COUNT(*) AS n FROM sessions");
+  return Number(result.rows[0].n ?? 0);
+}
+async function runReview2(args2) {
+  const frameworkArg = args2.find((a) => a.startsWith("--framework="))?.slice("--framework=".length)?.toLowerCase();
+  const outputArg = args2.find((a) => a.startsWith("--output="))?.slice("--output=".length);
+  const sinceArg = args2.find((a) => a.startsWith("--since="))?.slice("--since=".length);
+  if (!frameworkArg) {
+    process.stderr.write("Usage: chron review --framework=soc2 [--since=<range>] [--output=<file>]\n");
+    process.exit(1);
+  }
+  const rules = FRAMEWORKS[frameworkArg];
+  if (!rules) {
+    process.stderr.write(`Unknown framework: "${frameworkArg}". Available: ${Object.keys(FRAMEWORKS).join(", ")}
+`);
+    process.exit(1);
+  }
+  let since;
+  if (sinceArg) {
+    try {
+      since = parseSince(sinceArg);
+    } catch (err) {
+      process.stderr.write(`${err instanceof Error ? err.message : String(err)}
+`);
+      process.exit(1);
+    }
+  }
+  const db = await initDb();
+  const [findings, sessionCount] = await Promise.all([
+    runReview(db, rules, since),
+    countSessions(db)
+  ]);
+  printFindings(findings, frameworkArg, sessionCount);
+  if (outputArg) {
+    const generatedAt = (/* @__PURE__ */ new Date()).toISOString().replace("T", " ").slice(0, 19) + " UTC";
+    const html = buildReviewHtml({
+      framework: frameworkArg,
+      host: (0, import_os11.hostname)(),
+      generatedAt,
+      sessionCount,
+      findings
+    });
+    (0, import_fs12.writeFileSync)(outputArg, html, "utf8");
+    process.stdout.write(`Review report written to ${outputArg}
+`);
+  }
+}
+var import_fs12, import_os11, RESET10, BOLD10, DIM9, RED5, YELLOW8, CYAN8, MAGENTA2, SEV_COLOR, REPORT_CSS;
+var init_review = __esm({
+  "src/cli/review.ts"() {
+    "use strict";
+    import_fs12 = require("fs");
+    import_os11 = require("os");
+    init_db2();
+    init_report();
+    init_rules();
+    init_engine();
+    RESET10 = "\x1B[0m";
+    BOLD10 = "\x1B[1m";
+    DIM9 = "\x1B[2m";
+    RED5 = "\x1B[31m";
+    YELLOW8 = "\x1B[33m";
+    CYAN8 = "\x1B[36m";
+    MAGENTA2 = "\x1B[35m";
+    SEV_COLOR = {
+      critical: RED5,
+      high: YELLOW8,
+      medium: CYAN8,
+      low: DIM9
+    };
+    REPORT_CSS = `
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; color: #111; background: #fff; line-height: 1.5; }
+.page { max-width: 900px; margin: 0 auto; padding: 40px 48px; }
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+h2 { font-size: 17px; font-weight: 700; margin: 32px 0 10px; padding-bottom: 4px; border-bottom: 2px solid #e5e7eb; color: #1f2937; }
+h3 { font-size: 14px; font-weight: 600; margin: 20px 0 6px; color: #374151; }
+p { margin-bottom: 8px; color: #374151; }
+.meta { color: #6b7280; font-size: 12px; margin-bottom: 32px; }
+.cover-badge { display: inline-block; background: #1d4ed8; color: #fff; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 12px; }
+th { background: #f3f4f6; text-align: left; padding: 6px 10px; font-weight: 600; color: #374151; border: 1px solid #e5e7eb; }
+td { padding: 5px 10px; border: 1px solid #e5e7eb; vertical-align: top; word-break: break-word; }
+tr:nth-child(even) td { background: #fafafa; }
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px 16px; }
+.stat-value { font-size: 24px; font-weight: 700; color: #1f2937; }
+.stat-label { font-size: 11px; color: #6b7280; margin-top: 2px; }
+.badge { display:inline-block; padding:1px 7px; border-radius:3px; font-size:11px; font-weight:600; color:#fff; }
+.badge-critical { background:#dc2626; }
+.badge-high { background:#d97706; }
+.badge-medium { background:#2563eb; }
+.badge-low { background:#6b7280; }
+.disclaimer { background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 4px; padding: 12px 14px; margin: 14px 0 20px; font-size: 12px; color: #374151; }
+.finding-card { border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 14px; overflow: hidden; }
+.finding-header { display:flex; align-items:center; gap:10px; padding:10px 14px; background:#f9fafb; border-bottom:1px solid #e5e7eb; }
+.finding-controls { font-size:12px; font-weight:700; color:#1f2937; }
+.finding-session { font-family:monospace; font-size:11px; color:#6b7280; }
+.finding-body { padding:10px 14px; }
+.finding-text { font-size:13px; color:#111; margin-bottom:6px; }
+.finding-disclaimer { font-size:11px; color:#6b7280; margin-bottom:8px; }
+.evidence-list { margin:0 0 8px 16px; }
+.evidence-list li { font-size:11px; font-family:monospace; color:#374151; margin-bottom:2px; }
+.suggested-list { margin:0 0 0 16px; }
+.suggested-list li { font-size:11px; color:#374151; margin-bottom:2px; }
+.appendix { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px 20px; margin-top: 12px; }
+ul { padding-left: 20px; margin-bottom: 8px; }
+li { margin-bottom: 4px; }
+@media print {
+  body { font-size: 11px; }
+  .page { padding: 20px 24px; max-width: 100%; }
+  h1 { font-size: 22px; }
+  h2 { font-size: 14px; }
+}
+`;
+  }
+});
+
 // src/cli/index.ts
 var [, , command, ...args] = process.argv;
 async function main() {
@@ -20074,6 +20579,11 @@ async function main() {
       await runImport2(args);
       break;
     }
+    case "review": {
+      const { runReview: runReview3 } = await Promise.resolve().then(() => (init_review(), review_exports));
+      await runReview3(args);
+      break;
+    }
     default: {
       const name = command ? `Unknown command: ${command}
 
@@ -20094,6 +20604,7 @@ Commands:
   prune           Delete sessions older than a retention cutoff
   doctor          Check your Chron setup \u2014 Node version, DB, MCP configs, SIEM
   import          Import conversations from external AI tools
+  review          Review AI sessions against compliance control criteria
 
 Options (history):
   --limit=<n>       Max sessions to show (default: 20)
@@ -20127,6 +20638,11 @@ Options (doctor):
 
 Options (import):
   chatgpt <file>     Import from ChatGPT export (.zip or conversations.json)
+
+Options (review):
+  --framework=<name>  Framework to review against: soc2
+  --since=<range>     Limit to sessions since: 7d, 30d, or YYYY-MM-DD
+  --output=<file>     Write HTML report to file (printable to PDF from browser)
 `
       );
       process.exit(command ? 1 : 0);
