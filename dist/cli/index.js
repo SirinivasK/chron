@@ -17510,7 +17510,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.31",
+      version: "0.1.32",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -20034,11 +20034,127 @@ var init_import = __esm({
   }
 });
 
+// src/review/rules-iso27001.ts
+var ISO27001_RULES;
+var init_rules_iso27001 = __esm({
+  "src/review/rules-iso27001.ts"() {
+    "use strict";
+    ISO27001_RULES = [
+      {
+        id: "iso27001.a8_2.ai_privileged_access_change",
+        framework: "iso27001",
+        controls: ["A.8.2"],
+        severity: "high",
+        description: "AI modified privileged access or administrative code",
+        finding: "AI modified code in a privileged access or administrative path.",
+        not_claiming: "This is not evidence of unauthorised access or a control failure.",
+        suggested_evidence: [
+          "Confirm change was approved by a system owner or security team",
+          "Change ticket with business justification",
+          "PR approval from an administrator"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["admin", "superuser", "sudo", "privilege", "root", "sysadmin", "elevated"]
+        }
+      },
+      {
+        id: "iso27001.a8_3.ai_access_restriction_change",
+        framework: "iso27001",
+        controls: ["A.8.3"],
+        severity: "high",
+        description: "AI touched information access restriction code",
+        finding: "AI modified code that controls information access restrictions.",
+        not_claiming: "This is not evidence of unauthorised access or a security breach.",
+        suggested_evidence: [
+          "PR approval with human reviewer",
+          "Change ticket linked to the work",
+          "Security team sign-off"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["auth", "iam", "rbac", "permission", "acl", "access_control", "policy", "role", "entitlement"]
+        }
+      },
+      {
+        id: "iso27001.a8_12.sensitive_data_detected",
+        framework: "iso27001",
+        controls: ["A.8.12"],
+        severity: "high",
+        description: "Sensitive data or credential detected in AI session",
+        finding: "Sensitive data was detected in an AI session \u2014 potential data leakage event.",
+        not_claiming: "This is not evidence of a data breach. Chron masks detected values at log time \u2014 no plaintext is stored.",
+        suggested_evidence: [
+          "Confirm no sensitive data was committed to version control",
+          "Rotate any live credentials that appeared in the session",
+          "Review and document the incident per your data handling policy"
+        ],
+        match: { type: "secret_detected" }
+      },
+      {
+        id: "iso27001.a8_20.ai_network_security_change",
+        framework: "iso27001",
+        controls: ["A.8.20"],
+        severity: "high",
+        description: "AI modified network security controls or configuration",
+        finding: "AI modified network security configuration or controls.",
+        not_claiming: "This is not evidence of a network security failure.",
+        suggested_evidence: [
+          "Network or security team review of the change",
+          "Change ticket with approval",
+          "Confirm firewall rules or security groups were not weakened"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["firewall", "vpc", "security-group", "securitygroup", "waf", "network", "ingress", "egress", "nsg", "nacl"]
+        }
+      },
+      {
+        id: "iso27001.a8_24.ai_cryptography_change",
+        framework: "iso27001",
+        controls: ["A.8.24"],
+        severity: "high",
+        description: "AI modified cryptographic code or configuration",
+        finding: "AI modified code that implements or configures cryptographic controls.",
+        not_claiming: "This is not evidence of weakened encryption.",
+        suggested_evidence: [
+          "Security or cryptography team review",
+          "Confirm no downgrade in algorithm strength (e.g. MD5, SHA1, DES)",
+          "Change ticket documenting the cryptographic decision"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["encrypt", "decrypt", "crypto", "cipher", "tls", "ssl", "certificate", "x509", "pkcs", "hmac", "aes", "rsa"]
+        }
+      },
+      {
+        id: "iso27001.a8_31.ai_production_change",
+        framework: "iso27001",
+        controls: ["A.8.31"],
+        severity: "medium",
+        description: "AI modified production environment files or configuration",
+        finding: "AI modified files or configuration in a production environment path.",
+        not_claiming: "This is not evidence of an unauthorised production change.",
+        suggested_evidence: [
+          "Confirm change went through your change management process",
+          "Change ticket with approval and rollback plan",
+          "Confirm separation of duties was maintained"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["production", "/prod/", "prod.", ".prod", "prod-", "-prod"]
+        }
+      }
+    ];
+  }
+});
+
 // src/review/rules.ts
 var SOC2_RULES, FRAMEWORKS;
 var init_rules = __esm({
   "src/review/rules.ts"() {
     "use strict";
+    init_rules_iso27001();
     SOC2_RULES = [
       {
         id: "soc2.cc6_1.ai_access_control_change",
@@ -20129,7 +20245,8 @@ var init_rules = __esm({
       }
     ];
     FRAMEWORKS = {
-      soc2: SOC2_RULES
+      soc2: SOC2_RULES,
+      iso27001: ISO27001_RULES
     };
   }
 });
@@ -20760,6 +20877,51 @@ li { margin-bottom: 4px; }
   }
 });
 
+// src/cli/update.ts
+var update_exports = {};
+__export(update_exports, {
+  runUpdate: () => runUpdate
+});
+async function runUpdate(_args) {
+  process.stdout.write(`Current version: ${CURRENT_VERSION}
+`);
+  process.stdout.write("Checking npm registry...\n");
+  let latest;
+  try {
+    latest = (0, import_child_process5.execFileSync)("npm", ["view", "chron-mcp", "version"], { encoding: "utf8" }).trim();
+  } catch {
+    process.stderr.write("Could not reach npm registry. Check your network connection.\n");
+    process.stderr.write("You can also update manually: npm install -g chron-mcp@latest\n");
+    process.exit(1);
+    return;
+  }
+  if (CURRENT_VERSION === latest) {
+    process.stdout.write(`chron is up to date (${CURRENT_VERSION})
+`);
+    return;
+  }
+  process.stdout.write(`Update available: ${CURRENT_VERSION} \u2192 ${latest}
+`);
+  process.stdout.write("Running: npm install -g chron-mcp@latest\n\n");
+  try {
+    (0, import_child_process5.execFileSync)("npm", ["install", "-g", `chron-mcp@${latest}`], { stdio: "inherit" });
+    process.stdout.write(`
+chron updated to ${latest}
+`);
+  } catch {
+    process.stderr.write("\nUpdate failed. Try manually: npm install -g chron-mcp@latest\n");
+    process.exit(1);
+  }
+}
+var import_child_process5, CURRENT_VERSION;
+var init_update2 = __esm({
+  "src/cli/update.ts"() {
+    "use strict";
+    import_child_process5 = require("child_process");
+    CURRENT_VERSION = require_package().version;
+  }
+});
+
 // src/cli/index.ts
 var [, , command, ...args] = process.argv;
 async function main() {
@@ -20829,6 +20991,11 @@ async function main() {
       await runReview3(args);
       break;
     }
+    case "update": {
+      const { runUpdate: runUpdate2 } = await Promise.resolve().then(() => (init_update2(), update_exports));
+      await runUpdate2(args);
+      break;
+    }
     default: {
       const name = command ? `Unknown command: ${command}
 
@@ -20850,6 +21017,7 @@ Commands:
   doctor          Check your Chron setup \u2014 Node version, DB, MCP configs, SIEM
   import          Import conversations from external AI tools
   review          Review AI sessions against compliance control criteria
+  update          Update chron to the latest version
 
 Options (history):
   --limit=<n>       Max sessions to show (default: 20)
@@ -20885,7 +21053,7 @@ Options (import):
   chatgpt <file>     Import from ChatGPT export (.zip or conversations.json)
 
 Options (review):
-  --framework=<name>  Framework to review against: soc2
+  --framework=<name>  Framework to review against: soc2, iso27001
   --since=<range>     Limit to sessions since: 7d, 30d, or YYYY-MM-DD
   --all               Include accepted, dismissed, and resolved findings
   --output=<file>     Write HTML report to file (printable to PDF from browser)
