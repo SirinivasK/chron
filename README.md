@@ -1,12 +1,12 @@
 <div align="center">
   <img src="assets/chron-icon-png-transperent.png" alt="Chron" width="96" />
   <h1>Chron</h1>
-  <p>Local-first, tamper-evident audit trails for AI conversations, tool calls, code changes, and secrets.</p>
+  <p>Local-first, tamper-evident audit trails for AI conversations, tool calls, code changes, and secrets — with deterministic compliance review across SOC 2, ISO 27001, EU AI Act, and NIST AI RMF.</p>
 </div>
 
 AI tools show when you sent a message. Chron logs when the AI responded too — and keeps a permanent, queryable, tamper-evident record of the AI work happening across your tools.
 
-Works with Claude Desktop, Claude Code, Cursor, Windsurf, and any MCP-compatible AI tool.
+Works with Claude Desktop, Claude Code, Cursor, Windsurf, Codex, and any MCP-compatible AI tool.
 
 ---
 
@@ -21,7 +21,7 @@ AI tools produce no audit trail by default. You cannot answer:
 - Has this audit record been edited after the fact?
 - What did I ask Claude last week about this codebase?
 
-Chron fixes that. Every exchange is logged with a precise local datetime (including timezone offset) to a SQLite file you own. It can hash-chain every event, sign sessions with Ed25519, detect secrets/PII, produce SOC 2 evidence, and stream metadata-only events to your SIEM. No cloud, no vendor lock-in, no message content leaving your machine.
+Chron fixes that. Every exchange is logged with a precise local datetime (including timezone offset) to a SQLite file you own. It can hash-chain every event, sign sessions with Ed25519, detect secrets/PII, run deterministic compliance review across four frameworks, and stream metadata-only events to your SIEM. No cloud, no vendor lock-in, no message content leaving your machine.
 
 ---
 
@@ -98,18 +98,21 @@ Commands:
   export          Export a session as markdown
   secrets         List detected secrets across sessions
   settings        View current configuration
-  connect         Connect to a SIEM integration (crowdstrike, sentinel, splunk)
+  connect         Connect to a SIEM or AI tool (codex, crowdstrike, sentinel, splunk)
   summary         Structured summary of a session (timeline, mutations, secrets)
   sign            Sign a session with its Ed25519 key — produces a .chron.sig file
   verify          Verify a session's hash chain and Ed25519 signature
   prune           Delete sessions older than a retention cutoff
   doctor          Check your Chron setup — Node version, DB, MCP configs, SIEM
   import          Import conversations from external AI tools into Chron
+  review          Review AI sessions against compliance control criteria
+  update          Update chron to the latest version
 
 Options (history):
-  --limit=<n>     Max sessions to show (default: 20)
-  --ref=<value>   Filter by external_ref prefix (e.g. --ref=jira:ENG-123)
-  <id-prefix>     Show full log for the session with this ID prefix
+  --limit=<n>       Max sessions to show (default: 20)
+  --search=<query>  Full-text search across all sessions (FTS5: phrases, boolean, prefix*)
+  --ref=<value>     Filter by external_ref prefix (e.g. --ref=jira:ENG-123)
+  <id-prefix>       Show full log for the session with this ID prefix
 
 Options (report):
   --since=<range>   Filter by date: 7d, 30d, or YYYY-MM-DD (default: all time)
@@ -137,7 +140,55 @@ Options (doctor):
 
 Options (import):
   chatgpt <file>     Import from ChatGPT export (.zip or conversations.json)
+
+Options (review):
+  --framework=<name>  Framework to review against: soc2, iso27001, euaiact, nist-ai-rmf
+  --since=<range>     Limit to sessions since: 7d, 30d, or YYYY-MM-DD
+  --all               Include accepted, dismissed, and resolved findings
+  --output=<file>     Write HTML report to file (printable to PDF from browser)
+  accept <id>         Mark a finding as accepted; supports --note=<text>
+  dismiss <id>        Mark a finding as dismissed; supports --note=<text>
+  resolve <id>        Mark a finding as resolved; supports --note=<text>
 ```
+
+---
+
+## Chron Intelligence — compliance review
+
+`chron review` scans your session history and flags findings against a compliance framework. No model inference. No API calls. Pure deterministic pattern matching on structured events Chron already captured.
+
+```bash
+chron review --framework=soc2
+chron review --framework=iso27001
+chron review --framework=euaiact
+chron review --framework=nist-ai-rmf
+```
+
+Add `--since=30d` to scope to recent sessions, and `--output=report.html` to generate a printable HTML evidence report.
+
+**Four frameworks supported:**
+
+| Framework | Rules | Controls covered |
+|-----------|-------|-----------------|
+| SOC 2 | 5 | CC6.1, CC6.6, CC6.7, CC7.2, CC8.1 |
+| ISO 27001:2022 | 6 | A.8.2, A.8.3, A.8.12, A.8.20, A.8.24, A.8.31 |
+| EU AI Act | 6 | Art. 9, Art. 10, Art. 12, Art. 13, Art. 14 |
+| NIST AI RMF 1.0 | 7 | GOVERN, MAP, MEASURE, MANAGE |
+
+**Finding workflow:**
+
+Every finding has a stable SHA-256 ID. Act on findings as you review:
+
+```bash
+chron review accept <id> --note="approved by security team, PR #512"
+chron review dismiss <id> --note="test fixture, not production code"
+chron review resolve <id> --note="credential rotated, no commit exposure"
+chron review --framework=soc2 --all   # show accepted/dismissed/resolved too
+```
+
+Reviewed findings do not reappear as noise on the next run. New findings — from sessions since your last review — surface cleanly.
+
+**Important:** Chron covers the subset of controls evaluable from AI coding session evidence. A full framework assessment requires policy documentation, board records, and auditor judgement that session logs cannot replace. Each HTML report includes a framework-specific disclaimer on the cover page.
 
 ### `chron doctor`
 
