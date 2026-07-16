@@ -17510,7 +17510,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.33",
+      version: "0.1.35",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -20149,12 +20149,262 @@ var init_rules_iso27001 = __esm({
   }
 });
 
+// src/review/rules-euaiact.ts
+var EUAIACT_RULES;
+var init_rules_euaiact = __esm({
+  "src/review/rules-euaiact.ts"() {
+    "use strict";
+    EUAIACT_RULES = [
+      {
+        id: "euaiact.a12.ai_logging_modification",
+        framework: "euaiact",
+        controls: ["Art. 12"],
+        severity: "high",
+        description: "AI modified record-keeping, audit logging, or event telemetry code",
+        finding: "AI modified code responsible for logging, record-keeping, or audit trails in a system potentially subject to EU AI Act Article 12.",
+        not_claiming: "This is not evidence of a compliance failure or an Article 12 violation.",
+        suggested_evidence: [
+          "Confirm logging coverage was not reduced or disabled",
+          "Human review of the change with sign-off from a compliance or engineering lead",
+          "Change ticket documenting the business reason and impact on record-keeping obligations"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["audit", "audit_log", "audit-log", "event_log", "logging", "logger", "telemetry", "observability", "record_keep"]
+        }
+      },
+      {
+        id: "euaiact.a10.ai_data_governance_change",
+        framework: "euaiact",
+        controls: ["Art. 10"],
+        severity: "high",
+        description: "AI modified data pipeline, dataset, or data governance code",
+        finding: "AI modified code related to data governance, data quality, or training/inference data pipelines.",
+        not_claiming: "This is not evidence of a data governance violation or non-compliance with Article 10.",
+        suggested_evidence: [
+          "Data owner or data governance team review of the change",
+          "Confirm data quality and provenance requirements were not weakened",
+          "Change ticket linked to the data governance decision"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["dataset", "data_pipeline", "preprocessing", "data_quality", "data_governance", "training_data", "etl", "ingestion", "data_loader", "feature_store"]
+        }
+      },
+      {
+        id: "euaiact.a10.sensitive_data_in_session",
+        framework: "euaiact",
+        controls: ["Art. 10"],
+        severity: "high",
+        description: "Sensitive data or credential detected in AI session \u2014 data governance concern",
+        finding: "Sensitive data was detected in an AI session. Under Article 10, training and operational data must meet quality and governance standards.",
+        not_claiming: "This is not evidence of a data breach or Article 10 violation. Chron masks detected values at log time \u2014 no plaintext is stored.",
+        suggested_evidence: [
+          "Confirm no sensitive data was committed to version control or training datasets",
+          "Rotate any live credentials that appeared in the session",
+          "Review and document the incident per your data handling policy"
+        ],
+        match: { type: "secret_detected" }
+      },
+      {
+        id: "euaiact.a14.ai_oversight_mechanism_change",
+        framework: "euaiact",
+        controls: ["Art. 14"],
+        severity: "high",
+        description: "AI modified human oversight, approval, or intervention mechanisms",
+        finding: "AI modified code that implements human oversight, approval gates, escalation, or intervention controls.",
+        not_claiming: "This is not evidence that human oversight was removed or bypassed.",
+        suggested_evidence: [
+          "Confirm human oversight capability was not reduced",
+          "Safety or compliance team review of the change",
+          "Document that meaningful human intervention remains possible"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["approval", "oversight", "human_review", "escalation", "fallback", "override", "intervention", "safeguard", "human_in_the_loop", "hitl"]
+        }
+      },
+      {
+        id: "euaiact.a9.ai_risk_management_change",
+        framework: "euaiact",
+        controls: ["Art. 9"],
+        severity: "high",
+        description: "AI modified risk management, safety guardrails, or content moderation code",
+        finding: "AI modified code related to risk assessment, safety guardrails, or content moderation in a potentially high-risk AI system.",
+        not_claiming: "This is not evidence of a risk management failure or Article 9 non-compliance.",
+        suggested_evidence: [
+          "Risk or safety team review of the change",
+          "Confirm risk mitigations were not weakened",
+          "Change ticket with documented risk assessment decision"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["risk_assessment", "risk_management", "safety", "guardrail", "content_filter", "moderation", "threat_model", "risk_score", "safety_check"]
+        }
+      },
+      {
+        id: "euaiact.a13.ai_transparency_change",
+        framework: "euaiact",
+        controls: ["Art. 13"],
+        severity: "medium",
+        description: "AI modified transparency, explainability, or disclosure code",
+        finding: "AI modified code related to transparency, explainability, or user disclosure in a potentially high-risk AI system.",
+        not_claiming: "This is not evidence of an Article 13 transparency violation.",
+        suggested_evidence: [
+          "Confirm disclosure and explainability requirements were not reduced",
+          "Legal or compliance team review if user-facing disclosures changed",
+          "Change ticket documenting the transparency design decision"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["explainability", "transparency", "disclosure", "explain", "interpretability", "xai", "fairness", "bias_detection", "model_card"]
+        }
+      }
+    ];
+  }
+});
+
+// src/review/rules-nist-ai-rmf.ts
+var NIST_AI_RMF_RULES;
+var init_rules_nist_ai_rmf = __esm({
+  "src/review/rules-nist-ai-rmf.ts"() {
+    "use strict";
+    NIST_AI_RMF_RULES = [
+      {
+        id: "nist-ai-rmf.govern.ai_policy_change",
+        framework: "nist-ai-rmf",
+        controls: ["GOVERN 1.1", "GOVERN 1.2"],
+        severity: "high",
+        description: "AI modified AI governance policy, accountability, or responsible AI documentation",
+        finding: "AI modified code or configuration related to AI governance policy, accountability structures, or responsible AI documentation.",
+        not_claiming: "This is not evidence of a governance failure or NIST AI RMF non-conformance.",
+        suggested_evidence: [
+          "Confirm the change was reviewed by an AI governance or responsible AI lead",
+          "Change ticket documenting the governance decision and approver",
+          "Verify updated documentation reflects current organisational AI policy"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["ai_policy", "governance", "accountability", "responsible_ai", "ai_ethics", "model_card", "ai_documentation", "ai_governance"]
+        }
+      },
+      {
+        id: "nist-ai-rmf.govern.ai_oversight_change",
+        framework: "nist-ai-rmf",
+        controls: ["GOVERN 6.1", "GOVERN 6.2"],
+        severity: "high",
+        description: "AI modified human oversight, review, or escalation mechanisms for an AI system",
+        finding: "AI modified code that implements human review, oversight, escalation, or intervention capabilities for an AI system.",
+        not_claiming: "This is not evidence that human oversight was removed or that controls are inadequate.",
+        suggested_evidence: [
+          "Confirm meaningful human oversight capability is maintained",
+          "Safety or AI governance team review of the change",
+          "Document that escalation paths remain operable after the change"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["human_review", "oversight", "escalation", "approval", "human_in_the_loop", "hitl", "intervention", "safeguard", "override"]
+        }
+      },
+      {
+        id: "nist-ai-rmf.map.ai_risk_assessment_change",
+        framework: "nist-ai-rmf",
+        controls: ["MAP 1.1", "MAP 5.1"],
+        severity: "high",
+        description: "AI modified risk assessment, risk classification, or threat modelling code",
+        finding: "AI modified code related to AI risk assessment, risk classification, or threat modelling.",
+        not_claiming: "This is not evidence of a risk management failure or MAP function non-conformance.",
+        suggested_evidence: [
+          "Risk or AI safety team review of the change",
+          "Confirm risk classifications and scoring logic remain accurate",
+          "Change ticket with documented rationale for the risk assessment update"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["risk_assessment", "risk_classification", "threat_model", "risk_register", "risk_score", "hazard", "impact_assessment"]
+        }
+      },
+      {
+        id: "nist-ai-rmf.map.sensitive_data_in_session",
+        framework: "nist-ai-rmf",
+        controls: ["MAP 3.5"],
+        severity: "high",
+        description: "Sensitive data or credential detected in AI session \u2014 data impact and categorisation concern",
+        finding: "Sensitive data was detected in an AI session. Under MAP 3.5, AI systems must identify and categorise impacts related to data.",
+        not_claiming: "This is not evidence of a data breach or MAP 3.5 non-conformance. Chron masks detected values at log time \u2014 no plaintext is stored.",
+        suggested_evidence: [
+          "Confirm no sensitive data was committed to version control or AI training datasets",
+          "Rotate any live credentials that appeared in the session",
+          "Review and document per your AI data impact categorisation process"
+        ],
+        match: { type: "secret_detected" }
+      },
+      {
+        id: "nist-ai-rmf.measure.ai_evaluation_change",
+        framework: "nist-ai-rmf",
+        controls: ["MEASURE 2.1", "MEASURE 2.5"],
+        severity: "high",
+        description: "AI modified model evaluation, benchmarking, or validation pipelines",
+        finding: "AI modified code related to AI model evaluation, benchmarking, red-teaming, or validation.",
+        not_claiming: "This is not evidence that evaluation coverage was reduced or that the MEASURE function is non-conformant.",
+        suggested_evidence: [
+          "Confirm evaluation coverage and benchmarks were not weakened",
+          "AI or ML engineering lead review of the change",
+          "Document the evaluation design decision and its rationale"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["evaluation", "benchmark", "validation", "model_eval", "red_team", "red-team", "test_suite", "performance_test", "evals"]
+        }
+      },
+      {
+        id: "nist-ai-rmf.measure.ai_monitoring_change",
+        framework: "nist-ai-rmf",
+        controls: ["MEASURE 2.7"],
+        severity: "high",
+        description: "AI modified AI system monitoring, drift detection, or performance tracking",
+        finding: "AI modified code related to AI system monitoring, model drift detection, or runtime performance tracking.",
+        not_claiming: "This is not evidence that monitoring was disabled or that MEASURE 2.7 obligations are unmet.",
+        suggested_evidence: [
+          "Confirm monitoring coverage and alerting thresholds were not reduced",
+          "Human review of the change with sign-off from an AI operations or ML engineering lead",
+          "Change ticket documenting the monitoring design decision"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["drift", "model_monitor", "performance_monitor", "monitoring", "alerting", "telemetry", "observability", "model_health"]
+        }
+      },
+      {
+        id: "nist-ai-rmf.manage.ai_incident_response_change",
+        framework: "nist-ai-rmf",
+        controls: ["MANAGE 2.2", "MANAGE 4.1"],
+        severity: "high",
+        description: "AI modified incident response, fallback, or recovery procedures for an AI system",
+        finding: "AI modified code related to AI incident response, fallback behaviour, rollback, or system recovery.",
+        not_claiming: "This is not evidence of inadequate incident response or MANAGE function non-conformance.",
+        suggested_evidence: [
+          "Confirm fallback and recovery paths remain operable after the change",
+          "Incident response or AI operations lead review",
+          "Change ticket with rollback plan and approval"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["incident", "fallback", "recovery", "rollback", "contingency", "failsafe", "circuit_breaker", "fail_open", "fail_closed"]
+        }
+      }
+    ];
+  }
+});
+
 // src/review/rules.ts
 var SOC2_RULES, FRAMEWORKS;
 var init_rules = __esm({
   "src/review/rules.ts"() {
     "use strict";
     init_rules_iso27001();
+    init_rules_euaiact();
+    init_rules_nist_ai_rmf();
     SOC2_RULES = [
       {
         id: "soc2.cc6_1.ai_access_control_change",
@@ -20246,7 +20496,9 @@ var init_rules = __esm({
     ];
     FRAMEWORKS = {
       soc2: SOC2_RULES,
-      iso27001: ISO27001_RULES
+      iso27001: ISO27001_RULES,
+      euaiact: EUAIACT_RULES,
+      "nist-ai-rmf": NIST_AI_RMF_RULES
     };
   }
 });
@@ -20599,6 +20851,41 @@ function statusBadgeHtml(status) {
   return `<span class="status-badge status-${esc2(status)}">${esc2(status.toUpperCase())}</span>`;
 }
 function frameworkInfo(framework) {
+  if (framework === "nist-ai-rmf") {
+    return {
+      title: "NIST AI RMF",
+      frameworkRow: "NIST AI Risk Management Framework (AI RMF 1.0)",
+      disclaimer: "It is not an AI RMF assessment or evidence of non-conformance. Each finding is a potential review item for teams developing or deploying AI systems. Your AI governance, risk, and engineering teams must evaluate whether controls are adequate and whether the RMF functions apply to your context.",
+      methodology: "Chron Review evaluates AI session logs against a deterministic rule pack aligned to the NIST AI RMF core functions: GOVERN, MAP, MEASURE, and MANAGE. Rules match on structured event types (<code>code_change</code>, <code>secret_detected</code>) recorded by the Chron MCP server during live AI conversations.",
+      rules: [
+        "<strong>GOVERN 1.1 / 1.2</strong> \u2014 AI modified AI governance policy, accountability, or responsible AI documentation",
+        "<strong>GOVERN 6.1 / 6.2</strong> \u2014 AI modified human oversight, review, or escalation mechanisms",
+        "<strong>MAP 1.1 / 5.1</strong> \u2014 AI modified risk assessment, risk classification, or threat modelling code",
+        "<strong>MAP 3.5</strong> \u2014 Sensitive data or credential detected in AI session",
+        "<strong>MEASURE 2.1 / 2.5</strong> \u2014 AI modified model evaluation, benchmarking, or validation pipelines",
+        "<strong>MEASURE 2.7</strong> \u2014 AI modified AI system monitoring, drift detection, or performance tracking",
+        "<strong>MANAGE 2.2 / 4.1</strong> \u2014 AI modified incident response, fallback, or recovery procedures"
+      ],
+      notCovered: "Does not cover organisational culture, stakeholder engagement, procurement, or external deployment obligations that cannot be evaluated from Chron session logs alone."
+    };
+  }
+  if (framework === "euaiact") {
+    return {
+      title: "EU AI Act",
+      frameworkRow: "EU AI Act (Regulation 2024/1689)",
+      disclaimer: "It is not a legal opinion or evidence of any Article violation. Each finding is a potential review item for teams building or maintaining systems that may be subject to the EU AI Act. Your legal, compliance, and engineering teams must evaluate whether obligations apply and whether controls are adequate.",
+      methodology: "Chron Review evaluates AI session logs against a deterministic rule pack aligned to EU AI Act obligations for high-risk AI systems. Rules match on structured event types (<code>code_change</code>, <code>secret_detected</code>) recorded by the Chron MCP server during live AI conversations.",
+      rules: [
+        "<strong>Art. 12</strong> \u2014 AI modified record-keeping, audit logging, or event telemetry code",
+        "<strong>Art. 10</strong> \u2014 AI modified data pipeline, dataset, or data governance code",
+        "<strong>Art. 10</strong> \u2014 Sensitive data or credential detected in AI session",
+        "<strong>Art. 14</strong> \u2014 AI modified human oversight, approval, or intervention mechanisms",
+        "<strong>Art. 9</strong> \u2014 AI modified risk management, safety guardrails, or content moderation code",
+        "<strong>Art. 13</strong> \u2014 AI modified transparency, explainability, or disclosure code"
+      ],
+      notCovered: "Does not cover organisational obligations, conformity assessment, registration requirements, or market surveillance duties that cannot be evaluated from Chron session logs alone."
+    };
+  }
   if (framework === "iso27001") {
     return {
       title: "ISO 27001",
@@ -21102,7 +21389,7 @@ Options (import):
   chatgpt <file>     Import from ChatGPT export (.zip or conversations.json)
 
 Options (review):
-  --framework=<name>  Framework to review against: soc2, iso27001
+  --framework=<name>  Framework to review against: soc2, iso27001, euaiact, nist-ai-rmf
   --since=<range>     Limit to sessions since: 7d, 30d, or YYYY-MM-DD
   --all               Include accepted, dismissed, and resolved findings
   --output=<file>     Write HTML report to file (printable to PDF from browser)
