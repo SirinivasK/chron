@@ -17510,7 +17510,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.35",
+      version: "0.1.38",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -20503,6 +20503,1091 @@ var init_rules = __esm({
   }
 });
 
+// src/review/control-map-nist-ai-rmf.ts
+var NIST_AI_RMF_CONTROL_MAP;
+var init_control_map_nist_ai_rmf = __esm({
+  "src/review/control-map-nist-ai-rmf.ts"() {
+    "use strict";
+    NIST_AI_RMF_CONTROL_MAP = [
+      // ── GOVERN ──────────────────────────────────────────────────────────────────
+      {
+        id: "GOVERN 1.1",
+        title: "AI risk management policies and practices are in place and implemented effectively",
+        coverage: "covered",
+        rule_id: "nist-ai-rmf.govern.ai_policy_change",
+        rationale: "Chron detects when AI modifies governance policy files or responsible AI documentation."
+      },
+      {
+        id: "GOVERN 1.2",
+        title: "Accountability for AI risk management roles and responsibilities is defined",
+        coverage: "manual_review",
+        rationale: "Requires review of org charts, role definitions, and accountability documentation \u2014 not assessable from session logs."
+      },
+      {
+        id: "GOVERN 1.3",
+        title: "Roles and responsibilities for AI design and development stakeholders are clear",
+        coverage: "manual_review",
+        rationale: "Requires review of staffing structures and responsibility matrices \u2014 not visible in session logs."
+      },
+      {
+        id: "GOVERN 1.4",
+        title: "Stakeholder roles and responsibilities are documented",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires role documentation and stakeholder agreements to be provided as evidence."
+      },
+      {
+        id: "GOVERN 1.5",
+        title: "Organizational risk tolerance is established",
+        coverage: "manual_review",
+        rationale: "Risk tolerance is a board/executive decision requiring policy documents and governance records \u2014 not visible in session logs."
+      },
+      {
+        id: "GOVERN 1.6",
+        title: "Policies and procedures for AI risk management are established and enforced",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires AI risk policy documents to be provided as evidence."
+      },
+      {
+        id: "GOVERN 1.7",
+        title: "Methods for establishing risk tolerance are documented",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires risk tolerance methodology documentation."
+      },
+      {
+        id: "GOVERN 2.1",
+        title: "Organizational risk priorities and tolerances are established",
+        coverage: "manual_review",
+        rationale: "Requires executive-level decisions and board records \u2014 not assessable from session logs."
+      },
+      {
+        id: "GOVERN 2.2",
+        title: "AI risk and benefit management activities are implemented across the organization",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires evidence of org-wide rollout of AI risk management practices."
+      },
+      {
+        id: "GOVERN 3.1",
+        title: "Decision-making related to organizational AI risk is transparent",
+        coverage: "manual_review",
+        rationale: "Requires review of decision logs, governance minutes, and org records."
+      },
+      {
+        id: "GOVERN 3.2",
+        title: "Executive leadership is accountable for AI risk and it is integrated into org processes",
+        coverage: "manual_review",
+        rationale: "Requires executive attestation and governance process evidence."
+      },
+      {
+        id: "GOVERN 4.1",
+        title: "Risk management policies and procedures for organizational teams are in place",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires team-level risk management policies to be provided as evidence."
+      },
+      {
+        id: "GOVERN 4.2",
+        title: "Organizational teams document AI-specific risks",
+        coverage: "needs_evidence",
+        required_source: "tickets",
+        rationale: "Requires risk registers or ticket-based risk tracking evidence."
+      },
+      {
+        id: "GOVERN 5.1",
+        title: "Organizational risk priorities and tolerances are updated and documented",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires versioned risk tolerance documentation showing periodic updates."
+      },
+      {
+        id: "GOVERN 5.2",
+        title: "Risk tolerance for teams is documented",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires team-level risk tolerance documentation."
+      },
+      {
+        id: "GOVERN 6.1",
+        title: "Policies for human oversight and compliance programs are established and communicated",
+        coverage: "covered",
+        rule_id: "nist-ai-rmf.govern.ai_oversight_change",
+        rationale: "Chron detects when AI modifies human oversight, approval gates, or escalation code."
+      },
+      {
+        id: "GOVERN 6.2",
+        title: "Mechanisms are in place for users and stakeholders to provide feedback on AI systems",
+        coverage: "covered",
+        rule_id: "nist-ai-rmf.govern.ai_oversight_change",
+        rationale: "Chron detects when AI modifies feedback, intervention, or override mechanisms."
+      },
+      // ── MAP ─────────────────────────────────────────────────────────────────────
+      {
+        id: "MAP 1.1",
+        title: "Context is established for assessing and managing AI risks throughout the lifecycle",
+        coverage: "covered",
+        rule_id: "nist-ai-rmf.map.ai_risk_assessment_change",
+        rationale: "Chron detects when AI modifies risk assessment or risk classification code."
+      },
+      {
+        id: "MAP 1.2",
+        title: "Organizational mission is reflected in AI system objectives and context",
+        coverage: "manual_review",
+        rationale: "Requires review of system design documentation and mission alignment records."
+      },
+      {
+        id: "MAP 1.3",
+        title: "Processes for assessing and managing AI risks in context are documented",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires AI risk assessment process documentation."
+      },
+      {
+        id: "MAP 1.4",
+        title: "Organizational risk tolerances are communicated",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires evidence of risk tolerance communication to teams."
+      },
+      {
+        id: "MAP 1.5",
+        title: "Organizational AI policies are assessed for clarity and communicated",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires AI policy documents and evidence of communication."
+      },
+      {
+        id: "MAP 1.6",
+        title: "AI risk management approaches are made available across the organization",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires evidence of org-wide availability of risk management resources."
+      },
+      {
+        id: "MAP 2.1",
+        title: "Scientific understanding is applied when establishing AI system context",
+        coverage: "manual_review",
+        rationale: "Requires review of AI system design documents and scientific rationale \u2014 not visible in session logs."
+      },
+      {
+        id: "MAP 2.2",
+        title: "Scientific understanding is applied when conducting AI risk assessments",
+        coverage: "manual_review",
+        rationale: "Requires review of risk assessment methodology and expert input."
+      },
+      {
+        id: "MAP 2.3",
+        title: "AI system error and incident histories are reviewed and applied",
+        coverage: "needs_evidence",
+        required_source: "tickets",
+        rationale: "Requires incident logs or post-mortem records to be provided as evidence."
+      },
+      {
+        id: "MAP 3.1",
+        title: "AI system benefits are identified and communicated to relevant stakeholders",
+        coverage: "manual_review",
+        rationale: "Requires stakeholder communication records \u2014 not visible in session logs."
+      },
+      {
+        id: "MAP 3.2",
+        title: "Scientific understanding is applied when assessing AI system risks",
+        coverage: "manual_review",
+        rationale: "Requires expert review of risk assessment methodology."
+      },
+      {
+        id: "MAP 3.3",
+        title: "AI system use limitations and constraints are communicated",
+        coverage: "manual_review",
+        rationale: "Requires review of user documentation and disclosure records."
+      },
+      {
+        id: "MAP 3.4",
+        title: "Risks from third-party components are identified and documented",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires vendor risk assessments or SBOM evidence."
+      },
+      {
+        id: "MAP 3.5",
+        title: "Risks to individuals and human rights from the AI system context of use are assessed",
+        coverage: "covered",
+        rule_id: "nist-ai-rmf.map.sensitive_data_in_session",
+        rationale: "Chron detects sensitive data appearing in AI sessions, flagging potential human rights/data impact risk."
+      },
+      {
+        id: "MAP 4.1",
+        title: "Risk and benefit assessment documentation is created and shared",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires risk assessment reports to be provided as evidence."
+      },
+      {
+        id: "MAP 4.2",
+        title: "Risk and benefit assessment processes are documented and updated",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires documented risk assessment process and revision history."
+      },
+      {
+        id: "MAP 5.1",
+        title: "Likelihood and magnitude of impacts from AI risks are characterised",
+        coverage: "covered",
+        rule_id: "nist-ai-rmf.map.ai_risk_assessment_change",
+        rationale: "Chron detects when AI modifies risk scoring or impact classification code."
+      },
+      {
+        id: "MAP 5.2",
+        title: "Risks are prioritized based on likelihood and impact",
+        coverage: "manual_review",
+        rationale: "Requires review of risk prioritization decisions and governance records."
+      },
+      // ── MEASURE ─────────────────────────────────────────────────────────────────
+      {
+        id: "MEASURE 1.1",
+        title: "Approaches and metrics for measuring AI risks are identified and documented",
+        coverage: "manual_review",
+        rationale: "Requires review of measurement methodology documentation."
+      },
+      {
+        id: "MEASURE 1.2",
+        title: "Internal and external evaluations of AI systems are performed",
+        coverage: "needs_evidence",
+        required_source: "ci",
+        rationale: "Requires CI/CD pipeline evidence showing evaluation runs."
+      },
+      {
+        id: "MEASURE 1.3",
+        title: "Internal experts assess the organization's AI risk measurement activities",
+        coverage: "manual_review",
+        rationale: "Requires internal audit records or expert assessment documentation."
+      },
+      {
+        id: "MEASURE 2.1",
+        title: "Test sets appropriate for the deployed context are prepared and used",
+        coverage: "covered",
+        rule_id: "nist-ai-rmf.measure.ai_evaluation_change",
+        rationale: "Chron detects when AI modifies evaluation pipelines, benchmark suites, or test sets."
+      },
+      {
+        id: "MEASURE 2.2",
+        title: "Evaluations involving human subjects are conducted and documented",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires human evaluation records, consent documentation, and IRB/ethics approval."
+      },
+      {
+        id: "MEASURE 2.3",
+        title: "AI system performance or assurance criteria are measured",
+        coverage: "needs_evidence",
+        required_source: "ci",
+        rationale: "Requires CI/CD pipeline performance measurement results."
+      },
+      {
+        id: "MEASURE 2.4",
+        title: "AI system performance is assessed for accuracy",
+        coverage: "needs_evidence",
+        required_source: "ci",
+        rationale: "Requires accuracy benchmarks and evaluation results from CI or testing environments."
+      },
+      {
+        id: "MEASURE 2.5",
+        title: "The AI system meets organizational requirements before deployment",
+        coverage: "covered",
+        rule_id: "nist-ai-rmf.measure.ai_evaluation_change",
+        rationale: "Chron detects when AI modifies pre-deployment validation or acceptance test code."
+      },
+      {
+        id: "MEASURE 2.6",
+        title: "Risk or benefit status is reflected in the AI system documentation",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires documentation showing how risk/benefit status is tracked and updated."
+      },
+      {
+        id: "MEASURE 2.7",
+        title: "AI system performance for the deployed context is monitored",
+        coverage: "covered",
+        rule_id: "nist-ai-rmf.measure.ai_monitoring_change",
+        rationale: "Chron detects when AI modifies model monitoring, drift detection, or performance tracking code."
+      },
+      {
+        id: "MEASURE 2.8",
+        title: "Risks from third-party AI components are monitored",
+        coverage: "needs_evidence",
+        required_source: "ci",
+        rationale: "Requires vendor monitoring evidence or third-party risk tracking."
+      },
+      {
+        id: "MEASURE 2.9",
+        title: "Privacy risks of the AI system are identified and managed",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires privacy impact assessments or DPIA documentation."
+      },
+      {
+        id: "MEASURE 2.10",
+        title: "Risks to affected individuals from the AI system are documented",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires impact documentation covering individuals potentially affected by the AI system."
+      },
+      {
+        id: "MEASURE 2.11",
+        title: "Fairness and bias are evaluated across the AI system lifecycle",
+        coverage: "needs_evidence",
+        required_source: "ci",
+        rationale: "Requires fairness/bias evaluation results from testing pipelines."
+      },
+      {
+        id: "MEASURE 2.12",
+        title: "Environmental impacts of the AI system are assessed",
+        coverage: "out_of_scope",
+        rationale: "Environmental impact assessment requires infrastructure and energy consumption data \u2014 not visible in AI coding session logs."
+      },
+      {
+        id: "MEASURE 2.13",
+        title: "Effectiveness of the AI risk measurement approach is evaluated",
+        coverage: "manual_review",
+        rationale: "Requires periodic review by internal auditors or AI governance leads."
+      },
+      {
+        id: "MEASURE 3.1",
+        title: "AI risk measurement results are communicated to relevant teams",
+        coverage: "manual_review",
+        rationale: "Requires evidence of measurement communication \u2014 meeting records, reports, or audit logs."
+      },
+      {
+        id: "MEASURE 3.2",
+        title: "Scientific and technical findings from AI evaluations are communicated",
+        coverage: "manual_review",
+        rationale: "Requires evidence of findings being surfaced to stakeholders."
+      },
+      {
+        id: "MEASURE 4.1",
+        title: "AI risk measurement results are reflected in organizational policies",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires versioned policies showing how measurement findings informed updates."
+      },
+      // ── MANAGE ──────────────────────────────────────────────────────────────────
+      {
+        id: "MANAGE 1.1",
+        title: "A risk response plan is prioritized and adopted based on risk tolerance",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires a documented and approved risk response plan."
+      },
+      {
+        id: "MANAGE 1.2",
+        title: "The AI risk response plan is effective and updated regularly",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires versioned risk response plans with effectiveness review evidence."
+      },
+      {
+        id: "MANAGE 1.3",
+        title: "AI risk and benefit management plans include escalation and response paths",
+        coverage: "covered",
+        rule_id: "nist-ai-rmf.manage.ai_incident_response_change",
+        rationale: "Chron detects when AI modifies escalation, fallback, or incident response code."
+      },
+      {
+        id: "MANAGE 1.4",
+        title: "Residual risks are documented after applying risk treatments",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires residual risk registers or risk treatment records."
+      },
+      {
+        id: "MANAGE 2.1",
+        title: "Resources are allocated to manage identified AI risks",
+        coverage: "manual_review",
+        rationale: "Requires budget and resourcing evidence \u2014 not visible in session logs."
+      },
+      {
+        id: "MANAGE 2.2",
+        title: "Mechanisms are in place to make improvements to the AI system based on incidents",
+        coverage: "covered",
+        rule_id: "nist-ai-rmf.manage.ai_incident_response_change",
+        rationale: "Chron detects when AI modifies recovery, rollback, or improvement mechanisms in code."
+      },
+      {
+        id: "MANAGE 2.3",
+        title: "Responses to identified AI risks are documented and tracked",
+        coverage: "needs_evidence",
+        required_source: "tickets",
+        rationale: "Requires ticket-based risk response tracking or risk register updates."
+      },
+      {
+        id: "MANAGE 2.4",
+        title: "Risks from third-party AI systems are identified and managed",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires third-party risk management records or vendor contracts."
+      },
+      {
+        id: "MANAGE 3.1",
+        title: "AI risks and benefits are monitored over time",
+        coverage: "needs_evidence",
+        required_source: "siem",
+        rationale: "Requires SIEM or monitoring system evidence showing ongoing risk tracking."
+      },
+      {
+        id: "MANAGE 3.2",
+        title: "Risk response plans are implemented and tracked",
+        coverage: "needs_evidence",
+        required_source: "tickets",
+        rationale: "Requires ticket or project tracking evidence of risk response implementation."
+      },
+      {
+        id: "MANAGE 4.1",
+        title: "A plan for retiring or sunsetting the AI system is documented",
+        coverage: "covered",
+        rule_id: "nist-ai-rmf.manage.ai_incident_response_change",
+        rationale: "Chron detects when AI modifies fallback, contingency, or decommission-related code paths."
+      },
+      {
+        id: "MANAGE 4.2",
+        title: "A feedback mechanism for end users, customers, and operators is established",
+        coverage: "manual_review",
+        rationale: "Requires evidence of feedback channels and stakeholder input processes."
+      }
+    ];
+  }
+});
+
+// src/review/control-map-soc2.ts
+var SOC2_CONTROL_MAP;
+var init_control_map_soc2 = __esm({
+  "src/review/control-map-soc2.ts"() {
+    "use strict";
+    SOC2_CONTROL_MAP = [
+      // ── CC1: Control Environment ─────────────────────────────────────────────
+      {
+        id: "CC1.1",
+        title: "COSO Principle 1 \u2014 Commitment to integrity and ethical values",
+        coverage: "manual_review",
+        rationale: "Requires board-level governance records, codes of conduct, and ethical policy documentation."
+      },
+      {
+        id: "CC1.2",
+        title: "COSO Principle 2 \u2014 Board independence and oversight of internal controls",
+        coverage: "manual_review",
+        rationale: "Requires board minutes, audit committee records, and governance documentation."
+      },
+      {
+        id: "CC1.3",
+        title: "COSO Principle 3 \u2014 Management establishes structure, authority, and responsibility",
+        coverage: "manual_review",
+        rationale: "Requires org charts, management authority records, and accountability documentation."
+      },
+      {
+        id: "CC1.4",
+        title: "COSO Principle 4 \u2014 Commitment to attract, develop, and retain competent individuals",
+        coverage: "manual_review",
+        rationale: "Requires HR records, training logs, and personnel competency evidence."
+      },
+      {
+        id: "CC1.5",
+        title: "COSO Principle 5 \u2014 Accountability for individuals including IT personnel",
+        coverage: "manual_review",
+        rationale: "Requires performance management records and accountability attestations."
+      },
+      // ── CC2: Communication and Information ──────────────────────────────────
+      {
+        id: "CC2.1",
+        title: "COSO Principle 13 \u2014 Obtains or generates relevant, quality information to support controls",
+        coverage: "manual_review",
+        rationale: "Requires evidence of information quality processes and reporting mechanisms."
+      },
+      {
+        id: "CC2.2",
+        title: "COSO Principle 14 \u2014 Internally communicates information necessary for controls",
+        coverage: "manual_review",
+        rationale: "Requires internal communication records, policy distribution evidence."
+      },
+      {
+        id: "CC2.3",
+        title: "COSO Principle 15 \u2014 Communicates with external parties about matters affecting controls",
+        coverage: "manual_review",
+        rationale: "Requires external communication records and disclosure documentation."
+      },
+      // ── CC3: Risk Assessment ─────────────────────────────────────────────────
+      {
+        id: "CC3.1",
+        title: "COSO Principle 6 \u2014 Specifies suitable objectives to identify and assess risks",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires documented system objectives and risk assessment scope."
+      },
+      {
+        id: "CC3.2",
+        title: "COSO Principle 7 \u2014 Identifies and analyses risks to the achievement of objectives",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires risk register and risk analysis documentation."
+      },
+      {
+        id: "CC3.3",
+        title: "COSO Principle 8 \u2014 Considers the potential for fraud in assessing risks",
+        coverage: "manual_review",
+        rationale: "Requires fraud risk assessment documentation and management review."
+      },
+      {
+        id: "CC3.4",
+        title: "COSO Principle 9 \u2014 Identifies and assesses changes that could significantly impact controls",
+        coverage: "needs_evidence",
+        required_source: "tickets",
+        rationale: "Requires change management records showing impact assessment on controls."
+      },
+      // ── CC4: Monitoring Activities ───────────────────────────────────────────
+      {
+        id: "CC4.1",
+        title: "COSO Principle 16 \u2014 Selects, develops, and performs monitoring evaluations",
+        coverage: "needs_evidence",
+        required_source: "siem",
+        rationale: "Requires SIEM or monitoring platform evidence showing active monitoring evaluations."
+      },
+      {
+        id: "CC4.2",
+        title: "COSO Principle 17 \u2014 Evaluates and communicates monitoring deficiencies",
+        coverage: "manual_review",
+        rationale: "Requires deficiency reporting records and remediation tracking documentation."
+      },
+      // ── CC5: Control Activities ──────────────────────────────────────────────
+      {
+        id: "CC5.1",
+        title: "COSO Principle 10 \u2014 Selects and develops control activities to mitigate risks",
+        coverage: "manual_review",
+        rationale: "Requires control design documentation and risk-to-control mapping."
+      },
+      {
+        id: "CC5.2",
+        title: "COSO Principle 11 \u2014 Selects and develops general controls over technology",
+        coverage: "manual_review",
+        rationale: "Requires IT general control documentation and technology control assessments."
+      },
+      {
+        id: "CC5.3",
+        title: "COSO Principle 12 \u2014 Deploys controls through policies and procedures",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires policy and procedure documentation showing control deployment."
+      },
+      // ── CC6: Logical and Physical Access Controls ────────────────────────────
+      {
+        id: "CC6.1",
+        title: "Logical access security software, infrastructure, and architectures are implemented",
+        coverage: "covered",
+        rule_id: "soc2.cc6_1.ai_access_control_change",
+        rationale: "Chron detects when AI modifies access-control-sensitive code paths (auth, IAM, RBAC, JWT, OAuth, SAML)."
+      },
+      {
+        id: "CC6.2",
+        title: "Prior to issuing system credentials, users are registered and authorized",
+        coverage: "needs_evidence",
+        required_source: "tickets",
+        rationale: "Requires onboarding ticket or identity provisioning records for each user credential issued."
+      },
+      {
+        id: "CC6.3",
+        title: "Access is removed when no longer required",
+        coverage: "needs_evidence",
+        required_source: "tickets",
+        rationale: "Requires offboarding or access revocation records from identity management or ticketing systems."
+      },
+      {
+        id: "CC6.4",
+        title: "Access to data, software, functions, ports, and protocols is restricted",
+        coverage: "needs_evidence",
+        required_source: "repo",
+        rationale: "Requires review of access control configurations in code or infrastructure-as-code."
+      },
+      {
+        id: "CC6.5",
+        title: "Authentication mechanisms are implemented to restrict access to protected resources",
+        coverage: "needs_evidence",
+        required_source: "repo",
+        rationale: "Requires review of authentication implementation in application code or configuration."
+      },
+      {
+        id: "CC6.6",
+        title: "Logical access controls protect assets outside system boundaries",
+        coverage: "covered",
+        rule_id: "soc2.cc6_1.cc6_6.secret_detected",
+        rationale: "Chron detects credentials, API keys, and secrets appearing in AI sessions \u2014 masking at log time."
+      },
+      {
+        id: "CC6.7",
+        title: "Transmission, movement, and removal of data are restricted to authorized personnel",
+        coverage: "covered",
+        rule_id: "soc2.cc6_1.cc6_7.ai_data_handling_change",
+        rationale: "Chron detects when AI modifies data retention, deletion, encryption, or export logic."
+      },
+      {
+        id: "CC6.8",
+        title: "Controls protect against unauthorized access to physical facilities",
+        coverage: "out_of_scope",
+        rationale: "Physical facility access cannot be assessed from AI coding session logs."
+      },
+      // ── CC7: System Operations ───────────────────────────────────────────────
+      {
+        id: "CC7.1",
+        title: "Vulnerability and configuration management processes are in place",
+        coverage: "needs_evidence",
+        required_source: "repo",
+        rationale: "Requires infrastructure-as-code review, vulnerability scanning results, or config audit records."
+      },
+      {
+        id: "CC7.2",
+        title: "System monitoring detects and evaluates security events",
+        coverage: "covered",
+        rule_id: "soc2.cc7_2.ai_monitoring_change",
+        rationale: "Chron detects when AI modifies logging, monitoring, alerting, or security tooling."
+      },
+      {
+        id: "CC7.3",
+        title: "Identified security events are evaluated to determine if they are security incidents",
+        coverage: "needs_evidence",
+        required_source: "siem",
+        rationale: "Requires SIEM alert and triage records showing security event evaluation."
+      },
+      {
+        id: "CC7.4",
+        title: "Identified security incidents are responded to according to a defined procedure",
+        coverage: "manual_review",
+        rationale: "Requires incident response plan and tabletop exercise records."
+      },
+      {
+        id: "CC7.5",
+        title: "Identified breaches in security are disclosed to appropriate parties",
+        coverage: "manual_review",
+        rationale: "Requires breach notification records and disclosure procedures \u2014 not visible in session logs."
+      },
+      // ── CC8: Change Management ───────────────────────────────────────────────
+      {
+        id: "CC8.1",
+        title: "System changes are authorized, designed, developed, and deployed in a controlled manner",
+        coverage: "covered",
+        rule_id: "soc2.cc7_2.cc8_1.ai_infra_change",
+        rationale: "Chron detects when AI modifies deployment pipelines, infrastructure, Docker, Terraform, or Kubernetes configs."
+      },
+      // ── CC9: Risk Mitigation ─────────────────────────────────────────────────
+      {
+        id: "CC9.1",
+        title: "Risks identified during risk assessment are addressed",
+        coverage: "needs_evidence",
+        required_source: "tickets",
+        rationale: "Requires ticket-based evidence linking identified risks to treatment actions."
+      },
+      {
+        id: "CC9.2",
+        title: "Vendor and business partner risks are identified and managed",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires vendor risk assessments, SLAs, and third-party review records."
+      }
+    ];
+  }
+});
+
+// src/review/control-map-iso27001.ts
+var ISO27001_CONTROL_MAP;
+var init_control_map_iso27001 = __esm({
+  "src/review/control-map-iso27001.ts"() {
+    "use strict";
+    ISO27001_CONTROL_MAP = [
+      // ── A.5: Organisational controls (37 controls) ──────────────────────────
+      // These require policy, governance, and process evidence — not visible in AI coding session logs.
+      {
+        id: "A.5 (all)",
+        title: "Organisational controls (A.5.1\u2013A.5.37) \u2014 policies, threat intelligence, roles, cloud use, supplier relationships, incidents, BCM, legal compliance",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "All 37 A.5 organisational controls require policy documents, governance records, supplier agreements, or incident reports \u2014 none are assessable from AI coding session logs alone."
+      },
+      // ── A.6: People controls (8 controls) ────────────────────────────────────
+      {
+        id: "A.6 (all)",
+        title: "People controls (A.6.1\u2013A.6.8) \u2014 screening, terms, awareness, training, disciplinary, offboarding, remote working, monitoring",
+        coverage: "manual_review",
+        rationale: "All 8 A.6 people controls require HR records, employment terms, and training evidence \u2014 not visible in AI coding session logs."
+      },
+      // ── A.7: Physical controls (14 controls) ─────────────────────────────────
+      {
+        id: "A.7 (all)",
+        title: "Physical controls (A.7.1\u2013A.7.14) \u2014 physical security perimeters, entry, offices, monitoring, threats, working in secure areas, clear desk, equipment siting, cabling, maintenance, asset disposal, equipment off-premises, unattended equipment",
+        coverage: "out_of_scope",
+        rationale: "All 14 A.7 physical controls require physical security evidence \u2014 not visible in AI coding session logs."
+      },
+      // ── A.8: Technological controls (34 controls) ────────────────────────────
+      {
+        id: "A.8.1",
+        title: "User endpoint devices",
+        coverage: "needs_evidence",
+        required_source: "cloud",
+        rationale: "Requires device management platform evidence (MDM/EDR) \u2014 not assessable from session logs."
+      },
+      {
+        id: "A.8.2",
+        title: "Privileged access rights",
+        coverage: "covered",
+        rule_id: "iso27001.a8_2.ai_privileged_access_change",
+        rationale: "Chron detects when AI modifies admin, superuser, sudo, or privilege-related code."
+      },
+      {
+        id: "A.8.3",
+        title: "Information access restriction",
+        coverage: "covered",
+        rule_id: "iso27001.a8_3.ai_access_restriction_change",
+        rationale: "Chron detects when AI modifies auth, IAM, RBAC, permission, or access control code."
+      },
+      {
+        id: "A.8.4",
+        title: "Access to source code",
+        coverage: "needs_evidence",
+        required_source: "repo",
+        rationale: "Requires repository permission configuration evidence showing who has source code access."
+      },
+      {
+        id: "A.8.5",
+        title: "Secure authentication",
+        coverage: "needs_evidence",
+        required_source: "repo",
+        rationale: "Requires review of authentication implementation in application code or configuration."
+      },
+      {
+        id: "A.8.6",
+        title: "Capacity management",
+        coverage: "needs_evidence",
+        required_source: "cloud",
+        rationale: "Requires infrastructure capacity monitoring evidence from cloud or operations tooling."
+      },
+      {
+        id: "A.8.7",
+        title: "Protection against malware",
+        coverage: "needs_evidence",
+        required_source: "cloud",
+        rationale: "Requires endpoint protection or EDR evidence \u2014 not visible in session logs."
+      },
+      {
+        id: "A.8.8",
+        title: "Management of technical vulnerabilities",
+        coverage: "needs_evidence",
+        required_source: "repo",
+        rationale: "Requires vulnerability scanning results or dependency audit records from CI/repo tooling."
+      },
+      {
+        id: "A.8.9",
+        title: "Configuration management",
+        coverage: "needs_evidence",
+        required_source: "repo",
+        rationale: "Requires infrastructure-as-code review or configuration baseline evidence."
+      },
+      {
+        id: "A.8.10",
+        title: "Information deletion",
+        coverage: "needs_evidence",
+        required_source: "repo",
+        rationale: "Requires evidence of data deletion implementation or data lifecycle policy enforcement."
+      },
+      {
+        id: "A.8.11",
+        title: "Data masking",
+        coverage: "needs_evidence",
+        required_source: "repo",
+        rationale: "Requires review of data masking implementation in application code."
+      },
+      {
+        id: "A.8.12",
+        title: "Data leakage prevention",
+        coverage: "covered",
+        rule_id: "iso27001.a8_12.sensitive_data_detected",
+        rationale: "Chron detects sensitive data and credentials appearing in AI sessions \u2014 masking at log time."
+      },
+      {
+        id: "A.8.13",
+        title: "Information backup",
+        coverage: "needs_evidence",
+        required_source: "cloud",
+        rationale: "Requires backup schedule and restoration test records from infrastructure tooling."
+      },
+      {
+        id: "A.8.14",
+        title: "Redundancy of information processing facilities",
+        coverage: "needs_evidence",
+        required_source: "cloud",
+        rationale: "Requires infrastructure redundancy configuration evidence."
+      },
+      {
+        id: "A.8.15",
+        title: "Logging",
+        coverage: "needs_evidence",
+        required_source: "siem",
+        rationale: "Requires SIEM or centralized logging platform evidence showing log collection and retention."
+      },
+      {
+        id: "A.8.16",
+        title: "Monitoring activities",
+        coverage: "needs_evidence",
+        required_source: "siem",
+        rationale: "Requires monitoring platform evidence showing active alerting and review."
+      },
+      {
+        id: "A.8.17",
+        title: "Clock synchronisation",
+        coverage: "out_of_scope",
+        rationale: "NTP configuration is infrastructure-level \u2014 not visible in AI coding session logs."
+      },
+      {
+        id: "A.8.18",
+        title: "Use of privileged utility programs",
+        coverage: "out_of_scope",
+        rationale: "Privileged utility usage controls are OS/admin level \u2014 not assessable from session logs."
+      },
+      {
+        id: "A.8.19",
+        title: "Installation of software on operational systems",
+        coverage: "needs_evidence",
+        required_source: "cloud",
+        rationale: "Requires change management records for software installation on operational systems."
+      },
+      {
+        id: "A.8.20",
+        title: "Networks security",
+        coverage: "covered",
+        rule_id: "iso27001.a8_20.ai_network_security_change",
+        rationale: "Chron detects when AI modifies firewall, VPC, WAF, NSG, or network security configuration."
+      },
+      {
+        id: "A.8.21",
+        title: "Security of network services",
+        coverage: "needs_evidence",
+        required_source: "cloud",
+        rationale: "Requires network service security evidence from cloud or network platform."
+      },
+      {
+        id: "A.8.22",
+        title: "Segregation of networks",
+        coverage: "needs_evidence",
+        required_source: "cloud",
+        rationale: "Requires network topology and segmentation evidence from infrastructure."
+      },
+      {
+        id: "A.8.23",
+        title: "Web filtering",
+        coverage: "out_of_scope",
+        rationale: "Web filtering is a network-level control \u2014 not visible in AI coding session logs."
+      },
+      {
+        id: "A.8.24",
+        title: "Use of cryptography",
+        coverage: "covered",
+        rule_id: "iso27001.a8_24.ai_cryptography_change",
+        rationale: "Chron detects when AI modifies cryptographic code \u2014 TLS, encryption, cipher configuration."
+      },
+      {
+        id: "A.8.25",
+        title: "Secure development lifecycle",
+        coverage: "needs_evidence",
+        required_source: "ci",
+        rationale: "Requires CI/CD pipeline evidence showing security checks integrated into the development lifecycle."
+      },
+      {
+        id: "A.8.26",
+        title: "Application security requirements",
+        coverage: "needs_evidence",
+        required_source: "repo",
+        rationale: "Requires documented security requirements and review evidence in the repository."
+      },
+      {
+        id: "A.8.27",
+        title: "Secure system architecture and engineering principles",
+        coverage: "needs_evidence",
+        required_source: "repo",
+        rationale: "Requires architecture documentation and security design review records."
+      },
+      {
+        id: "A.8.28",
+        title: "Secure coding",
+        coverage: "needs_evidence",
+        required_source: "ci",
+        rationale: "Requires static analysis, SAST results, or code review records from CI pipeline."
+      },
+      {
+        id: "A.8.29",
+        title: "Security testing in development and acceptance",
+        coverage: "needs_evidence",
+        required_source: "ci",
+        rationale: "Requires DAST, penetration test records, or security test results from CI or QA."
+      },
+      {
+        id: "A.8.30",
+        title: "Outsourced development",
+        coverage: "manual_review",
+        rationale: "Requires third-party development agreements and review records."
+      },
+      {
+        id: "A.8.31",
+        title: "Separation of development, test and production environments",
+        coverage: "covered",
+        rule_id: "iso27001.a8_31.ai_production_change",
+        rationale: "Chron detects when AI modifies files in production environment paths."
+      },
+      {
+        id: "A.8.32",
+        title: "Change management",
+        coverage: "needs_evidence",
+        required_source: "tickets",
+        rationale: "Requires change ticket records showing authorization and approval for changes."
+      },
+      {
+        id: "A.8.33",
+        title: "Test information",
+        coverage: "needs_evidence",
+        required_source: "ci",
+        rationale: "Requires evidence that test environments do not use live production data."
+      },
+      {
+        id: "A.8.34",
+        title: "Protection of information systems during audit testing",
+        coverage: "manual_review",
+        rationale: "Requires audit testing agreements and access control records for audit activities."
+      }
+    ];
+  }
+});
+
+// src/review/control-map-euaiact.ts
+var EUAIACT_CONTROL_MAP;
+var init_control_map_euaiact = __esm({
+  "src/review/control-map-euaiact.ts"() {
+    "use strict";
+    EUAIACT_CONTROL_MAP = [
+      {
+        id: "Art. 6",
+        title: "Classification rules for high-risk AI systems",
+        coverage: "manual_review",
+        rationale: "Whether an AI system qualifies as high-risk requires legal and product classification review \u2014 not assessable from session logs."
+      },
+      {
+        id: "Art. 7",
+        title: "Amendments to the list of high-risk AI systems in Annex III",
+        coverage: "out_of_scope",
+        rationale: "Regulatory classification updates are a legislative matter \u2014 not applicable to session log analysis."
+      },
+      {
+        id: "Art. 9",
+        title: "Risk management system for high-risk AI systems",
+        coverage: "covered",
+        rule_id: "euaiact.a9.ai_risk_management_change",
+        rationale: "Chron detects when AI modifies risk management, safety guardrail, or content moderation code."
+      },
+      {
+        id: "Art. 10",
+        title: "Data and data governance requirements for training, validation, and testing data",
+        coverage: "covered",
+        rule_id: "euaiact.a10.ai_data_governance_change",
+        rationale: "Chron detects when AI modifies data pipeline, dataset, or data governance code, and when sensitive data appears in sessions."
+      },
+      {
+        id: "Art. 11",
+        title: "Technical documentation \u2014 providers must draw up and maintain documentation before placing on market",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires technical documentation files covering system design, data, performance, and risk \u2014 not visible in session logs alone."
+      },
+      {
+        id: "Art. 12",
+        title: "Record-keeping \u2014 automatic logging of events by high-risk AI systems",
+        coverage: "covered",
+        rule_id: "euaiact.a12.ai_logging_modification",
+        rationale: "Chron detects when AI modifies record-keeping, audit logging, or event telemetry code."
+      },
+      {
+        id: "Art. 13",
+        title: "Transparency and provision of information to deployers",
+        coverage: "covered",
+        rule_id: "euaiact.a13.ai_transparency_change",
+        rationale: "Chron detects when AI modifies transparency, explainability, or disclosure-related code."
+      },
+      {
+        id: "Art. 14",
+        title: "Human oversight \u2014 design must enable effective oversight by natural persons",
+        coverage: "covered",
+        rule_id: "euaiact.a14.ai_oversight_mechanism_change",
+        rationale: "Chron detects when AI modifies human oversight, approval gates, or intervention mechanisms."
+      },
+      {
+        id: "Art. 15",
+        title: "Accuracy, robustness, and cybersecurity of high-risk AI systems",
+        coverage: "needs_evidence",
+        required_source: "ci",
+        rationale: "Requires accuracy benchmarks, robustness test results, and security testing evidence from CI pipelines."
+      },
+      {
+        id: "Art. 16",
+        title: "Obligations of providers \u2014 CE marking, registration, post-market monitoring, incident reporting",
+        coverage: "manual_review",
+        rationale: "Requires conformity assessment records, EU database registration, and post-market monitoring plans."
+      },
+      {
+        id: "Art. 17",
+        title: "Quality management system \u2014 providers must establish a documented QMS",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires QMS documentation covering design, development, testing, and change management."
+      },
+      {
+        id: "Art. 18",
+        title: "Documentation keeping \u2014 providers must retain technical documentation for 10 years",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires document retention policy and archiving evidence."
+      },
+      {
+        id: "Art. 25",
+        title: "Responsibilities along the AI value chain for providers and deployers",
+        coverage: "manual_review",
+        rationale: "Requires contractual and governance documentation defining responsibilities across the supply chain."
+      },
+      {
+        id: "Art. 26",
+        title: "Obligations of deployers of high-risk AI systems",
+        coverage: "manual_review",
+        rationale: "Requires deployer governance records, fundamental rights impact assessments, and human oversight documentation."
+      },
+      {
+        id: "Art. 50",
+        title: "Transparency obligations for certain AI systems (GPAI, chatbots, deep fakes)",
+        coverage: "needs_evidence",
+        required_source: "policy_docs",
+        rationale: "Requires disclosure documentation and labelling evidence for AI-generated content."
+      }
+    ];
+  }
+});
+
+// src/review/control-map.ts
+var CONTROL_MAPS;
+var init_control_map = __esm({
+  "src/review/control-map.ts"() {
+    "use strict";
+    init_control_map_nist_ai_rmf();
+    init_control_map_soc2();
+    init_control_map_iso27001();
+    init_control_map_euaiact();
+    CONTROL_MAPS = {
+      "nist-ai-rmf": NIST_AI_RMF_CONTROL_MAP,
+      soc2: SOC2_CONTROL_MAP,
+      iso27001: ISO27001_CONTROL_MAP,
+      euaiact: EUAIACT_CONTROL_MAP
+    };
+  }
+});
+
 // src/review/workflow.ts
 function findingId(ruleId, sessionId) {
   return (0, import_crypto7.createHash)("sha256").update(`${ruleId}:${sessionId}`).digest("hex");
@@ -20850,6 +21935,98 @@ function badgeHtml(severity) {
 function statusBadgeHtml(status) {
   return `<span class="status-badge status-${esc2(status)}">${esc2(status.toUpperCase())}</span>`;
 }
+function renderFullMapCli(framework, map, info2) {
+  const counts = { covered: 0, needs_evidence: 0, manual_review: 0, out_of_scope: 0 };
+  for (const e of map)
+    counts[e.coverage] = (counts[e.coverage] ?? 0) + 1;
+  process.stdout.write(`
+${BOLD10}Control Map \u2014 ${info2.title}${RESET10}
+
+`);
+  process.stdout.write(`  ${CYAN8}Covered by session evidence:${RESET10}  ${BOLD10}${counts["covered"] ?? 0}${RESET10}
+`);
+  process.stdout.write(`  ${YELLOW8}Needs additional evidence:${RESET10}   ${BOLD10}${counts["needs_evidence"] ?? 0}${RESET10}
+`);
+  process.stdout.write(`  ${DIM9}Manual review required:${RESET10}      ${BOLD10}${counts["manual_review"] ?? 0}${RESET10}
+`);
+  process.stdout.write(`  ${DIM9}Out of scope:${RESET10}                ${BOLD10}${counts["out_of_scope"] ?? 0}${RESET10}
+
+`);
+  const groups = { covered: [], needs_evidence: [], manual_review: [], out_of_scope: [] };
+  for (const e of map)
+    groups[e.coverage].push(e);
+  for (const cov of COV_ORDER) {
+    const entries = groups[cov];
+    if (!entries || entries.length === 0)
+      continue;
+    process.stdout.write(`${BOLD10}${COV_LABELS[cov]}:${RESET10}
+`);
+    for (const e of entries) {
+      const id = e.id.padEnd(22);
+      const title = e.title.length > 50 ? e.title.slice(0, 47) + "\u2026" : e.title.padEnd(50);
+      let suffix = "";
+      if (cov === "covered")
+        suffix = `${DIM9}rule: ${e.rule_id}${RESET10}`;
+      if (cov === "needs_evidence")
+        suffix = `${DIM9}source: ${e.required_source}${RESET10}`;
+      if (cov === "manual_review")
+        suffix = `${DIM9}human judgement required${RESET10}`;
+      process.stdout.write(`  ${CYAN8}${id}${RESET10}  ${title}  ${suffix}
+`);
+    }
+    process.stdout.write("\n");
+  }
+  process.stdout.write(
+    `${DIM9}Covered does not mean compliant. It means Chron has a deterministic session-evidence rule for this control.
+A full framework assessment requires policy documents, auditor judgement, and evidence beyond session logs.${RESET10}
+
+`
+  );
+}
+function buildCoverageMapSection(framework, map, info2) {
+  const counts = { covered: 0, needs_evidence: 0, manual_review: 0, out_of_scope: 0 };
+  for (const e of map)
+    counts[e.coverage] = (counts[e.coverage] ?? 0) + 1;
+  const groups = { covered: [], needs_evidence: [], manual_review: [], out_of_scope: [] };
+  for (const e of map)
+    groups[e.coverage].push(e);
+  const groupHtml = COV_ORDER.map((cov) => {
+    const entries = groups[cov];
+    if (!entries || entries.length === 0)
+      return "";
+    const badgeClass = { covered: "cov-covered", needs_evidence: "cov-needs", manual_review: "cov-manual", out_of_scope: "cov-out" }[cov];
+    const rows = entries.map((e) => {
+      let detail = "";
+      if (cov === "covered")
+        detail = `<code style="font-size:10px">${esc2(e.rule_id)}</code>`;
+      if (cov === "needs_evidence")
+        detail = `source: <strong>${esc2(e.required_source)}</strong>`;
+      if (cov === "manual_review")
+        detail = `<span style="color:#6b7280">human judgement required</span>`;
+      if (cov === "out_of_scope")
+        detail = `<span style="color:#9ca3af">not applicable to session logs</span>`;
+      return `<tr><td style="white-space:nowrap;font-weight:600">${esc2(e.id)}</td><td>${esc2(e.title)}</td><td>${detail}</td></tr>`;
+    }).join("\n");
+    return `
+<h3>${esc2(COV_LABELS[cov])} <span class="coverage-badge ${badgeClass}">${entries.length}</span></h3>
+<table><thead><tr><th style="width:140px">Control</th><th>Description</th><th style="width:240px">Detail</th></tr></thead><tbody>
+${rows}
+</tbody></table>`;
+  }).join("\n");
+  return `
+<h2>Framework Coverage Map</h2>
+<div class="coverage-stat-grid">
+  <div class="coverage-stat cs-covered"><div class="coverage-stat-value">${counts["covered"] ?? 0}</div><div class="coverage-stat-label">Covered by session evidence</div></div>
+  <div class="coverage-stat cs-needs"><div class="coverage-stat-value">${counts["needs_evidence"] ?? 0}</div><div class="coverage-stat-label">Needs additional evidence</div></div>
+  <div class="coverage-stat cs-manual"><div class="coverage-stat-value">${counts["manual_review"] ?? 0}</div><div class="coverage-stat-label">Manual review required</div></div>
+  <div class="coverage-stat cs-out"><div class="coverage-stat-value">${counts["out_of_scope"] ?? 0}</div><div class="coverage-stat-label">Out of scope</div></div>
+</div>
+<div class="disclaimer">
+  <strong>Coverage does not mean compliance.</strong> "Covered by session evidence" means Chron has a deterministic rule that can flag relevant AI coding activity for this control.
+  A full ${esc2(info2.title)} assessment requires policy documents, auditor judgement, stakeholder interviews, and evidence sources beyond AI session logs.
+</div>
+${groupHtml}`;
+}
 function frameworkInfo(framework) {
   if (framework === "nist-ai-rmf") {
     return {
@@ -20919,7 +22096,7 @@ function frameworkInfo(framework) {
   };
 }
 function buildReviewHtml(params) {
-  const { framework, host, generatedAt, sessionCount, findings } = params;
+  const { framework, host, generatedAt, sessionCount, findings, coverageMapHtml } = params;
   const info2 = frameworkInfo(framework);
   const controlsHit = new Set(findings.flatMap((f) => f.controls));
   const bySeverity = { critical: 0, high: 0, medium: 0, low: 0 };
@@ -21014,6 +22191,8 @@ ${findingCards}
   </p>
 </div>
 
+${coverageMapHtml ?? ""}
+
 </div>
 </body>
 </html>`;
@@ -21038,8 +22217,9 @@ async function runReview2(args2) {
   const outputArg = args2.find((a) => a.startsWith("--output="))?.slice("--output=".length);
   const sinceArg = args2.find((a) => a.startsWith("--since="))?.slice("--since=".length);
   const showAll = args2.includes("--all");
+  const fullMap = args2.includes("--full-map");
   if (!frameworkArg) {
-    process.stderr.write("Usage: chron review --framework=soc2 [--since=<range>] [--all] [--output=<file>]\n");
+    process.stderr.write("Usage: chron review --framework=<name> [--since=<range>] [--all] [--full-map] [--output=<file>]\n");
     process.exit(1);
   }
   const rules = FRAMEWORKS[frameworkArg];
@@ -21066,14 +22246,30 @@ async function runReview2(args2) {
   const allFindings = await hydrateFindingStatuses(db, rawFindings);
   const findings = showAll ? allFindings : allFindings.filter((f) => f.status === "open");
   printFindings(findings, frameworkArg, sessionCount, showAll);
+  if (fullMap) {
+    const map = CONTROL_MAPS[frameworkArg];
+    if (map) {
+      const info2 = frameworkInfo(frameworkArg);
+      renderFullMapCli(frameworkArg, map, info2);
+    }
+  }
   if (outputArg) {
     const generatedAt = (/* @__PURE__ */ new Date()).toISOString().replace("T", " ").slice(0, 19) + " UTC";
+    let coverageMapHtml;
+    if (fullMap) {
+      const map = CONTROL_MAPS[frameworkArg];
+      if (map) {
+        const info2 = frameworkInfo(frameworkArg);
+        coverageMapHtml = buildCoverageMapSection(frameworkArg, map, info2);
+      }
+    }
     const html = buildReviewHtml({
       framework: frameworkArg,
       host: (0, import_os11.hostname)(),
       generatedAt,
       sessionCount,
-      findings
+      findings,
+      coverageMapHtml
     });
     (0, import_fs12.writeFileSync)(outputArg, html, "utf8");
     process.stdout.write(`Review report written to ${outputArg}
@@ -21107,7 +22303,7 @@ async function runReviewAction(action, args2) {
     process.exit(1);
   }
 }
-var import_fs12, import_os11, RESET10, BOLD10, DIM9, RED5, YELLOW8, CYAN8, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS;
+var import_fs12, import_os11, RESET10, BOLD10, DIM9, RED5, YELLOW8, CYAN8, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
 var init_review = __esm({
   "src/cli/review.ts"() {
     "use strict";
@@ -21116,6 +22312,7 @@ var init_review = __esm({
     init_db2();
     init_report();
     init_rules();
+    init_control_map();
     init_engine();
     init_workflow();
     RESET10 = "\x1B[0m";
@@ -21186,7 +22383,27 @@ li { margin-bottom: 4px; }
   h1 { font-size: 22px; }
   h2 { font-size: 14px; }
 }
+.coverage-badge { display:inline-block; padding:1px 7px; border-radius:3px; font-size:11px; font-weight:600; }
+.cov-covered { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+.cov-needs { background:#fef9c3; color:#854d0e; border:1px solid #fde047; }
+.cov-manual { background:#f3f4f6; color:#374151; border:1px solid #d1d5db; }
+.cov-out { background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb; }
+.coverage-stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:16px 0; }
+.coverage-stat { border-radius:6px; padding:12px 14px; text-align:center; }
+.coverage-stat-value { font-size:22px; font-weight:700; }
+.coverage-stat-label { font-size:11px; margin-top:2px; }
+.cs-covered { background:#dcfce7; border:1px solid #86efac; color:#166534; }
+.cs-needs { background:#fef9c3; border:1px solid #fde047; color:#854d0e; }
+.cs-manual { background:#f3f4f6; border:1px solid #d1d5db; color:#374151; }
+.cs-out { background:#f3f4f6; border:1px solid #e5e7eb; color:#9ca3af; }
 `;
+    COV_LABELS = {
+      covered: "Covered by session evidence",
+      needs_evidence: "Needs additional evidence",
+      manual_review: "Manual review required",
+      out_of_scope: "Out of scope"
+    };
+    COV_ORDER = ["covered", "needs_evidence", "manual_review", "out_of_scope"];
   }
 });
 
@@ -21392,6 +22609,7 @@ Options (review):
   --framework=<name>  Framework to review against: soc2, iso27001, euaiact, nist-ai-rmf
   --since=<range>     Limit to sessions since: 7d, 30d, or YYYY-MM-DD
   --all               Include accepted, dismissed, and resolved findings
+  --full-map          Show full framework control map with coverage classification
   --output=<file>     Write HTML report to file (printable to PDF from browser)
   accept <id>         Mark a finding as accepted; supports --note=<text>
   dismiss <id>        Mark a finding as dismissed; supports --note=<text>

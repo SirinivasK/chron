@@ -38526,7 +38526,7 @@ var init_time = __esm({
 var version4;
 var init_package = __esm({
   "package.json"() {
-    version4 = "0.1.35";
+    version4 = "0.1.38";
   }
 });
 
@@ -38985,6 +38985,39 @@ function initSession(db) {
     let session_id;
     let created;
     let ai_tool;
+    if (args.resume_latest) {
+      const latest = await db.select().from(sessions).orderBy(desc(sessions.updated_at)).limit(1);
+      if (latest.length > 0) {
+        const session = latest[0];
+        await db.update(sessions).set({ updated_at: now }).where(eq(sessions.id, session.id));
+        session_id = session.id;
+        created = false;
+        ai_tool = session.ai_tool;
+        emitEvent({ event_type: "session_started", timestamp: now, session: { id_prefix: session.id.slice(0, 8), ai_tool } });
+        terminalAudit(`session ${session.id.slice(0, 8)} resumed at ${now} (${ai_tool ?? "unknown"}: ${session.title}) [resume_latest]`, "session");
+        const limit2 = args.limit ?? 10;
+        const [countRow2] = await db.select({
+          count: sql`count(*)`,
+          first_message_at: sql`min(${messages.created_at})`
+        }).from(messages).where(eq(messages.session_id, session_id));
+        const total2 = countRow2?.count ?? 0;
+        const first_message_at2 = countRow2?.first_message_at ?? null;
+        const recentRows2 = await db.select().from(messages).where(eq(messages.session_id, session_id)).orderBy(desc(messages.created_at), desc(sql`rowid`)).limit(limit2);
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              session_id,
+              created,
+              ai_tool,
+              message_count: total2,
+              first_message_at: first_message_at2,
+              messages: recentRows2.reverse().map((m) => ({ role: m.role, content: m.content, created_at: m.created_at }))
+            })
+          }]
+        };
+      }
+    }
     try {
       let publicKey = null;
       try {
@@ -40012,7 +40045,8 @@ function createServer(db) {
       ai_tool: external_exports.string().optional().describe('AI tool name: "claude", "cursor", "windsurf", etc.'),
       limit: external_exports.number().int().positive().optional().describe("Number of recent messages to return (default: 10)"),
       parent_session_id: external_exports.string().optional().describe("Parent session ID if this is a subagent session spawned by another session"),
-      external_ref: external_exports.string().optional().describe('External ticket/PR reference, e.g. "jira:ENG-123" or "github:org/repo#456"')
+      external_ref: external_exports.string().optional().describe('External ticket/PR reference, e.g. "jira:ENG-123" or "github:org/repo#456"'),
+      resume_latest: external_exports.boolean().optional().describe("When true, resumes the most recently active session instead of matching by title. Use this to survive context compaction without breaking the audit chain.")
     },
     initSession(db)
   );
