@@ -719,10 +719,10 @@ var init_subquery = __esm({
     init_entity();
     Subquery = class {
       static [entityKind] = "Subquery";
-      constructor(sql2, fields, alias, isWith = false, usedTables = []) {
+      constructor(sql3, fields, alias, isWith = false, usedTables = []) {
         this._ = {
           brand: "Subquery",
-          sql: sql2,
+          sql: sql3,
           selectedFields: fields,
           alias,
           isWith,
@@ -1171,19 +1171,19 @@ var init_sql = __esm({
         return new SQL([this]);
       }
     };
-    ((sql2) => {
+    ((sql22) => {
       function empty() {
         return new SQL([]);
       }
-      sql2.empty = empty;
+      sql22.empty = empty;
       function fromList(list) {
         return new SQL(list);
       }
-      sql2.fromList = fromList;
+      sql22.fromList = fromList;
       function raw(str) {
         return new SQL([new StringChunk(str)]);
       }
-      sql2.raw = raw;
+      sql22.raw = raw;
       function join11(chunks, separator) {
         const result = [];
         for (const [i, chunk] of chunks.entries()) {
@@ -1194,24 +1194,24 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql2.join = join11;
+      sql22.join = join11;
       function identifier(value) {
         return new Name(value);
       }
-      sql2.identifier = identifier;
+      sql22.identifier = identifier;
       function placeholder2(name2) {
         return new Placeholder(name2);
       }
-      sql2.placeholder = placeholder2;
+      sql22.placeholder = placeholder2;
       function param2(value, encoder) {
         return new Param(value, encoder);
       }
-      sql2.param = param2;
+      sql22.param = param2;
     })(sql || (sql = {}));
     ((SQL2) => {
       class Aliased {
-        constructor(sql2, fieldAlias) {
-          this.sql = sql2;
+        constructor(sql22, fieldAlias) {
+          this.sql = sql22;
           this.fieldAlias = fieldAlias;
         }
         static [entityKind] = "SQL.Aliased";
@@ -3193,9 +3193,9 @@ var require_libsql = __commonJS({
        *
        * @param {string} sql - The SQL statement string to prepare.
        */
-      prepare(sql2) {
+      prepare(sql3) {
         try {
-          const stmt = databasePrepareSync.call(this.db, sql2);
+          const stmt = databasePrepareSync.call(this.db, sql3);
           return new Statement(stmt);
         } catch (err) {
           throw convertError(err);
@@ -3306,9 +3306,9 @@ var require_libsql = __commonJS({
        *
        * @param {string} sql - The SQL statement string to execute.
        */
-      exec(sql2) {
+      exec(sql3) {
         try {
-          databaseExecSync.call(this.db, sql2);
+          databaseExecSync.call(this.db, sql3);
         } catch (err) {
           throw convertError(err);
         }
@@ -3517,13 +3517,13 @@ function _createClient(config) {
   return new Sqlite3Client(path, options, db, config.intMode);
 }
 function executeStmt(db, stmt, intMode) {
-  let sql2;
+  let sql3;
   let args2;
   if (typeof stmt === "string") {
-    sql2 = stmt;
+    sql3 = stmt;
     args2 = [];
   } else {
-    sql2 = stmt.sql;
+    sql3 = stmt.sql;
     if (Array.isArray(stmt.args)) {
       args2 = stmt.args.map((value) => valueToSql(value, intMode));
     } else {
@@ -3535,7 +3535,7 @@ function executeStmt(db, stmt, intMode) {
     }
   }
   try {
-    const sqlStmt = db.prepare(sql2);
+    const sqlStmt = db.prepare(sql3);
     sqlStmt.safeIntegers(true);
     let returnsData = true;
     try {
@@ -3629,9 +3629,9 @@ function valueToSql(value, intMode) {
     return value;
   }
 }
-function executeMultiple(db, sql2) {
+function executeMultiple(db, sql3) {
   try {
-    db.exec(sql2);
+    db.exec(sql3);
   } catch (e) {
     throw mapSqliteError(e);
   }
@@ -3759,11 +3759,11 @@ var init_sqlite3 = __esm({
         this.#db = null;
         return new Sqlite3Transaction(db, this.#intMode);
       }
-      async executeMultiple(sql2) {
+      async executeMultiple(sql3) {
         this.#checkNotClosed();
         const db = this.#getDb();
         try {
-          return executeMultiple(db, sql2);
+          return executeMultiple(db, sql3);
         } finally {
           if (db.inTransaction) {
             executeStmt(db, "ROLLBACK", this.#intMode);
@@ -3849,9 +3849,9 @@ var init_sqlite3 = __esm({
         }
         return resultSets;
       }
-      async executeMultiple(sql2) {
+      async executeMultiple(sql3) {
         this.#checkNotClosed();
-        return executeMultiple(this.#database, sql2);
+        return executeMultiple(this.#database, sql3);
       }
       async rollback() {
         if (!this.#database.open) {
@@ -8345,11 +8345,11 @@ var init_result = __esm({
 });
 
 // node_modules/@libsql/hrana-client/lib-esm/sql.js
-function sqlToProto(owner, sql2) {
-  if (sql2 instanceof Sql) {
-    return { sqlId: sql2._getSqlId(owner) };
+function sqlToProto(owner, sql3) {
+  if (sql3 instanceof Sql) {
+    return { sqlId: sql3._getSqlId(owner) };
   } else {
-    return { sql: "" + sql2 };
+    return { sql: "" + sql3 };
   }
 }
 var Sql;
@@ -8448,8 +8448,8 @@ function stmtToProto(sqlOwner, stmt, wantRows) {
   } else {
     inSql = stmt;
   }
-  const { sql: sql2, sqlId } = sqlToProto(sqlOwner, inSql);
-  return { sql: sql2, sqlId, args: args2, namedArgs, wantRows };
+  const { sql: sql3, sqlId } = sqlToProto(sqlOwner, inSql);
+  return { sql: sql3, sqlId, args: args2, namedArgs, wantRows };
 }
 var Stmt;
 var init_stmt = __esm({
@@ -8464,8 +8464,8 @@ var init_stmt = __esm({
       /** @private */
       _namedArgs;
       /** Initialize the statement with given SQL text. */
-      constructor(sql2) {
-        this.sql = sql2;
+      constructor(sql3) {
+        this.sql = sql3;
         this._args = [];
         this._namedArgs = /* @__PURE__ */ new Map();
       }
@@ -10251,13 +10251,13 @@ var init_client2 = __esm({
         return WsStream.open(this);
       }
       /** Cache a SQL text on the server. This requires protocol version 2 or higher. */
-      storeSql(sql2) {
+      storeSql(sql3) {
         this._ensureVersion(2, "storeSql()");
         const sqlId = this.#sqlIdAlloc.alloc();
         const sqlObj = new Sql(this, sqlId);
         const responseCallback = () => void 0;
         const errorCallback = (e) => sqlObj._setClosed(e);
-        const request = { type: "store_sql", sqlId, sql: sql2 };
+        const request = { type: "store_sql", sqlId, sql: sql3 };
         this._sendRequest(request, { responseCallback, errorCallback });
         return sqlObj;
       }
@@ -10887,9 +10887,9 @@ var init_stream3 = __esm({
         return this;
       }
       /** Cache a SQL text on the server. */
-      storeSql(sql2) {
+      storeSql(sql3) {
         const sqlId = this.#sqlIdAlloc.alloc();
-        this.#sendStreamRequest({ type: "store_sql", sqlId, sql: sql2 }).then(() => void 0, (error) => this._setClosed(error));
+        this.#sendStreamRequest({ type: "store_sql", sqlId, sql: sql3 }).then(() => void 0, (error) => this._setClosed(error));
         return new Sql(this, sqlId);
       }
       /** @private */
@@ -11357,17 +11357,17 @@ async function executeHranaBatch(mode, version4, batch, hranaStmts, disableForei
   return resultSets;
 }
 function stmtToHrana(stmt) {
-  let sql2;
+  let sql3;
   let args2;
   if (Array.isArray(stmt)) {
-    [sql2, args2] = stmt;
+    [sql3, args2] = stmt;
   } else if (typeof stmt === "string") {
-    sql2 = stmt;
+    sql3 = stmt;
   } else {
-    sql2 = stmt.sql;
+    sql3 = stmt.sql;
     args2 = stmt.args;
   }
-  const hranaStmt = new Stmt(sql2);
+  const hranaStmt = new Stmt(sql3);
   if (args2) {
     if (Array.isArray(args2)) {
       hranaStmt.bindIndexes(args2);
@@ -11512,7 +11512,7 @@ var init_hrana = __esm({
           throw mapHranaError(e);
         }
       }
-      async executeMultiple(sql2) {
+      async executeMultiple(sql3) {
         const stream = this._getStream();
         if (stream.closed) {
           throw new LibsqlError("Cannot execute statements because the transaction is closed", "TRANSACTION_CLOSED");
@@ -11529,7 +11529,7 @@ var init_hrana = __esm({
           } else {
             await this.#started;
           }
-          await stream.sequence(sql2);
+          await stream.sequence(sql3);
         } catch (e) {
           throw mapHranaError(e);
         }
@@ -11901,11 +11901,11 @@ var init_ws = __esm({
           }
         });
       }
-      async executeMultiple(sql2) {
+      async executeMultiple(sql3) {
         return this.limit(async () => {
           const streamState = await this.#openStream();
           try {
-            const promise = streamState.stream.sequence(sql2);
+            const promise = streamState.stream.sequence(sql3);
             streamState.stream.closeGracefully();
             await promise;
           } catch (e) {
@@ -12200,13 +12200,13 @@ var init_http = __esm({
           }
         });
       }
-      async executeMultiple(sql2) {
+      async executeMultiple(sql3) {
         return this.limit(async () => {
           try {
             let promise;
             const stream = this.#client.openStream();
             try {
-              promise = stream.sequence(sql2);
+              promise = stream.sequence(sql3);
             } finally {
               stream.closeGracefully();
             }
@@ -13802,8 +13802,8 @@ var init_dialect = __esm({
         const onConflictSql = onConflict?.length ? sql.join(onConflict) : void 0;
         return sql`${withSql}insert into ${table} ${insertOrder} ${valuesSql}${onConflictSql}${returningSql}`;
       }
-      sqlToQuery(sql2, invokeSource) {
-        return sql2.toQuery({
+      sqlToQuery(sql22, invokeSource) {
+        return sql22.toQuery({
           casing: this.casing,
           escapeName: this.escapeName,
           escapeParam: this.escapeParam,
@@ -15828,8 +15828,8 @@ var init_db = __esm({
 });
 
 // node_modules/drizzle-orm/cache/core/cache.js
-async function hashQuery(sql2, params) {
-  const dataToHash = `${sql2}-${JSON.stringify(params)}`;
+async function hashQuery(sql3, params) {
+  const dataToHash = `${sql3}-${JSON.stringify(params)}`;
   const encoder = new TextEncoder();
   const data = encoder.encode(dataToHash);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
@@ -16056,8 +16056,8 @@ var init_session = __esm({
       values(query) {
         return this.prepareOneTimeQuery(this.dialect.sqlToQuery(query), void 0, "run", false).values();
       }
-      async count(sql2) {
-        const result = await this.values(sql2);
+      async count(sql3) {
+        const result = await this.values(sql3);
         return result[0][0];
       }
       /** @internal */
@@ -16595,8 +16595,8 @@ async function initDb(dbPath3) {
   await client.execute("PRAGMA journal_mode = WAL");
   await client.execute("PRAGMA busy_timeout = 5000");
   await client.execute("PRAGMA foreign_keys = ON");
-  for (const sql2 of CREATE_SQL) {
-    await client.execute(sql2);
+  for (const sql3 of CREATE_SQL) {
+    await client.execute(sql3);
   }
   const msgInfo = await client.execute("PRAGMA table_info(messages)");
   const msgCols = msgInfo.rows.map((r) => r[1]);
@@ -16771,6 +16771,609 @@ var init_search = __esm({
   }
 });
 
+// src/review/rules-iso27001.ts
+var ISO27001_RULES;
+var init_rules_iso27001 = __esm({
+  "src/review/rules-iso27001.ts"() {
+    "use strict";
+    ISO27001_RULES = [
+      {
+        id: "iso27001.a8_2.ai_privileged_access_change",
+        framework: "iso27001",
+        controls: ["A.8.2"],
+        severity: "high",
+        description: "AI modified privileged access or administrative code",
+        finding: "AI modified code in a privileged access or administrative path.",
+        not_claiming: "This is not evidence of unauthorised access or a control failure.",
+        suggested_evidence: [
+          "Confirm change was approved by a system owner or security team",
+          "Change ticket with business justification",
+          "PR approval from an administrator"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["admin", "superuser", "sudo", "privilege", "root", "sysadmin", "elevated"]
+        }
+      },
+      {
+        id: "iso27001.a8_3.ai_access_restriction_change",
+        framework: "iso27001",
+        controls: ["A.8.3"],
+        severity: "high",
+        description: "AI touched information access restriction code",
+        finding: "AI modified code that controls information access restrictions.",
+        not_claiming: "This is not evidence of unauthorised access or a security breach.",
+        suggested_evidence: [
+          "PR approval with human reviewer",
+          "Change ticket linked to the work",
+          "Security team sign-off"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["auth", "iam", "rbac", "permission", "acl", "access_control", "policy", "role", "entitlement"]
+        }
+      },
+      {
+        id: "iso27001.a8_12.sensitive_data_detected",
+        framework: "iso27001",
+        controls: ["A.8.12"],
+        severity: "high",
+        description: "Sensitive data or credential detected in AI session",
+        finding: "Sensitive data was detected in an AI session \u2014 potential data leakage event.",
+        not_claiming: "This is not evidence of a data breach. Chron masks detected values at log time \u2014 no plaintext is stored.",
+        suggested_evidence: [
+          "Confirm no sensitive data was committed to version control",
+          "Rotate any live credentials that appeared in the session",
+          "Review and document the incident per your data handling policy"
+        ],
+        match: { type: "secret_detected" }
+      },
+      {
+        id: "iso27001.a8_20.ai_network_security_change",
+        framework: "iso27001",
+        controls: ["A.8.20"],
+        severity: "high",
+        description: "AI modified network security controls or configuration",
+        finding: "AI modified network security configuration or controls.",
+        not_claiming: "This is not evidence of a network security failure.",
+        suggested_evidence: [
+          "Network or security team review of the change",
+          "Change ticket with approval",
+          "Confirm firewall rules or security groups were not weakened"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["firewall", "vpc", "security-group", "securitygroup", "waf", "network", "ingress", "egress", "nsg", "nacl"]
+        }
+      },
+      {
+        id: "iso27001.a8_24.ai_cryptography_change",
+        framework: "iso27001",
+        controls: ["A.8.24"],
+        severity: "high",
+        description: "AI modified cryptographic code or configuration",
+        finding: "AI modified code that implements or configures cryptographic controls.",
+        not_claiming: "This is not evidence of weakened encryption.",
+        suggested_evidence: [
+          "Security or cryptography team review",
+          "Confirm no downgrade in algorithm strength (e.g. MD5, SHA1, DES)",
+          "Change ticket documenting the cryptographic decision"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["encrypt", "decrypt", "crypto", "cipher", "tls", "ssl", "certificate", "x509", "pkcs", "hmac", "aes", "rsa"]
+        }
+      },
+      {
+        id: "iso27001.a8_31.ai_production_change",
+        framework: "iso27001",
+        controls: ["A.8.31"],
+        severity: "medium",
+        description: "AI modified production environment files or configuration",
+        finding: "AI modified files or configuration in a production environment path.",
+        not_claiming: "This is not evidence of an unauthorised production change.",
+        suggested_evidence: [
+          "Confirm change went through your change management process",
+          "Change ticket with approval and rollback plan",
+          "Confirm separation of duties was maintained"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["production", "/prod/", "prod.", ".prod", "prod-", "-prod"]
+        }
+      }
+    ];
+  }
+});
+
+// src/review/rules-euaiact.ts
+var EUAIACT_RULES;
+var init_rules_euaiact = __esm({
+  "src/review/rules-euaiact.ts"() {
+    "use strict";
+    EUAIACT_RULES = [
+      {
+        id: "euaiact.a12.ai_logging_modification",
+        framework: "euaiact",
+        controls: ["Art. 12"],
+        severity: "high",
+        description: "AI modified record-keeping, audit logging, or event telemetry code",
+        finding: "AI modified code responsible for logging, record-keeping, or audit trails in a system potentially subject to EU AI Act Article 12.",
+        not_claiming: "This is not evidence of a compliance failure or an Article 12 violation.",
+        suggested_evidence: [
+          "Confirm logging coverage was not reduced or disabled",
+          "Human review of the change with sign-off from a compliance or engineering lead",
+          "Change ticket documenting the business reason and impact on record-keeping obligations"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["audit", "audit_log", "audit-log", "event_log", "logging", "logger", "telemetry", "observability", "record_keep"]
+        }
+      },
+      {
+        id: "euaiact.a10.ai_data_governance_change",
+        framework: "euaiact",
+        controls: ["Art. 10"],
+        severity: "high",
+        description: "AI modified data pipeline, dataset, or data governance code",
+        finding: "AI modified code related to data governance, data quality, or training/inference data pipelines.",
+        not_claiming: "This is not evidence of a data governance violation or non-compliance with Article 10.",
+        suggested_evidence: [
+          "Data owner or data governance team review of the change",
+          "Confirm data quality and provenance requirements were not weakened",
+          "Change ticket linked to the data governance decision"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["dataset", "data_pipeline", "preprocessing", "data_quality", "data_governance", "training_data", "etl", "ingestion", "data_loader", "feature_store"]
+        }
+      },
+      {
+        id: "euaiact.a10.sensitive_data_in_session",
+        framework: "euaiact",
+        controls: ["Art. 10"],
+        severity: "high",
+        description: "Sensitive data or credential detected in AI session \u2014 data governance concern",
+        finding: "Sensitive data was detected in an AI session. Under Article 10, training and operational data must meet quality and governance standards.",
+        not_claiming: "This is not evidence of a data breach or Article 10 violation. Chron masks detected values at log time \u2014 no plaintext is stored.",
+        suggested_evidence: [
+          "Confirm no sensitive data was committed to version control or training datasets",
+          "Rotate any live credentials that appeared in the session",
+          "Review and document the incident per your data handling policy"
+        ],
+        match: { type: "secret_detected" }
+      },
+      {
+        id: "euaiact.a14.ai_oversight_mechanism_change",
+        framework: "euaiact",
+        controls: ["Art. 14"],
+        severity: "high",
+        description: "AI modified human oversight, approval, or intervention mechanisms",
+        finding: "AI modified code that implements human oversight, approval gates, escalation, or intervention controls.",
+        not_claiming: "This is not evidence that human oversight was removed or bypassed.",
+        suggested_evidence: [
+          "Confirm human oversight capability was not reduced",
+          "Safety or compliance team review of the change",
+          "Document that meaningful human intervention remains possible"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["approval", "oversight", "human_review", "escalation", "fallback", "override", "intervention", "safeguard", "human_in_the_loop", "hitl"]
+        }
+      },
+      {
+        id: "euaiact.a9.ai_risk_management_change",
+        framework: "euaiact",
+        controls: ["Art. 9"],
+        severity: "high",
+        description: "AI modified risk management, safety guardrails, or content moderation code",
+        finding: "AI modified code related to risk assessment, safety guardrails, or content moderation in a potentially high-risk AI system.",
+        not_claiming: "This is not evidence of a risk management failure or Article 9 non-compliance.",
+        suggested_evidence: [
+          "Risk or safety team review of the change",
+          "Confirm risk mitigations were not weakened",
+          "Change ticket with documented risk assessment decision"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["risk_assessment", "risk_management", "safety", "guardrail", "content_filter", "moderation", "threat_model", "risk_score", "safety_check"]
+        }
+      },
+      {
+        id: "euaiact.a13.ai_transparency_change",
+        framework: "euaiact",
+        controls: ["Art. 13"],
+        severity: "medium",
+        description: "AI modified transparency, explainability, or disclosure code",
+        finding: "AI modified code related to transparency, explainability, or user disclosure in a potentially high-risk AI system.",
+        not_claiming: "This is not evidence of an Article 13 transparency violation.",
+        suggested_evidence: [
+          "Confirm disclosure and explainability requirements were not reduced",
+          "Legal or compliance team review if user-facing disclosures changed",
+          "Change ticket documenting the transparency design decision"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["explainability", "transparency", "disclosure", "explain", "interpretability", "xai", "fairness", "bias_detection", "model_card"]
+        }
+      }
+    ];
+  }
+});
+
+// src/review/rules-nist-ai-rmf.ts
+var NIST_AI_RMF_RULES;
+var init_rules_nist_ai_rmf = __esm({
+  "src/review/rules-nist-ai-rmf.ts"() {
+    "use strict";
+    NIST_AI_RMF_RULES = [
+      {
+        id: "nist-ai-rmf.govern.ai_policy_change",
+        framework: "nist-ai-rmf",
+        controls: ["GOVERN 1.1", "GOVERN 1.2"],
+        severity: "high",
+        description: "AI modified AI governance policy, accountability, or responsible AI documentation",
+        finding: "AI modified code or configuration related to AI governance policy, accountability structures, or responsible AI documentation.",
+        not_claiming: "This is not evidence of a governance failure or NIST AI RMF non-conformance.",
+        suggested_evidence: [
+          "Confirm the change was reviewed by an AI governance or responsible AI lead",
+          "Change ticket documenting the governance decision and approver",
+          "Verify updated documentation reflects current organisational AI policy"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["ai_policy", "governance", "accountability", "responsible_ai", "ai_ethics", "model_card", "ai_documentation", "ai_governance"]
+        }
+      },
+      {
+        id: "nist-ai-rmf.govern.ai_oversight_change",
+        framework: "nist-ai-rmf",
+        controls: ["GOVERN 6.1", "GOVERN 6.2"],
+        severity: "high",
+        description: "AI modified human oversight, review, or escalation mechanisms for an AI system",
+        finding: "AI modified code that implements human review, oversight, escalation, or intervention capabilities for an AI system.",
+        not_claiming: "This is not evidence that human oversight was removed or that controls are inadequate.",
+        suggested_evidence: [
+          "Confirm meaningful human oversight capability is maintained",
+          "Safety or AI governance team review of the change",
+          "Document that escalation paths remain operable after the change"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["human_review", "oversight", "escalation", "approval", "human_in_the_loop", "hitl", "intervention", "safeguard", "override"]
+        }
+      },
+      {
+        id: "nist-ai-rmf.map.ai_risk_assessment_change",
+        framework: "nist-ai-rmf",
+        controls: ["MAP 1.1", "MAP 5.1"],
+        severity: "high",
+        description: "AI modified risk assessment, risk classification, or threat modelling code",
+        finding: "AI modified code related to AI risk assessment, risk classification, or threat modelling.",
+        not_claiming: "This is not evidence of a risk management failure or MAP function non-conformance.",
+        suggested_evidence: [
+          "Risk or AI safety team review of the change",
+          "Confirm risk classifications and scoring logic remain accurate",
+          "Change ticket with documented rationale for the risk assessment update"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["risk_assessment", "risk_classification", "threat_model", "risk_register", "risk_score", "hazard", "impact_assessment"]
+        }
+      },
+      {
+        id: "nist-ai-rmf.map.sensitive_data_in_session",
+        framework: "nist-ai-rmf",
+        controls: ["MAP 3.5"],
+        severity: "high",
+        description: "Sensitive data or credential detected in AI session \u2014 data impact and categorisation concern",
+        finding: "Sensitive data was detected in an AI session. Under MAP 3.5, AI systems must identify and categorise impacts related to data.",
+        not_claiming: "This is not evidence of a data breach or MAP 3.5 non-conformance. Chron masks detected values at log time \u2014 no plaintext is stored.",
+        suggested_evidence: [
+          "Confirm no sensitive data was committed to version control or AI training datasets",
+          "Rotate any live credentials that appeared in the session",
+          "Review and document per your AI data impact categorisation process"
+        ],
+        match: { type: "secret_detected" }
+      },
+      {
+        id: "nist-ai-rmf.measure.ai_evaluation_change",
+        framework: "nist-ai-rmf",
+        controls: ["MEASURE 2.1", "MEASURE 2.5"],
+        severity: "high",
+        description: "AI modified model evaluation, benchmarking, or validation pipelines",
+        finding: "AI modified code related to AI model evaluation, benchmarking, red-teaming, or validation.",
+        not_claiming: "This is not evidence that evaluation coverage was reduced or that the MEASURE function is non-conformant.",
+        suggested_evidence: [
+          "Confirm evaluation coverage and benchmarks were not weakened",
+          "AI or ML engineering lead review of the change",
+          "Document the evaluation design decision and its rationale"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["evaluation", "benchmark", "validation", "model_eval", "red_team", "red-team", "test_suite", "performance_test", "evals"]
+        }
+      },
+      {
+        id: "nist-ai-rmf.measure.ai_monitoring_change",
+        framework: "nist-ai-rmf",
+        controls: ["MEASURE 2.7"],
+        severity: "high",
+        description: "AI modified AI system monitoring, drift detection, or performance tracking",
+        finding: "AI modified code related to AI system monitoring, model drift detection, or runtime performance tracking.",
+        not_claiming: "This is not evidence that monitoring was disabled or that MEASURE 2.7 obligations are unmet.",
+        suggested_evidence: [
+          "Confirm monitoring coverage and alerting thresholds were not reduced",
+          "Human review of the change with sign-off from an AI operations or ML engineering lead",
+          "Change ticket documenting the monitoring design decision"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["drift", "model_monitor", "performance_monitor", "monitoring", "alerting", "telemetry", "observability", "model_health"]
+        }
+      },
+      {
+        id: "nist-ai-rmf.manage.ai_incident_response_change",
+        framework: "nist-ai-rmf",
+        controls: ["MANAGE 2.2", "MANAGE 4.1"],
+        severity: "high",
+        description: "AI modified incident response, fallback, or recovery procedures for an AI system",
+        finding: "AI modified code related to AI incident response, fallback behaviour, rollback, or system recovery.",
+        not_claiming: "This is not evidence of inadequate incident response or MANAGE function non-conformance.",
+        suggested_evidence: [
+          "Confirm fallback and recovery paths remain operable after the change",
+          "Incident response or AI operations lead review",
+          "Change ticket with rollback plan and approval"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["incident", "fallback", "recovery", "rollback", "contingency", "failsafe", "circuit_breaker", "fail_open", "fail_closed"]
+        }
+      }
+    ];
+  }
+});
+
+// src/review/rules.ts
+var SOC2_RULES, FRAMEWORKS;
+var init_rules = __esm({
+  "src/review/rules.ts"() {
+    "use strict";
+    init_rules_iso27001();
+    init_rules_euaiact();
+    init_rules_nist_ai_rmf();
+    SOC2_RULES = [
+      {
+        id: "soc2.cc6_1.ai_access_control_change",
+        framework: "soc2",
+        controls: ["CC6.1"],
+        severity: "high",
+        description: "AI touched access-control-related code",
+        finding: "AI modified code in an access-control-sensitive path.",
+        not_claiming: "This is not evidence of a security failure or SOC 2 non-compliance.",
+        suggested_evidence: [
+          "PR approval with human reviewer",
+          "Change ticket linked to the work",
+          "Manager or security team sign-off"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["auth", "iam", "rbac", "permission", "policy", "acl", "role", "login", "jwt", "oauth", "saml", "sso", "mfa", "access_control"]
+        }
+      },
+      {
+        id: "soc2.cc6_1.cc6_6.secret_detected",
+        framework: "soc2",
+        controls: ["CC6.1", "CC6.6"],
+        severity: "high",
+        description: "AI session contained detected sensitive data or credentials",
+        finding: "Sensitive data or a credential was detected in an AI session.",
+        not_claiming: "This is not evidence of a breach or credential compromise. Chron masks detected values at log time \u2014 no plaintext values are stored.",
+        suggested_evidence: [
+          "Confirm no plaintext credential was committed to version control",
+          "Rotate the credential if it was a live secret",
+          "Document the detection and resolution in the change log"
+        ],
+        match: { type: "secret_detected" }
+      },
+      {
+        id: "soc2.cc7_2.cc8_1.ai_infra_change",
+        framework: "soc2",
+        controls: ["CC7.2", "CC8.1"],
+        severity: "high",
+        description: "AI executed or modified deployment or infrastructure files",
+        finding: "AI modified infrastructure or deployment configuration.",
+        not_claiming: "This is not evidence of an unauthorized change.",
+        suggested_evidence: [
+          "Change ticket or approval record",
+          "Pipeline approval gate log",
+          "Human review of the infrastructure diff"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: [".tf", "terraform", "dockerfile", "docker-compose", "kubernetes", "k8s", "helm", "ansible", ".github/workflow", "cloudformation", "pipeline", "deploy"]
+        }
+      },
+      {
+        id: "soc2.cc7_2.ai_monitoring_change",
+        framework: "soc2",
+        controls: ["CC7.2"],
+        severity: "high",
+        description: "AI changed logging, monitoring, alerting, or security tooling",
+        finding: "AI modified logging, monitoring, or security alerting code or configuration.",
+        not_claiming: "This is not evidence that monitoring was disabled or circumvented.",
+        suggested_evidence: [
+          "Confirm monitoring coverage was not reduced",
+          "Human review of the change",
+          "Change ticket"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["logging", "monitoring", "alerting", "splunk", "datadog", "prometheus", "grafana", "cloudwatch", "sentry", "pagerduty", "audit_log", "audit-log", "logger"]
+        }
+      },
+      {
+        id: "soc2.cc6_1.cc6_7.ai_data_handling_change",
+        framework: "soc2",
+        controls: ["CC6.1", "CC6.7"],
+        severity: "medium",
+        description: "AI changed data retention, deletion, export, or encryption logic",
+        finding: "AI modified data handling, retention, or privacy-related code.",
+        not_claiming: "This is not evidence of a data handling violation.",
+        suggested_evidence: [
+          "Privacy or data officer review",
+          "Change ticket documenting the business reason",
+          "Confirm compliance with data retention policy"
+        ],
+        match: {
+          type: "code_change_path",
+          path_contains: ["retention", "encrypt", "decrypt", "gdpr", "privacy", "anonymize", "redact", "purge", "archive", "backup"]
+        }
+      }
+    ];
+    FRAMEWORKS = {
+      soc2: SOC2_RULES,
+      iso27001: ISO27001_RULES,
+      euaiact: EUAIACT_RULES,
+      "nist-ai-rmf": NIST_AI_RMF_RULES
+    };
+  }
+});
+
+// src/review/risk.ts
+function toBand(score) {
+  if (score >= 75)
+    return "critical";
+  if (score >= 50)
+    return "high";
+  if (score >= 25)
+    return "review";
+  return "normal";
+}
+function computeScore(secretCount, codeContents, findingRuleIds) {
+  const reasons = [];
+  const secretPoints = secretCount > 0 ? 30 : 0;
+  if (secretCount > 0) {
+    reasons.push({
+      text: secretCount === 1 ? "secret detected in session" : `${secretCount} secrets detected in session`,
+      weight: 30
+    });
+  }
+  let codePoints = 0;
+  const hitMap = /* @__PURE__ */ new Map();
+  for (const content of codeContents) {
+    try {
+      const fp = (JSON.parse(content).file_path ?? "").toLowerCase();
+      for (let i = 0; i < CODE_SIGNALS.length; i++) {
+        if (CODE_SIGNALS[i].patterns.some((p) => fp.includes(p))) {
+          const ex = hitMap.get(i);
+          if (ex) {
+            ex.count++;
+          } else {
+            hitMap.set(i, { label: CODE_SIGNALS[i].label, count: 1 });
+          }
+        }
+      }
+    } catch {
+    }
+  }
+  for (const [i, hit] of hitMap) {
+    const w = CODE_SIGNALS[i].weight;
+    codePoints = Math.min(30, codePoints + w);
+    reasons.push({ text: hit.count > 1 ? `${hit.label} (${hit.count} files)` : hit.label, weight: w });
+    if (codePoints >= 30)
+      break;
+  }
+  let findingPoints = 0;
+  const bySev = {};
+  for (const ruleId of findingRuleIds) {
+    const sev = SEVERITY_MAP.get(ruleId) ?? "medium";
+    bySev[sev] = (bySev[sev] ?? 0) + 1;
+    findingPoints = Math.min(30, findingPoints + (FINDING_WEIGHTS[sev] ?? 6));
+  }
+  if (findingRuleIds.length > 0) {
+    const parts = ["critical", "high", "medium", "low"].filter((s) => bySev[s]).map((s) => `${bySev[s]} ${s}`);
+    reasons.push({
+      text: `${findingRuleIds.length} unresolved finding${findingRuleIds.length === 1 ? "" : "s"} (${parts.join(", ")})`,
+      weight: findingPoints
+    });
+  }
+  reasons.sort((a, b) => b.weight - a.weight);
+  const score = Math.min(100, secretPoints + codePoints + findingPoints);
+  return {
+    score,
+    band: toBand(score),
+    reasons: reasons.map((r) => r.text),
+    signals: { secrets: secretPoints, code_changes: codePoints, findings: findingPoints }
+  };
+}
+async function scoreSessionsBatch(db, sessionIds) {
+  if (sessionIds.length === 0)
+    return /* @__PURE__ */ new Map();
+  const [secretRows, codeRows, findingRows] = await Promise.all([
+    db.select({ session_id: secrets_detected.session_id, count: sql`count(*)` }).from(secrets_detected).where(inArray(secrets_detected.session_id, sessionIds)).groupBy(secrets_detected.session_id),
+    db.select({ session_id: messages.session_id, content: messages.content }).from(messages).where(and(inArray(messages.session_id, sessionIds), eq(messages.event_type, "code_change"))),
+    db.select({ session_id: review_findings.session_id, rule_id: review_findings.rule_id }).from(review_findings).where(and(inArray(review_findings.session_id, sessionIds), eq(review_findings.status, "open")))
+  ]);
+  const secretMap = new Map(secretRows.map((r) => [r.session_id, Number(r.count)]));
+  const codeMap = /* @__PURE__ */ new Map();
+  for (const r of codeRows) {
+    const arr = codeMap.get(r.session_id) ?? [];
+    arr.push(r.content);
+    codeMap.set(r.session_id, arr);
+  }
+  const findingMap = /* @__PURE__ */ new Map();
+  for (const r of findingRows) {
+    const arr = findingMap.get(r.session_id) ?? [];
+    arr.push(r.rule_id);
+    findingMap.set(r.session_id, arr);
+  }
+  const result = /* @__PURE__ */ new Map();
+  for (const id of sessionIds) {
+    result.set(id, computeScore(
+      secretMap.get(id) ?? 0,
+      codeMap.get(id) ?? [],
+      findingMap.get(id) ?? []
+    ));
+  }
+  return result;
+}
+var CODE_SIGNALS, FINDING_WEIGHTS, SEVERITY_MAP;
+var init_risk = __esm({
+  "src/review/risk.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    init_schema();
+    init_rules();
+    CODE_SIGNALS = [
+      {
+        patterns: ["auth", "access_control", "permission", "login", "oauth", "jwt", "credential", "rbac", "acl", "token", "saml", "sso", "mfa"],
+        weight: 15,
+        label: "auth/access control code modified"
+      },
+      {
+        patterns: ["production", "/prod/", "infra", "terraform", "kubernetes", "k8s", "deploy", "docker", "helm", ".env", "config/prod"],
+        weight: 15,
+        label: "production/infrastructure code modified"
+      },
+      {
+        patterns: ["ai_policy", "governance", "responsible_ai", "model_card", "guardrail", "oversight", "human_review", "hitl"],
+        weight: 10,
+        label: "AI governance code modified"
+      },
+      {
+        patterns: ["monitor", "logging", "audit", "telemetry", "alert", "observab"],
+        weight: 5,
+        label: "monitoring/logging code modified"
+      }
+    ];
+    FINDING_WEIGHTS = { critical: 20, high: 12, medium: 6, low: 2 };
+    SEVERITY_MAP = new Map(
+      Object.values(FRAMEWORKS).flat().map((r) => [r.id, r.severity])
+    );
+  }
+});
+
 // src/cli/history.ts
 var history_exports = {};
 __export(history_exports, {
@@ -16805,14 +17408,17 @@ async function printList(limit, refFilter) {
     process.stdout.write(msg);
     return;
   }
+  const scores = await scoreSessionsBatch(db, rows.map((r) => r.id));
   process.stdout.write("\n");
   for (const row of rows) {
     const date = fmtDate(row.updated_at);
     const prefix = row.id.slice(0, 8);
     const count = String(row.message_count).padStart(3);
     const ref = row.external_ref ? `  ${DIM}[${row.external_ref}]${RESET}` : "";
+    const risk = scores.get(row.id);
+    const scoreTag = risk && risk.score > 0 ? `  ${BAND_COLOR[risk.band]}${BOLD}[${risk.score}]${RESET}` : "";
     process.stdout.write(
-      `  ${DIM}${date}${RESET}  ${CYAN}${prefix}${RESET}  ${BOLD}${count} msgs${RESET}  ${row.title}${ref}
+      `  ${DIM}${date}${RESET}  ${CYAN}${prefix}${RESET}  ${BOLD}${count} msgs${RESET}  ${row.title}${ref}${scoreTag}
 `
     );
   }
@@ -16932,7 +17538,7 @@ async function runHistory(args2) {
     await printDetail(positional[0]);
   }
 }
-var RESET, BOLD, DIM, CYAN, YELLOW, GREEN, MAGENTA;
+var RESET, BOLD, DIM, CYAN, YELLOW, GREEN, MAGENTA, RED, BAND_COLOR;
 var init_history = __esm({
   "src/cli/history.ts"() {
     "use strict";
@@ -16940,6 +17546,7 @@ var init_history = __esm({
     init_db2();
     init_schema();
     init_search();
+    init_risk();
     RESET = "\x1B[0m";
     BOLD = "\x1B[1m";
     DIM = "\x1B[2m";
@@ -16947,6 +17554,13 @@ var init_history = __esm({
     YELLOW = "\x1B[33m";
     GREEN = "\x1B[32m";
     MAGENTA = "\x1B[35m";
+    RED = "\x1B[31m";
+    BAND_COLOR = {
+      critical: RED,
+      high: YELLOW,
+      review: YELLOW,
+      normal: DIM
+    };
   }
 });
 
@@ -16955,8 +17569,8 @@ var soc2_exports = {};
 __export(soc2_exports, {
   buildSoc2Report: () => buildSoc2Report
 });
-async function q(db, sql2) {
-  const res = await db.$client.execute(sql2);
+async function q(db, sql3) {
+  const res = await db.$client.execute(sql3);
   return res.rows;
 }
 async function queryOverview(db) {
@@ -17510,7 +18124,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.38",
+      version: "0.1.40",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -17967,7 +18581,7 @@ ${BOLD5}Connect Chron \u2192 CrowdStrike LogScale${RESET5}
   ${CYAN4}>${RESET5} `)).trim();
     if (!url.startsWith("https://")) {
       process.stdout.write(`
-${RED}URL must start with https://${RESET5}
+${RED2}URL must start with https://${RESET5}
 `);
       process.exit(1);
     }
@@ -17976,7 +18590,7 @@ ${RED}URL must start with https://${RESET5}
   ${CYAN4}>${RESET5} `)).trim();
     if (!token) {
       process.stdout.write(`
-${RED}Token cannot be empty${RESET5}
+${RED2}Token cannot be empty${RESET5}
 `);
       process.exit(1);
     }
@@ -18011,17 +18625,17 @@ ${DIM4}Sending test event...${RESET5} `);
     statusCode = res.status;
     ok3 = res.ok;
   } catch (e) {
-    process.stdout.write(`${RED}failed${RESET5}
+    process.stdout.write(`${RED2}failed${RESET5}
 `);
-    process.stderr.write(`  ${RED}Error: ${e.message}${RESET5}
+    process.stderr.write(`  ${RED2}Error: ${e.message}${RESET5}
 
 `);
     process.exit(1);
   }
   if (!ok3) {
-    process.stdout.write(`${RED}failed (HTTP ${statusCode})${RESET5}
+    process.stdout.write(`${RED2}failed (HTTP ${statusCode})${RESET5}
 `);
-    process.stderr.write(`  ${RED}Check your URL and token, then try again.${RESET5}
+    process.stderr.write(`  ${RED2}Check your URL and token, then try again.${RESET5}
 
 `);
     process.exit(1);
@@ -18095,13 +18709,13 @@ ${BOLD5}Connect Chron \u2192 Splunk${RESET5}
   }
   if (!url.startsWith("http")) {
     process.stdout.write(`
-${RED}URL must start with http:// or https://${RESET5}
+${RED2}URL must start with http:// or https://${RESET5}
 `);
     process.exit(1);
   }
   if (!token) {
     process.stdout.write(`
-${RED}HEC token cannot be empty${RESET5}
+${RED2}HEC token cannot be empty${RESET5}
 `);
     process.exit(1);
   }
@@ -18134,9 +18748,9 @@ ${DIM4}Sending test event...${RESET5} `);
     });
     if (!res.ok) {
       const err = await res.text();
-      process.stdout.write(`${RED}failed (HTTP ${res.status})${RESET5}
+      process.stdout.write(`${RED2}failed (HTTP ${res.status})${RESET5}
 `);
-      process.stderr.write(`  ${RED}${err}${RESET5}
+      process.stderr.write(`  ${RED2}${err}${RESET5}
 
 `);
       process.exit(1);
@@ -18145,9 +18759,9 @@ ${DIM4}Sending test event...${RESET5} `);
 
 `);
   } catch (e) {
-    process.stdout.write(`${RED}failed${RESET5}
+    process.stdout.write(`${RED2}failed${RESET5}
 `);
-    process.stderr.write(`  ${RED}Error: ${e.message}${RESET5}
+    process.stderr.write(`  ${RED2}Error: ${e.message}${RESET5}
 
 `);
     process.exit(1);
@@ -18208,13 +18822,13 @@ ${BOLD5}Connect Chron \u2192 Microsoft Sentinel${RESET5}
   }
   if (!tenantId || !clientId || !clientSecret) {
     process.stdout.write(`
-${RED}Tenant ID, Client ID, and Client Secret are all required.${RESET5}
+${RED2}Tenant ID, Client ID, and Client Secret are all required.${RESET5}
 `);
     process.exit(1);
   }
   if (!dce.startsWith("https://")) {
     process.stdout.write(`
-${RED}DCE URL must start with https://${RESET5}
+${RED2}DCE URL must start with https://${RESET5}
 `);
     process.exit(1);
   }
@@ -18239,9 +18853,9 @@ ${DIM4}Authenticating with Azure AD...${RESET5} `);
     });
     if (!tokenRes.ok) {
       const err = await tokenRes.text();
-      process.stdout.write(`${RED}failed (HTTP ${tokenRes.status})${RESET5}
+      process.stdout.write(`${RED2}failed (HTTP ${tokenRes.status})${RESET5}
 `);
-      process.stderr.write(`  ${RED}${err}${RESET5}
+      process.stderr.write(`  ${RED2}${err}${RESET5}
 
 `);
       process.exit(1);
@@ -18251,9 +18865,9 @@ ${DIM4}Authenticating with Azure AD...${RESET5} `);
     process.stdout.write(`${GREEN2}OK${RESET5}
 `);
   } catch (e) {
-    process.stdout.write(`${RED}failed${RESET5}
+    process.stdout.write(`${RED2}failed${RESET5}
 `);
-    process.stderr.write(`  ${RED}Error: ${e.message}${RESET5}
+    process.stderr.write(`  ${RED2}Error: ${e.message}${RESET5}
 
 `);
     process.exit(1);
@@ -18283,9 +18897,9 @@ ${DIM4}Authenticating with Azure AD...${RESET5} `);
     });
     if (!res.ok) {
       const err = await res.text();
-      process.stdout.write(`${RED}failed (HTTP ${res.status})${RESET5}
+      process.stdout.write(`${RED2}failed (HTTP ${res.status})${RESET5}
 `);
-      process.stderr.write(`  ${RED}${err}${RESET5}
+      process.stderr.write(`  ${RED2}${err}${RESET5}
 
 `);
       process.exit(1);
@@ -18294,9 +18908,9 @@ ${DIM4}Authenticating with Azure AD...${RESET5} `);
 
 `);
   } catch (e) {
-    process.stdout.write(`${RED}failed${RESET5}
+    process.stdout.write(`${RED2}failed${RESET5}
 `);
-    process.stderr.write(`  ${RED}Error: ${e.message}${RESET5}
+    process.stderr.write(`  ${RED2}Error: ${e.message}${RESET5}
 
 `);
     process.exit(1);
@@ -18439,7 +19053,7 @@ Integrations:
     }
   }
 }
-var import_readline, import_os6, import_path5, import_fs5, RESET5, BOLD5, DIM4, CYAN4, GREEN2, RED, YELLOW3, CODEX_MCP_BLOCK;
+var import_readline, import_os6, import_path5, import_fs5, RESET5, BOLD5, DIM4, CYAN4, GREEN2, RED2, YELLOW3, CODEX_MCP_BLOCK;
 var init_connect = __esm({
   "src/cli/connect.ts"() {
     "use strict";
@@ -18452,7 +19066,7 @@ var init_connect = __esm({
     DIM4 = "\x1B[2m";
     CYAN4 = "\x1B[36m";
     GREEN2 = "\x1B[32m";
-    RED = "\x1B[31m";
+    RED2 = "\x1B[31m";
     YELLOW3 = "\x1B[33m";
     CODEX_MCP_BLOCK = `
 [mcp_servers.chron]
@@ -18552,10 +19166,10 @@ ${BOLD6}Session Summary${RESET6}
   process.stdout.write(`  Duration    ${stats.duration_minutes}m
 
 `);
-  process.stdout.write(`${BOLD6}Secrets touched${RESET6}  ${secrets.length === 0 ? `${GREEN3}none${RESET6}` : `${RED2}${secrets.length} detection(s)${RESET6}`}
+  process.stdout.write(`${BOLD6}Secrets touched${RESET6}  ${secrets.length === 0 ? `${GREEN3}none${RESET6}` : `${RED3}${secrets.length} detection(s)${RESET6}`}
 `);
   for (const s of secrets) {
-    process.stdout.write(`  ${RED2}[${s.type}]${RESET6} ${DIM5}${s.masked_value}${RESET6}
+    process.stdout.write(`  ${RED3}[${s.type}]${RESET6} ${DIM5}${s.masked_value}${RESET6}
 `);
   }
   if (secrets.length)
@@ -18606,7 +19220,7 @@ async function runSummary(args2) {
     printSummary(data);
   }
 }
-var RESET6, BOLD6, DIM5, CYAN5, GREEN3, YELLOW4, RED2, MUTATION_PATTERNS, PROD_PATTERNS;
+var RESET6, BOLD6, DIM5, CYAN5, GREEN3, YELLOW4, RED3, MUTATION_PATTERNS, PROD_PATTERNS;
 var init_summary = __esm({
   "src/cli/summary.ts"() {
     "use strict";
@@ -18619,7 +19233,7 @@ var init_summary = __esm({
     CYAN5 = "\x1B[36m";
     GREEN3 = "\x1B[32m";
     YELLOW4 = "\x1B[33m";
-    RED2 = "\x1B[31m";
+    RED3 = "\x1B[31m";
     MUTATION_PATTERNS = [
       { label: "file write", re: /\b(?:wrote?|created?|saved?|updated?) (?:file |the file )?["']?([^\s"']{1,80})/i },
       { label: "git", re: /\bgit (?:commit|push|merge|rebase|reset|checkout)\b/i },
@@ -18850,7 +19464,7 @@ function ok(msg) {
 `);
 }
 function fail(msg) {
-  process.stdout.write(`  ${RED3}\u2717${RESET7} ${msg}
+  process.stdout.write(`  ${RED4}\u2717${RESET7} ${msg}
 `);
 }
 function warn(msg) {
@@ -19032,7 +19646,7 @@ ${BOLD7}Signature${RESET7}
   const allOk = chainOk && (session.signature ? true : true);
   process.exit(allOk ? 0 : 1);
 }
-var import_fs9, import_path8, import_os8, import_child_process2, RESET7, BOLD7, GREEN4, RED3, DIM6, YELLOW5;
+var import_fs9, import_path8, import_os8, import_child_process2, RESET7, BOLD7, GREEN4, RED4, DIM6, YELLOW5;
 var init_verify = __esm({
   "src/cli/verify.ts"() {
     "use strict";
@@ -19048,7 +19662,7 @@ var init_verify = __esm({
     RESET7 = "\x1B[0m";
     BOLD7 = "\x1B[1m";
     GREEN4 = "\x1B[32m";
-    RED3 = "\x1B[31m";
+    RED4 = "\x1B[31m";
     DIM6 = "\x1B[2m";
     YELLOW5 = "\x1B[33m";
   }
@@ -19064,7 +19678,7 @@ function ok2(label, detail = "") {
 `);
 }
 function fail2(label, detail = "") {
-  process.stdout.write(`  ${RED4}\u2717${RESET8} ${label}${detail ? `  ${DIM7}${detail}${RESET8}` : ""}
+  process.stdout.write(`  ${RED5}\u2717${RESET8} ${label}${detail ? `  ${DIM7}${detail}${RESET8}` : ""}
 `);
 }
 function warn2(label, detail = "") {
@@ -19357,10 +19971,10 @@ ${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}
 `);
     } else {
       if (failures.length > 0) {
-        process.stdout.write(`${RED4}${BOLD8}${failures.length} issue(s) need attention:${RESET8}
+        process.stdout.write(`${RED5}${BOLD8}${failures.length} issue(s) need attention:${RESET8}
 `);
         for (const f of failures) {
-          process.stdout.write(`  ${RED4}\u2717${RESET8} ${f.label}
+          process.stdout.write(`  ${RED5}\u2717${RESET8} ${f.label}
 `);
           if (f.fix)
             process.stdout.write(`    ${DIM7}\u2192 ${f.fix}${RESET8}
@@ -19402,7 +20016,7 @@ ${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}
   }
   process.exit(failures.length > 0 ? 1 : 0);
 }
-var import_os9, import_path9, import_fs10, import_child_process3, import_package2, RESET8, BOLD8, DIM7, GREEN5, RED4, YELLOW6, CYAN6, CLAIIM_PREVIEW_URL;
+var import_os9, import_path9, import_fs10, import_child_process3, import_package2, RESET8, BOLD8, DIM7, GREEN5, RED5, YELLOW6, CYAN6, CLAIIM_PREVIEW_URL;
 var init_doctor = __esm({
   "src/cli/doctor.ts"() {
     "use strict";
@@ -19415,7 +20029,7 @@ var init_doctor = __esm({
     BOLD8 = "\x1B[1m";
     DIM7 = "\x1B[2m";
     GREEN5 = "\x1B[32m";
-    RED4 = "\x1B[31m";
+    RED5 = "\x1B[31m";
     YELLOW6 = "\x1B[33m";
     CYAN6 = "\x1B[36m";
     CLAIIM_PREVIEW_URL = "https://claiim.io/preview";
@@ -20031,475 +20645,6 @@ var init_import = __esm({
     GREEN6 = "\x1B[32m";
     YELLOW7 = "\x1B[33m";
     CYAN7 = "\x1B[36m";
-  }
-});
-
-// src/review/rules-iso27001.ts
-var ISO27001_RULES;
-var init_rules_iso27001 = __esm({
-  "src/review/rules-iso27001.ts"() {
-    "use strict";
-    ISO27001_RULES = [
-      {
-        id: "iso27001.a8_2.ai_privileged_access_change",
-        framework: "iso27001",
-        controls: ["A.8.2"],
-        severity: "high",
-        description: "AI modified privileged access or administrative code",
-        finding: "AI modified code in a privileged access or administrative path.",
-        not_claiming: "This is not evidence of unauthorised access or a control failure.",
-        suggested_evidence: [
-          "Confirm change was approved by a system owner or security team",
-          "Change ticket with business justification",
-          "PR approval from an administrator"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["admin", "superuser", "sudo", "privilege", "root", "sysadmin", "elevated"]
-        }
-      },
-      {
-        id: "iso27001.a8_3.ai_access_restriction_change",
-        framework: "iso27001",
-        controls: ["A.8.3"],
-        severity: "high",
-        description: "AI touched information access restriction code",
-        finding: "AI modified code that controls information access restrictions.",
-        not_claiming: "This is not evidence of unauthorised access or a security breach.",
-        suggested_evidence: [
-          "PR approval with human reviewer",
-          "Change ticket linked to the work",
-          "Security team sign-off"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["auth", "iam", "rbac", "permission", "acl", "access_control", "policy", "role", "entitlement"]
-        }
-      },
-      {
-        id: "iso27001.a8_12.sensitive_data_detected",
-        framework: "iso27001",
-        controls: ["A.8.12"],
-        severity: "high",
-        description: "Sensitive data or credential detected in AI session",
-        finding: "Sensitive data was detected in an AI session \u2014 potential data leakage event.",
-        not_claiming: "This is not evidence of a data breach. Chron masks detected values at log time \u2014 no plaintext is stored.",
-        suggested_evidence: [
-          "Confirm no sensitive data was committed to version control",
-          "Rotate any live credentials that appeared in the session",
-          "Review and document the incident per your data handling policy"
-        ],
-        match: { type: "secret_detected" }
-      },
-      {
-        id: "iso27001.a8_20.ai_network_security_change",
-        framework: "iso27001",
-        controls: ["A.8.20"],
-        severity: "high",
-        description: "AI modified network security controls or configuration",
-        finding: "AI modified network security configuration or controls.",
-        not_claiming: "This is not evidence of a network security failure.",
-        suggested_evidence: [
-          "Network or security team review of the change",
-          "Change ticket with approval",
-          "Confirm firewall rules or security groups were not weakened"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["firewall", "vpc", "security-group", "securitygroup", "waf", "network", "ingress", "egress", "nsg", "nacl"]
-        }
-      },
-      {
-        id: "iso27001.a8_24.ai_cryptography_change",
-        framework: "iso27001",
-        controls: ["A.8.24"],
-        severity: "high",
-        description: "AI modified cryptographic code or configuration",
-        finding: "AI modified code that implements or configures cryptographic controls.",
-        not_claiming: "This is not evidence of weakened encryption.",
-        suggested_evidence: [
-          "Security or cryptography team review",
-          "Confirm no downgrade in algorithm strength (e.g. MD5, SHA1, DES)",
-          "Change ticket documenting the cryptographic decision"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["encrypt", "decrypt", "crypto", "cipher", "tls", "ssl", "certificate", "x509", "pkcs", "hmac", "aes", "rsa"]
-        }
-      },
-      {
-        id: "iso27001.a8_31.ai_production_change",
-        framework: "iso27001",
-        controls: ["A.8.31"],
-        severity: "medium",
-        description: "AI modified production environment files or configuration",
-        finding: "AI modified files or configuration in a production environment path.",
-        not_claiming: "This is not evidence of an unauthorised production change.",
-        suggested_evidence: [
-          "Confirm change went through your change management process",
-          "Change ticket with approval and rollback plan",
-          "Confirm separation of duties was maintained"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["production", "/prod/", "prod.", ".prod", "prod-", "-prod"]
-        }
-      }
-    ];
-  }
-});
-
-// src/review/rules-euaiact.ts
-var EUAIACT_RULES;
-var init_rules_euaiact = __esm({
-  "src/review/rules-euaiact.ts"() {
-    "use strict";
-    EUAIACT_RULES = [
-      {
-        id: "euaiact.a12.ai_logging_modification",
-        framework: "euaiact",
-        controls: ["Art. 12"],
-        severity: "high",
-        description: "AI modified record-keeping, audit logging, or event telemetry code",
-        finding: "AI modified code responsible for logging, record-keeping, or audit trails in a system potentially subject to EU AI Act Article 12.",
-        not_claiming: "This is not evidence of a compliance failure or an Article 12 violation.",
-        suggested_evidence: [
-          "Confirm logging coverage was not reduced or disabled",
-          "Human review of the change with sign-off from a compliance or engineering lead",
-          "Change ticket documenting the business reason and impact on record-keeping obligations"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["audit", "audit_log", "audit-log", "event_log", "logging", "logger", "telemetry", "observability", "record_keep"]
-        }
-      },
-      {
-        id: "euaiact.a10.ai_data_governance_change",
-        framework: "euaiact",
-        controls: ["Art. 10"],
-        severity: "high",
-        description: "AI modified data pipeline, dataset, or data governance code",
-        finding: "AI modified code related to data governance, data quality, or training/inference data pipelines.",
-        not_claiming: "This is not evidence of a data governance violation or non-compliance with Article 10.",
-        suggested_evidence: [
-          "Data owner or data governance team review of the change",
-          "Confirm data quality and provenance requirements were not weakened",
-          "Change ticket linked to the data governance decision"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["dataset", "data_pipeline", "preprocessing", "data_quality", "data_governance", "training_data", "etl", "ingestion", "data_loader", "feature_store"]
-        }
-      },
-      {
-        id: "euaiact.a10.sensitive_data_in_session",
-        framework: "euaiact",
-        controls: ["Art. 10"],
-        severity: "high",
-        description: "Sensitive data or credential detected in AI session \u2014 data governance concern",
-        finding: "Sensitive data was detected in an AI session. Under Article 10, training and operational data must meet quality and governance standards.",
-        not_claiming: "This is not evidence of a data breach or Article 10 violation. Chron masks detected values at log time \u2014 no plaintext is stored.",
-        suggested_evidence: [
-          "Confirm no sensitive data was committed to version control or training datasets",
-          "Rotate any live credentials that appeared in the session",
-          "Review and document the incident per your data handling policy"
-        ],
-        match: { type: "secret_detected" }
-      },
-      {
-        id: "euaiact.a14.ai_oversight_mechanism_change",
-        framework: "euaiact",
-        controls: ["Art. 14"],
-        severity: "high",
-        description: "AI modified human oversight, approval, or intervention mechanisms",
-        finding: "AI modified code that implements human oversight, approval gates, escalation, or intervention controls.",
-        not_claiming: "This is not evidence that human oversight was removed or bypassed.",
-        suggested_evidence: [
-          "Confirm human oversight capability was not reduced",
-          "Safety or compliance team review of the change",
-          "Document that meaningful human intervention remains possible"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["approval", "oversight", "human_review", "escalation", "fallback", "override", "intervention", "safeguard", "human_in_the_loop", "hitl"]
-        }
-      },
-      {
-        id: "euaiact.a9.ai_risk_management_change",
-        framework: "euaiact",
-        controls: ["Art. 9"],
-        severity: "high",
-        description: "AI modified risk management, safety guardrails, or content moderation code",
-        finding: "AI modified code related to risk assessment, safety guardrails, or content moderation in a potentially high-risk AI system.",
-        not_claiming: "This is not evidence of a risk management failure or Article 9 non-compliance.",
-        suggested_evidence: [
-          "Risk or safety team review of the change",
-          "Confirm risk mitigations were not weakened",
-          "Change ticket with documented risk assessment decision"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["risk_assessment", "risk_management", "safety", "guardrail", "content_filter", "moderation", "threat_model", "risk_score", "safety_check"]
-        }
-      },
-      {
-        id: "euaiact.a13.ai_transparency_change",
-        framework: "euaiact",
-        controls: ["Art. 13"],
-        severity: "medium",
-        description: "AI modified transparency, explainability, or disclosure code",
-        finding: "AI modified code related to transparency, explainability, or user disclosure in a potentially high-risk AI system.",
-        not_claiming: "This is not evidence of an Article 13 transparency violation.",
-        suggested_evidence: [
-          "Confirm disclosure and explainability requirements were not reduced",
-          "Legal or compliance team review if user-facing disclosures changed",
-          "Change ticket documenting the transparency design decision"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["explainability", "transparency", "disclosure", "explain", "interpretability", "xai", "fairness", "bias_detection", "model_card"]
-        }
-      }
-    ];
-  }
-});
-
-// src/review/rules-nist-ai-rmf.ts
-var NIST_AI_RMF_RULES;
-var init_rules_nist_ai_rmf = __esm({
-  "src/review/rules-nist-ai-rmf.ts"() {
-    "use strict";
-    NIST_AI_RMF_RULES = [
-      {
-        id: "nist-ai-rmf.govern.ai_policy_change",
-        framework: "nist-ai-rmf",
-        controls: ["GOVERN 1.1", "GOVERN 1.2"],
-        severity: "high",
-        description: "AI modified AI governance policy, accountability, or responsible AI documentation",
-        finding: "AI modified code or configuration related to AI governance policy, accountability structures, or responsible AI documentation.",
-        not_claiming: "This is not evidence of a governance failure or NIST AI RMF non-conformance.",
-        suggested_evidence: [
-          "Confirm the change was reviewed by an AI governance or responsible AI lead",
-          "Change ticket documenting the governance decision and approver",
-          "Verify updated documentation reflects current organisational AI policy"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["ai_policy", "governance", "accountability", "responsible_ai", "ai_ethics", "model_card", "ai_documentation", "ai_governance"]
-        }
-      },
-      {
-        id: "nist-ai-rmf.govern.ai_oversight_change",
-        framework: "nist-ai-rmf",
-        controls: ["GOVERN 6.1", "GOVERN 6.2"],
-        severity: "high",
-        description: "AI modified human oversight, review, or escalation mechanisms for an AI system",
-        finding: "AI modified code that implements human review, oversight, escalation, or intervention capabilities for an AI system.",
-        not_claiming: "This is not evidence that human oversight was removed or that controls are inadequate.",
-        suggested_evidence: [
-          "Confirm meaningful human oversight capability is maintained",
-          "Safety or AI governance team review of the change",
-          "Document that escalation paths remain operable after the change"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["human_review", "oversight", "escalation", "approval", "human_in_the_loop", "hitl", "intervention", "safeguard", "override"]
-        }
-      },
-      {
-        id: "nist-ai-rmf.map.ai_risk_assessment_change",
-        framework: "nist-ai-rmf",
-        controls: ["MAP 1.1", "MAP 5.1"],
-        severity: "high",
-        description: "AI modified risk assessment, risk classification, or threat modelling code",
-        finding: "AI modified code related to AI risk assessment, risk classification, or threat modelling.",
-        not_claiming: "This is not evidence of a risk management failure or MAP function non-conformance.",
-        suggested_evidence: [
-          "Risk or AI safety team review of the change",
-          "Confirm risk classifications and scoring logic remain accurate",
-          "Change ticket with documented rationale for the risk assessment update"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["risk_assessment", "risk_classification", "threat_model", "risk_register", "risk_score", "hazard", "impact_assessment"]
-        }
-      },
-      {
-        id: "nist-ai-rmf.map.sensitive_data_in_session",
-        framework: "nist-ai-rmf",
-        controls: ["MAP 3.5"],
-        severity: "high",
-        description: "Sensitive data or credential detected in AI session \u2014 data impact and categorisation concern",
-        finding: "Sensitive data was detected in an AI session. Under MAP 3.5, AI systems must identify and categorise impacts related to data.",
-        not_claiming: "This is not evidence of a data breach or MAP 3.5 non-conformance. Chron masks detected values at log time \u2014 no plaintext is stored.",
-        suggested_evidence: [
-          "Confirm no sensitive data was committed to version control or AI training datasets",
-          "Rotate any live credentials that appeared in the session",
-          "Review and document per your AI data impact categorisation process"
-        ],
-        match: { type: "secret_detected" }
-      },
-      {
-        id: "nist-ai-rmf.measure.ai_evaluation_change",
-        framework: "nist-ai-rmf",
-        controls: ["MEASURE 2.1", "MEASURE 2.5"],
-        severity: "high",
-        description: "AI modified model evaluation, benchmarking, or validation pipelines",
-        finding: "AI modified code related to AI model evaluation, benchmarking, red-teaming, or validation.",
-        not_claiming: "This is not evidence that evaluation coverage was reduced or that the MEASURE function is non-conformant.",
-        suggested_evidence: [
-          "Confirm evaluation coverage and benchmarks were not weakened",
-          "AI or ML engineering lead review of the change",
-          "Document the evaluation design decision and its rationale"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["evaluation", "benchmark", "validation", "model_eval", "red_team", "red-team", "test_suite", "performance_test", "evals"]
-        }
-      },
-      {
-        id: "nist-ai-rmf.measure.ai_monitoring_change",
-        framework: "nist-ai-rmf",
-        controls: ["MEASURE 2.7"],
-        severity: "high",
-        description: "AI modified AI system monitoring, drift detection, or performance tracking",
-        finding: "AI modified code related to AI system monitoring, model drift detection, or runtime performance tracking.",
-        not_claiming: "This is not evidence that monitoring was disabled or that MEASURE 2.7 obligations are unmet.",
-        suggested_evidence: [
-          "Confirm monitoring coverage and alerting thresholds were not reduced",
-          "Human review of the change with sign-off from an AI operations or ML engineering lead",
-          "Change ticket documenting the monitoring design decision"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["drift", "model_monitor", "performance_monitor", "monitoring", "alerting", "telemetry", "observability", "model_health"]
-        }
-      },
-      {
-        id: "nist-ai-rmf.manage.ai_incident_response_change",
-        framework: "nist-ai-rmf",
-        controls: ["MANAGE 2.2", "MANAGE 4.1"],
-        severity: "high",
-        description: "AI modified incident response, fallback, or recovery procedures for an AI system",
-        finding: "AI modified code related to AI incident response, fallback behaviour, rollback, or system recovery.",
-        not_claiming: "This is not evidence of inadequate incident response or MANAGE function non-conformance.",
-        suggested_evidence: [
-          "Confirm fallback and recovery paths remain operable after the change",
-          "Incident response or AI operations lead review",
-          "Change ticket with rollback plan and approval"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["incident", "fallback", "recovery", "rollback", "contingency", "failsafe", "circuit_breaker", "fail_open", "fail_closed"]
-        }
-      }
-    ];
-  }
-});
-
-// src/review/rules.ts
-var SOC2_RULES, FRAMEWORKS;
-var init_rules = __esm({
-  "src/review/rules.ts"() {
-    "use strict";
-    init_rules_iso27001();
-    init_rules_euaiact();
-    init_rules_nist_ai_rmf();
-    SOC2_RULES = [
-      {
-        id: "soc2.cc6_1.ai_access_control_change",
-        framework: "soc2",
-        controls: ["CC6.1"],
-        severity: "high",
-        description: "AI touched access-control-related code",
-        finding: "AI modified code in an access-control-sensitive path.",
-        not_claiming: "This is not evidence of a security failure or SOC 2 non-compliance.",
-        suggested_evidence: [
-          "PR approval with human reviewer",
-          "Change ticket linked to the work",
-          "Manager or security team sign-off"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["auth", "iam", "rbac", "permission", "policy", "acl", "role", "login", "jwt", "oauth", "saml", "sso", "mfa", "access_control"]
-        }
-      },
-      {
-        id: "soc2.cc6_1.cc6_6.secret_detected",
-        framework: "soc2",
-        controls: ["CC6.1", "CC6.6"],
-        severity: "high",
-        description: "AI session contained detected sensitive data or credentials",
-        finding: "Sensitive data or a credential was detected in an AI session.",
-        not_claiming: "This is not evidence of a breach or credential compromise. Chron masks detected values at log time \u2014 no plaintext values are stored.",
-        suggested_evidence: [
-          "Confirm no plaintext credential was committed to version control",
-          "Rotate the credential if it was a live secret",
-          "Document the detection and resolution in the change log"
-        ],
-        match: { type: "secret_detected" }
-      },
-      {
-        id: "soc2.cc7_2.cc8_1.ai_infra_change",
-        framework: "soc2",
-        controls: ["CC7.2", "CC8.1"],
-        severity: "high",
-        description: "AI executed or modified deployment or infrastructure files",
-        finding: "AI modified infrastructure or deployment configuration.",
-        not_claiming: "This is not evidence of an unauthorized change.",
-        suggested_evidence: [
-          "Change ticket or approval record",
-          "Pipeline approval gate log",
-          "Human review of the infrastructure diff"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: [".tf", "terraform", "dockerfile", "docker-compose", "kubernetes", "k8s", "helm", "ansible", ".github/workflow", "cloudformation", "pipeline", "deploy"]
-        }
-      },
-      {
-        id: "soc2.cc7_2.ai_monitoring_change",
-        framework: "soc2",
-        controls: ["CC7.2"],
-        severity: "high",
-        description: "AI changed logging, monitoring, alerting, or security tooling",
-        finding: "AI modified logging, monitoring, or security alerting code or configuration.",
-        not_claiming: "This is not evidence that monitoring was disabled or circumvented.",
-        suggested_evidence: [
-          "Confirm monitoring coverage was not reduced",
-          "Human review of the change",
-          "Change ticket"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["logging", "monitoring", "alerting", "splunk", "datadog", "prometheus", "grafana", "cloudwatch", "sentry", "pagerduty", "audit_log", "audit-log", "logger"]
-        }
-      },
-      {
-        id: "soc2.cc6_1.cc6_7.ai_data_handling_change",
-        framework: "soc2",
-        controls: ["CC6.1", "CC6.7"],
-        severity: "medium",
-        description: "AI changed data retention, deletion, export, or encryption logic",
-        finding: "AI modified data handling, retention, or privacy-related code.",
-        not_claiming: "This is not evidence of a data handling violation.",
-        suggested_evidence: [
-          "Privacy or data officer review",
-          "Change ticket documenting the business reason",
-          "Confirm compliance with data retention policy"
-        ],
-        match: {
-          type: "code_change_path",
-          path_contains: ["retention", "encrypt", "decrypt", "gdpr", "privacy", "anonymize", "redact", "purge", "archive", "backup"]
-        }
-      }
-    ];
-    FRAMEWORKS = {
-      soc2: SOC2_RULES,
-      iso27001: ISO27001_RULES,
-      euaiact: EUAIACT_RULES,
-      "nist-ai-rmf": NIST_AI_RMF_RULES
-    };
   }
 });
 
@@ -22303,7 +22448,7 @@ async function runReviewAction(action, args2) {
     process.exit(1);
   }
 }
-var import_fs12, import_os11, RESET10, BOLD10, DIM9, RED5, YELLOW8, CYAN8, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
+var import_fs12, import_os11, RESET10, BOLD10, DIM9, RED6, YELLOW8, CYAN8, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
 var init_review = __esm({
   "src/cli/review.ts"() {
     "use strict";
@@ -22318,12 +22463,12 @@ var init_review = __esm({
     RESET10 = "\x1B[0m";
     BOLD10 = "\x1B[1m";
     DIM9 = "\x1B[2m";
-    RED5 = "\x1B[31m";
+    RED6 = "\x1B[31m";
     YELLOW8 = "\x1B[33m";
     CYAN8 = "\x1B[36m";
     MAGENTA2 = "\x1B[35m";
     SEV_COLOR = {
-      critical: RED5,
+      critical: RED6,
       high: YELLOW8,
       medium: CYAN8,
       low: DIM9
@@ -22463,6 +22608,485 @@ var init_update2 = __esm({
   }
 });
 
+// src/cli/risk.ts
+var risk_exports = {};
+__export(risk_exports, {
+  runRisk: () => runRisk
+});
+function fmtDate4(iso) {
+  return iso.slice(0, 16).replace("T", " ");
+}
+async function runRisk(args2) {
+  const sinceArg = args2.find((a) => a.startsWith("--since="))?.split("=")[1];
+  const showAll = args2.includes("--all");
+  const since = sinceArg ? parseSince(sinceArg) : null;
+  const db = await initDb();
+  let query = db.select({
+    id: sessions.id,
+    title: sessions.title,
+    ai_tool: sessions.ai_tool,
+    updated_at: sessions.updated_at
+  }).from(sessions).orderBy(desc(sessions.updated_at));
+  if (since) {
+    query = db.select({
+      id: sessions.id,
+      title: sessions.title,
+      ai_tool: sessions.ai_tool,
+      updated_at: sessions.updated_at
+    }).from(sessions).where(gte(sessions.updated_at, since)).orderBy(desc(sessions.updated_at));
+  }
+  const rows = await query;
+  if (rows.length === 0) {
+    process.stdout.write("\nNo sessions found.\n\n");
+    return;
+  }
+  const sessionIds = rows.map((r) => r.id);
+  const scores = await scoreSessionsBatch(db, sessionIds);
+  const scored = rows.map((r) => ({ ...r, risk: scores.get(r.id) })).filter((r) => showAll || r.risk.score > 0).sort((a, b) => b.risk.score - a.risk.score);
+  const label = since ? `since ${sinceArg}` : "all time";
+  process.stdout.write(`
+${BOLD11}Sessions requiring attention${RESET11}  ${DIM10}(${label})${RESET11}
+
+`);
+  if (scored.length === 0) {
+    process.stdout.write(`${DIM10}No sessions with attention signals detected.${RESET11}
+
+`);
+    return;
+  }
+  for (const row of scored) {
+    const { risk } = row;
+    const color = BAND_COLOR2[risk.band];
+    const dots = BAND_DOTS[risk.band];
+    const score = String(risk.score).padStart(3);
+    const prefix = row.id.slice(0, 8);
+    const date = fmtDate4(row.updated_at);
+    const tool = row.ai_tool ?? "unknown";
+    process.stdout.write(
+      `  ${color}${BOLD11}${score}${RESET11}  ${color}${dots}${RESET11}  ${CYAN9}${prefix}${RESET11}  ${DIM10}${tool.padEnd(12)}${RESET11}  ${DIM10}${date}${RESET11}  ${row.title}
+`
+    );
+    for (const reason of risk.reasons.slice(0, 3)) {
+      process.stdout.write(`      ${DIM10}\u21B3 ${reason}${RESET11}
+`);
+    }
+    process.stdout.write("\n");
+  }
+  const total = scored.length;
+  const critical = scored.filter((r) => r.risk.band === "critical").length;
+  const high = scored.filter((r) => r.risk.band === "high").length;
+  const summary = [];
+  if (critical > 0)
+    summary.push(`${RED7}${BOLD11}${critical} critical${RESET11}`);
+  if (high > 0)
+    summary.push(`${YELLOW9}${high} high${RESET11}`);
+  const rest = total - critical - high;
+  if (rest > 0)
+    summary.push(`${DIM10}${rest} review${RESET11}`);
+  process.stdout.write(`  ${BOLD11}${total}${RESET11} session${total === 1 ? "" : "s"} flagged`);
+  if (summary.length > 0)
+    process.stdout.write(`  \xB7  ${summary.join("  ")}`);
+  process.stdout.write("\n\n");
+}
+var RESET11, BOLD11, DIM10, RED7, YELLOW9, CYAN9, BAND_COLOR2, BAND_DOTS;
+var init_risk2 = __esm({
+  "src/cli/risk.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    init_db2();
+    init_schema();
+    init_report();
+    init_risk();
+    RESET11 = "\x1B[0m";
+    BOLD11 = "\x1B[1m";
+    DIM10 = "\x1B[2m";
+    RED7 = "\x1B[31m";
+    YELLOW9 = "\x1B[33m";
+    CYAN9 = "\x1B[36m";
+    BAND_COLOR2 = {
+      critical: RED7,
+      high: YELLOW9,
+      review: YELLOW9,
+      normal: DIM10
+    };
+    BAND_DOTS = {
+      critical: "\u25CF\u25CF\u25CF\u25CF",
+      high: "\u25CF\u25CF\u25CF\u25CB",
+      review: "\u25CF\u25CF\u25CB\u25CB",
+      normal: "\u25CF\u25CB\u25CB\u25CB"
+    };
+  }
+});
+
+// src/cli/dashboard.ts
+var dashboard_exports = {};
+__export(dashboard_exports, {
+  runDashboard: () => runDashboard
+});
+function esc3(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function fmtDate5(iso) {
+  return iso.slice(0, 10);
+}
+function scoreBadge(score, band) {
+  if (score === 0)
+    return `<span class="score-badge score-normal">0</span>`;
+  const cls = `score-${band}`;
+  return `<span class="score-badge ${cls}">${score}</span>`;
+}
+function sevBadge(sev) {
+  return `<span class="sev-badge sev-${sev}">${sev.toUpperCase()}</span>`;
+}
+function buildExecSummary(totalSessions, openFindings, criticalSessions, highSessions, since) {
+  const rangeLabel = since ? `Last ${since}` : "All time";
+  return `
+  <div class="stat-grid">
+    <div class="stat">
+      <div class="stat-value">${totalSessions}</div>
+      <div class="stat-label">Sessions reviewed \xB7 ${rangeLabel}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">${openFindings}</div>
+      <div class="stat-label">Open compliance findings</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value critical">${criticalSessions}</div>
+      <div class="stat-label">Critical attention (score 75+)</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value high">${highSessions}</div>
+      <div class="stat-label">High attention (score 50\u201374)</div>
+    </div>
+  </div>
+  <div class="disclaimer">
+    Attention scores are deterministic \u2014 computed from detected secrets, sensitive code path changes, and open compliance findings.
+    A high score means a session warrants human review, not that a violation occurred.
+  </div>`;
+}
+function buildSessionsTable(rows) {
+  if (rows.length === 0) {
+    return `<div class="no-data">No sessions found in this date range.</div>`;
+  }
+  const sorted = [...rows].sort((a, b) => b.risk.score - a.risk.score);
+  const trs = sorted.map((r) => {
+    const prefix = r.id.slice(0, 8);
+    const tool = r.ai_tool ?? "unknown";
+    const reason = r.risk.reasons[0] ? esc3(r.risk.reasons[0]) : "\u2014";
+    const extra = r.risk.reasons.length > 1 ? ` <span class="dim">+${r.risk.reasons.length - 1} more</span>` : "";
+    return `<tr>
+      <td>${scoreBadge(r.risk.score, r.risk.band)}</td>
+      <td><span class="mono">${esc3(prefix)}</span></td>
+      <td class="dim">${esc3(tool)}</td>
+      <td class="dim">${fmtDate5(r.updated_at)}</td>
+      <td>${esc3(r.title)}</td>
+      <td>${reason}${extra}</td>
+    </tr>`;
+  }).join("\n");
+  return `
+  <table>
+    <thead><tr>
+      <th>Score</th><th>Session</th><th>AI Tool</th><th>Date</th><th>Title</th><th>Top Reason</th>
+    </tr></thead>
+    <tbody>${trs}</tbody>
+  </table>`;
+}
+function buildFindingsSection(findings) {
+  if (findings.length === 0) {
+    return `<div class="no-data">No open findings. All sessions are clean or findings have been reviewed.</div>`;
+  }
+  const byFramework = /* @__PURE__ */ new Map();
+  for (const f of findings) {
+    const arr = byFramework.get(f.framework) ?? [];
+    arr.push(f);
+    byFramework.set(f.framework, arr);
+  }
+  let html = "";
+  for (const [fw, fws] of byFramework) {
+    const label = FW_LABELS[fw] ?? fw;
+    html += `<h3><span class="fw-badge">${esc3(label)}</span>  ${fws.length} open finding${fws.length === 1 ? "" : "s"}</h3>`;
+    const trs = fws.map((f) => {
+      const prefix = f.session_id.slice(0, 8);
+      const idShort = f.id.slice(0, 12);
+      return `<tr>
+        <td>${sevBadge(f.severity)}</td>
+        <td class="mono dim">${esc3(f.rule_id)}</td>
+        <td class="mono dim">${esc3(prefix)}</td>
+        <td>${esc3(f.finding)}</td>
+        <td class="mono" style="white-space:nowrap">chron review accept ${esc3(idShort)}</td>
+      </tr>`;
+    }).join("\n");
+    html += `<table>
+      <thead><tr><th>Severity</th><th>Rule</th><th>Session</th><th>Finding</th><th>Action</th></tr></thead>
+      <tbody>${trs}</tbody>
+    </table>`;
+  }
+  return html;
+}
+function buildCoverageSummary() {
+  const rows = Object.entries(CONTROL_MAPS).map(([fw, map]) => {
+    const counts = { covered: 0, needs_evidence: 0, manual_review: 0, out_of_scope: 0 };
+    for (const e of map)
+      counts[e.coverage]++;
+    const label = FW_LABELS[fw] ?? fw;
+    return `<tr>
+      <td>${esc3(label)}</td>
+      <td><span class="cov-covered">${counts.covered}</span></td>
+      <td><span class="cov-needs">${counts.needs_evidence}</span></td>
+      <td><span class="cov-manual">${counts.manual_review}</span></td>
+      <td><span class="cov-out">${counts.out_of_scope}</span></td>
+      <td class="dim">${map.length}</td>
+    </tr>`;
+  }).join("\n");
+  return `
+  <table>
+    <thead><tr>
+      <th>Framework</th>
+      <th>Covered by session evidence</th>
+      <th>Needs additional evidence</th>
+      <th>Manual review required</th>
+      <th>Out of scope</th>
+      <th>Total controls</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <p class="dim" style="font-size:11px;margin-top:4px">Covered does not mean compliant. Session evidence supports control review \u2014 it does not replace it.</p>`;
+}
+function buildNextActions(rows, findings, since) {
+  const actions = [];
+  const sinceFlag = since ? ` --since=${since}` : "";
+  const criticalCount = rows.filter((r) => r.risk.band === "critical").length;
+  if (criticalCount > 0) {
+    actions.push({
+      cmd: `chron risk${sinceFlag}`,
+      why: `${criticalCount} session${criticalCount === 1 ? "" : "s"} scored 75+ \u2014 review these first`
+    });
+  }
+  const fwsWithFindings = [...new Set(findings.map((f) => f.framework))];
+  for (const fw of fwsWithFindings.slice(0, 3)) {
+    actions.push({
+      cmd: `chron review --framework=${fw} --output=${fw}-evidence.html`,
+      why: `Generate evidence report with all findings for ${FW_LABELS[fw] ?? fw}`
+    });
+  }
+  if (findings.length > 0) {
+    const critical = findings.find((f) => f.severity === "critical");
+    const target = critical ?? findings[0];
+    actions.push({
+      cmd: `chron review accept ${target.id.slice(0, 12)} --note="reviewed by [name]"`,
+      why: `Mark a finding reviewed \u2014 or use dismiss / resolve`
+    });
+  }
+  for (const fw of Object.keys(CONTROL_MAPS).slice(0, 2)) {
+    actions.push({
+      cmd: `chron review --framework=${fw} --full-map`,
+      why: `See full ${FW_LABELS[fw] ?? fw} control coverage breakdown`
+    });
+  }
+  if (actions.length === 0) {
+    actions.push({ cmd: `chron risk`, why: "See sessions ranked by attention score" });
+    actions.push({ cmd: `chron review --framework=soc2`, why: "Run compliance review against SOC 2" });
+  }
+  const items = actions.map((a) => `
+  <div class="action-item">
+    <div class="cmd">${esc3(a.cmd)}</div>
+    <div class="why">${esc3(a.why)}</div>
+  </div>`).join("");
+  return `<div class="cli-box"><h3>Suggested next actions</h3><div class="next-action">${items}</div></div>`;
+}
+function buildDashboardHtml(rows, findings, since, sinceArg, generatedAt) {
+  const criticalSessions = rows.filter((r) => r.risk.band === "critical").length;
+  const highSessions = rows.filter((r) => r.risk.band === "high").length;
+  const execSummary = buildExecSummary(rows.length, findings.length, criticalSessions, highSessions, sinceArg);
+  const sessionsTable = buildSessionsTable(rows);
+  const findingsSection = buildFindingsSection(findings);
+  const coverageSummary = buildCoverageSummary();
+  const nextActions = buildNextActions(rows, findings, sinceArg);
+  const rangeLabel = sinceArg ? `\xB7 last ${sinceArg}` : "";
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chron Intelligence Dashboard</title>
+<style>${DASHBOARD_CSS}</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="header-title">Chron Intelligence</div>
+    <div class="header-sub">AI Session Audit Dashboard ${rangeLabel}</div>
+    <div class="header-badge">Generated ${esc3(generatedAt)}</div>
+  </div>
+
+  <h2>Executive Summary</h2>
+  ${execSummary}
+
+  <h2>Sessions by Attention Score</h2>
+  ${sessionsTable}
+
+  <h2>Open Findings</h2>
+  ${findingsSection}
+
+  <h2>Framework Coverage Summary</h2>
+  ${coverageSummary}
+
+  <h2>Next Actions</h2>
+  ${nextActions}
+
+</div>
+</body>
+</html>`;
+}
+async function runDashboard(args2) {
+  const sinceArg = args2.find((a) => a.startsWith("--since="))?.split("=")[1] ?? null;
+  const outputArg = args2.find((a) => a.startsWith("--output="))?.split("=").slice(1).join("=") ?? "chron-dashboard.html";
+  const since = sinceArg ? parseSince(sinceArg) : null;
+  const db = await initDb();
+  let sessionQuery = db.select({
+    id: sessions.id,
+    title: sessions.title,
+    ai_tool: sessions.ai_tool,
+    updated_at: sessions.updated_at,
+    message_count: sql`count(${messages.id})`
+  }).from(sessions).leftJoin(messages, eq(messages.session_id, sessions.id)).groupBy(sessions.id).orderBy(desc(sessions.updated_at));
+  if (since) {
+    sessionQuery = db.select({
+      id: sessions.id,
+      title: sessions.title,
+      ai_tool: sessions.ai_tool,
+      updated_at: sessions.updated_at,
+      message_count: sql`count(${messages.id})`
+    }).from(sessions).leftJoin(messages, eq(messages.session_id, sessions.id)).where(gte(sessions.updated_at, since)).groupBy(sessions.id).orderBy(desc(sessions.updated_at));
+  }
+  const sessionRows = await sessionQuery;
+  const sessionIds = sessionRows.map((r) => r.id);
+  const scores = sessionIds.length > 0 ? await scoreSessionsBatch(db, sessionIds) : /* @__PURE__ */ new Map();
+  const rows = sessionRows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    ai_tool: r.ai_tool,
+    updated_at: r.updated_at,
+    message_count: Number(r.message_count),
+    risk: scores.get(r.id) ?? { score: 0, band: "normal", reasons: [], signals: { secrets: 0, code_changes: 0, findings: 0 } }
+  }));
+  const rawFindings = sessionIds.length > 0 ? await db.select().from(review_findings).where(and(
+    inArray(review_findings.session_id, sessionIds),
+    eq(review_findings.status, "open")
+  )) : [];
+  const findings = rawFindings.map((f) => {
+    const meta = RULE_META.get(f.rule_id);
+    return {
+      id: f.id,
+      rule_id: f.rule_id,
+      session_id: f.session_id,
+      framework: meta?.framework ?? f.rule_id.split(".")[0] ?? "unknown",
+      severity: meta?.severity ?? "medium",
+      finding: meta?.finding ?? f.rule_id
+    };
+  });
+  const generatedAt = (/* @__PURE__ */ new Date()).toLocaleString("en-GB", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+  const html = buildDashboardHtml(rows, findings, since, sinceArg, generatedAt);
+  (0, import_fs13.writeFileSync)(outputArg, html, "utf8");
+  const criticalCount = rows.filter((r) => r.risk.band === "critical").length;
+  const highCount = rows.filter((r) => r.risk.band === "high").length;
+  process.stdout.write(
+    `
+\x1B[1mChron Intelligence Dashboard\x1B[0m  \u2192  ${outputArg}
+
+  \x1B[2m${rows.length} sessions\x1B[0m` + (criticalCount ? `  \x1B[1m\x1B[31m${criticalCount} critical\x1B[0m` : "") + (highCount ? `  \x1B[33m${highCount} high\x1B[0m` : "") + `  \x1B[2m${findings.length} open finding${findings.length === 1 ? "" : "s"}\x1B[0m
+
+  Open in browser: open ${outputArg}
+
+`
+  );
+}
+var import_fs13, RULE_META, FW_LABELS, DASHBOARD_CSS;
+var init_dashboard = __esm({
+  "src/cli/dashboard.ts"() {
+    "use strict";
+    import_fs13 = require("fs");
+    init_drizzle_orm();
+    init_db2();
+    init_schema();
+    init_report();
+    init_risk();
+    init_rules();
+    init_control_map();
+    RULE_META = new Map(
+      Object.values(FRAMEWORKS).flat().map((r) => [r.id, { severity: r.severity, framework: r.framework, finding: r.finding }])
+    );
+    FW_LABELS = {
+      soc2: "SOC 2",
+      iso27001: "ISO 27001",
+      euaiact: "EU AI Act",
+      "nist-ai-rmf": "NIST AI RMF"
+    };
+    DASHBOARD_CSS = `
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; color: #111; background: #f8fafc; line-height: 1.5; }
+.page { max-width: 1000px; margin: 0 auto; padding: 40px 48px; }
+.header { background: #0f172a; color: #fff; border-radius: 8px; padding: 24px 32px; margin-bottom: 32px; }
+.header-title { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+.header-sub { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+.header-badge { display:inline-block; background:#1e3a5f; color:#93c5fd; padding:2px 10px; border-radius:3px; font-size:11px; font-weight:600; margin-top:8px; }
+h2 { font-size: 15px; font-weight: 700; margin: 32px 0 12px; padding-bottom: 4px; border-bottom: 2px solid #e2e8f0; color: #1e293b; }
+h3 { font-size: 13px; font-weight: 600; margin: 16px 0 6px; color: #334155; }
+p { margin-bottom: 8px; color: #475569; }
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 8px; }
+.stat { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 18px; }
+.stat-value { font-size: 28px; font-weight: 700; color: #0f172a; line-height: 1; }
+.stat-value.critical { color: #dc2626; }
+.stat-value.high { color: #d97706; }
+.stat-label { font-size: 11px; color: #64748b; margin-top: 4px; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 12px; background: #fff; border-radius: 6px; overflow: hidden; border: 1px solid #e2e8f0; }
+th { background: #f1f5f9; text-align: left; padding: 7px 12px; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0; }
+td { padding: 6px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: top; word-break: break-word; }
+tr:last-child td { border-bottom: none; }
+.score-badge { display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:700; }
+.score-critical { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
+.score-high { background:#fffbeb; color:#d97706; border:1px solid #fde68a; }
+.score-review { background:#fefce8; color:#854d0e; border:1px solid #fef08a; }
+.score-normal { background:#f8fafc; color:#64748b; border:1px solid #e2e8f0; }
+.sev-badge { display:inline-block; padding:1px 7px; border-radius:3px; font-size:11px; font-weight:600; color:#fff; }
+.sev-critical { background:#dc2626; }
+.sev-high { background:#d97706; }
+.sev-medium { background:#2563eb; }
+.sev-low { background:#6b7280; }
+.fw-badge { display:inline-block; padding:2px 8px; border-radius:3px; font-size:11px; font-weight:600; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
+.cov-covered { background:#dcfce7; color:#166534; border:1px solid #86efac; padding:1px 7px; border-radius:3px; font-size:11px; font-weight:600; display:inline-block; }
+.cov-needs { background:#fef9c3; color:#854d0e; border:1px solid #fde047; padding:1px 7px; border-radius:3px; font-size:11px; font-weight:600; display:inline-block; }
+.cov-manual { background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:1px 7px; border-radius:3px; font-size:11px; font-weight:600; display:inline-block; }
+.cov-out { background:#f8fafc; color:#94a3b8; border:1px solid #e2e8f0; padding:1px 7px; border-radius:3px; font-size:11px; font-weight:600; display:inline-block; }
+.cli-box { background:#0f172a; border-radius:8px; padding:16px 20px; margin-top:8px; }
+.cli-box h3 { color:#e2e8f0; margin-top:0; margin-bottom:10px; font-size:12px; text-transform:uppercase; letter-spacing:0.5px; }
+.cli-cmd { font-family:monospace; font-size:12px; color:#7dd3fc; margin-bottom:5px; }
+.cli-cmd-label { color:#64748b; font-size:11px; }
+.next-action { display:flex; flex-direction:column; gap:8px; }
+.action-item { background:#1e293b; border-radius:6px; padding:10px 14px; }
+.action-item .cmd { font-family:monospace; font-size:12px; color:#7dd3fc; }
+.action-item .why { font-size:11px; color:#94a3b8; margin-top:3px; }
+.disclaimer { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #f59e0b; border-radius:4px; padding:10px 14px; margin:16px 0; font-size:11px; color:#374151; }
+.mono { font-family:monospace; font-size:11px; }
+.dim { color:#94a3b8; }
+.no-data { color:#94a3b8; font-size:12px; padding:16px; background:#fff; border:1px solid #e2e8f0; border-radius:6px; text-align:center; }
+@media print {
+  body { background: #fff; font-size: 11px; }
+  .page { padding: 20px 24px; max-width: 100%; }
+  .header { background: #1e293b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .cli-box { background: #1e293b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+`;
+  }
+});
+
 // src/cli/index.ts
 var [, , command, ...args] = process.argv;
 async function main() {
@@ -22543,6 +23167,16 @@ async function main() {
       await runUpdate2(args);
       break;
     }
+    case "risk": {
+      const { runRisk: runRisk2 } = await Promise.resolve().then(() => (init_risk2(), risk_exports));
+      await runRisk2(args);
+      break;
+    }
+    case "dashboard": {
+      const { runDashboard: runDashboard2 } = await Promise.resolve().then(() => (init_dashboard(), dashboard_exports));
+      await runDashboard2(args);
+      break;
+    }
     default: {
       process.stdout.write(`Unknown command: ${command}
 
@@ -22570,6 +23204,8 @@ Commands:
   doctor          Check your Chron setup \u2014 Node version, DB, MCP configs, SIEM
   import          Import conversations from external AI tools
   review          Review AI sessions against compliance control criteria
+  risk            Show sessions by attention score \u2014 triage what to review first
+  dashboard       Generate a static HTML intelligence dashboard (no server)
   update          Update chron to the latest version
 
 Options (history):
@@ -22614,6 +23250,14 @@ Options (review):
   accept <id>         Mark a finding as accepted; supports --note=<text>
   dismiss <id>        Mark a finding as dismissed; supports --note=<text>
   resolve <id>        Mark a finding as resolved; supports --note=<text>
+
+Options (risk):
+  --since=<range>   Limit to sessions since: 7d, 30d, or YYYY-MM-DD
+  --all             Include sessions with attention score of 0
+
+Options (dashboard):
+  --since=<range>   Limit to sessions since: 7d, 30d, or YYYY-MM-DD
+  --output=<file>   Output file (default: chron-dashboard.html)
 `
   );
 }
