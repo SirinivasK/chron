@@ -17338,6 +17338,10 @@ async function scoreSessionsBatch(db, sessionIds) {
   }
   return result;
 }
+async function scoreSession(db, sessionId) {
+  const scores = await scoreSessionsBatch(db, [sessionId]);
+  return scores.get(sessionId) ?? { score: 0, band: "normal", reasons: [], signals: { secrets: 0, code_changes: 0, findings: 0 } };
+}
 var CODE_SIGNALS, FINDING_WEIGHTS, SEVERITY_MAP;
 var init_risk = __esm({
   "src/review/risk.ts"() {
@@ -18124,7 +18128,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.40",
+      version: "0.1.42",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -22718,21 +22722,494 @@ var init_risk2 = __esm({
   }
 });
 
+// src/cli/session-detail.ts
+var session_detail_exports = {};
+__export(session_detail_exports, {
+  runSessionDetail: () => runSessionDetail
+});
+function esc3(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function fmtTs(iso) {
+  const m = iso.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})(?:\.\d+)?([-+]\d{2}:\d{2}|Z)?$/);
+  if (!m)
+    return iso;
+  const tz = !m[3] || m[3] === "Z" ? "+00:00" : m[3];
+  return `${m[1]} ${m[2]} ${tz}`;
+}
+function fmtDate5(iso) {
+  return iso.slice(0, 10);
+}
+function scoreBadgeHtml(score, band2) {
+  return `<div class="score-badge score-${band2}">${score}</div><div class="score-band">${band2.toUpperCase()}</div>`;
+}
+async function computeTamperStatus(session, msgs) {
+  const chained = msgs.filter((m) => m.content_hash !== null);
+  let chain = "none";
+  let chain_msg = "No chained messages \u2014 session pre-dates hash chaining";
+  let chain_count = 0;
+  if (chained.length > 0) {
+    chain_count = chained.length;
+    let ok3 = true;
+    for (let i = 0; i < chained.length; i++) {
+      const row = chained[i];
+      const expectedPrev = i === 0 ? null : chained[i - 1].content_hash;
+      if (row.prev_hash !== expectedPrev) {
+        ok3 = false;
+        break;
+      }
+      const expected = computeContentHash(row.session_id, row.role, row.content, row.created_at, row.prev_hash, row.event_type ?? void 0);
+      if (row.content_hash !== expected) {
+        ok3 = false;
+        break;
+      }
+    }
+    chain = ok3 ? "valid" : "broken";
+    chain_msg = ok3 ? `All ${chained.length} message hashes valid` : "Hash chain broken \u2014 content may have been altered";
+  }
+  let clock = "unknown";
+  let clock_offset_ms;
+  if (session.metadata) {
+    try {
+      const meta = JSON.parse(session.metadata);
+      if (meta.clock_sync_status === "synchronized") {
+        clock = "synced";
+        clock_offset_ms = meta.clock_offset_ms;
+      } else if (meta.clock_sync_status === "not_synchronized") {
+        clock = "not_synced";
+      }
+    } catch {
+    }
+  }
+  let sig = "no_key";
+  if (session.public_key) {
+    if (!session.signature) {
+      sig = "unsigned";
+    } else {
+      const finalHash = chained[chained.length - 1]?.content_hash ?? "";
+      const firstCreatedAt = msgs[0]?.created_at ?? "";
+      const valid = verifySignature(session.public_key, session.signature, session.id, finalHash, msgs.length, firstCreatedAt);
+      sig = valid ? "valid" : "invalid";
+    }
+  }
+  return { chain, chain_count, chain_msg, clock, clock_offset_ms, sig };
+}
+function buildTamperBar(t) {
+  const chainCls = t.chain === "valid" ? "tamper-ok" : t.chain === "broken" ? "tamper-fail" : "tamper-dim";
+  const chainIcon = t.chain === "valid" ? "\u2713" : t.chain === "broken" ? "\u2717" : "\u2014";
+  const chainLabel = t.chain === "valid" ? `Hash chain valid (${t.chain_count} msgs)` : t.chain === "broken" ? "Hash chain broken" : "No hash chain";
+  const clockCls = t.clock === "synced" ? "tamper-ok" : t.clock === "not_synced" ? "tamper-fail" : "tamper-dim";
+  const clockIcon = t.clock === "synced" ? "\u2713" : t.clock === "not_synced" ? "\u2717" : "\u2014";
+  const clockLabel = t.clock === "synced" ? `NTP synced${t.clock_offset_ms !== void 0 ? ` (${t.clock_offset_ms > 0 ? "+" : ""}${t.clock_offset_ms}ms)` : ""}` : t.clock === "not_synced" ? "Clock not synced" : "Clock unknown";
+  const sigCls = t.sig === "valid" ? "tamper-ok" : t.sig === "invalid" ? "tamper-fail" : t.sig === "unsigned" ? "tamper-warn" : "tamper-dim";
+  const sigIcon = t.sig === "valid" ? "\u2713" : t.sig === "invalid" ? "\u2717" : t.sig === "unsigned" ? "!" : "\u2014";
+  const sigLabel = t.sig === "valid" ? "Ed25519 signed" : t.sig === "invalid" ? "Signature invalid" : t.sig === "unsigned" ? "Not yet signed" : "No signing key";
+  return `<div class="tamper-bar">
+    <span class="tamper-badge ${chainCls}">${chainIcon} ${esc3(chainLabel)}</span>
+    <span class="tamper-badge ${clockCls}">${clockIcon} ${esc3(clockLabel)}</span>
+    <span class="tamper-badge ${sigCls}">${sigIcon} ${esc3(sigLabel)}</span>
+  </div>`;
+}
+function buildTimelineEntry(msg, secrets) {
+  const ts = fmtTs(msg.created_at);
+  const eventType = msg.event_type ?? "message";
+  if (eventType === "code_change") {
+    let label = "code_change";
+    let body2 = "";
+    try {
+      const p = JSON.parse(msg.content);
+      const op = p.operation ?? "";
+      label = `${op} \xB7 ${p.file_path ?? ""}`;
+      if (p.diff) {
+        const lines = p.diff.split("\n").slice(0, 20);
+        body2 = lines.map((l) => {
+          const cls = l.startsWith("+") ? "diff-add" : l.startsWith("-") ? "diff-del" : "diff-ctx";
+          return `<span class="${cls}">${esc3(l)}</span>`;
+        }).join("\n");
+        const total = p.diff.split("\n").length;
+        if (total > 20)
+          body2 += `
+<span class="diff-ctx dim">\u2026 ${total - 20} more lines</span>`;
+      }
+    } catch {
+      label = "code_change";
+      body2 = esc3(msg.content.slice(0, 200));
+    }
+    return `<div class="tl-entry code_change">
+      <div class="tl-header">
+        <span class="tl-type type-code_change">code change</span>
+        <span class="tl-ts">${esc3(ts)}</span>
+      </div>
+      <div class="tl-label">${esc3(label)}</div>
+      ${body2 ? `<div class="diff">${body2}</div>` : ""}
+    </div>`;
+  }
+  if (eventType === "tool_call") {
+    let toolName = "tool_call";
+    try {
+      toolName = JSON.parse(msg.content).tool_name ?? "tool_call";
+    } catch {
+    }
+    return `<div class="tl-entry tool_call">
+      <div class="tl-header">
+        <span class="tl-type type-tool_call">tool call</span>
+        <span class="tl-ts">${esc3(ts)}</span>
+      </div>
+      <div class="tl-label">${esc3(toolName)}</div>
+    </div>`;
+  }
+  if (eventType === "tool_result") {
+    return `<div class="tl-entry tool_result">
+      <div class="tl-header">
+        <span class="tl-type type-tool_result">tool result</span>
+        <span class="tl-ts">${esc3(ts)}</span>
+      </div>
+      <div class="tl-label dim">result received</div>
+    </div>`;
+  }
+  const role = msg.role === "user" ? "user" : "assistant";
+  const content = msg.content;
+  const truncated = content.length > 400;
+  const body = esc3(truncated ? content.slice(0, 400) : content);
+  const more = truncated ? `<div class="tl-more">\u2026 ${content.length - 400} more characters</div>` : "";
+  const secretHtml = secrets.length > 0 ? secrets.map((s) => `
+    <div class="tl-entry secret" style="margin-top:6px; border-left:3px solid #dc2626;">
+      <div class="tl-header">
+        <span class="tl-type type-secret">secret detected</span>
+        <span class="tl-ts">${esc3(fmtTs(s.detected_at))}</span>
+      </div>
+      <div class="secret-row">
+        <span class="secret-type">${esc3(s.type)}</span>
+        <span class="secret-val">${esc3(s.masked_value)}</span>
+      </div>
+    </div>`).join("") : "";
+  return `<div class="tl-entry ${role}">
+    <div class="tl-header">
+      <span class="tl-type type-${role}">${role}</span>
+      <span class="tl-ts">${esc3(ts)}</span>
+    </div>
+    <div class="tl-body">${body}</div>
+    ${more}
+    ${secretHtml}
+  </div>`;
+}
+function buildFindingCard(f) {
+  const meta = RULE_META.get(f.rule_id);
+  const sev = meta?.severity ?? "medium";
+  const fw = meta?.framework ?? f.rule_id.split(".")[0] ?? "unknown";
+  const fwLabel = FW_LABELS[fw] ?? fw;
+  const finding = meta?.finding ?? f.rule_id;
+  const desc2 = meta?.description ?? "";
+  const suggested = meta?.suggested_evidence?.[0] ?? "";
+  const controls = meta?.controls?.join(", ") ?? "";
+  const statusBadge = `<span class="status-badge status-${f.status}">${f.status.toUpperCase()}</span>`;
+  const sevBadge2 = `<span class="sev-badge sev-${sev}">${sev.toUpperCase()}</span>`;
+  const fwBadge = `<span class="fw-badge">${esc3(fwLabel)}</span>`;
+  const noteHtml = f.note ? `<div class="finding-note">Note: ${esc3(f.note)}</div>` : "";
+  const suggestedHtml = suggested ? `<div class="finding-suggested">Suggested evidence: ${esc3(suggested)}</div>` : "";
+  const controlsHtml = controls ? `<div class="finding-controls">Controls: <span class="mono">${esc3(controls)}</span></div>` : "";
+  const actionCmd = f.status === "open" ? `chron review accept ${f.id.slice(0, 12)} --note="reviewed by [name]"` : "";
+  const actionHtml = actionCmd ? `<div class="finding-action">${esc3(actionCmd)}</div>` : "";
+  return `<div class="finding-card ${f.status}">
+    <div class="finding-header">
+      ${sevBadge2}
+      ${statusBadge}
+      ${fwBadge}
+      <span class="finding-rule">${esc3(f.rule_id)}</span>
+    </div>
+    ${desc2 ? `<div class="finding-desc">${esc3(desc2)}</div>` : ""}
+    <div class="finding-finding">${esc3(finding)}</div>
+    ${controlsHtml}
+    ${suggestedHtml}
+    ${noteHtml}
+    <div class="mono dim" style="font-size:10px;margin-top:6px">id: ${esc3(f.id.slice(0, 16))} \xB7 opened ${esc3(fmtDate5(f.created_at))}${f.updated_at !== f.created_at ? ` \xB7 updated ${esc3(fmtDate5(f.updated_at))}` : ""}</div>
+    ${actionHtml}
+  </div>`;
+}
+function buildCoverageContrib(findingRuleIds) {
+  if (findingRuleIds.size === 0) {
+    return `<div class="no-data">No compliance findings in this session \u2014 no control coverage to show.</div>`;
+  }
+  const grouped = [];
+  for (const [fw, map] of Object.entries(CONTROL_MAPS)) {
+    const matched = map.filter((entry) => entry.rule_id && findingRuleIds.has(entry.rule_id));
+    if (matched.length > 0) {
+      grouped.push({
+        fw,
+        label: FW_LABELS[fw] ?? fw,
+        entries: matched.map((e) => ({ id: e.id, title: e.title, ruleId: e.rule_id }))
+      });
+    }
+  }
+  if (grouped.length === 0) {
+    return `<div class="no-data">No control map entries matched this session's findings.</div>`;
+  }
+  return grouped.map((g) => `
+  <div class="coverage-group">
+    <h3>${esc3(g.label)}</h3>
+    ${g.entries.map((e) => `
+    <div class="coverage-entry">
+      <span class="cov-id">${esc3(e.id)}</span>
+      <span class="cov-title">${esc3(e.title)}</span>
+      <span class="mono dim">${esc3(e.ruleId)}</span>
+    </div>`).join("")}
+  </div>`).join("");
+}
+function buildDetailHtml(session, msgs, secretsByMsg, findings, risk, tamper, generatedAt) {
+  const allSecrets = [...secretsByMsg.values()].flat();
+  const findingRuleIds = new Set(findings.map((f) => f.rule_id));
+  const timelineHtml = msgs.length === 0 ? `<div class="no-data">No messages in this session.</div>` : `<div class="timeline">${msgs.map((m) => buildTimelineEntry(m, secretsByMsg.get(m.id) ?? [])).join("\n")}</div>`;
+  const findingsHtml = findings.length === 0 ? `<div class="no-data">No findings for this session.</div>` : `<div class="finding-cards">${findings.map(buildFindingCard).join("\n")}</div>`;
+  const scoreHtml = `<div class="score-card">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+      ${scoreBadgeHtml(risk.score, risk.band)}
+    </div>
+    <div class="score-reasons">
+      <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px">TOP SIGNALS</div>
+      ${risk.reasons.length === 0 ? `<div style="font-size:12px;color:#94a3b8">No signals detected \u2014 session is clean.</div>` : `<ul>${risk.reasons.map((r) => `<li>${esc3(r)}</li>`).join("")}</ul>`}
+    </div>
+    <div style="font-size:11px;color:#94a3b8;flex-shrink:0">${allSecrets.length} secret${allSecrets.length === 1 ? "" : "s"} \xB7 ${msgs.length} message${msgs.length === 1 ? "" : "s"} \xB7 ${findings.length} finding${findings.length === 1 ? "" : "s"}</div>
+  </div>`;
+  const externalRefHtml = session.external_ref ? `<div class="header-meta-item"><strong>Ref:</strong> ${esc3(session.external_ref)}</div>` : "";
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session Evidence Report \xB7 ${esc3(session.id.slice(0, 8))}</title>
+<style>${DETAIL_CSS}</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="header-title">Session Evidence Report</div>
+    <div class="header-sub">${esc3(session.title)}</div>
+    <div class="header-meta">
+      <div class="header-meta-item"><strong>Session:</strong> <span class="mono">${esc3(session.id.slice(0, 8))}</span></div>
+      <div class="header-meta-item"><strong>AI Tool:</strong> ${esc3(session.ai_tool ?? "unknown")}</div>
+      <div class="header-meta-item"><strong>Started:</strong> ${esc3(fmtTs(session.created_at))}</div>
+      <div class="header-meta-item"><strong>Last active:</strong> ${esc3(fmtTs(session.updated_at))}</div>
+      ${externalRefHtml}
+      <div class="header-meta-item"><strong>Generated:</strong> ${esc3(generatedAt)}</div>
+    </div>
+    ${buildTamperBar(tamper)}
+  </div>
+
+  <div class="disclaimer">
+    This report is evidence documentation \u2014 it identifies what happened in this AI session and which compliance controls were touched.
+    It is not a compliance determination and does not replace control-owner review.
+  </div>
+
+  <h2>Attention Score</h2>
+  ${scoreHtml}
+
+  <h2>Session Timeline <span style="font-weight:400;color:#94a3b8;font-size:12px">(${msgs.length} events)</span></h2>
+  ${timelineHtml}
+
+  <h2>Compliance Findings <span style="font-weight:400;color:#94a3b8;font-size:12px">(${findings.length} total)</span></h2>
+  ${findingsHtml}
+
+  <h2>Coverage Contribution</h2>
+  <p style="font-size:11px;color:#64748b;margin-bottom:10px">Controls this session provides evidence for, based on triggered rules.</p>
+  ${buildCoverageContrib(findingRuleIds)}
+
+</div>
+</body>
+</html>`;
+}
+async function runSessionDetail(prefix, outputArg) {
+  const db = await initDb();
+  const allSessions = await db.select().from(sessions);
+  const matches = allSessions.filter((s) => s.id.startsWith(prefix));
+  if (matches.length === 0) {
+    process.stderr.write(`No session found matching prefix: ${prefix}
+`);
+    process.exit(1);
+  }
+  if (matches.length > 1) {
+    process.stderr.write(`Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
+`);
+    process.exit(1);
+  }
+  const session = matches[0];
+  const msgs = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(asc(messages.created_at), asc(sql`rowid`));
+  const secretRows = await db.select().from(secrets_detected).where(eq(secrets_detected.session_id, session.id));
+  const secretsByMsg = /* @__PURE__ */ new Map();
+  for (const s of secretRows) {
+    const arr = secretsByMsg.get(s.message_id) ?? [];
+    arr.push({ id: s.id, type: s.type, masked_value: s.masked_value, detected_at: s.detected_at });
+    secretsByMsg.set(s.message_id, arr);
+  }
+  const findings = await db.select().from(review_findings).where(eq(review_findings.session_id, session.id)).orderBy(asc(review_findings.created_at));
+  const risk = await scoreSession(db, session.id);
+  const tamper = await computeTamperStatus(session, msgs);
+  const generatedAt = (/* @__PURE__ */ new Date()).toLocaleString("en-GB", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+  const html = buildDetailHtml(session, msgs, secretsByMsg, findings, risk, tamper, generatedAt);
+  const defaultOut = `chron-session-${session.id.slice(0, 8)}.html`;
+  const outFile = outputArg !== "chron-dashboard.html" ? outputArg : defaultOut;
+  (0, import_fs13.writeFileSync)(outFile, html, "utf8");
+  const openCount = findings.filter((f) => f.status === "open").length;
+  process.stdout.write(
+    `
+\x1B[1mSession Evidence Report\x1B[0m  \u2192  ${outFile}
+
+  \x1B[36m${session.id.slice(0, 8)}\x1B[0m  ${session.title}
+  \x1B[2m${msgs.length} messages \xB7 ${secretRows.length} secrets \xB7 ${findings.length} findings (${openCount} open)\x1B[0m
+
+  Open in browser: open ${outFile}
+
+`
+  );
+}
+var import_fs13, RULE_META, FW_LABELS, DETAIL_CSS;
+var init_session_detail = __esm({
+  "src/cli/session-detail.ts"() {
+    "use strict";
+    import_fs13 = require("fs");
+    init_drizzle_orm();
+    init_db2();
+    init_schema();
+    init_risk();
+    init_rules();
+    init_control_map();
+    init_hash();
+    init_signing();
+    RULE_META = new Map(
+      Object.values(FRAMEWORKS).flat().map((r) => [r.id, { severity: r.severity, framework: r.framework, finding: r.finding, description: r.description, suggested_evidence: r.suggested_evidence, controls: r.controls }])
+    );
+    FW_LABELS = {
+      soc2: "SOC 2",
+      iso27001: "ISO 27001",
+      euaiact: "EU AI Act",
+      "nist-ai-rmf": "NIST AI RMF"
+    };
+    DETAIL_CSS = `
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; color: #111; background: #f8fafc; line-height: 1.5; }
+.page { max-width: 960px; margin: 0 auto; padding: 40px 48px; }
+.header { background: #0f172a; color: #fff; border-radius: 8px; padding: 24px 32px; margin-bottom: 28px; }
+.header-title { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+.header-sub { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+.header-meta { display: flex; gap: 20px; margin-top: 16px; flex-wrap: wrap; }
+.header-meta-item { font-size: 11px; color: #94a3b8; }
+.header-meta-item strong { color: #e2e8f0; }
+.tamper-bar { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.tamper-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.tamper-ok { background: #14532d; color: #86efac; }
+.tamper-warn { background: #78350f; color: #fcd34d; }
+.tamper-fail { background: #7f1d1d; color: #fca5a5; }
+.tamper-dim { background: #1e293b; color: #64748b; }
+h2 { font-size: 14px; font-weight: 700; margin: 28px 0 12px; padding-bottom: 4px; border-bottom: 2px solid #e2e8f0; color: #1e293b; }
+.score-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px; display: flex; gap: 24px; align-items: flex-start; margin-bottom: 8px; }
+.score-badge { display: inline-flex; align-items: center; padding: 4px 14px; border-radius: 6px; font-size: 28px; font-weight: 800; flex-shrink: 0; line-height: 1; }
+.score-critical { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.score-high { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+.score-review { background: #fefce8; color: #854d0e; border: 1px solid #fef08a; }
+.score-normal { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+.score-band { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 4px; color: #64748b; }
+.score-reasons { flex: 1; }
+.score-reasons ul { list-style: none; margin-top: 4px; }
+.score-reasons li { font-size: 12px; color: #475569; padding: 3px 0; border-bottom: 1px solid #f1f5f9; }
+.score-reasons li:last-child { border-bottom: none; }
+.timeline { display: flex; flex-direction: column; gap: 6px; }
+.tl-entry { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 14px; }
+.tl-entry.user { border-left: 3px solid #f59e0b; }
+.tl-entry.assistant { border-left: 3px solid #3b82f6; }
+.tl-entry.code_change { border-left: 3px solid #10b981; }
+.tl-entry.tool_call { border-left: 3px solid #8b5cf6; }
+.tl-entry.tool_result { border-left: 3px solid #6b7280; }
+.tl-entry.secret { border-left: 3px solid #dc2626; background: #fef2f2; }
+.tl-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.tl-type { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 1px 6px; border-radius: 3px; }
+.type-user { background: #fef3c7; color: #92400e; }
+.type-assistant { background: #eff6ff; color: #1d4ed8; }
+.type-code_change { background: #ecfdf5; color: #065f46; }
+.type-tool_call { background: #f5f3ff; color: #5b21b6; }
+.type-tool_result { background: #f1f5f9; color: #475569; }
+.type-secret { background: #fef2f2; color: #991b1b; }
+.tl-ts { font-size: 10px; color: #94a3b8; font-family: monospace; }
+.tl-label { font-size: 12px; font-weight: 600; color: #374151; }
+.tl-body { font-size: 12px; color: #475569; margin-top: 4px; white-space: pre-wrap; word-break: break-word; max-height: 120px; overflow: hidden; }
+.tl-body.expanded { max-height: none; }
+.tl-more { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+.secret-row { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+.secret-type { font-size: 11px; font-weight: 700; color: #991b1b; background: #fee2e2; padding: 1px 6px; border-radius: 3px; }
+.secret-val { font-family: monospace; font-size: 11px; color: #7f1d1d; }
+.diff { font-family: monospace; font-size: 11px; line-height: 1.4; margin-top: 4px; }
+.diff-add { color: #166534; }
+.diff-del { color: #991b1b; }
+.diff-ctx { color: #94a3b8; }
+.finding-cards { display: flex; flex-direction: column; gap: 10px; }
+.finding-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px; }
+.finding-card.open { border-left: 4px solid #d97706; }
+.finding-card.accepted { border-left: 4px solid #2563eb; }
+.finding-card.dismissed { border-left: 4px solid #6b7280; opacity: 0.75; }
+.finding-card.resolved { border-left: 4px solid #16a34a; }
+.finding-header { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.sev-badge { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 11px; font-weight: 600; color: #fff; }
+.sev-critical { background: #dc2626; }
+.sev-high { background: #d97706; }
+.sev-medium { background: #2563eb; }
+.sev-low { background: #6b7280; }
+.status-badge { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 11px; font-weight: 600; }
+.status-open { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+.status-accepted { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+.status-dismissed { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+.status-resolved { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.fw-badge { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 11px; font-weight: 600; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.finding-rule { font-family: monospace; font-size: 11px; color: #64748b; }
+.finding-desc { font-size: 12px; color: #1e293b; font-weight: 600; margin-bottom: 4px; }
+.finding-finding { font-size: 12px; color: #475569; margin-bottom: 8px; }
+.finding-controls { font-size: 11px; color: #64748b; margin-bottom: 6px; }
+.finding-note { background: #f8fafc; border-left: 3px solid #94a3b8; padding: 6px 10px; font-size: 11px; color: #475569; margin-bottom: 6px; border-radius: 2px; }
+.finding-suggested { font-size: 11px; color: #64748b; margin-bottom: 6px; }
+.finding-action { background: #0f172a; border-radius: 4px; padding: 6px 12px; display: inline-block; font-family: monospace; font-size: 11px; color: #7dd3fc; margin-top: 4px; }
+.coverage-group { margin-bottom: 16px; }
+.coverage-group h3 { font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px; }
+.coverage-entry { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
+.coverage-entry:last-child { border-bottom: none; }
+.cov-id { font-family: monospace; font-size: 11px; color: #94a3b8; flex-shrink: 0; width: 100px; }
+.cov-title { color: #374151; flex: 1; }
+.cov-status { font-size: 11px; font-weight: 600; flex-shrink: 0; }
+.cov-open { color: #d97706; }
+.cov-accepted { color: #2563eb; }
+.cov-resolved { color: #16a34a; }
+.disclaimer { background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 4px; padding: 10px 14px; margin: 16px 0; font-size: 11px; color: #374151; }
+.no-data { color: #94a3b8; font-size: 12px; padding: 16px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; text-align: center; }
+.mono { font-family: monospace; font-size: 11px; }
+.dim { color: #94a3b8; }
+@media print {
+  body { background: #fff; }
+  .page { padding: 20px 24px; max-width: 100%; }
+  .header { background: #1e293b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .finding-action { background: #1e293b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+`;
+  }
+});
+
 // src/cli/dashboard.ts
 var dashboard_exports = {};
 __export(dashboard_exports, {
   runDashboard: () => runDashboard
 });
-function esc3(s) {
+function esc4(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
-function fmtDate5(iso) {
+function fmtDate6(iso) {
   return iso.slice(0, 10);
 }
-function scoreBadge(score, band) {
+function scoreBadge(score, band2) {
   if (score === 0)
     return `<span class="score-badge score-normal">0</span>`;
-  const cls = `score-${band}`;
+  const cls = `score-${band2}`;
   return `<span class="score-badge ${cls}">${score}</span>`;
 }
 function sevBadge(sev) {
@@ -22772,14 +23249,14 @@ function buildSessionsTable(rows) {
   const trs = sorted.map((r) => {
     const prefix = r.id.slice(0, 8);
     const tool = r.ai_tool ?? "unknown";
-    const reason = r.risk.reasons[0] ? esc3(r.risk.reasons[0]) : "\u2014";
+    const reason = r.risk.reasons[0] ? esc4(r.risk.reasons[0]) : "\u2014";
     const extra = r.risk.reasons.length > 1 ? ` <span class="dim">+${r.risk.reasons.length - 1} more</span>` : "";
     return `<tr>
       <td>${scoreBadge(r.risk.score, r.risk.band)}</td>
-      <td><span class="mono">${esc3(prefix)}</span></td>
-      <td class="dim">${esc3(tool)}</td>
-      <td class="dim">${fmtDate5(r.updated_at)}</td>
-      <td>${esc3(r.title)}</td>
+      <td><span class="mono">${esc4(prefix)}</span></td>
+      <td class="dim">${esc4(tool)}</td>
+      <td class="dim">${fmtDate6(r.updated_at)}</td>
+      <td>${esc4(r.title)}</td>
       <td>${reason}${extra}</td>
     </tr>`;
   }).join("\n");
@@ -22803,17 +23280,17 @@ function buildFindingsSection(findings) {
   }
   let html = "";
   for (const [fw, fws] of byFramework) {
-    const label = FW_LABELS[fw] ?? fw;
-    html += `<h3><span class="fw-badge">${esc3(label)}</span>  ${fws.length} open finding${fws.length === 1 ? "" : "s"}</h3>`;
+    const label = FW_LABELS2[fw] ?? fw;
+    html += `<h3><span class="fw-badge">${esc4(label)}</span>  ${fws.length} open finding${fws.length === 1 ? "" : "s"}</h3>`;
     const trs = fws.map((f) => {
       const prefix = f.session_id.slice(0, 8);
       const idShort = f.id.slice(0, 12);
       return `<tr>
         <td>${sevBadge(f.severity)}</td>
-        <td class="mono dim">${esc3(f.rule_id)}</td>
-        <td class="mono dim">${esc3(prefix)}</td>
-        <td>${esc3(f.finding)}</td>
-        <td class="mono" style="white-space:nowrap">chron review accept ${esc3(idShort)}</td>
+        <td class="mono dim">${esc4(f.rule_id)}</td>
+        <td class="mono dim">${esc4(prefix)}</td>
+        <td>${esc4(f.finding)}</td>
+        <td class="mono" style="white-space:nowrap">chron review accept ${esc4(idShort)}</td>
       </tr>`;
     }).join("\n");
     html += `<table>
@@ -22828,9 +23305,9 @@ function buildCoverageSummary() {
     const counts = { covered: 0, needs_evidence: 0, manual_review: 0, out_of_scope: 0 };
     for (const e of map)
       counts[e.coverage]++;
-    const label = FW_LABELS[fw] ?? fw;
+    const label = FW_LABELS2[fw] ?? fw;
     return `<tr>
-      <td>${esc3(label)}</td>
+      <td>${esc4(label)}</td>
       <td><span class="cov-covered">${counts.covered}</span></td>
       <td><span class="cov-needs">${counts.needs_evidence}</span></td>
       <td><span class="cov-manual">${counts.manual_review}</span></td>
@@ -22866,7 +23343,7 @@ function buildNextActions(rows, findings, since) {
   for (const fw of fwsWithFindings.slice(0, 3)) {
     actions.push({
       cmd: `chron review --framework=${fw} --output=${fw}-evidence.html`,
-      why: `Generate evidence report with all findings for ${FW_LABELS[fw] ?? fw}`
+      why: `Generate evidence report with all findings for ${FW_LABELS2[fw] ?? fw}`
     });
   }
   if (findings.length > 0) {
@@ -22880,7 +23357,7 @@ function buildNextActions(rows, findings, since) {
   for (const fw of Object.keys(CONTROL_MAPS).slice(0, 2)) {
     actions.push({
       cmd: `chron review --framework=${fw} --full-map`,
-      why: `See full ${FW_LABELS[fw] ?? fw} control coverage breakdown`
+      why: `See full ${FW_LABELS2[fw] ?? fw} control coverage breakdown`
     });
   }
   if (actions.length === 0) {
@@ -22889,8 +23366,8 @@ function buildNextActions(rows, findings, since) {
   }
   const items = actions.map((a) => `
   <div class="action-item">
-    <div class="cmd">${esc3(a.cmd)}</div>
-    <div class="why">${esc3(a.why)}</div>
+    <div class="cmd">${esc4(a.cmd)}</div>
+    <div class="why">${esc4(a.why)}</div>
   </div>`).join("");
   return `<div class="cli-box"><h3>Suggested next actions</h3><div class="next-action">${items}</div></div>`;
 }
@@ -22917,7 +23394,7 @@ function buildDashboardHtml(rows, findings, since, sinceArg, generatedAt) {
   <div class="header">
     <div class="header-title">Chron Intelligence</div>
     <div class="header-sub">AI Session Audit Dashboard ${rangeLabel}</div>
-    <div class="header-badge">Generated ${esc3(generatedAt)}</div>
+    <div class="header-badge">Generated ${esc4(generatedAt)}</div>
   </div>
 
   <h2>Executive Summary</h2>
@@ -22942,6 +23419,14 @@ function buildDashboardHtml(rows, findings, since, sinceArg, generatedAt) {
 async function runDashboard(args2) {
   const sinceArg = args2.find((a) => a.startsWith("--since="))?.split("=")[1] ?? null;
   const outputArg = args2.find((a) => a.startsWith("--output="))?.split("=").slice(1).join("=") ?? "chron-dashboard.html";
+  const sessionFlag = args2.find((a) => a.startsWith("--session="))?.split("=").slice(1).join("=");
+  const positional = args2.find((a) => !a.startsWith("--"));
+  const sessionPrefix = sessionFlag ?? positional ?? null;
+  if (sessionPrefix) {
+    const { runSessionDetail: runSessionDetail2 } = await Promise.resolve().then(() => (init_session_detail(), session_detail_exports));
+    await runSessionDetail2(sessionPrefix, outputArg);
+    return;
+  }
   const since = sinceArg ? parseSince(sinceArg) : null;
   const db = await initDb();
   let sessionQuery = db.select({
@@ -22976,7 +23461,7 @@ async function runDashboard(args2) {
     eq(review_findings.status, "open")
   )) : [];
   const findings = rawFindings.map((f) => {
-    const meta = RULE_META.get(f.rule_id);
+    const meta = RULE_META2.get(f.rule_id);
     return {
       id: f.id,
       rule_id: f.rule_id,
@@ -22994,7 +23479,7 @@ async function runDashboard(args2) {
     minute: "2-digit"
   });
   const html = buildDashboardHtml(rows, findings, since, sinceArg, generatedAt);
-  (0, import_fs13.writeFileSync)(outputArg, html, "utf8");
+  (0, import_fs14.writeFileSync)(outputArg, html, "utf8");
   const criticalCount = rows.filter((r) => r.risk.band === "critical").length;
   const highCount = rows.filter((r) => r.risk.band === "high").length;
   process.stdout.write(
@@ -23008,11 +23493,11 @@ async function runDashboard(args2) {
 `
   );
 }
-var import_fs13, RULE_META, FW_LABELS, DASHBOARD_CSS;
+var import_fs14, RULE_META2, FW_LABELS2, DASHBOARD_CSS;
 var init_dashboard = __esm({
   "src/cli/dashboard.ts"() {
     "use strict";
-    import_fs13 = require("fs");
+    import_fs14 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -23020,10 +23505,10 @@ var init_dashboard = __esm({
     init_risk();
     init_rules();
     init_control_map();
-    RULE_META = new Map(
+    RULE_META2 = new Map(
       Object.values(FRAMEWORKS).flat().map((r) => [r.id, { severity: r.severity, framework: r.framework, finding: r.finding }])
     );
-    FW_LABELS = {
+    FW_LABELS2 = {
       soc2: "SOC 2",
       iso27001: "ISO 27001",
       euaiact: "EU AI Act",
@@ -23084,6 +23569,288 @@ tr:last-child td { border-bottom: none; }
   .cli-box { background: #1e293b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 `;
+  }
+});
+
+// src/review/patterns.ts
+function band(count, medThreshold, highThreshold) {
+  if (count >= highThreshold)
+    return "high";
+  if (count >= medThreshold)
+    return "medium";
+  return "low";
+}
+function matchesSignal(content, patterns) {
+  try {
+    const fp = (JSON.parse(content).file_path ?? "").toLowerCase();
+    return patterns.some((p) => fp.includes(p));
+  } catch {
+    return false;
+  }
+}
+function daysBetween(isoA, isoB) {
+  return Math.floor((Date.parse(isoB) - Date.parse(isoA)) / 864e5);
+}
+function uniqueIds(items) {
+  return [...new Set(items.map((i) => i.session_id))];
+}
+function stableSlug(label) {
+  return label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+}
+function detectPatterns(input, opts = {}) {
+  const ref = opts.referenceDate ?? (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  const staleWarn = opts.staleThresholdDays ?? 14;
+  const staleHigh = staleWarn * 2;
+  const detected = [];
+  const secretSessions = [...input.secretsBySession.entries()].filter(([, n]) => n > 0);
+  if (secretSessions.length >= 2) {
+    const total = secretSessions.reduce((s, [, n]) => s + n, 0);
+    detected.push({
+      id: "repeated_secret_exposure",
+      severity: band(secretSessions.length, 2, 4),
+      title: "Repeated secret exposure",
+      detail: `${secretSessions.length} sessions detected secrets \xB7 ${total} total detection${total === 1 ? "" : "s"}`,
+      session_count: secretSessions.length,
+      session_ids: secretSessions.map(([id]) => id),
+      evidence: [
+        `${total} secret detection${total === 1 ? "" : "s"} across ${secretSessions.length} sessions`,
+        "Repeated exposure may indicate hardcoded credentials or unsafe AI prompting patterns"
+      ]
+    });
+  }
+  for (const signal of CODE_SIGNALS) {
+    const hitSessions = [];
+    for (const [sessionId, contents] of input.codeChangesBySession) {
+      if (contents.some((c) => matchesSignal(c, signal.patterns))) {
+        hitSessions.push(sessionId);
+      }
+    }
+    if (hitSessions.length >= 2) {
+      detected.push({
+        id: `repeated_${stableSlug(signal.label)}`,
+        severity: band(hitSessions.length, 2, 4),
+        title: `Repeated ${signal.label}`,
+        detail: `${hitSessions.length} sessions touched these paths`,
+        session_count: hitSessions.length,
+        session_ids: hitSessions,
+        evidence: [
+          `${hitSessions.length} sessions with code changes matching: ${signal.patterns.slice(0, 4).join(", ")}${signal.patterns.length > 4 ? "\u2026" : ""}`
+        ]
+      });
+    }
+  }
+  for (const [ruleId, instances] of input.openFindingsByRule) {
+    const sessIds = uniqueIds(instances);
+    if (sessIds.length >= 2) {
+      const meta = RULE_META3.get(ruleId);
+      const fwLabel = meta ? FW_LABELS3[meta.framework] ?? meta.framework : ruleId.split(".")[0] ?? ruleId;
+      detected.push({
+        id: `recurring_finding:${ruleId}`,
+        severity: band(sessIds.length, 2, 4),
+        title: `Recurring ${fwLabel} finding`,
+        detail: `${ruleId} open in ${sessIds.length} sessions \u2014 not yet resolved`,
+        session_count: sessIds.length,
+        session_ids: sessIds,
+        evidence: [
+          `Rule: ${ruleId}`,
+          ...meta ? [`Finding: ${meta.finding}`] : [],
+          `Open in ${sessIds.length} sessions with no accepted, dismissed, or resolved status`
+        ]
+      });
+    }
+  }
+  const highAttn = [...input.scoreBySession.entries()].filter(([, r]) => r.score >= 50).map(([id]) => id);
+  if (highAttn.length >= 2) {
+    detected.push({
+      id: "high_attention_recurring",
+      severity: band(highAttn.length, 2, 4),
+      title: "High-attention sessions recurring",
+      detail: `${highAttn.length} sessions scored \u2265 50 (high or critical attention)`,
+      session_count: highAttn.length,
+      session_ids: highAttn,
+      evidence: [
+        `${highAttn.length} sessions with attention score \u2265 50`,
+        "Recurring high-attention signals indicate a systemic pattern, not a one-off event"
+      ]
+    });
+  }
+  const staleHighItems = [];
+  const staleMedItems = [];
+  for (const [ruleId, instances] of input.openFindingsByRule) {
+    for (const inst of instances) {
+      const age = daysBetween(inst.created_at, ref);
+      if (age >= staleHigh) {
+        staleHighItems.push({ ruleId, session_id: inst.session_id, days: age });
+      } else if (age >= staleWarn) {
+        staleMedItems.push({ ruleId, session_id: inst.session_id, days: age });
+      }
+    }
+  }
+  for (const [items, sev, label] of [
+    [staleHighItems, "high", `${staleHigh}+`],
+    [staleMedItems, "medium", `${staleWarn}\u2013${staleHigh - 1}`]
+  ]) {
+    if (items.length > 0) {
+      const uniqueRules = [...new Set(items.map((i) => i.ruleId))];
+      const sessIds = [...new Set(items.map((i) => i.session_id))];
+      detected.push({
+        id: `stale_findings_${sev}`,
+        severity: sev,
+        title: `Findings unresolved for ${label} days`,
+        detail: `${items.length} open finding${items.length === 1 ? "" : "s"} ${label} day${label.endsWith("+") ? "s old" : "s old"}`,
+        session_count: sessIds.length,
+        session_ids: sessIds,
+        evidence: [
+          `${items.length} finding${items.length === 1 ? "" : "s"} unresolved for ${label} days`,
+          `Rules: ${uniqueRules.slice(0, 3).join(", ")}${uniqueRules.length > 3 ? ` +${uniqueRules.length - 3} more` : ""}`
+        ]
+      });
+    }
+  }
+  return detected.sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity]);
+}
+async function fetchPatternInput(db, since) {
+  const sessionRows = since ? await db.select({ id: sessions.id }).from(sessions).where(gte(sessions.updated_at, since)) : await db.select({ id: sessions.id }).from(sessions);
+  const sessionIds = sessionRows.map((r) => r.id);
+  if (sessionIds.length === 0) {
+    return {
+      input: {
+        secretsBySession: /* @__PURE__ */ new Map(),
+        codeChangesBySession: /* @__PURE__ */ new Map(),
+        openFindingsByRule: /* @__PURE__ */ new Map(),
+        scoreBySession: /* @__PURE__ */ new Map()
+      },
+      sessionCount: 0
+    };
+  }
+  const [secretRows, codeRows, findingRows, scoreBySession] = await Promise.all([
+    db.select({ session_id: secrets_detected.session_id }).from(secrets_detected).where(inArray(secrets_detected.session_id, sessionIds)),
+    db.select({ session_id: messages.session_id, content: messages.content }).from(messages).where(and(inArray(messages.session_id, sessionIds), eq(messages.event_type, "code_change"))),
+    db.select({ rule_id: review_findings.rule_id, session_id: review_findings.session_id, created_at: review_findings.created_at }).from(review_findings).where(and(inArray(review_findings.session_id, sessionIds), eq(review_findings.status, "open"))),
+    scoreSessionsBatch(db, sessionIds)
+  ]);
+  const secretsBySession = /* @__PURE__ */ new Map();
+  for (const r of secretRows) {
+    secretsBySession.set(r.session_id, (secretsBySession.get(r.session_id) ?? 0) + 1);
+  }
+  const codeChangesBySession = /* @__PURE__ */ new Map();
+  for (const r of codeRows) {
+    const arr = codeChangesBySession.get(r.session_id) ?? [];
+    arr.push(r.content);
+    codeChangesBySession.set(r.session_id, arr);
+  }
+  const openFindingsByRule = /* @__PURE__ */ new Map();
+  for (const r of findingRows) {
+    const arr = openFindingsByRule.get(r.rule_id) ?? [];
+    arr.push({ session_id: r.session_id, created_at: r.created_at });
+    openFindingsByRule.set(r.rule_id, arr);
+  }
+  return { input: { secretsBySession, codeChangesBySession, openFindingsByRule, scoreBySession }, sessionCount: sessionIds.length };
+}
+var RULE_META3, FW_LABELS3, SEV_ORDER;
+var init_patterns = __esm({
+  "src/review/patterns.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    init_schema();
+    init_rules();
+    init_risk();
+    RULE_META3 = new Map(
+      Object.values(FRAMEWORKS).flat().map((r) => [r.id, { severity: r.severity, framework: r.framework, finding: r.finding }])
+    );
+    FW_LABELS3 = {
+      soc2: "SOC 2",
+      iso27001: "ISO 27001",
+      euaiact: "EU AI Act",
+      "nist-ai-rmf": "NIST AI RMF"
+    };
+    SEV_ORDER = { high: 0, medium: 1, low: 2 };
+  }
+});
+
+// src/cli/patterns.ts
+var patterns_exports = {};
+__export(patterns_exports, {
+  runPatterns: () => runPatterns
+});
+async function runPatterns(args2) {
+  const sinceArg = args2.find((a) => a.startsWith("--since="))?.split("=")[1] ?? null;
+  const staleArg = args2.find((a) => a.startsWith("--stale="))?.split("=")[1] ?? null;
+  const jsonMode = args2.includes("--json");
+  const since = sinceArg ? parseSince(sinceArg) : null;
+  const staleThresholdDays = staleArg ? Number(staleArg) : 14;
+  if (!Number.isInteger(staleThresholdDays) || staleThresholdDays < 1) {
+    process.stderr.write("Invalid --stale value. Use a positive whole number of days, for example --stale=14.\n");
+    process.exit(1);
+  }
+  const db = await initDb();
+  const { input, sessionCount } = await fetchPatternInput(db, since);
+  const patterns = detectPatterns(input, { staleThresholdDays });
+  if (jsonMode) {
+    process.stdout.write(JSON.stringify({ patterns, session_count: sessionCount }, null, 2) + "\n");
+    return;
+  }
+  const rangeLabel = sinceArg ? `last ${sinceArg}` : "all time";
+  process.stdout.write(`
+${BOLD12}Chron Patterns${RESET12}  ${DIM11}${rangeLabel} \xB7 ${sessionCount} session${sessionCount === 1 ? "" : "s"}${RESET12}
+
+`);
+  if (patterns.length === 0) {
+    process.stdout.write(`${DIM11}No patterns detected \u2014 no repeated signals across sessions.${RESET12}
+
+`);
+    return;
+  }
+  for (const p of patterns) {
+    const color = SEV_COLOR2[p.severity];
+    const dots = SEV_DOTS[p.severity];
+    const sev = p.severity.toUpperCase().padEnd(6);
+    process.stdout.write(`${color}${dots}${RESET12} ${color}${BOLD12}${sev}${RESET12}  ${BOLD12}${p.title}${RESET12}
+`);
+    process.stdout.write(`       ${DIM11}${p.detail}${RESET12}
+`);
+    if (p.evidence.length > 0) {
+      for (const line of p.evidence) {
+        process.stdout.write(`       ${DIM11}\xB7 ${line}${RESET12}
+`);
+      }
+    }
+    const prefixes = p.session_ids.slice(0, 5).map((id) => `${CYAN10}${id.slice(0, 8)}${RESET12}`);
+    const more = p.session_ids.length > 5 ? ` ${DIM11}+${p.session_ids.length - 5} more${RESET12}` : "";
+    process.stdout.write(`       Sessions: ${prefixes.join("  ")}${more}
+
+`);
+  }
+  const high = patterns.filter((p) => p.severity === "high").length;
+  const medium = patterns.filter((p) => p.severity === "medium").length;
+  const low = patterns.filter((p) => p.severity === "low").length;
+  process.stdout.write(
+    `${DIM11}${patterns.length} pattern${patterns.length === 1 ? "" : "s"} detected${RESET12}` + (high ? `  ${RED8}${high} high${RESET12}` : "") + (medium ? `  ${YELLOW10}${medium} medium${RESET12}` : "") + (low ? `  ${DIM11}${low} low${RESET12}` : "") + "\n\n"
+  );
+}
+var RESET12, BOLD12, DIM11, RED8, YELLOW10, CYAN10, SEV_COLOR2, SEV_DOTS;
+var init_patterns2 = __esm({
+  "src/cli/patterns.ts"() {
+    "use strict";
+    init_db2();
+    init_report();
+    init_patterns();
+    RESET12 = "\x1B[0m";
+    BOLD12 = "\x1B[1m";
+    DIM11 = "\x1B[2m";
+    RED8 = "\x1B[31m";
+    YELLOW10 = "\x1B[33m";
+    CYAN10 = "\x1B[36m";
+    SEV_COLOR2 = {
+      high: RED8,
+      medium: YELLOW10,
+      low: DIM11
+    };
+    SEV_DOTS = {
+      high: "\u25CF\u25CF\u25CF\u25CF",
+      medium: "\u25CF\u25CF\u25CF\u25CB",
+      low: "\u25CF\u25CF\u25CB\u25CB"
+    };
   }
 });
 
@@ -23177,6 +23944,11 @@ async function main() {
       await runDashboard2(args);
       break;
     }
+    case "patterns": {
+      const { runPatterns: runPatterns2 } = await Promise.resolve().then(() => (init_patterns2(), patterns_exports));
+      await runPatterns2(args);
+      break;
+    }
     default: {
       process.stdout.write(`Unknown command: ${command}
 
@@ -23206,6 +23978,7 @@ Commands:
   review          Review AI sessions against compliance control criteria
   risk            Show sessions by attention score \u2014 triage what to review first
   dashboard       Generate a static HTML intelligence dashboard (no server)
+  patterns        Detect repeated signals across sessions \u2014 org-level risk patterns
   update          Update chron to the latest version
 
 Options (history):
@@ -23255,9 +24028,16 @@ Options (risk):
   --since=<range>   Limit to sessions since: 7d, 30d, or YYYY-MM-DD
   --all             Include sessions with attention score of 0
 
+Options (patterns):
+  --since=<range>     Limit to sessions since: 7d, 30d, or YYYY-MM-DD
+  --stale=<days>      Staleness threshold for unresolved findings (default: 14)
+  --json              Machine-readable JSON output (for SIEM/scripting)
+
 Options (dashboard):
-  --since=<range>   Limit to sessions since: 7d, 30d, or YYYY-MM-DD
-  --output=<file>   Output file (default: chron-dashboard.html)
+  --since=<range>     Limit list view to sessions since: 7d, 30d, or YYYY-MM-DD
+  --output=<file>     Output file (default depends on mode)
+  --session=<prefix>  Per-session evidence detail report (default: chron-session-<id>.html)
+  <id-prefix>         Shorthand for --session=<id-prefix>
 `
   );
 }
