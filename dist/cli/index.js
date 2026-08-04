@@ -1184,7 +1184,7 @@ var init_sql = __esm({
         return new SQL([new StringChunk(str)]);
       }
       sql22.raw = raw;
-      function join11(chunks, separator) {
+      function join12(chunks, separator) {
         const result = [];
         for (const [i, chunk] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -1194,7 +1194,7 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql22.join = join11;
+      sql22.join = join12;
       function identifier(value) {
         return new Name(value);
       }
@@ -2806,7 +2806,7 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync8 = (path) => fs.readFileSync(path, "utf-8");
+    var readFileSync9 = (path) => fs.readFileSync(path, "utf-8");
     var readFile = (path) => new Promise((resolve, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
@@ -2818,7 +2818,7 @@ var require_filesystem = __commonJS({
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync8,
+      readFileSync: readFileSync9,
       readFile
     };
   }
@@ -2830,7 +2830,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync8 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync9 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command2 = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
@@ -2911,7 +2911,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync8(LDD_PATH);
+        const lddContent = readFileSync9(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -2968,7 +2968,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync8(LDD_PATH);
+        const lddContent = readFileSync9(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -2995,33 +2995,33 @@ var require_detect_libc = __commonJS({
       }
       return null;
     };
-    var version4 = async () => {
-      let version5 = null;
+    var version5 = async () => {
+      let version6 = null;
       if (isLinux()) {
-        version5 = await versionFromFilesystem();
-        if (!version5) {
-          version5 = versionFromReport();
+        version6 = await versionFromFilesystem();
+        if (!version6) {
+          version6 = versionFromReport();
         }
-        if (!version5) {
+        if (!version6) {
           const out = await safeCommand();
-          version5 = versionFromCommand(out);
+          version6 = versionFromCommand(out);
         }
       }
-      return version5;
+      return version6;
     };
     var versionSync = () => {
-      let version5 = null;
+      let version6 = null;
       if (isLinux()) {
-        version5 = versionFromFilesystemSync();
-        if (!version5) {
-          version5 = versionFromReport();
+        version6 = versionFromFilesystemSync();
+        if (!version6) {
+          version6 = versionFromReport();
         }
-        if (!version5) {
+        if (!version6) {
           const out = safeCommandSync();
-          version5 = versionFromCommand(out);
+          version6 = versionFromCommand(out);
         }
       }
-      return version5;
+      return version6;
     };
     module2.exports = {
       GLIBC,
@@ -3030,7 +3030,7 @@ var require_detect_libc = __commonJS({
       familySync,
       isNonGlibcLinux,
       isNonGlibcLinuxSync,
-      version: version4,
+      version: version5,
       versionSync
     };
   }
@@ -6162,7 +6162,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash7 } = require("crypto");
+    var { randomBytes, createHash: createHash8 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -6842,7 +6842,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash7("sha1").update(key + GUID).digest("base64");
+        const digest = createHash8("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -7229,7 +7229,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash7 } = require("crypto");
+    var { createHash: createHash8 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -7429,7 +7429,7 @@ var require_websocket_server = __commonJS({
         socket.on("error", socketOnError);
         const key = req.headers["sec-websocket-key"];
         const upgrade = req.headers.upgrade;
-        const version4 = +req.headers["sec-websocket-version"];
+        const version5 = +req.headers["sec-websocket-version"];
         if (req.method !== "GET") {
           const message = "Invalid HTTP method";
           abortHandshakeOrEmitwsClientError(this, req, socket, 405, message);
@@ -7445,7 +7445,7 @@ var require_websocket_server = __commonJS({
           abortHandshakeOrEmitwsClientError(this, req, socket, 400, message);
           return;
         }
-        if (version4 !== 13 && version4 !== 8) {
+        if (version5 !== 13 && version5 !== 8) {
           const message = "Missing or invalid Sec-WebSocket-Version header";
           abortHandshakeOrEmitwsClientError(this, req, socket, 400, message, {
             "Sec-WebSocket-Version": "13, 8"
@@ -7489,7 +7489,7 @@ var require_websocket_server = __commonJS({
         }
         if (this.options.verifyClient) {
           const info2 = {
-            origin: req.headers[`${version4 === 8 ? "sec-websocket-origin" : "origin"}`],
+            origin: req.headers[`${version5 === 8 ? "sec-websocket-origin" : "origin"}`],
             secure: !!(req.socket.authorized || req.socket.encrypted),
             req
           };
@@ -7538,7 +7538,7 @@ var require_websocket_server = __commonJS({
         }
         if (this._state > RUNNING)
           return abortHandshake(socket, 503);
-        const digest = createHash7("sha1").update(key + GUID).digest("base64");
+        const digest = createHash8("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -11306,7 +11306,7 @@ var init_lib_esm = __esm({
 });
 
 // node_modules/@libsql/client/lib-esm/hrana.js
-async function executeHranaBatch(mode, version4, batch, hranaStmts, disableForeignKeys = false) {
+async function executeHranaBatch(mode, version5, batch, hranaStmts, disableForeignKeys = false) {
   if (disableForeignKeys) {
     batch.step().run("PRAGMA foreign_keys=off");
   }
@@ -11315,7 +11315,7 @@ async function executeHranaBatch(mode, version4, batch, hranaStmts, disableForei
   let lastStep = beginStep;
   const stmtPromises = hranaStmts.map((hranaStmt) => {
     const stmtStep = batch.step().condition(BatchCond.ok(lastStep));
-    if (version4 >= 3) {
+    if (version5 >= 3) {
       stmtStep.condition(BatchCond.not(BatchCond.isAutocommit(batch)));
     }
     const stmtPromise = stmtStep.query(hranaStmt);
@@ -11323,7 +11323,7 @@ async function executeHranaBatch(mode, version4, batch, hranaStmts, disableForei
     return stmtPromise;
   });
   const commitStep = batch.step().condition(BatchCond.ok(lastStep));
-  if (version4 >= 3) {
+  if (version5 >= 3) {
     commitStep.condition(BatchCond.not(BatchCond.isAutocommit(batch)));
   }
   const commitPromise = commitStep.run("COMMIT");
@@ -11426,9 +11426,9 @@ var init_hrana = __esm({
       // BEGIN statement yet.
       #started;
       /** @private */
-      constructor(mode, version4) {
+      constructor(mode, version5) {
         this.#mode = mode;
-        this.#version = version4;
+        this.#version = version5;
         this.#started = void 0;
       }
       execute(stmt) {
@@ -11859,10 +11859,10 @@ var init_ws = __esm({
               return stmt;
             });
             const hranaStmts = normalizedStmts.map(stmtToHrana);
-            const version4 = await streamState.conn.client.getVersion();
+            const version5 = await streamState.conn.client.getVersion();
             streamState.conn.sqlCache.apply(hranaStmts);
-            const batch = streamState.stream.batch(version4 >= 3);
-            const resultsPromise = executeHranaBatch(mode, version4, batch, hranaStmts);
+            const batch = streamState.stream.batch(version5 >= 3);
+            const resultsPromise = executeHranaBatch(mode, version5, batch, hranaStmts);
             const results = await resultsPromise;
             return results;
           } catch (e) {
@@ -11877,9 +11877,9 @@ var init_ws = __esm({
           const streamState = await this.#openStream();
           try {
             const hranaStmts = stmts.map(stmtToHrana);
-            const version4 = await streamState.conn.client.getVersion();
-            const batch = streamState.stream.batch(version4 >= 3);
-            const resultsPromise = executeHranaBatch("deferred", version4, batch, hranaStmts, true);
+            const version5 = await streamState.conn.client.getVersion();
+            const batch = streamState.stream.batch(version5 >= 3);
+            const resultsPromise = executeHranaBatch("deferred", version5, batch, hranaStmts, true);
             const results = await resultsPromise;
             return results;
           } catch (e) {
@@ -11893,8 +11893,8 @@ var init_ws = __esm({
         return this.limit(async () => {
           const streamState = await this.#openStream();
           try {
-            const version4 = await streamState.conn.client.getVersion();
-            return new WsTransaction(this, streamState, mode, version4);
+            const version5 = await streamState.conn.client.getVersion();
+            return new WsTransaction(this, streamState, mode, version5);
           } catch (e) {
             this._closeStream(streamState);
             throw mapHranaError(e);
@@ -12001,8 +12001,8 @@ var init_ws = __esm({
           this.#futureConnState = void 0;
         }
         const next = this.#openConn();
-        const version4 = await next.client.getVersion();
-        next.useSqlCache = version4 >= 2;
+        const version5 = await next.client.getVersion();
+        next.useSqlCache = version5 >= 2;
         if (next.useSqlCache) {
           next.sqlCache.capacity = sqlCacheCapacity;
         }
@@ -12034,8 +12034,8 @@ var init_ws = __esm({
       #client;
       #streamState;
       /** @private */
-      constructor(client, state, mode, version4) {
-        super(mode, version4);
+      constructor(client, state, mode, version5) {
+        super(mode, version5);
         this.#client = client;
         this.#streamState = state;
       }
@@ -12152,14 +12152,14 @@ var init_http = __esm({
               return stmt;
             });
             const hranaStmts = normalizedStmts.map(stmtToHrana);
-            const version4 = await this.#client.getVersion();
+            const version5 = await this.#client.getVersion();
             let resultsPromise;
             const stream = this.#client.openStream();
             try {
               const sqlCache = new SqlCache(stream, sqlCacheCapacity2);
               sqlCache.apply(hranaStmts);
               const batch = stream.batch(false);
-              resultsPromise = executeHranaBatch(mode, version4, batch, hranaStmts);
+              resultsPromise = executeHranaBatch(mode, version5, batch, hranaStmts);
             } finally {
               stream.closeGracefully();
             }
@@ -12174,12 +12174,12 @@ var init_http = __esm({
         return this.limit(async () => {
           try {
             const hranaStmts = stmts.map(stmtToHrana);
-            const version4 = await this.#client.getVersion();
+            const version5 = await this.#client.getVersion();
             let resultsPromise;
             const stream = this.#client.openStream();
             try {
               const batch = stream.batch(false);
-              resultsPromise = executeHranaBatch("deferred", version4, batch, hranaStmts, true);
+              resultsPromise = executeHranaBatch("deferred", version5, batch, hranaStmts, true);
             } finally {
               stream.closeGracefully();
             }
@@ -12193,8 +12193,8 @@ var init_http = __esm({
       async transaction(mode = "write") {
         return this.limit(async () => {
           try {
-            const version4 = await this.#client.getVersion();
-            return new HttpTransaction(this.#client.openStream(), mode, version4);
+            const version5 = await this.#client.getVersion();
+            return new HttpTransaction(this.#client.openStream(), mode, version5);
           } catch (e) {
             throw mapHranaError(e);
           }
@@ -12240,8 +12240,8 @@ var init_http = __esm({
       #stream;
       #sqlCache;
       /** @private */
-      constructor(stream, mode, version4) {
-        super(mode, version4);
+      constructor(stream, mode, version5) {
+        super(mode, version5);
         this.#stream = stream;
         this.#sqlCache = new SqlCache(stream, sqlCacheCapacity2);
       }
@@ -14252,7 +14252,7 @@ var init_select2 = __esm({
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table))
             this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join11) => join11.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join12) => join12.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -15141,7 +15141,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join11) => join11.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join12) => join12.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -18128,7 +18128,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.42",
+      version: "0.1.43",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -23854,6 +23854,398 @@ var init_patterns2 = __esm({
   }
 });
 
+// src/utils/relay.ts
+function getSplunkConfig() {
+  const envUrl = process.env.CHRON_SPLUNK_URL;
+  const envToken = process.env.CHRON_SPLUNK_TOKEN;
+  if (envUrl && envToken) {
+    return { url: envUrl, token: envToken, insecure: process.env.CHRON_SPLUNK_INSECURE === "1" };
+  }
+  const now = Date.now();
+  if (now < _splunkCacheExpiry)
+    return _splunkCache;
+  _splunkCacheExpiry = now + 1e4;
+  try {
+    const cfg = JSON.parse((0, import_fs15.readFileSync)((0, import_path11.join)((0, import_os12.homedir)(), ".chron", "config.json"), "utf8"));
+    const s = cfg?.splunk;
+    _splunkCache = s?.url && s?.token ? { url: s.url, token: s.token, insecure: s.insecure ?? false } : null;
+  } catch {
+    _splunkCache = null;
+  }
+  if (_splunkCache?.insecure)
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  return _splunkCache;
+}
+function getSentinelConfig() {
+  const envDce = process.env.CHRON_SENTINEL_DCE;
+  const envDcrId = process.env.CHRON_SENTINEL_DCR_ID;
+  const envStream = process.env.CHRON_SENTINEL_STREAM;
+  const envTenantId = process.env.CHRON_SENTINEL_TENANT_ID;
+  const envClientId = process.env.CHRON_SENTINEL_CLIENT_ID;
+  const envClientSecret = process.env.CHRON_SENTINEL_CLIENT_SECRET;
+  if (envDce && envDcrId && envStream && envTenantId && envClientId && envClientSecret) {
+    return { dce: envDce, dcrId: envDcrId, stream: envStream, tenantId: envTenantId, clientId: envClientId, clientSecret: envClientSecret };
+  }
+  const now = Date.now();
+  if (now < _sentinelCacheExpiry)
+    return _sentinelCache;
+  _sentinelCacheExpiry = now + 1e4;
+  try {
+    const cfg = JSON.parse((0, import_fs15.readFileSync)((0, import_path11.join)((0, import_os12.homedir)(), ".chron", "config.json"), "utf8"));
+    const s = cfg?.sentinel;
+    _sentinelCache = s?.dce && s?.dcrId && s?.stream && s?.tenantId && s?.clientId && s?.clientSecret ? { dce: s.dce, dcrId: s.dcrId, stream: s.stream, tenantId: s.tenantId, clientId: s.clientId, clientSecret: s.clientSecret } : null;
+  } catch {
+    _sentinelCache = null;
+  }
+  return _sentinelCache;
+}
+async function getAzureToken(tenantId, clientId, clientSecret) {
+  const now = Date.now();
+  if (_azureTokenCache && _azureTokenCache.expiry > now + 6e4) {
+    return _azureTokenCache.token;
+  }
+  try {
+    const res = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: clientId,
+        client_secret: clientSecret,
+        scope: "https://monitor.azure.com/.default"
+      }).toString()
+    });
+    if (!res.ok)
+      return null;
+    const data = await res.json();
+    _azureTokenCache = { token: data.access_token, expiry: now + data.expires_in * 1e3 };
+    return data.access_token;
+  } catch {
+    return null;
+  }
+}
+function getMachineId() {
+  if (!_machineId) {
+    _machineId = "sha256:" + (0, import_crypto8.createHash)("sha256").update((0, import_os12.hostname)()).digest("hex").slice(0, 16);
+  }
+  return _machineId;
+}
+function toSplunkRiskEvent(payload) {
+  const base = {
+    event_type: payload.event_type,
+    os: process.platform,
+    chron_version: import_package3.version
+  };
+  if (payload.event_type === "pattern_detected") {
+    base.pattern_id = payload.pattern_id;
+    base.severity = payload.severity;
+    base.title = payload.title;
+    base.detail = payload.detail;
+    base.session_count = payload.session_count;
+    base.session_ids = payload.session_ids.join(",");
+    base.evidence = payload.evidence.join(" | ");
+  } else {
+    base.session_id = payload.session_id;
+    base.score = payload.score;
+    base.band = payload.band;
+    base.reasons = payload.reasons.join("; ");
+    base.signals_secrets = payload.signals.secrets;
+    base.signals_code_changes = payload.signals.code_changes;
+    base.signals_findings = payload.signals.findings;
+  }
+  return { time: new Date(payload.timestamp).getTime() / 1e3, host: (0, import_os12.hostname)(), source: "chron", sourcetype: "chron:risk", event: base };
+}
+function toSentinelRiskRecord(payload) {
+  const base = {
+    TimeGenerated: payload.timestamp,
+    EventType: payload.event_type,
+    OS: process.platform,
+    ChronVersion: import_package3.version,
+    Computer: (0, import_os12.hostname)()
+  };
+  if (payload.event_type === "pattern_detected") {
+    base.PatternId = payload.pattern_id;
+    base.Severity = payload.severity;
+    base.Title = payload.title;
+    base.Detail = payload.detail;
+    base.SessionCount = payload.session_count;
+    base.SessionIds = payload.session_ids.join(",");
+    base.Evidence = payload.evidence.join(" | ");
+  } else {
+    base.SessionId = payload.session_id;
+    base.Score = payload.score;
+    base.Band = payload.band;
+    base.Reasons = payload.reasons.join("; ");
+    base.SignalsSecrets = payload.signals.secrets;
+    base.SignalsCodeChanges = payload.signals.code_changes;
+    base.SignalsFindings = payload.signals.findings;
+  }
+  return base;
+}
+function toLogScaleRiskAttributes(payload) {
+  const base = {
+    event_type: payload.event_type,
+    os: process.platform,
+    chron_version: import_package3.version
+  };
+  if (payload.event_type === "pattern_detected") {
+    base.pattern_id = payload.pattern_id;
+    base.severity = payload.severity;
+    base.title = payload.title;
+    base.session_count = payload.session_count;
+    base.session_ids = payload.session_ids.join(",");
+  } else {
+    base.session_id = payload.session_id;
+    base.score = payload.score;
+    base.band = payload.band;
+  }
+  return base;
+}
+function emitRiskEvent(payload) {
+  const relayUrl = process.env.CHRON_RELAY_URL;
+  const relayToken = process.env.CHRON_RELAY_TOKEN;
+  if (relayUrl && relayToken) {
+    const event = { schema_version: "1.0", chron_version: import_package3.version, machine_id: getMachineId(), os: process.platform, ...payload };
+    setImmediate(
+      () => fetch(relayUrl, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${relayToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify(event)
+      }).catch(() => void 0)
+    );
+  }
+  const lsUrl = process.env.CHRON_LOGSCALE_URL;
+  const lsToken = process.env.CHRON_LOGSCALE_TOKEN;
+  if (lsUrl && lsToken) {
+    const body = JSON.stringify([{
+      tags: { host: (0, import_os12.hostname)(), source: "chron" },
+      events: [{ timestamp: payload.timestamp, attributes: toLogScaleRiskAttributes(payload) }]
+    }]);
+    setImmediate(
+      () => fetch(lsUrl, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${lsToken}`, "Content-Type": "application/json" },
+        body
+      }).catch(() => void 0)
+    );
+  }
+  const sentinelCfg = getSentinelConfig();
+  if (sentinelCfg) {
+    setImmediate(async () => {
+      try {
+        const token = await getAzureToken(sentinelCfg.tenantId, sentinelCfg.clientId, sentinelCfg.clientSecret);
+        if (!token)
+          return;
+        const url = `${sentinelCfg.dce}/dataCollectionRules/${sentinelCfg.dcrId}/streams/${sentinelCfg.stream}?api-version=2023-01-01`;
+        await fetch(url, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify([toSentinelRiskRecord(payload)])
+        });
+      } catch {
+      }
+    });
+  }
+  const splunkCfg = getSplunkConfig();
+  if (splunkCfg) {
+    const url = `${splunkCfg.url.replace(/\/$/, "")}/services/collector/event`;
+    setImmediate(
+      () => fetch(url, {
+        method: "POST",
+        headers: { "Authorization": `Splunk ${splunkCfg.token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(toSplunkRiskEvent(payload))
+      }).catch(() => void 0)
+    );
+  }
+}
+var import_fs15, import_path11, import_crypto8, import_os12, import_package3, _splunkCache, _splunkCacheExpiry, _sentinelCache, _sentinelCacheExpiry, _azureTokenCache, _machineId;
+var init_relay = __esm({
+  "src/utils/relay.ts"() {
+    "use strict";
+    import_fs15 = require("fs");
+    import_path11 = require("path");
+    import_crypto8 = require("crypto");
+    import_os12 = require("os");
+    import_package3 = __toESM(require_package());
+    if (process.env.CHRON_SPLUNK_INSECURE === "1") {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+    }
+    _splunkCache = null;
+    _splunkCacheExpiry = 0;
+    _sentinelCache = null;
+    _sentinelCacheExpiry = 0;
+    _azureTokenCache = null;
+    _machineId = null;
+  }
+});
+
+// src/cli/events.ts
+var events_exports = {};
+__export(events_exports, {
+  buildRiskEvents: () => buildRiskEvents,
+  runEvents: () => runEvents
+});
+function buildRiskEvents(input, now) {
+  const events = [];
+  const patterns = detectPatterns(input);
+  for (const p of patterns) {
+    events.push({
+      event_type: "pattern_detected",
+      timestamp: now,
+      pattern_id: p.id,
+      severity: p.severity,
+      title: p.title,
+      detail: p.detail,
+      session_count: p.session_count,
+      session_ids: p.session_ids,
+      evidence: p.evidence
+    });
+  }
+  for (const [sessionId, score] of input.scoreBySession) {
+    if (score.score > 0) {
+      events.push({
+        event_type: "attention_score_computed",
+        timestamp: now,
+        session_id: sessionId,
+        score: score.score,
+        band: score.band,
+        reasons: score.reasons,
+        signals: score.signals
+      });
+    }
+    if (score.score >= 50) {
+      events.push({
+        event_type: "high_attention_session",
+        timestamp: now,
+        session_id: sessionId,
+        score: score.score,
+        band: score.band,
+        reasons: score.reasons,
+        signals: score.signals
+      });
+    }
+  }
+  return events;
+}
+async function runEvents(args2) {
+  const sinceArg = args2.find((a) => a.startsWith("--since="))?.split("=")[1] ?? null;
+  const jsonMode = args2.includes("--json");
+  const emitMode = args2.includes("--emit");
+  const since = sinceArg ? parseSince(sinceArg) : null;
+  const db = await initDb();
+  const { input, sessionCount } = await fetchPatternInput(db, since);
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const events = buildRiskEvents(input, now);
+  if (jsonMode) {
+    process.stdout.write(JSON.stringify(events, null, 2) + "\n");
+    if (emitMode) {
+      for (const ev of events)
+        emitRiskEvent(ev);
+      await new Promise((r) => setTimeout(r, 800));
+    }
+    return;
+  }
+  const rangeLabel = sinceArg ? `last ${sinceArg}` : "all time";
+  process.stdout.write(`
+${BOLD13}Chron Events${RESET13}  ${DIM12}${rangeLabel} \xB7 ${sessionCount} session${sessionCount === 1 ? "" : "s"}${RESET13}
+
+`);
+  if (events.length === 0) {
+    process.stdout.write(`${DIM12}No risk events \u2014 no patterns detected and no sessions with attention score > 0.${RESET13}
+
+`);
+    return;
+  }
+  const patterns = events.filter((e) => e.event_type === "pattern_detected");
+  const highAttn = events.filter((e) => e.event_type === "high_attention_session");
+  const allScored = events.filter((e) => e.event_type === "attention_score_computed");
+  if (patterns.length > 0) {
+    process.stdout.write(`${BOLD13}Pattern events${RESET13}  ${DIM12}${patterns.length} detected${RESET13}
+
+`);
+    for (const ev of patterns) {
+      if (ev.event_type !== "pattern_detected")
+        continue;
+      const color = SEV_COLOR3[ev.severity] ?? DIM12;
+      process.stdout.write(`  ${color}${BOLD13}${ev.severity.toUpperCase()}${RESET13}  ${BOLD13}${ev.title}${RESET13}
+`);
+      process.stdout.write(`  ${DIM12}id: ${ev.pattern_id}${RESET13}
+`);
+      process.stdout.write(`  ${DIM12}${ev.detail}${RESET13}
+`);
+      const prefixes = ev.session_ids.slice(0, 5).map((id) => `${CYAN11}${id.slice(0, 8)}${RESET13}`);
+      const more = ev.session_ids.length > 5 ? ` ${DIM12}+${ev.session_ids.length - 5} more${RESET13}` : "";
+      process.stdout.write(`  sessions: ${prefixes.join("  ")}${more}
+
+`);
+    }
+  }
+  if (highAttn.length > 0) {
+    process.stdout.write(`${BOLD13}High-attention sessions${RESET13}  ${DIM12}${highAttn.length} flagged${RESET13}
+
+`);
+    for (const ev of highAttn) {
+      if (ev.event_type !== "high_attention_session")
+        continue;
+      const color = BAND_COLOR3[ev.band] ?? DIM12;
+      process.stdout.write(`  ${color}${BOLD13}${ev.band.toUpperCase()}${RESET13}  score ${BOLD13}${ev.score}${RESET13}  ${CYAN11}${ev.session_id.slice(0, 8)}${RESET13}
+`);
+      if (ev.reasons.length > 0) {
+        process.stdout.write(`  ${DIM12}${ev.reasons[0]}${ev.reasons.length > 1 ? ` +${ev.reasons.length - 1} more` : ""}${RESET13}
+`);
+      }
+      process.stdout.write("\n");
+    }
+  }
+  if (allScored.length > 0 && allScored.length !== highAttn.length) {
+    process.stdout.write(`${DIM12}+ ${allScored.length} attention_score_computed event${allScored.length === 1 ? "" : "s"} (sessions with score > 0)${RESET13}
+
+`);
+  }
+  const total = events.length;
+  process.stdout.write(`${DIM12}${total} event${total === 1 ? "" : "s"} total${RESET13}`);
+  if (emitMode) {
+    for (const ev of events)
+      emitRiskEvent(ev);
+    await new Promise((r) => setTimeout(r, 800));
+    process.stdout.write(`  ${GREEN7}${BOLD13}\u2713 emitted${RESET13}
+
+`);
+  } else {
+    process.stdout.write(`  ${DIM12}(use --emit to send to configured SIEM targets)${RESET13}
+
+`);
+  }
+}
+var RESET13, BOLD13, DIM12, RED9, YELLOW11, CYAN11, GREEN7, BAND_COLOR3, SEV_COLOR3;
+var init_events = __esm({
+  "src/cli/events.ts"() {
+    "use strict";
+    init_db2();
+    init_report();
+    init_patterns();
+    init_relay();
+    RESET13 = "\x1B[0m";
+    BOLD13 = "\x1B[1m";
+    DIM12 = "\x1B[2m";
+    RED9 = "\x1B[31m";
+    YELLOW11 = "\x1B[33m";
+    CYAN11 = "\x1B[36m";
+    GREEN7 = "\x1B[32m";
+    BAND_COLOR3 = {
+      critical: RED9,
+      high: RED9,
+      review: YELLOW11,
+      normal: DIM12
+    };
+    SEV_COLOR3 = {
+      high: RED9,
+      medium: YELLOW11,
+      low: DIM12
+    };
+  }
+});
+
 // src/cli/index.ts
 var [, , command, ...args] = process.argv;
 async function main() {
@@ -23949,6 +24341,11 @@ async function main() {
       await runPatterns2(args);
       break;
     }
+    case "events": {
+      const { runEvents: runEvents2 } = await Promise.resolve().then(() => (init_events(), events_exports));
+      await runEvents2(args);
+      break;
+    }
     default: {
       process.stdout.write(`Unknown command: ${command}
 
@@ -23979,6 +24376,7 @@ Commands:
   risk            Show sessions by attention score \u2014 triage what to review first
   dashboard       Generate a static HTML intelligence dashboard (no server)
   patterns        Detect repeated signals across sessions \u2014 org-level risk patterns
+  events          Build and emit SIEM risk events from patterns and attention scores
   update          Update chron to the latest version
 
 Options (history):
@@ -24032,6 +24430,11 @@ Options (patterns):
   --since=<range>     Limit to sessions since: 7d, 30d, or YYYY-MM-DD
   --stale=<days>      Staleness threshold for unresolved findings (default: 14)
   --json              Machine-readable JSON output (for SIEM/scripting)
+
+Options (events):
+  --since=<range>     Limit to sessions since: 7d, 30d, or YYYY-MM-DD
+  --json              Output event array as JSON (pipe into Splunk, jq, etc.)
+  --emit              Send events to all configured SIEM targets (env vars or ~/.chron/config.json)
 
 Options (dashboard):
   --since=<range>     Limit list view to sessions since: 7d, 30d, or YYYY-MM-DD
