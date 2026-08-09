@@ -22667,12 +22667,14 @@ var init_libsql = __esm({
 // src/db/schema.ts
 var schema_exports = {};
 __export(schema_exports, {
+  evidence_documents: () => evidence_documents,
+  evidence_links: () => evidence_links,
   messages: () => messages,
   review_findings: () => review_findings,
   secrets_detected: () => secrets_detected,
   sessions: () => sessions
 });
-var sessions, messages, secrets_detected, review_findings;
+var sessions, messages, secrets_detected, review_findings, evidence_documents, evidence_links;
 var init_schema = __esm({
   "src/db/schema.ts"() {
     "use strict";
@@ -22717,6 +22719,23 @@ var init_schema = __esm({
       reviewed_at: text("reviewed_at"),
       created_at: text("created_at").notNull(),
       updated_at: text("updated_at").notNull()
+    });
+    evidence_documents = sqliteTable("evidence_documents", {
+      id: text("id").primaryKey(),
+      title: text("title").notNull(),
+      file_path: text("file_path").notNull(),
+      sha256: text("sha256").notNull(),
+      size_bytes: integer2("size_bytes").notNull(),
+      imported_at: text("imported_at").notNull(),
+      metadata: text("metadata")
+    });
+    evidence_links = sqliteTable("evidence_links", {
+      id: text("id").primaryKey(),
+      evidence_id: text("evidence_id").notNull().references(() => evidence_documents.id),
+      target_type: text("target_type", { enum: ["control", "finding"] }).notNull(),
+      target_id: text("target_id").notNull(),
+      note: text("note"),
+      created_at: text("created_at").notNull()
     });
   }
 });
@@ -22832,12 +22851,32 @@ var init_db2 = __esm({
     updated_at TEXT NOT NULL,
     FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
   )`,
+      `CREATE TABLE IF NOT EXISTS evidence_documents (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    sha256 TEXT NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    imported_at TEXT NOT NULL,
+    metadata TEXT
+  )`,
+      `CREATE TABLE IF NOT EXISTS evidence_links (
+    id TEXT PRIMARY KEY,
+    evidence_id TEXT NOT NULL,
+    target_type TEXT NOT NULL CHECK (target_type IN ('control', 'finding')),
+    target_id TEXT NOT NULL,
+    note TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (evidence_id) REFERENCES evidence_documents(id) ON DELETE CASCADE
+  )`,
       `CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_title ON sessions(title)`,
       `CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_session_id ON secrets_detected(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_message_id ON secrets_detected(message_id)`,
       `CREATE INDEX IF NOT EXISTS idx_review_findings_session_id ON review_findings(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_review_findings_status ON review_findings(status)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_links_evidence_id ON evidence_links(evidence_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_links_target ON evidence_links(target_type, target_id)`,
       `CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
     content,
     session_id UNINDEXED,
@@ -38478,7 +38517,7 @@ var init_time = __esm({
 var version4;
 var init_package = __esm({
   "package.json"() {
-    version4 = "0.1.43";
+    version4 = "0.1.44";
   }
 });
 

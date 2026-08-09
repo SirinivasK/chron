@@ -2788,19 +2788,19 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync9 = (path) => fs.readFileSync(path, "utf-8");
-    var readFile = (path) => new Promise((resolve, reject) => {
+    var readFileSync10 = (path) => fs.readFileSync(path, "utf-8");
+    var readFile = (path) => new Promise((resolve2, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
           reject(err);
         } else {
-          resolve(data);
+          resolve2(data);
         }
       });
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync9,
+      readFileSync: readFileSync10,
       readFile
     };
   }
@@ -2812,17 +2812,17 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync9 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync10 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command2 = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
     var commandOut = "";
     var safeCommand = () => {
       if (!commandOut) {
-        return new Promise((resolve) => {
+        return new Promise((resolve2) => {
           childProcess.exec(command2, (err, out) => {
             commandOut = err ? " " : out;
-            resolve(commandOut);
+            resolve2(commandOut);
           });
         });
       }
@@ -2893,7 +2893,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync9(LDD_PATH);
+        const lddContent = readFileSync10(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -2950,7 +2950,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync9(LDD_PATH);
+        const lddContent = readFileSync10(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -6132,7 +6132,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash8 } = require("crypto");
+    var { randomBytes, createHash: createHash9 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -6800,7 +6800,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash8("sha1").update(key + GUID).digest("base64");
+        const digest = createHash9("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -7169,7 +7169,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash8 } = require("crypto");
+    var { createHash: createHash9 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -7476,7 +7476,7 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest = createHash8("sha1").update(key + GUID).digest("base64");
+        const digest = createHash9("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -11629,8 +11629,8 @@ var require_promise_limit = __commonJS({
         }
       }
       function queue(fn) {
-        return new Promise(function(resolve, reject) {
-          jobs.push({ fn, resolve, reject });
+        return new Promise(function(resolve2, reject) {
+          jobs.push({ fn, resolve: resolve2, reject });
           semaphore.queue = jobs.length;
         });
       }
@@ -16453,12 +16453,14 @@ var init_libsql = __esm({
 // src/db/schema.ts
 var schema_exports = {};
 __export(schema_exports, {
+  evidence_documents: () => evidence_documents,
+  evidence_links: () => evidence_links,
   messages: () => messages,
   review_findings: () => review_findings,
   secrets_detected: () => secrets_detected,
   sessions: () => sessions
 });
-var sessions, messages, secrets_detected, review_findings;
+var sessions, messages, secrets_detected, review_findings, evidence_documents, evidence_links;
 var init_schema = __esm({
   "src/db/schema.ts"() {
     "use strict";
@@ -16503,6 +16505,23 @@ var init_schema = __esm({
       reviewed_at: text("reviewed_at"),
       created_at: text("created_at").notNull(),
       updated_at: text("updated_at").notNull()
+    });
+    evidence_documents = sqliteTable("evidence_documents", {
+      id: text("id").primaryKey(),
+      title: text("title").notNull(),
+      file_path: text("file_path").notNull(),
+      sha256: text("sha256").notNull(),
+      size_bytes: integer("size_bytes").notNull(),
+      imported_at: text("imported_at").notNull(),
+      metadata: text("metadata")
+    });
+    evidence_links = sqliteTable("evidence_links", {
+      id: text("id").primaryKey(),
+      evidence_id: text("evidence_id").notNull().references(() => evidence_documents.id),
+      target_type: text("target_type", { enum: ["control", "finding"] }).notNull(),
+      target_id: text("target_id").notNull(),
+      note: text("note"),
+      created_at: text("created_at").notNull()
     });
   }
 });
@@ -16618,12 +16637,32 @@ var init_db2 = __esm({
     updated_at TEXT NOT NULL,
     FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
   )`,
+      `CREATE TABLE IF NOT EXISTS evidence_documents (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    sha256 TEXT NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    imported_at TEXT NOT NULL,
+    metadata TEXT
+  )`,
+      `CREATE TABLE IF NOT EXISTS evidence_links (
+    id TEXT PRIMARY KEY,
+    evidence_id TEXT NOT NULL,
+    target_type TEXT NOT NULL CHECK (target_type IN ('control', 'finding')),
+    target_id TEXT NOT NULL,
+    note TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (evidence_id) REFERENCES evidence_documents(id) ON DELETE CASCADE
+  )`,
       `CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_title ON sessions(title)`,
       `CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_session_id ON secrets_detected(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_message_id ON secrets_detected(message_id)`,
       `CREATE INDEX IF NOT EXISTS idx_review_findings_session_id ON review_findings(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_review_findings_status ON review_findings(status)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_links_evidence_id ON evidence_links(evidence_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_evidence_links_target ON evidence_links(target_type, target_id)`,
       `CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
     content,
     session_id UNINDEXED,
@@ -18043,7 +18082,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.43",
+      version: "0.1.44",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -18168,14 +18207,14 @@ async function runExportBundle(args2) {
       const msgs = await db.select().from(messages).where(eq(messages.session_id, sid)).orderBy(asc(messages.created_at), asc(sql`rowid`));
       for (const m of msgs) msgsStream.write(JSON.stringify(m) + "\n");
     }
-    await new Promise((resolve) => msgsStream.end(resolve));
+    await new Promise((resolve2) => msgsStream.end(resolve2));
     const secretsPath = (0, import_path3.join)(tempDir, "secrets.jsonl");
     const secretsStream = (0, import_fs4.createWriteStream)(secretsPath);
     for (const sid of sessionIds) {
       const secs = await db.select().from(secrets_detected).where(eq(secrets_detected.session_id, sid));
       for (const s of secs) secretsStream.write(JSON.stringify(s) + "\n");
     }
-    await new Promise((resolve) => secretsStream.end(resolve));
+    await new Promise((resolve2) => secretsStream.end(resolve2));
     for (const s of filtered) {
       if (s.public_key) {
         (0, import_fs4.writeFileSync)((0, import_path3.join)(pubkeysDir, `${s.id}.pub`), s.public_key);
@@ -18445,7 +18484,7 @@ __export(connect_exports, {
   runConnect: () => runConnect
 });
 function prompt(rl, question) {
-  return new Promise((resolve) => rl.question(question, resolve));
+  return new Promise((resolve2) => rl.question(question, resolve2));
 }
 function configPath() {
   return (0, import_path5.join)((0, import_os6.homedir)(), ".chron", "config.json");
@@ -18879,7 +18918,7 @@ ${BOLD5}Connect Chron \u2192 Codex${RESET5}
 `);
     const rl = (0, import_readline.createInterface)({ input: process.stdin, output: process.stdout });
     const choice = await new Promise(
-      (resolve) => rl.question(`  Add Chron to (g)lobal or (p)roject config? [g/p]: `, resolve)
+      (resolve2) => rl.question(`  Add Chron to (g)lobal or (p)roject config? [g/p]: `, resolve2)
     );
     rl.close();
     isProject = choice.trim().toLowerCase() === "p";
@@ -20357,7 +20396,7 @@ async function importGptConversations(db, conversations) {
         let prevHash = null;
         for (const m of msgs) {
           const msgId = v4_default();
-          const hash = computeContentHash(sessionId, m.role, m.content, m.ts, prevHash, "message");
+          const hash2 = computeContentHash(sessionId, m.role, m.content, m.ts, prevHash, "message");
           await tx.insert(messages).values({
             id: msgId,
             session_id: sessionId,
@@ -20365,7 +20404,7 @@ async function importGptConversations(db, conversations) {
             content: m.content,
             created_at: m.ts,
             prev_hash: prevHash,
-            content_hash: hash,
+            content_hash: hash2,
             event_type: "message"
           });
           if (m.role === "user") {
@@ -20386,7 +20425,7 @@ async function importGptConversations(db, conversations) {
               totalSecrets += found.length;
             }
           }
-          prevHash = hash;
+          prevHash = hash2;
         }
       });
       totalMessages += msgs.length;
@@ -24059,6 +24098,253 @@ var init_events = __esm({
   }
 });
 
+// src/cli/evidence.ts
+var evidence_exports = {};
+__export(evidence_exports, {
+  importEvidenceDocument: () => importEvidenceDocument,
+  linkEvidenceToFinding: () => linkEvidenceToFinding,
+  listEvidence: () => listEvidence,
+  resolveControlTarget: () => resolveControlTarget,
+  runEvidence: () => runEvidence
+});
+function hash(input) {
+  return (0, import_crypto9.createHash)("sha256").update(input).digest("hex");
+}
+function argValue(args2, name) {
+  const prefix = `--${name}=`;
+  return args2.find((a) => a.startsWith(prefix))?.slice(prefix.length);
+}
+function hasFlag(args2, name) {
+  return args2.includes(`--${name}`);
+}
+function normalizeControlId(value) {
+  return value.trim().replace(/\s+/g, " ").toUpperCase();
+}
+function resolveControlTarget(control, framework) {
+  const normalized = normalizeControlId(control);
+  const matches = [];
+  for (const [fw, map] of Object.entries(CONTROL_MAPS)) {
+    if (framework && fw !== framework) continue;
+    for (const entry of map) {
+      if (normalizeControlId(entry.id) === normalized) {
+        matches.push({ framework: fw, control: entry.id, title: entry.title });
+      }
+    }
+  }
+  if (matches.length === 0) {
+    const suffix = framework ? ` in ${framework}` : "";
+    throw new Error(`Control not found${suffix}: ${control}`);
+  }
+  if (matches.length > 1) {
+    const labels = matches.map((m) => `${m.framework}:${m.control}`).join(", ");
+    throw new Error(`Control is ambiguous: ${control}. Use --framework=<name>. Matches: ${labels}`);
+  }
+  const match = matches[0];
+  return {
+    id: `${match.framework}:${match.control}`,
+    label: `${FW_LABELS4[match.framework] ?? match.framework} ${match.control} \u2014 ${match.title}`
+  };
+}
+async function resolveEvidenceId(db, idOrPrefix) {
+  const prefix = idOrPrefix.trim();
+  if (!prefix) throw new Error("Evidence document id is required");
+  const rows = await db.select({ id: evidence_documents.id }).from(evidence_documents).where(sql`${evidence_documents.id} LIKE ${`${prefix}%`}`).orderBy(asc(evidence_documents.id)).limit(2);
+  if (rows.length === 0) throw new Error(`Evidence document not found: ${prefix}`);
+  if (rows.length > 1) throw new Error(`Evidence document id prefix is ambiguous: ${prefix}. Use more characters.`);
+  return rows[0].id;
+}
+async function resolveFindingId2(db, idOrPrefix) {
+  const prefix = idOrPrefix.trim();
+  if (!prefix) throw new Error("Finding id is required");
+  const rows = await db.select({ id: review_findings.id }).from(review_findings).where(sql`${review_findings.id} LIKE ${`${prefix}%`}`).orderBy(asc(review_findings.id)).limit(2);
+  if (rows.length === 0) {
+    throw new Error(`Finding not found: ${prefix}. Run "chron review --framework=<name>" first to register current findings.`);
+  }
+  if (rows.length > 1) throw new Error(`Finding id prefix is ambiguous: ${prefix}. Use more characters.`);
+  return rows[0].id;
+}
+async function createEvidenceLink(db, evidenceId, targetType, targetId, now, note) {
+  const id = hash(`${evidenceId}:${targetType}:${targetId}`);
+  await db.$client.execute({
+    sql: `INSERT INTO evidence_links (id, evidence_id, target_type, target_id, note, created_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET note = excluded.note`,
+    args: [id, evidenceId, targetType, targetId, note ?? null, now]
+  });
+  return id;
+}
+async function importEvidenceDocument(db, params) {
+  const filePath = (0, import_path12.resolve)(params.file);
+  const buf = (0, import_fs16.readFileSync)(filePath);
+  const stat = (0, import_fs16.statSync)(filePath);
+  const sha256 = hash(buf);
+  const now = params.now ?? (/* @__PURE__ */ new Date()).toISOString();
+  const title = (0, import_path12.basename)(filePath);
+  const documentId = sha256;
+  await db.$client.execute({
+    sql: `INSERT INTO evidence_documents (id, title, file_path, sha256, size_bytes, imported_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            title = excluded.title,
+            file_path = excluded.file_path,
+            size_bytes = excluded.size_bytes,
+            imported_at = excluded.imported_at`,
+    args: [documentId, title, filePath, sha256, stat.size, now]
+  });
+  let linkId = null;
+  let target;
+  if (params.control) {
+    const resolved = resolveControlTarget(params.control, params.framework);
+    linkId = await createEvidenceLink(db, documentId, "control", resolved.id, now, params.note);
+    target = { type: "control", id: resolved.id, label: resolved.label };
+  }
+  return {
+    document_id: documentId,
+    link_id: linkId,
+    title,
+    file_path: filePath,
+    sha256,
+    size_bytes: stat.size,
+    target
+  };
+}
+async function linkEvidenceToFinding(db, params) {
+  const documentId = await resolveEvidenceId(db, params.doc);
+  const findingId2 = await resolveFindingId2(db, params.finding);
+  const linkId = await createEvidenceLink(db, documentId, "finding", findingId2, params.now ?? (/* @__PURE__ */ new Date()).toISOString(), params.note);
+  return { document_id: documentId, finding_id: findingId2, link_id: linkId };
+}
+async function listEvidence(db) {
+  const documents = await db.select().from(evidence_documents).orderBy(asc(evidence_documents.imported_at));
+  const links = await db.select().from(evidence_links).orderBy(asc(evidence_links.created_at));
+  return { documents, links };
+}
+function printImportResult(result) {
+  process.stdout.write(
+    `Imported evidence
+  doc: ${result.document_id.slice(0, 12)}  ${result.title}
+  sha: ${result.sha256.slice(0, 16)}\u2026  ${result.size_bytes} bytes
+`
+  );
+  if (result.target) {
+    process.stdout.write(`  linked: ${result.target.type} ${result.target.id}
+`);
+  }
+  process.stdout.write("\n");
+}
+function printEvidenceList(rows) {
+  if (rows.documents.length === 0) {
+    process.stdout.write("No evidence documents imported yet.\n\n");
+    return;
+  }
+  const linksByDoc = /* @__PURE__ */ new Map();
+  for (const link of rows.links) {
+    const arr = linksByDoc.get(link.evidence_id) ?? [];
+    arr.push(link);
+    linksByDoc.set(link.evidence_id, arr);
+  }
+  for (const doc of rows.documents) {
+    process.stdout.write(`${doc.id.slice(0, 12)}  ${doc.title}
+`);
+    process.stdout.write(`  ${doc.file_path}
+`);
+    const links = linksByDoc.get(doc.id) ?? [];
+    if (links.length === 0) {
+      process.stdout.write(`  no linked controls or findings
+`);
+    } else {
+      for (const link of links) {
+        process.stdout.write(`  ${link.target_type}: ${link.target_id}${link.note ? ` \u2014 ${link.note}` : ""}
+`);
+      }
+    }
+  }
+  process.stdout.write("\n");
+}
+function printHelp() {
+  process.stdout.write(
+    `Usage: chron evidence <command> [options]
+
+Commands:
+  import --file=<path> [--control=<id>] [--framework=<name>] [--note=<text>]
+  list
+  link --doc=<id-prefix> --finding=<id-prefix> [--note=<text>]
+
+Examples:
+  chron evidence import --file=soc2-policy.pdf --control=CC6.1
+  chron evidence link --doc=8f3a7c9e --finding=4d2a1b0c --note="Access policy covers this change"
+`
+  );
+}
+async function runEvidence(args2) {
+  const [subcommand, ...rest] = args2;
+  if (!subcommand || subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+    printHelp();
+    return;
+  }
+  const db = await initDb();
+  if (subcommand === "import") {
+    const file = argValue(rest, "file");
+    if (!file) throw new Error("--file=<path> is required");
+    const result = await importEvidenceDocument(db, {
+      file,
+      control: argValue(rest, "control"),
+      framework: argValue(rest, "framework"),
+      note: argValue(rest, "note")
+    });
+    if (hasFlag(rest, "json")) process.stdout.write(`${JSON.stringify(result, null, 2)}
+`);
+    else printImportResult(result);
+    return;
+  }
+  if (subcommand === "list") {
+    const rows = await listEvidence(db);
+    if (hasFlag(rest, "json")) process.stdout.write(`${JSON.stringify(rows, null, 2)}
+`);
+    else printEvidenceList(rows);
+    return;
+  }
+  if (subcommand === "link") {
+    const doc = argValue(rest, "doc");
+    const finding = argValue(rest, "finding");
+    if (!doc) throw new Error("--doc=<id-prefix> is required");
+    if (!finding) throw new Error("--finding=<id-prefix> is required");
+    const result = await linkEvidenceToFinding(db, { doc, finding, note: argValue(rest, "note") });
+    if (hasFlag(rest, "json")) process.stdout.write(`${JSON.stringify(result, null, 2)}
+`);
+    else {
+      process.stdout.write(
+        `Linked evidence
+  doc: ${result.document_id.slice(0, 12)}
+  finding: ${result.finding_id.slice(0, 12)}
+
+`
+      );
+    }
+    return;
+  }
+  throw new Error(`Unknown evidence command: ${subcommand}`);
+}
+var import_crypto9, import_path12, import_fs16, FW_LABELS4;
+var init_evidence = __esm({
+  "src/cli/evidence.ts"() {
+    "use strict";
+    import_crypto9 = require("crypto");
+    import_path12 = require("path");
+    import_fs16 = require("fs");
+    init_drizzle_orm();
+    init_db2();
+    init_schema();
+    init_control_map();
+    FW_LABELS4 = {
+      soc2: "SOC 2",
+      iso27001: "ISO 27001",
+      euaiact: "EU AI Act",
+      "nist-ai-rmf": "NIST AI RMF"
+    };
+  }
+});
+
 // src/cli/index.ts
 var [, , command, ...args] = process.argv;
 async function main() {
@@ -24067,7 +24353,7 @@ async function main() {
     case "help":
     case "--help":
     case "-h":
-      printHelp();
+      printHelp2();
       break;
     case "history": {
       const { runHistory: runHistory2 } = await Promise.resolve().then(() => (init_history(), history_exports));
@@ -24159,16 +24445,21 @@ async function main() {
       await runEvents2(args);
       break;
     }
+    case "evidence": {
+      const { runEvidence: runEvidence2 } = await Promise.resolve().then(() => (init_evidence(), evidence_exports));
+      await runEvidence2(args);
+      break;
+    }
     default: {
       process.stdout.write(`Unknown command: ${command}
 
 `);
-      printHelp();
+      printHelp2();
       process.exit(1);
     }
   }
 }
-function printHelp() {
+function printHelp2() {
   process.stdout.write(
     `Usage: chron <command> [options]
 
@@ -24190,6 +24481,7 @@ Commands:
   dashboard       Generate a static HTML intelligence dashboard (no server)
   patterns        Detect repeated signals across sessions \u2014 org-level risk patterns
   events          Build and emit SIEM risk events from patterns and attention scores
+  evidence        Import and link policy/evidence documents to controls or findings
   update          Update chron to the latest version
 
 Options (history):
@@ -24248,6 +24540,11 @@ Options (events):
   --since=<range>     Limit to sessions since: 7d, 30d, or YYYY-MM-DD
   --json              Output event array as JSON (pipe into Splunk, jq, etc.)
   --emit              Send events to all configured SIEM targets (env vars or ~/.chron/config.json)
+
+Options (evidence):
+  import --file=<path> [--control=<id>] [--framework=<name>] [--note=<text>]
+  list [--json]
+  link --doc=<id-prefix> --finding=<id-prefix> [--note=<text>]
 
 Options (dashboard):
   --since=<range>     Limit list view to sessions since: 7d, 30d, or YYYY-MM-DD
