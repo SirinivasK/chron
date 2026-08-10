@@ -6132,7 +6132,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash9 } = require("crypto");
+    var { randomBytes, createHash: createHash10 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -6800,7 +6800,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash9("sha1").update(key + GUID).digest("base64");
+        const digest = createHash10("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -7169,7 +7169,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash9 } = require("crypto");
+    var { createHash: createHash10 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -7476,7 +7476,7 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest = createHash9("sha1").update(key + GUID).digest("base64");
+        const digest = createHash10("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -16457,10 +16457,11 @@ __export(schema_exports, {
   evidence_links: () => evidence_links,
   messages: () => messages,
   review_findings: () => review_findings,
+  review_requirements: () => review_requirements,
   secrets_detected: () => secrets_detected,
   sessions: () => sessions
 });
-var sessions, messages, secrets_detected, review_findings, evidence_documents, evidence_links;
+var sessions, messages, secrets_detected, review_findings, evidence_documents, review_requirements, evidence_links;
 var init_schema = __esm({
   "src/db/schema.ts"() {
     "use strict";
@@ -16514,6 +16515,17 @@ var init_schema = __esm({
       size_bytes: integer("size_bytes").notNull(),
       imported_at: text("imported_at").notNull(),
       metadata: text("metadata")
+    });
+    review_requirements = sqliteTable("review_requirements", {
+      id: text("id").primaryKey(),
+      session_id: text("session_id").notNull().references(() => sessions.id),
+      reason: text("reason", { enum: ["secrets_detected", "auth_code_change", "infra_code_change", "high_attention", "critical_finding"] }).notNull(),
+      severity: text("severity", { enum: ["high", "critical"] }).notNull(),
+      required_by: text("required_by").notNull(),
+      status: text("status", { enum: ["pending", "reviewed", "expired"] }).notNull(),
+      reviewer: text("reviewer"),
+      reviewed_at: text("reviewed_at"),
+      created_at: text("created_at").notNull()
     });
     evidence_links = sqliteTable("evidence_links", {
       id: text("id").primaryKey(),
@@ -16637,6 +16649,18 @@ var init_db2 = __esm({
     updated_at TEXT NOT NULL,
     FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
   )`,
+      `CREATE TABLE IF NOT EXISTS review_requirements (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    reason TEXT NOT NULL CHECK (reason IN ('secrets_detected', 'auth_code_change', 'infra_code_change', 'high_attention', 'critical_finding')),
+    severity TEXT NOT NULL CHECK (severity IN ('high', 'critical')),
+    required_by TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('pending', 'reviewed', 'expired')),
+    reviewer TEXT,
+    reviewed_at TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+  )`,
       `CREATE TABLE IF NOT EXISTS evidence_documents (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
@@ -16661,6 +16685,9 @@ var init_db2 = __esm({
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_message_id ON secrets_detected(message_id)`,
       `CREATE INDEX IF NOT EXISTS idx_review_findings_session_id ON review_findings(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_review_findings_status ON review_findings(status)`,
+      `CREATE INDEX IF NOT EXISTS idx_review_requirements_session_id ON review_requirements(session_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_review_requirements_status ON review_requirements(status)`,
+      `CREATE INDEX IF NOT EXISTS idx_review_requirements_required_by ON review_requirements(required_by)`,
       `CREATE INDEX IF NOT EXISTS idx_evidence_links_evidence_id ON evidence_links(evidence_id)`,
       `CREATE INDEX IF NOT EXISTS idx_evidence_links_target ON evidence_links(target_type, target_id)`,
       `CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
@@ -18082,7 +18109,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.44",
+      version: "0.1.45",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -22589,6 +22616,156 @@ var init_risk2 = __esm({
   }
 });
 
+// src/review/queue.ts
+function matchesSignal(content, patterns) {
+  try {
+    const fp = (JSON.parse(content).file_path ?? "").toLowerCase();
+    return patterns.some((p) => fp.includes(p));
+  } catch {
+    return false;
+  }
+}
+function reqId(sessionId, reason) {
+  return (0, import_crypto8.createHash)("sha256").update(`${sessionId}:${reason}`).digest("hex");
+}
+function addHours(iso, hours) {
+  return new Date(Date.parse(iso) + hours * 36e5).toISOString();
+}
+function flagReasons(params) {
+  const results = [];
+  if (params.secretCount > 0) {
+    results.push({ reason: "secrets_detected", severity: "high" });
+  }
+  if (params.codeContents.some((c) => matchesSignal(c, AUTH_SIGNAL.patterns))) {
+    results.push({ reason: "auth_code_change", severity: "high" });
+  }
+  if (params.codeContents.some((c) => matchesSignal(c, INFRA_SIGNAL.patterns))) {
+    results.push({ reason: "infra_code_change", severity: "high" });
+  }
+  if (params.score >= 50) {
+    results.push({ reason: "high_attention", severity: params.band === "critical" ? "critical" : "high" });
+  }
+  const hasCriticalOrHigh = params.openFindingRuleIds.some((id) => {
+    const sev = SEVERITY_MAP2.get(id);
+    return sev === "critical" || sev === "high";
+  });
+  if (hasCriticalOrHigh) {
+    const hasCritical = params.openFindingRuleIds.some((id) => SEVERITY_MAP2.get(id) === "critical");
+    results.push({ reason: "critical_finding", severity: hasCritical ? "critical" : "high" });
+  }
+  return results;
+}
+async function scanAndFlagSessions(db, since, now) {
+  const sessionRows = since ? await db.select({ id: sessions.id }).from(sessions).where(sql`${sessions.updated_at} >= ${since}`) : await db.select({ id: sessions.id }).from(sessions);
+  const sessionIds = sessionRows.map((r) => r.id);
+  if (sessionIds.length > 0) {
+    await db.$client.execute({
+      sql: `UPDATE review_requirements SET status = 'expired'
+            WHERE status = 'pending' AND required_by < ?
+              AND session_id IN (${sessionIds.map(() => "?").join(",")})`,
+      args: [now, ...sessionIds]
+    });
+  }
+  if (sessionIds.length === 0) return { newFlags: 0, scanned: 0 };
+  const [secretRows, codeRows, findingRows, scoreMap] = await Promise.all([
+    db.select({ session_id: secrets_detected.session_id, count: sql`count(*)` }).from(secrets_detected).where(inArray(secrets_detected.session_id, sessionIds)).groupBy(secrets_detected.session_id),
+    db.select({ session_id: messages.session_id, content: messages.content }).from(messages).where(and(inArray(messages.session_id, sessionIds), eq(messages.event_type, "code_change"))),
+    db.select({ session_id: review_findings.session_id, rule_id: review_findings.rule_id }).from(review_findings).where(and(inArray(review_findings.session_id, sessionIds), eq(review_findings.status, "open"))),
+    scoreSessionsBatch(db, sessionIds)
+  ]);
+  const secretMap = new Map(secretRows.map((r) => [r.session_id, Number(r.count)]));
+  const codeMap = /* @__PURE__ */ new Map();
+  for (const r of codeRows) {
+    const arr = codeMap.get(r.session_id) ?? [];
+    arr.push(r.content);
+    codeMap.set(r.session_id, arr);
+  }
+  const findingMap = /* @__PURE__ */ new Map();
+  for (const r of findingRows) {
+    const arr = findingMap.get(r.session_id) ?? [];
+    arr.push(r.rule_id);
+    findingMap.set(r.session_id, arr);
+  }
+  const requiredBy = addHours(now, 48);
+  let inserted = 0;
+  for (const { id: sessionId } of sessionRows) {
+    const score = scoreMap.get(sessionId) ?? { score: 0, band: "normal", reasons: [], signals: { secrets: 0, code_changes: 0, findings: 0 } };
+    const reasons = flagReasons({
+      secretCount: secretMap.get(sessionId) ?? 0,
+      codeContents: codeMap.get(sessionId) ?? [],
+      score: score.score,
+      band: score.band,
+      openFindingRuleIds: findingMap.get(sessionId) ?? []
+    });
+    for (const { reason, severity } of reasons) {
+      const id = reqId(sessionId, reason);
+      const result = await db.$client.execute({
+        sql: `INSERT INTO review_requirements (id, session_id, reason, severity, required_by, status, reviewer, reviewed_at, created_at)
+              VALUES (?, ?, ?, ?, ?, 'pending', NULL, NULL, ?)
+              ON CONFLICT(id) DO NOTHING`,
+        args: [id, sessionId, reason, severity, requiredBy, now]
+      });
+      if (Number(result.rowsAffected) > 0) inserted++;
+    }
+  }
+  return { newFlags: inserted, scanned: sessionIds.length };
+}
+async function markReviewed(db, sessionIdPrefix, reviewer, now) {
+  const prefix = sessionIdPrefix.trim();
+  const rows = await db.select({ id: sessions.id }).from(sessions).where(sql`${sessions.id} LIKE ${prefix + "%"}`).limit(2);
+  if (rows.length === 0) throw new Error(`Session not found: ${prefix}`);
+  if (rows.length > 1) throw new Error(`Session id prefix is ambiguous: ${prefix}. Use more characters.`);
+  const sessionId = rows[0].id;
+  const result = await db.$client.execute({
+    sql: `UPDATE review_requirements SET status = 'reviewed', reviewer = ?, reviewed_at = ?
+          WHERE session_id = ? AND status IN ('pending', 'expired')`,
+    args: [reviewer, now, sessionId]
+  });
+  return { sessionId, count: Number(result.rowsAffected) };
+}
+async function listRequirements(db) {
+  return db.select().from(review_requirements).orderBy(review_requirements.created_at);
+}
+function computeStats(requirements, now, scannedCount = 0) {
+  let pending = 0, overdue = 0, reviewed = 0, expired = 0, withinSla = 0;
+  for (const r of requirements) {
+    if (r.status === "reviewed") {
+      reviewed++;
+      if (r.reviewed_at && r.reviewed_at <= r.required_by) withinSla++;
+    } else if (r.status === "expired") {
+      expired++;
+      overdue++;
+    } else {
+      if (r.required_by < now) overdue++;
+      else pending++;
+    }
+  }
+  const flagged = new Set(requirements.map((r) => r.session_id)).size;
+  const flagRate = scannedCount > 0 ? flagged / scannedCount : 0;
+  const highFlagRate = flagRate > 0.2;
+  const reasonBreakdown = {};
+  for (const r of requirements) {
+    reasonBreakdown[r.reason] = (reasonBreakdown[r.reason] ?? 0) + 1;
+  }
+  return { pending, overdue, reviewed, expired, withinSla, scanned: scannedCount, flagged, flagRate, highFlagRate, reasonBreakdown };
+}
+var import_crypto8, SEVERITY_MAP2, AUTH_SIGNAL, INFRA_SIGNAL;
+var init_queue2 = __esm({
+  "src/review/queue.ts"() {
+    "use strict";
+    import_crypto8 = require("crypto");
+    init_drizzle_orm();
+    init_schema();
+    init_risk();
+    init_rules();
+    SEVERITY_MAP2 = new Map(
+      Object.values(FRAMEWORKS).flat().map((r) => [r.id, r.severity])
+    );
+    AUTH_SIGNAL = CODE_SIGNALS.find((s) => s.label.includes("auth"));
+    INFRA_SIGNAL = CODE_SIGNALS.find((s) => s.label.includes("production"));
+  }
+});
+
 // src/cli/session-detail.ts
 var session_detail_exports = {};
 __export(session_detail_exports, {
@@ -23192,6 +23369,73 @@ function buildCoverageSummary() {
   </table>
   <p class="dim" style="font-size:11px;margin-top:4px">Covered does not mean compliant. Session evidence supports control review \u2014 it does not replace it.</p>`;
 }
+function buildReviewQueueSection(requirements, now, scannedCount) {
+  const stats = computeStats(requirements, now, scannedCount);
+  const total = stats.pending + stats.overdue + stats.reviewed + stats.expired;
+  const slaPct = stats.reviewed > 0 ? Math.round(stats.withinSla / stats.reviewed * 100) : null;
+  const flagPct = stats.scanned > 0 ? Math.round(stats.flagRate * 100) : null;
+  const flagCls = flagPct === null ? "" : flagPct > 20 ? "bad" : flagPct > 10 ? "warn" : "good";
+  const bars = `
+  <div class="sla-bar">
+    <div>
+      <div class="sla-num bad">${stats.overdue}</div>
+      <div class="sla-lbl">Overdue</div>
+    </div>
+    <div>
+      <div class="sla-num warn">${stats.pending}</div>
+      <div class="sla-lbl">Pending (within 48h)</div>
+    </div>
+    <div>
+      <div class="sla-num good">${stats.reviewed}</div>
+      <div class="sla-lbl">Reviewed</div>
+    </div>
+    <div>
+      <div class="sla-num ${slaPct === null ? "" : slaPct >= 80 ? "good" : slaPct >= 50 ? "warn" : "bad"}">${slaPct === null ? "\u2014" : slaPct + "%"}</div>
+      <div class="sla-lbl">Within 48h SLA</div>
+    </div>
+    <div>
+      <div class="sla-num ${flagCls}">${flagPct === null ? "\u2014" : flagPct + "%"}</div>
+      <div class="sla-lbl">Flag rate (${stats.flagged}/${stats.scanned})</div>
+    </div>
+  </div>`;
+  const warningHtml = stats.highFlagRate ? `<div class="flag-warning">\u26A0 Review queue is flagging more than 20% of sessions. Tune triggers to avoid review fatigue.</div>` : "";
+  const breakdownEntries = Object.entries(stats.reasonBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const breakdownHtml = breakdownEntries.length > 0 ? `<div class="reason-breakdown"><span class="dim">Top reasons:</span>  ` + breakdownEntries.map(([r, n]) => `${esc4(REASON_LABEL[r] ?? r)} (${n})`).join("  \xB7  ") + `</div>` : "";
+  if (total === 0) {
+    return bars + warningHtml + breakdownHtml + `<div class="no-data">No review requirements. Run <code>chron reviews</code> to scan sessions.</div>`;
+  }
+  const active = requirements.filter((r) => r.status !== "reviewed");
+  if (active.length === 0) {
+    return bars + warningHtml + breakdownHtml + `<div class="no-data">All flagged sessions have been reviewed.</div>`;
+  }
+  const grouped = /* @__PURE__ */ new Map();
+  for (const r of active) {
+    const arr = grouped.get(r.session_id) ?? [];
+    arr.push(r);
+    grouped.set(r.session_id, arr);
+  }
+  const trs = [...grouped.entries()].map(([sessionId, items]) => {
+    const overdue = items.some((r) => r.status === "expired" || r.required_by < now);
+    const badge = overdue ? `<span class="rev-overdue">OVERDUE</span>` : `<span class="rev-pending">PENDING</span>`;
+    const deadline = items[0].required_by;
+    const reasons = items.map(
+      (r) => `<span class="sev-badge sev-${r.severity}">${esc4(r.severity.toUpperCase())}</span> ${esc4(REASON_LABEL[r.reason] ?? r.reason)}`
+    ).join("<br>");
+    return `<tr>
+      <td>${badge}</td>
+      <td class="mono">${esc4(sessionId.slice(0, 8))}</td>
+      <td>${reasons}</td>
+      <td class="dim">${esc4(deadline.slice(0, 16).replace("T", " "))}</td>
+      <td class="mono" style="white-space:nowrap">chron reviews mark ${esc4(sessionId.slice(0, 8))} --reviewer=<name></td>
+    </tr>`;
+  }).join("\n");
+  return bars + warningHtml + breakdownHtml + `
+  <table>
+    <thead><tr><th>Status</th><th>Session</th><th>Reasons</th><th>Review by</th><th>Action</th></tr></thead>
+    <tbody>${trs}</tbody>
+  </table>
+  <p class="dim" style="font-size:11px;margin-top:4px">48-hour SLA from first detection. Review telemetry only \u2014 does not certify compliance adequacy.</p>`;
+}
 function buildNextActions(rows, findings, since) {
   const actions = [];
   const sinceFlag = since ? ` --since=${since}` : "";
@@ -23234,12 +23478,13 @@ function buildNextActions(rows, findings, since) {
   </div>`).join("");
   return `<div class="cli-box"><h3>Suggested next actions</h3><div class="next-action">${items}</div></div>`;
 }
-function buildDashboardHtml(rows, findings, since, sinceArg, generatedAt) {
+function buildDashboardHtml(rows, findings, requirements, scannedCount, since, sinceArg, generatedAt, now) {
   const criticalSessions = rows.filter((r) => r.risk.band === "critical").length;
   const highSessions = rows.filter((r) => r.risk.band === "high").length;
   const execSummary = buildExecSummary(rows.length, findings.length, criticalSessions, highSessions, sinceArg);
   const sessionsTable = buildSessionsTable(rows);
   const findingsSection = buildFindingsSection(findings);
+  const reviewQueueSection = buildReviewQueueSection(requirements, now, scannedCount);
   const coverageSummary = buildCoverageSummary();
   const nextActions = buildNextActions(rows, findings, sinceArg);
   const rangeLabel = sinceArg ? `\xB7 last ${sinceArg}` : "";
@@ -23268,6 +23513,9 @@ function buildDashboardHtml(rows, findings, since, sinceArg, generatedAt) {
 
   <h2>Open Findings</h2>
   ${findingsSection}
+
+  <h2>Review Queue</h2>
+  ${reviewQueueSection}
 
   <h2>Framework Coverage Summary</h2>
   ${coverageSummary}
@@ -23334,6 +23582,8 @@ async function runDashboard(args2) {
       finding: meta?.finding ?? f.rule_id
     };
   });
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const requirements = await listRequirements(db);
   const generatedAt = (/* @__PURE__ */ new Date()).toLocaleString("en-GB", {
     year: "numeric",
     month: "short",
@@ -23341,7 +23591,7 @@ async function runDashboard(args2) {
     hour: "2-digit",
     minute: "2-digit"
   });
-  const html = buildDashboardHtml(rows, findings, since, sinceArg, generatedAt);
+  const html = buildDashboardHtml(rows, findings, requirements, sessionIds.length, since, sinceArg, generatedAt, now);
   (0, import_fs14.writeFileSync)(outputArg, html, "utf8");
   const criticalCount = rows.filter((r) => r.risk.band === "critical").length;
   const highCount = rows.filter((r) => r.risk.band === "high").length;
@@ -23356,7 +23606,7 @@ async function runDashboard(args2) {
 `
   );
 }
-var import_fs14, RULE_META2, FW_LABELS2, DASHBOARD_CSS;
+var import_fs14, RULE_META2, FW_LABELS2, DASHBOARD_CSS, REASON_LABEL;
 var init_dashboard = __esm({
   "src/cli/dashboard.ts"() {
     "use strict";
@@ -23366,6 +23616,7 @@ var init_dashboard = __esm({
     init_schema();
     init_report();
     init_risk();
+    init_queue2();
     init_rules();
     init_control_map();
     RULE_META2 = new Map(
@@ -23413,6 +23664,17 @@ tr:last-child td { border-bottom: none; }
 .cov-needs { background:#fef9c3; color:#854d0e; border:1px solid #fde047; padding:1px 7px; border-radius:3px; font-size:11px; font-weight:600; display:inline-block; }
 .cov-manual { background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:1px 7px; border-radius:3px; font-size:11px; font-weight:600; display:inline-block; }
 .cov-out { background:#f8fafc; color:#94a3b8; border:1px solid #e2e8f0; padding:1px 7px; border-radius:3px; font-size:11px; font-weight:600; display:inline-block; }
+.rev-overdue { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; display:inline-block; }
+.rev-pending { background:#fffbeb; color:#d97706; border:1px solid #fde68a; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; display:inline-block; }
+.rev-ok { background:#f0fdf4; color:#166534; border:1px solid #86efac; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; display:inline-block; }
+.sla-bar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:14px 18px; margin-bottom:8px; }
+.sla-num { font-size:24px; font-weight:700; }
+.sla-num.bad { color:#dc2626; }
+.sla-num.warn { color:#d97706; }
+.sla-num.good { color:#16a34a; }
+.sla-lbl { font-size:11px; color:#64748b; }
+.flag-warning { background:#fef2f2; border:1px solid #fecaca; border-left:4px solid #dc2626; border-radius:4px; padding:9px 14px; margin:0 0 10px; font-size:12px; color:#374151; font-weight:500; }
+.reason-breakdown { font-size:11px; color:#64748b; margin:0 0 12px; }
 .cli-box { background:#0f172a; border-radius:8px; padding:16px 20px; margin-top:8px; }
 .cli-box h3 { color:#e2e8f0; margin-top:0; margin-bottom:10px; font-size:12px; text-transform:uppercase; letter-spacing:0.5px; }
 .cli-cmd { font-family:monospace; font-size:12px; color:#7dd3fc; margin-bottom:5px; }
@@ -23432,6 +23694,13 @@ tr:last-child td { border-bottom: none; }
   .cli-box { background: #1e293b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 `;
+    REASON_LABEL = {
+      secrets_detected: "Secret detected",
+      auth_code_change: "Auth/access-control code changed",
+      infra_code_change: "Infra/prod code changed",
+      high_attention: "High attention score",
+      critical_finding: "Critical or high compliance finding"
+    };
   }
 });
 
@@ -23441,7 +23710,7 @@ function band(count, medThreshold, highThreshold) {
   if (count >= medThreshold) return "medium";
   return "low";
 }
-function matchesSignal(content, patterns) {
+function matchesSignal2(content, patterns) {
   try {
     const fp = (JSON.parse(content).file_path ?? "").toLowerCase();
     return patterns.some((p) => fp.includes(p));
@@ -23482,7 +23751,7 @@ function detectPatterns(input, opts = {}) {
   for (const signal of CODE_SIGNALS) {
     const hitSessions = [];
     for (const [sessionId, contents] of input.codeChangesBySession) {
-      if (contents.some((c) => matchesSignal(c, signal.patterns))) {
+      if (contents.some((c) => matchesSignal2(c, signal.patterns))) {
         hitSessions.push(sessionId);
       }
     }
@@ -23783,7 +24052,7 @@ async function getAzureToken(tenantId, clientId, clientSecret) {
 }
 function getMachineId() {
   if (!_machineId) {
-    _machineId = "sha256:" + (0, import_crypto8.createHash)("sha256").update((0, import_os12.hostname)()).digest("hex").slice(0, 16);
+    _machineId = "sha256:" + (0, import_crypto9.createHash)("sha256").update((0, import_os12.hostname)()).digest("hex").slice(0, 16);
   }
   return _machineId;
 }
@@ -23914,13 +24183,13 @@ function emitRiskEvent(payload) {
     );
   }
 }
-var import_fs15, import_path11, import_crypto8, import_os12, import_package3, _splunkCache, _splunkCacheExpiry, _sentinelCache, _sentinelCacheExpiry, _azureTokenCache, _machineId;
+var import_fs15, import_path11, import_crypto9, import_os12, import_package3, _splunkCache, _splunkCacheExpiry, _sentinelCache, _sentinelCacheExpiry, _azureTokenCache, _machineId;
 var init_relay = __esm({
   "src/utils/relay.ts"() {
     "use strict";
     import_fs15 = require("fs");
     import_path11 = require("path");
-    import_crypto8 = require("crypto");
+    import_crypto9 = require("crypto");
     import_os12 = require("os");
     import_package3 = __toESM(require_package());
     if (process.env.CHRON_SPLUNK_INSECURE === "1") {
@@ -24108,7 +24377,7 @@ __export(evidence_exports, {
   runEvidence: () => runEvidence
 });
 function hash(input) {
-  return (0, import_crypto9.createHash)("sha256").update(input).digest("hex");
+  return (0, import_crypto10.createHash)("sha256").update(input).digest("hex");
 }
 function argValue(args2, name) {
   const prefix = `--${name}=`;
@@ -24325,11 +24594,11 @@ async function runEvidence(args2) {
   }
   throw new Error(`Unknown evidence command: ${subcommand}`);
 }
-var import_crypto9, import_path12, import_fs16, FW_LABELS4;
+var import_crypto10, import_path12, import_fs16, FW_LABELS4;
 var init_evidence = __esm({
   "src/cli/evidence.ts"() {
     "use strict";
-    import_crypto9 = require("crypto");
+    import_crypto10 = require("crypto");
     import_path12 = require("path");
     import_fs16 = require("fs");
     init_drizzle_orm();
@@ -24341,6 +24610,181 @@ var init_evidence = __esm({
       iso27001: "ISO 27001",
       euaiact: "EU AI Act",
       "nist-ai-rmf": "NIST AI RMF"
+    };
+  }
+});
+
+// src/cli/reviews.ts
+var reviews_exports = {};
+__export(reviews_exports, {
+  runReviews: () => runReviews
+});
+function fmtDt(iso) {
+  return iso.slice(0, 16).replace("T", " ");
+}
+function isOverdue(r, now) {
+  return r.status !== "reviewed" && r.required_by < now;
+}
+function groupBySession(reqs) {
+  const map = /* @__PURE__ */ new Map();
+  for (const r of reqs) {
+    const arr = map.get(r.session_id) ?? [];
+    arr.push(r);
+    map.set(r.session_id, arr);
+  }
+  return map;
+}
+function printReviewList(reqs, now, overdueOnly) {
+  const visible = overdueOnly ? reqs.filter((r) => isOverdue(r, now)) : reqs.filter((r) => r.status !== "reviewed");
+  if (visible.length === 0) {
+    const msg = overdueOnly ? "No overdue reviews." : "No pending reviews.";
+    process.stdout.write(`${DIM13}${msg}${RESET14}
+
+`);
+    return;
+  }
+  const grouped = groupBySession(visible);
+  for (const [sessionId, items] of grouped) {
+    const prefix = sessionId.slice(0, 8);
+    const hasOverdue = items.some((r) => isOverdue(r, now));
+    const badge = hasOverdue ? `${RED10}${BOLD14}OVERDUE${RESET14}` : `${YELLOW12}${BOLD14}PENDING${RESET14}`;
+    const deadline = items[0].required_by;
+    process.stdout.write(`  ${badge}  ${CYAN12}${prefix}${RESET14}  ${DIM13}review by ${fmtDt(deadline)}${RESET14}
+`);
+    for (const r of items) {
+      const color = SEV_COLOR4[r.severity] ?? DIM13;
+      process.stdout.write(`    ${DIM13}\xB7${RESET14} ${color}${r.severity}${RESET14}  ${REASON_LABEL2[r.reason] ?? r.reason}
+`);
+    }
+    process.stdout.write("\n");
+  }
+}
+function printAllList(reqs, now) {
+  if (reqs.length === 0) {
+    process.stdout.write(`${DIM13}No review requirements recorded yet. Run chron reviews to scan.${RESET14}
+
+`);
+    return;
+  }
+  const grouped = groupBySession(reqs);
+  for (const [sessionId, items] of grouped) {
+    const prefix = sessionId.slice(0, 8);
+    const isRev = items[0].status === "reviewed";
+    const statusStr = isRev ? `${GREEN8}${BOLD14}REVIEWED${RESET14}` : isOverdue(items[0], now) ? `${RED10}${BOLD14}OVERDUE${RESET14}` : `${YELLOW12}${BOLD14}PENDING${RESET14}`;
+    process.stdout.write(`  ${statusStr}  ${CYAN12}${prefix}${RESET14}`);
+    if (isRev && items[0].reviewer) {
+      process.stdout.write(`  ${DIM13}by ${items[0].reviewer} at ${fmtDt(items[0].reviewed_at)}${RESET14}`);
+    }
+    process.stdout.write("\n");
+    for (const r of items) {
+      const color = SEV_COLOR4[r.severity] ?? DIM13;
+      process.stdout.write(`    ${DIM13}\xB7${RESET14} ${color}${r.severity}${RESET14}  ${REASON_LABEL2[r.reason] ?? r.reason}
+`);
+    }
+    process.stdout.write("\n");
+  }
+}
+async function runReviews(args2) {
+  const [subcommand] = args2;
+  if (subcommand === "mark") {
+    const sessionPrefix = args2[1];
+    if (!sessionPrefix) throw new Error("Usage: chron reviews mark <session-id-prefix> --reviewer=<name>");
+    const reviewer = args2.find((a) => a.startsWith("--reviewer="))?.slice("--reviewer=".length) ?? "";
+    if (!reviewer) throw new Error("--reviewer=<name> is required");
+    const db2 = await initDb();
+    const now2 = (/* @__PURE__ */ new Date()).toISOString();
+    const { sessionId, count } = await markReviewed(db2, sessionPrefix, reviewer, now2);
+    if (count === 0) {
+      process.stdout.write(`${DIM13}No pending review requirements found for session ${sessionId.slice(0, 8)}.${RESET14}
+
+`);
+    } else {
+      process.stdout.write(
+        `${GREEN8}${BOLD14}\u2713 Marked reviewed${RESET14}  ${CYAN12}${sessionId.slice(0, 8)}${RESET14}  ${DIM13}by ${reviewer}  \xB7  ${count} requirement${count === 1 ? "" : "s"}${RESET14}
+
+`
+      );
+    }
+    return;
+  }
+  const sinceArg = args2.find((a) => a.startsWith("--since="))?.split("=")[1] ?? null;
+  const jsonMode = args2.includes("--json");
+  const overdueOnly = args2.includes("--overdue");
+  const showAll = args2.includes("--all");
+  const since = sinceArg ? parseSince(sinceArg) : null;
+  const db = await initDb();
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const { newFlags, scanned } = await scanAndFlagSessions(db, since, now);
+  const reqs = await listRequirements(db);
+  const stats = computeStats(reqs, now, scanned);
+  if (jsonMode) {
+    process.stdout.write(JSON.stringify({ stats, requirements: reqs }, null, 2) + "\n");
+    return;
+  }
+  const rangeLabel = sinceArg ? `last ${sinceArg}` : "all time";
+  const slaLabel = stats.reviewed > 0 ? `${Math.round(stats.withinSla / stats.reviewed * 100)}% within 48h SLA` : "no completed reviews";
+  const flagPct = stats.scanned > 0 ? Math.round(stats.flagRate * 100) : null;
+  const flagLabel = flagPct !== null ? `flag rate ${flagPct}% (${stats.flagged}/${stats.scanned})` : "";
+  process.stdout.write(`
+${BOLD14}Chron Reviews${RESET14}  ${DIM13}${rangeLabel}${RESET14}
+`);
+  process.stdout.write(
+    `${DIM13}${stats.overdue} overdue  \xB7  ${stats.pending} pending  \xB7  ${stats.reviewed} reviewed  \xB7  ${slaLabel}` + (flagLabel ? `  \xB7  ${flagLabel}` : "") + `${RESET14}` + (newFlags > 0 ? `  ${DIM13}(+${newFlags} new)${RESET14}` : "") + "\n\n"
+  );
+  if (stats.highFlagRate) {
+    process.stdout.write(
+      `${YELLOW12}${BOLD14}\u26A0  Review queue is flagging more than 20% of sessions. Tune triggers to avoid review fatigue.${RESET14}
+
+`
+    );
+  }
+  const breakdownEntries = Object.entries(stats.reasonBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  if (breakdownEntries.length > 0) {
+    const parts = breakdownEntries.map(([r, n]) => `${REASON_LABEL2[r] ?? r} (${n})`);
+    process.stdout.write(`${DIM13}Reasons: ${parts.join("  \xB7  ")}${RESET14}
+
+`);
+  }
+  if (showAll) {
+    printAllList(reqs, now);
+  } else {
+    printReviewList(reqs, now, overdueOnly);
+    if (!overdueOnly && stats.reviewed > 0) {
+      process.stdout.write(`${DIM13}${stats.reviewed} reviewed session${stats.reviewed === 1 ? "" : "s"} hidden \u2014 use --all to include${RESET14}
+
+`);
+    }
+  }
+  if (reqs.filter((r) => r.status !== "reviewed").length > 0) {
+    process.stdout.write(`${DIM13}To mark reviewed: chron reviews mark <session-prefix> --reviewer=<name>${RESET14}
+
+`);
+  }
+}
+var RESET14, BOLD14, DIM13, RED10, YELLOW12, GREEN8, CYAN12, REASON_LABEL2, SEV_COLOR4;
+var init_reviews = __esm({
+  "src/cli/reviews.ts"() {
+    "use strict";
+    init_db2();
+    init_report();
+    init_queue2();
+    RESET14 = "\x1B[0m";
+    BOLD14 = "\x1B[1m";
+    DIM13 = "\x1B[2m";
+    RED10 = "\x1B[31m";
+    YELLOW12 = "\x1B[33m";
+    GREEN8 = "\x1B[32m";
+    CYAN12 = "\x1B[36m";
+    REASON_LABEL2 = {
+      secrets_detected: "secret detected",
+      auth_code_change: "auth/access-control code changed",
+      infra_code_change: "infra/prod code changed",
+      high_attention: "high attention score",
+      critical_finding: "critical or high compliance finding"
+    };
+    SEV_COLOR4 = {
+      critical: RED10,
+      high: YELLOW12
     };
   }
 });
@@ -24450,6 +24894,11 @@ async function main() {
       await runEvidence2(args);
       break;
     }
+    case "reviews": {
+      const { runReviews: runReviews2 } = await Promise.resolve().then(() => (init_reviews(), reviews_exports));
+      await runReviews2(args);
+      break;
+    }
     default: {
       process.stdout.write(`Unknown command: ${command}
 
@@ -24482,6 +24931,7 @@ Commands:
   patterns        Detect repeated signals across sessions \u2014 org-level risk patterns
   events          Build and emit SIEM risk events from patterns and attention scores
   evidence        Import and link policy/evidence documents to controls or findings
+  reviews         Review queue \u2014 flag sessions for human review, track SLA compliance
   update          Update chron to the latest version
 
 Options (history):
@@ -24540,6 +24990,13 @@ Options (events):
   --since=<range>     Limit to sessions since: 7d, 30d, or YYYY-MM-DD
   --json              Output event array as JSON (pipe into Splunk, jq, etc.)
   --emit              Send events to all configured SIEM targets (env vars or ~/.chron/config.json)
+
+Options (reviews):
+  --since=<range>       Limit session scan to: 7d, 30d, or YYYY-MM-DD
+  --overdue             Show only overdue reviews (past 48h deadline)
+  --all                 Include reviewed and expired sessions
+  --json                Machine-readable JSON output
+  mark <id> --reviewer=<name>  Mark all pending requirements for a session as reviewed
 
 Options (evidence):
   import --file=<path> [--control=<id>] [--framework=<name>] [--note=<text>]

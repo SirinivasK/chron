@@ -22671,10 +22671,11 @@ __export(schema_exports, {
   evidence_links: () => evidence_links,
   messages: () => messages,
   review_findings: () => review_findings,
+  review_requirements: () => review_requirements,
   secrets_detected: () => secrets_detected,
   sessions: () => sessions
 });
-var sessions, messages, secrets_detected, review_findings, evidence_documents, evidence_links;
+var sessions, messages, secrets_detected, review_findings, evidence_documents, review_requirements, evidence_links;
 var init_schema = __esm({
   "src/db/schema.ts"() {
     "use strict";
@@ -22728,6 +22729,17 @@ var init_schema = __esm({
       size_bytes: integer2("size_bytes").notNull(),
       imported_at: text("imported_at").notNull(),
       metadata: text("metadata")
+    });
+    review_requirements = sqliteTable("review_requirements", {
+      id: text("id").primaryKey(),
+      session_id: text("session_id").notNull().references(() => sessions.id),
+      reason: text("reason", { enum: ["secrets_detected", "auth_code_change", "infra_code_change", "high_attention", "critical_finding"] }).notNull(),
+      severity: text("severity", { enum: ["high", "critical"] }).notNull(),
+      required_by: text("required_by").notNull(),
+      status: text("status", { enum: ["pending", "reviewed", "expired"] }).notNull(),
+      reviewer: text("reviewer"),
+      reviewed_at: text("reviewed_at"),
+      created_at: text("created_at").notNull()
     });
     evidence_links = sqliteTable("evidence_links", {
       id: text("id").primaryKey(),
@@ -22851,6 +22863,18 @@ var init_db2 = __esm({
     updated_at TEXT NOT NULL,
     FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
   )`,
+      `CREATE TABLE IF NOT EXISTS review_requirements (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    reason TEXT NOT NULL CHECK (reason IN ('secrets_detected', 'auth_code_change', 'infra_code_change', 'high_attention', 'critical_finding')),
+    severity TEXT NOT NULL CHECK (severity IN ('high', 'critical')),
+    required_by TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('pending', 'reviewed', 'expired')),
+    reviewer TEXT,
+    reviewed_at TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+  )`,
       `CREATE TABLE IF NOT EXISTS evidence_documents (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
@@ -22875,6 +22899,9 @@ var init_db2 = __esm({
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_message_id ON secrets_detected(message_id)`,
       `CREATE INDEX IF NOT EXISTS idx_review_findings_session_id ON review_findings(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_review_findings_status ON review_findings(status)`,
+      `CREATE INDEX IF NOT EXISTS idx_review_requirements_session_id ON review_requirements(session_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_review_requirements_status ON review_requirements(status)`,
+      `CREATE INDEX IF NOT EXISTS idx_review_requirements_required_by ON review_requirements(required_by)`,
       `CREATE INDEX IF NOT EXISTS idx_evidence_links_evidence_id ON evidence_links(evidence_id)`,
       `CREATE INDEX IF NOT EXISTS idx_evidence_links_target ON evidence_links(target_type, target_id)`,
       `CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
@@ -38517,7 +38544,7 @@ var init_time = __esm({
 var version4;
 var init_package = __esm({
   "package.json"() {
-    version4 = "0.1.44";
+    version4 = "0.1.45";
   }
 });
 
