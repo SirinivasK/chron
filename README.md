@@ -6,7 +6,7 @@
 
 AI tools show when you sent a message. Chron logs when the AI responded too — and keeps a permanent, queryable, tamper-evident record of the AI work happening across your tools.
 
-Works with Claude Desktop, Claude Code, Cursor, Windsurf, Codex, and any MCP-compatible AI tool.
+Works with Claude Desktop, Claude Code, Cursor, Windsurf, Codex, Gemini CLI, and any MCP-compatible AI tool.
 
 ---
 
@@ -46,28 +46,16 @@ Need runtime policy enforcement for AI agents? CLAIIM adds agent identity, appro
 
 ## Install
 
-**MCP server** (for Claude Desktop, Claude Code, Cursor, Windsurf):
-
-Add to your AI tool's MCP config:
-
-```json
-{
-  "mcpServers": {
-    "chron": {
-      "command": "npx",
-      "args": ["-y", "chron-mcp"]
-    }
-  }
-}
-```
-
-**CLI** (for `chron history`, `chron connect`, `chron export`, etc.):
+**CLI + MCP server:**
 
 ```bash
 npm install -g chron-mcp
+chron doctor --fix
 ```
 
 > `npx chron-mcp` starts the MCP server only — it does not put the `chron` CLI command in your PATH. You need a global install for the CLI.
+
+`chron doctor --fix` adds Chron to supported AI clients automatically: Claude Desktop, Claude Code, Cursor, Gemini CLI, Windsurf, and Codex. Restart your AI client after it runs.
 
 First run creates `~/.chron/chron.db` automatically. No database setup, no env vars, no migrations.
 
@@ -81,6 +69,19 @@ For CI or automation:
 
 ```bash
 chron doctor --json
+```
+
+Manual MCP config, if you need it:
+
+```json
+{
+  "mcpServers": {
+    "chron": {
+      "command": "npx",
+      "args": ["-y", "chron-mcp"]
+    }
+  }
+}
 ```
 
 ---
@@ -98,7 +99,7 @@ Commands:
   export          Export a session as markdown
   secrets         List detected secrets across sessions
   settings        View current configuration
-  connect         Connect to a SIEM or AI tool (codex, crowdstrike, sentinel, splunk)
+  connect         Connect to a SIEM or AI tool (codex, cursor, gemini, crowdstrike, sentinel, splunk)
   summary         Structured summary of a session (timeline, mutations, secrets)
   sign            Sign a session with its Ed25519 key — produces a .chron.sig file
   verify          Verify a session's hash chain and Ed25519 signature
@@ -198,12 +199,12 @@ Reviewed findings do not reappear as noise on the next run. New findings — fro
 - Local Chron version vs npm latest
 - `npx chron-mcp --version`
 - DB directory and key directory write access
-- Claude Desktop, Claude Code, Cursor, and Windsurf MCP config presence
+- Claude Desktop, Claude Code, Cursor, Gemini CLI, Windsurf, and Codex MCP config presence
 - Whether Chron is configured in each MCP client
 - Optional HTTP mode health check on `/health`
 - Splunk, Sentinel, and LogScale configuration via env vars or `~/.chron/config.json`
 
-Warnings for optional integrations do not fail the command. Real failures exit with code `1`.
+Run `chron doctor --fix` to add the Chron MCP server to supported clients automatically. Warnings for optional integrations do not fail the command. Real failures exit with code `1`.
 
 ---
 
@@ -265,7 +266,44 @@ Then add the skill hook to `~/.claude/settings.json`:
 
 ### Cursor
 
-Edit `~/.cursor/mcp.json`:
+Run:
+
+```bash
+chron connect cursor
+chron doctor --verify-logging cursor
+```
+
+This writes both global and project workspace files:
+
+- `~/.cursor/mcp.json`
+- `.cursor/mcp.json`
+- `~/.cursor/rules/chron.mdc`
+- `.cursor/rules/chron.mdc`
+
+Cursor must be restarted after setup. Use Cursor Agent mode, then run the verify command above to confirm a real Chron session appears in the local database.
+
+Manual MCP config:
+
+```json
+{
+  "mcpServers": {
+    "chron": {
+      "command": "npx",
+      "args": ["-y", "chron-mcp"]
+    }
+  }
+}
+```
+
+### Gemini CLI
+
+Run:
+
+```bash
+chron connect gemini
+```
+
+Or edit `~/.gemini/settings.json`:
 
 ```json
 {

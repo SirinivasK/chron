@@ -12,9 +12,9 @@ Chron is **locally deployed**. The SQLite database lives on the user's own machi
 
 ## Session Start
 
-Call `init_session` with `resume_latest: true`, the session title, and `ai_tool`. It returns `session_id`, `message_count`, `first_message_at`, and recent `messages` in a single call — no separate `get_session_history` needed.
+At the start of a brand-new user task, call `init_session` with the session title and `ai_tool`. Do not set `resume_latest` for normal new tasks. It returns `session_id`, `message_count`, `first_message_at`, and recent `messages` in a single call — no separate `get_session_history` needed.
 
-`resume_latest: true` means: if any sessions already exist, return the most recently active one (by `updated_at`) instead of creating a new session. This survives context compaction — the `session_id` is recovered from the DB even when it was lost from memory. If no sessions exist yet, a new one is created normally using the provided title.
+Use `resume_latest: true` only for compaction recovery, when you know this is the same user task but the previous `session_id` was lost. In that case, use a recovery title such as `COMPACTED — lost session id`. Chron will only resume a recent same-tool session; otherwise it creates a new session.
 
 If `message_count > 0`, display:
 > "Resuming session: [N messages] since [first_message_at]"
