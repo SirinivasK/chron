@@ -1182,7 +1182,7 @@ var init_sql = __esm({
         return new SQL([new StringChunk(str)]);
       }
       sql22.raw = raw;
-      function join14(chunks, separator) {
+      function join15(chunks, separator) {
         const result = [];
         for (const [i, chunk] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -1192,7 +1192,7 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql22.join = join14;
+      sql22.join = join15;
       function identifier(value) {
         return new Name(value);
       }
@@ -14190,7 +14190,7 @@ var init_select2 = __esm({
           const baseTableName = this.tableName;
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table)) this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join14) => join14.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join15) => join15.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -15076,7 +15076,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join14) => join14.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join15) => join15.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -20559,6 +20559,7 @@ __export(connect_exports, {
   ensureClaudeCodeInstructions: () => ensureClaudeCodeInstructions,
   ensureCodexInstructions: () => ensureCodexInstructions,
   ensureCodexProjectInstructions: () => ensureCodexProjectInstructions,
+  ensureCodexShellWrapper: () => ensureCodexShellWrapper,
   ensureCursorInstructions: () => ensureCursorInstructions,
   ensureCursorProjectInstructions: () => ensureCursorProjectInstructions,
   ensureGeminiInstructions: () => ensureGeminiInstructions,
@@ -20666,6 +20667,46 @@ function ensureCursorProjectInstructions(cwd = process.cwd()) {
   } catch (err) {
     return { status: "error", error: String(err.message) };
   }
+}
+function buildCodexShellWrapper() {
+  return `${SHELL_WRAPPER_START}
+# Chron: write project logging instructions before Codex reads AGENTS.md
+codex() {
+  command chron bootstrap 2>/dev/null
+  command codex "$@"
+}
+${SHELL_WRAPPER_END}`;
+}
+function writeShellWrapper(rcFile) {
+  try {
+    (0, import_fs7.mkdirSync)((0, import_path6.dirname)(rcFile), { recursive: true });
+    const wrapper = buildCodexShellWrapper();
+    if ((0, import_fs7.existsSync)(rcFile)) {
+      const existing = (0, import_fs7.readFileSync)(rcFile, "utf8");
+      if (existing.includes(SHELL_WRAPPER_START)) {
+        const startIdx = existing.indexOf(SHELL_WRAPPER_START);
+        const endIdx = existing.indexOf(SHELL_WRAPPER_END);
+        if (endIdx > startIdx) {
+          const newContent = existing.slice(0, startIdx) + wrapper + existing.slice(endIdx + SHELL_WRAPPER_END.length);
+          (0, import_fs7.writeFileSync)(rcFile, newContent, "utf8");
+          return { status: "added" };
+        }
+        return { status: "already" };
+      }
+      (0, import_fs7.writeFileSync)(rcFile, existing.trimEnd() + "\n\n" + wrapper + "\n", "utf8");
+    } else {
+      (0, import_fs7.writeFileSync)(rcFile, wrapper + "\n", "utf8");
+    }
+    return { status: "added" };
+  } catch (err) {
+    return { status: "error", error: String(err.message) };
+  }
+}
+function ensureCodexShellWrapper() {
+  const home = (0, import_os6.homedir)();
+  const zshResult = writeShellWrapper((0, import_path6.join)(home, ".zshrc"));
+  const bashResult = writeShellWrapper((0, import_path6.join)(home, ".bashrc"));
+  return { zsh: zshResult.status, bash: bashResult.status };
 }
 function prompt(rl, question) {
   return new Promise((resolve2) => rl.question(question, resolve2));
@@ -21140,6 +21181,11 @@ ${BOLD5}Connect Chron \u2192 Codex${RESET5}
       process.stdout.write(`${YELLOW3}!${RESET5} Could not write ./AGENTS.md: ${pr2.error}
 `);
     }
+    const wr2 = ensureCodexShellWrapper();
+    if (wr2.zsh === "added" || wr2.bash === "added") {
+      process.stdout.write(`${GREEN2}\u2713${RESET5} Shell wrapper added \u2014 codex will auto-bootstrap AGENTS.md on every launch
+`);
+    }
     process.stdout.write("\n");
     _printCodexNextSteps();
     return;
@@ -21174,6 +21220,11 @@ ${BOLD5}Connect Chron \u2192 Codex${RESET5}
 `);
   } else {
     process.stdout.write(`${YELLOW3}!${RESET5} Could not write ./AGENTS.md: ${pr.error}
+`);
+  }
+  const wr = ensureCodexShellWrapper();
+  if (wr.zsh === "added" || wr.bash === "added") {
+    process.stdout.write(`${GREEN2}\u2713${RESET5} Shell wrapper added \u2014 codex will auto-bootstrap AGENTS.md on every launch
 `);
   }
   process.stdout.write("\n");
@@ -21351,7 +21402,7 @@ Integrations:
     }
   }
 }
-var import_readline, import_os6, import_path6, import_fs7, RESET5, BOLD5, DIM4, CYAN4, GREEN2, RED2, YELLOW3, CHRON_SKILL_SENTINEL, CHRON_BLOCK_START, CHRON_BLOCK_END, CHRON_INSTRUCTION_SENTINEL, CHRON_INSTRUCTION_BLOCK_START;
+var import_readline, import_os6, import_path6, import_fs7, RESET5, BOLD5, DIM4, CYAN4, GREEN2, RED2, YELLOW3, CHRON_SKILL_SENTINEL, CHRON_BLOCK_START, CHRON_BLOCK_END, SHELL_WRAPPER_START, SHELL_WRAPPER_END, CHRON_INSTRUCTION_SENTINEL, CHRON_INSTRUCTION_BLOCK_START;
 var init_connect = __esm({
   "src/cli/connect.ts"() {
     "use strict";
@@ -21370,6 +21421,8 @@ var init_connect = __esm({
     CHRON_SKILL_SENTINEL = "<!-- chron-skill -->";
     CHRON_BLOCK_START = "<!-- chron-skill-start -->";
     CHRON_BLOCK_END = "<!-- chron-skill-end -->";
+    SHELL_WRAPPER_START = "# chron-codex-wrapper-start";
+    SHELL_WRAPPER_END = "# chron-codex-wrapper-end";
     CHRON_INSTRUCTION_SENTINEL = CHRON_SKILL_SENTINEL;
     CHRON_INSTRUCTION_BLOCK_START = CHRON_BLOCK_START;
   }
@@ -25998,6 +26051,10 @@ async function runSetup() {
     } catch {
     }
   }
+  try {
+    ensureCodexShellWrapper();
+  } catch {
+  }
   if (added.length > 0) {
     process.stdout.write(`Chron: configured MCP for ${added.join(", ")} \u2014 restart to begin logging.
 `);
@@ -26012,6 +26069,52 @@ var init_setup = __esm({
     import_fs19 = require("fs");
     init_mcp_config();
     init_connect();
+  }
+});
+
+// src/bootstrap.ts
+var bootstrap_exports = {};
+__export(bootstrap_exports, {
+  bootstrapProjectLogging: () => bootstrapProjectLogging
+});
+function isRealProject(cwd) {
+  return PROJECT_INDICATORS.some((indicator) => (0, import_fs20.existsSync)((0, import_path15.join)(cwd, indicator)));
+}
+function bootstrapProjectLogging(cwd = process.cwd()) {
+  try {
+    if (process.env.CHRON_DISABLE_PROJECT_BOOTSTRAP === "1") return;
+    if (cwd === (0, import_os14.homedir)()) return;
+    if (cwd.includes("node_modules")) return;
+    if (cwd.includes(".npm")) return;
+    if (!isRealProject(cwd)) return;
+    const codexResult = ensureCodexProjectInstructions(cwd);
+    if (codexResult.status === "added") {
+      process.stderr.write("Chron: project logging instructions installed in AGENTS.md\n");
+    }
+    const cursorResult = ensureCursorProjectInstructions(cwd);
+    if (cursorResult.status === "added") {
+      process.stderr.write("Chron: project logging instructions installed in .cursor/rules/chron.mdc\n");
+    }
+  } catch {
+  }
+}
+var import_fs20, import_os14, import_path15, PROJECT_INDICATORS;
+var init_bootstrap = __esm({
+  "src/bootstrap.ts"() {
+    "use strict";
+    import_fs20 = require("fs");
+    import_os14 = require("os");
+    import_path15 = require("path");
+    init_connect();
+    PROJECT_INDICATORS = [
+      ".git",
+      "package.json",
+      "go.mod",
+      "Cargo.toml",
+      "pyproject.toml",
+      "pom.xml",
+      ".gitignore"
+    ];
   }
 });
 
@@ -26128,6 +26231,11 @@ async function main() {
     case "setup": {
       const { runSetup: runSetup2 } = await Promise.resolve().then(() => (init_setup(), setup_exports));
       await runSetup2();
+      break;
+    }
+    case "bootstrap": {
+      const { bootstrapProjectLogging: bootstrapProjectLogging2 } = await Promise.resolve().then(() => (init_bootstrap(), bootstrap_exports));
+      bootstrapProjectLogging2(process.cwd());
       break;
     }
     default: {
