@@ -20057,7 +20057,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.51",
+      version: "0.1.52",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -20557,6 +20557,7 @@ __export(connect_exports, {
   CHRON_INSTRUCTION_BLOCK_START: () => CHRON_INSTRUCTION_BLOCK_START,
   CHRON_INSTRUCTION_SENTINEL: () => CHRON_INSTRUCTION_SENTINEL,
   ensureClaudeCodeInstructions: () => ensureClaudeCodeInstructions,
+  ensureCodexGlobalAgentsMd: () => ensureCodexGlobalAgentsMd,
   ensureCodexInstructions: () => ensureCodexInstructions,
   ensureCodexProjectInstructions: () => ensureCodexProjectInstructions,
   ensureCodexShellWrapper: () => ensureCodexShellWrapper,
@@ -20633,6 +20634,12 @@ function ensureClaudeCodeInstructions() {
 function ensureCodexInstructions() {
   return writeInstructionFile(
     (0, import_path6.join)((0, import_os6.homedir)(), ".codex", "instructions.md"),
+    buildChronInstructions("codex")
+  );
+}
+function ensureCodexGlobalAgentsMd() {
+  return writeInstructionFile(
+    (0, import_path6.join)((0, import_os6.homedir)(), "AGENTS.md"),
     buildChronInstructions("codex")
   );
 }
@@ -21181,6 +21188,11 @@ ${BOLD5}Connect Chron \u2192 Codex${RESET5}
       process.stdout.write(`${YELLOW3}!${RESET5} Could not write ./AGENTS.md: ${pr2.error}
 `);
     }
+    const gr2 = ensureCodexGlobalAgentsMd();
+    if (gr2.status === "added") {
+      process.stdout.write(`${GREEN2}\u2713${RESET5} Chron logging instructions written to ~/AGENTS.md (global fallback for Codex desktop)
+`);
+    }
     const wr2 = ensureCodexShellWrapper();
     if (wr2.zsh === "added" || wr2.bash === "added") {
       process.stdout.write(`${GREEN2}\u2713${RESET5} Shell wrapper added \u2014 codex will auto-bootstrap AGENTS.md on every launch
@@ -21220,6 +21232,14 @@ ${BOLD5}Connect Chron \u2192 Codex${RESET5}
 `);
   } else {
     process.stdout.write(`${YELLOW3}!${RESET5} Could not write ./AGENTS.md: ${pr.error}
+`);
+  }
+  const gr = ensureCodexGlobalAgentsMd();
+  if (gr.status === "added") {
+    process.stdout.write(`${GREEN2}\u2713${RESET5} Chron logging instructions written to ~/AGENTS.md (global fallback for Codex desktop)
+`);
+  } else if (gr.status === "already") {
+    process.stdout.write(`${GREEN2}\u2713${RESET5} ~/AGENTS.md already has Chron instructions
 `);
   }
   const wr = ensureCodexShellWrapper();
@@ -22418,6 +22438,7 @@ ${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}${fixM
     const instructionTargets = [
       { name: "Claude Code", write: ensureClaudeCodeInstructions, file: "~/CLAUDE.md" },
       { name: "Codex", write: ensureCodexInstructions, file: "~/.codex/instructions.md" },
+      { name: "Codex (~/AGENTS.md)", write: ensureCodexGlobalAgentsMd, file: "~/AGENTS.md" },
       { name: "Codex (AGENTS.md)", write: ensureCodexProjectInstructions, file: "./AGENTS.md" },
       { name: "Gemini CLI", write: ensureGeminiInstructions, file: "~/.gemini/GEMINI.md" },
       { name: "Cursor global", write: ensureCursorInstructions, file: "~/.cursor/rules/chron.mdc" },
@@ -22630,6 +22651,7 @@ var init_doctor = __esm({
     INSTRUCTION_PATHS = {
       "Claude Code": (0, import_path10.join)((0, import_os9.homedir)(), "CLAUDE.md"),
       "Codex (global)": (0, import_path10.join)((0, import_os9.homedir)(), ".codex", "instructions.md"),
+      "Codex (~/AGENTS.md)": (0, import_path10.join)((0, import_os9.homedir)(), "AGENTS.md"),
       "Codex (project AGENTS.md)": (0, import_path10.join)(process.cwd(), "AGENTS.md"),
       "Gemini CLI": (0, import_path10.join)((0, import_os9.homedir)(), ".gemini", "GEMINI.md"),
       "Cursor (global)": (0, import_path10.join)((0, import_os9.homedir)(), ".cursor", "rules", "chron.mdc"),
@@ -26045,7 +26067,7 @@ async function runSetup() {
     } catch {
     }
   }
-  for (const write of [ensureClaudeCodeInstructions, ensureCodexInstructions, ensureCursorInstructions, ensureGeminiInstructions]) {
+  for (const write of [ensureClaudeCodeInstructions, ensureCodexInstructions, ensureCodexGlobalAgentsMd, ensureCursorInstructions, ensureGeminiInstructions]) {
     try {
       write();
     } catch {
