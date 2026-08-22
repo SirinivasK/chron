@@ -20057,7 +20057,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.52",
+      version: "0.1.53",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -26140,6 +26140,92 @@ var init_bootstrap = __esm({
   }
 });
 
+// src/cli/session.ts
+var session_exports = {};
+__export(session_exports, {
+  runSession: () => runSession
+});
+async function resolveSession(prefix) {
+  const db = await initDb();
+  const all = await db.select({ id: sessions.id, title: sessions.title, signature: sessions.signature }).from(sessions);
+  const matches = all.filter((s) => s.id.startsWith(prefix));
+  if (matches.length === 0) {
+    process.stderr.write(`${RED11}\u2717${RESET15} No session found matching prefix: ${prefix}
+`);
+    process.exit(1);
+  }
+  if (matches.length > 1) {
+    process.stderr.write(
+      `${RED11}\u2717${RESET15} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
+`
+    );
+    process.exit(1);
+  }
+  return { db, session: matches[0] };
+}
+async function renameSession(args2) {
+  const [prefix, ...titleParts] = args2;
+  const newTitle = titleParts.join(" ").trim().replace(/^["']|["']$/g, "");
+  if (!prefix || !newTitle) {
+    process.stderr.write(
+      `Usage: chron session rename <session-id-prefix> "<new title>"
+`
+    );
+    process.exit(1);
+  }
+  const { db, session } = await resolveSession(prefix);
+  if (session.signature) {
+    process.stderr.write(
+      `${RED11}\u2717${RESET15} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
+  Use ${CYAN13}chron session rename${RESET15} only on unsigned sessions.
+`
+    );
+    process.exit(1);
+  }
+  const oldTitle = session.title;
+  await db.update(sessions).set({ title: newTitle }).where(eq(sessions.id, session.id));
+  process.stdout.write(
+    `${GREEN9}\u2713${RESET15} Session ${CYAN13}${session.id.slice(0, 8)}${RESET15} renamed
+  ${DIM14}before:${RESET15} ${oldTitle}
+  ${DIM14}after: ${RESET15} ${BOLD15}${newTitle}${RESET15}
+
+Messages and timestamps are unchanged.
+`
+  );
+}
+async function runSession(args2) {
+  const [subcommand, ...rest] = args2;
+  switch (subcommand) {
+    case "rename":
+      await renameSession(rest);
+      break;
+    default:
+      process.stdout.write(
+        `Usage: chron session <subcommand>
+
+Subcommands:
+  rename <session-id-prefix> "<new title>"   Rename a session title
+`
+      );
+      if (subcommand) process.exit(1);
+  }
+}
+var RESET15, BOLD15, DIM14, CYAN13, GREEN9, RED11;
+var init_session3 = __esm({
+  "src/cli/session.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    init_db2();
+    init_schema();
+    RESET15 = "\x1B[0m";
+    BOLD15 = "\x1B[1m";
+    DIM14 = "\x1B[2m";
+    CYAN13 = "\x1B[36m";
+    GREEN9 = "\x1B[32m";
+    RED11 = "\x1B[31m";
+  }
+});
+
 // src/cli/index.ts
 var [, , command, ...args] = process.argv;
 async function main() {
@@ -26260,6 +26346,11 @@ async function main() {
       bootstrapProjectLogging2(process.cwd());
       break;
     }
+    case "session": {
+      const { runSession: runSession2 } = await Promise.resolve().then(() => (init_session3(), session_exports));
+      await runSession2(args);
+      break;
+    }
     default: {
       process.stdout.write(`Unknown command: ${command}
 
@@ -26274,6 +26365,7 @@ function printHelp2() {
     `Usage: chron <command> [options]
 
 Commands:
+  session         Manage sessions (rename, ...)
   history         List sessions or show full log for a session
   report          Aggregate audit stats across sessions
   export          Export a session as markdown
