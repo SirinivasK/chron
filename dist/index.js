@@ -22682,7 +22682,7 @@ var init_schema = __esm({
     init_sqlite_core();
     sessions = sqliteTable("sessions", {
       id: text("id").primaryKey(),
-      title: text("title").notNull().unique(),
+      title: text("title").notNull(),
       ai_tool: text("ai_tool"),
       created_at: text("created_at").notNull(),
       updated_at: text("updated_at").notNull(),
@@ -22799,6 +22799,49 @@ async function initDb(dbPath) {
   if (!sessCols.includes("metadata")) {
     await client.execute("ALTER TABLE sessions ADD COLUMN metadata TEXT");
   }
+  const sessionsTableInfo = await client.execute(
+    "SELECT sql FROM sqlite_master WHERE type='table' AND name='sessions'"
+  );
+  const sessionsTableSql = String(sessionsTableInfo.rows[0]?.sql ?? "");
+  const hasLegacyTitleUnique = /\btitle\s+TEXT\s+NOT\s+NULL\s+UNIQUE\b/i.test(sessionsTableSql);
+  const compositeIdxExists = await client.execute(
+    "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_sessions_title_tool'"
+  );
+  if (hasLegacyTitleUnique || compositeIdxExists.rows.length === 0) {
+    await client.execute("PRAGMA foreign_keys = OFF");
+    await client.execute("BEGIN");
+    try {
+      await client.execute(`CREATE TABLE sessions_migration (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        ai_tool TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        parent_session_id TEXT,
+        external_ref TEXT,
+        public_key TEXT,
+        signature TEXT,
+        metadata TEXT
+      )`);
+      await client.execute(
+        "INSERT INTO sessions_migration SELECT id,title,ai_tool,created_at,updated_at,parent_session_id,external_ref,public_key,signature,metadata FROM sessions"
+      );
+      await client.execute("DROP TABLE sessions");
+      await client.execute("ALTER TABLE sessions_migration RENAME TO sessions");
+      await client.execute("COMMIT");
+    } catch (e) {
+      try {
+        await client.execute("ROLLBACK");
+      } catch {
+      }
+      throw e;
+    } finally {
+      await client.execute("PRAGMA foreign_keys = ON");
+    }
+    await client.execute(
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_title_tool ON sessions(title, COALESCE(ai_tool, ''))"
+    );
+  }
   const ftsCount = await client.execute("SELECT count(*) as n FROM messages_fts");
   const msgCount = await client.execute("SELECT count(*) as n FROM messages");
   if (Number(ftsCount.rows[0][0]) < Number(msgCount.rows[0][0])) {
@@ -22822,7 +22865,7 @@ var init_db2 = __esm({
     CREATE_SQL = [
       `CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
-    title TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
     ai_tool TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
@@ -22894,7 +22937,7 @@ var init_db2 = __esm({
     created_at TEXT NOT NULL,
     FOREIGN KEY (evidence_id) REFERENCES evidence_documents(id) ON DELETE CASCADE
   )`,
-      `CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_title ON sessions(title)`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_title_tool ON sessions(title, COALESCE(ai_tool, ''))`,
       `CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_session_id ON secrets_detected(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_message_id ON secrets_detected(message_id)`,
@@ -38546,7 +38589,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.53",
+      version: "0.1.55",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -39035,7 +39078,17 @@ function startSession(db) {
     } catch (e) {
       const isUnique = e?.message?.includes("UNIQUE constraint failed") || e?.code === "SQLITE_CONSTRAINT_UNIQUE" || e?.cause?.message?.includes("UNIQUE constraint failed") || e?.cause?.extendedCode === "SQLITE_CONSTRAINT_UNIQUE";
       if (!isUnique) throw e;
-      const existing = await db.select().from(sessions).where(eq(sessions.title, args.title)).limit(1);
+      const requestedTool = args.ai_tool ?? null;
+      const toolWhere = requestedTool !== null ? and(eq(sessions.title, args.title), eq(sessions.ai_tool, requestedTool)) : and(eq(sessions.title, args.title), isNull(sessions.ai_tool));
+      const existing = await db.select().from(sessions).where(toolWhere).limit(1);
+      if (existing.length === 0) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({ error: "session_title_conflict", message: `Title "${args.title}" is owned by a different AI tool. Use a distinct session title.` })
+          }]
+        };
+      }
       const session = existing[0];
       const [countRow] = await db.select({ count: sql`count(*)` }).from(messages).where(eq(messages.session_id, session.id));
       await db.update(sessions).set({ updated_at: now }).where(eq(sessions.id, session.id));
@@ -39120,7 +39173,12 @@ function initSession(db) {
     } catch (e) {
       const isUnique = e?.message?.includes("UNIQUE constraint failed") || e?.code === "SQLITE_CONSTRAINT_UNIQUE" || e?.cause?.message?.includes("UNIQUE constraint failed") || e?.cause?.extendedCode === "SQLITE_CONSTRAINT_UNIQUE";
       if (!isUnique) throw e;
-      const existing = await db.select().from(sessions).where(eq(sessions.title, args.title)).limit(1);
+      const requestedTool = args.ai_tool ?? null;
+      const toolWhere = requestedTool !== null ? and(eq(sessions.title, args.title), eq(sessions.ai_tool, requestedTool)) : and(eq(sessions.title, args.title), isNull(sessions.ai_tool));
+      const existing = await db.select().from(sessions).where(toolWhere).limit(1);
+      if (existing.length === 0) {
+        throw new Error(`session_title_conflict: title "${args.title}" is owned by a different AI tool`);
+      }
       const session = existing[0];
       await db.update(sessions).set({ updated_at: now }).where(eq(sessions.id, session.id));
       session_id = session.id;
@@ -39303,6 +39361,14 @@ function scanForSecrets(input) {
     deduped.sort((a, b) => a.priority - b.priority || a.start - b.start);
     deduped = deduplicateOverlaps(deduped);
   }
+  const possible = detectPossibleSecrets(input);
+  if (possible.length > 0) {
+    for (const s of possible) {
+      deduped.push({ ...s, priority: PATTERNS.length + 1 });
+    }
+    deduped.sort((a, b) => a.priority - b.priority || a.start - b.start);
+    deduped = deduplicateOverlaps(deduped);
+  }
   deduped.sort((a, b) => a.start - b.start);
   return deduped.map(({ priority: _p, ...s }) => annotate(s));
 }
@@ -39345,6 +39411,23 @@ function detectCredentialPairs(input, _existing) {
   }
   return results;
 }
+function detectPossibleSecrets(input) {
+  const results = [];
+  POSSIBLE_SECRET_RE.lastIndex = 0;
+  let match;
+  while ((match = POSSIBLE_SECRET_RE.exec(input)) !== null) {
+    const value = match[1];
+    if (!value) continue;
+    const valueStart = match.index + match[0].lastIndexOf(value);
+    results.push({
+      type: "possible_secret",
+      value,
+      start: valueStart,
+      end: valueStart + value.length
+    });
+  }
+  return results;
+}
 function deduplicateOverlaps(secrets) {
   const kept = [];
   for (const candidate of secrets) {
@@ -39353,7 +39436,7 @@ function deduplicateOverlaps(secrets) {
   }
   return kept;
 }
-var CONTEXT_WINDOW, DOB_KEYWORDS, PASS_KEYWORDS, SSN_KEYWORDS, PATTERNS, SEVERITY, CATEGORY, EMAIL_RE, PAIR_WINDOW;
+var CONTEXT_WINDOW, DOB_KEYWORDS, PASS_KEYWORDS, SSN_KEYWORDS, PATTERNS, SEVERITY, CATEGORY, EMAIL_RE, PAIR_WINDOW, POSSIBLE_SECRET_RE;
 var init_detect = __esm({
   "src/utils/detect.ts"() {
     "use strict";
@@ -39451,6 +39534,7 @@ var init_detect = __esm({
       url_credentials: "high",
       password: "high",
       credential_pair: "high",
+      possible_secret: "low",
       passport: "high",
       dob: "high",
       email: "medium",
@@ -39479,6 +39563,7 @@ var init_detect = __esm({
       url_credentials: "credential",
       password: "credential",
       credential_pair: "credential",
+      possible_secret: "credential",
       email: "contact",
       phone_us: "contact",
       phone_e164: "contact",
@@ -39487,6 +39572,7 @@ var init_detect = __esm({
     };
     EMAIL_RE = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
     PAIR_WINDOW = 100;
+    POSSIBLE_SECRET_RE = /\b(?:api[_\s-]?key|access[_\s-]?key|secret|token|credential|password)\b\s*(?:is\s*:?|[=:])?\s*["']?([A-Za-z0-9][A-Za-z0-9._\-]{11,127})["']?/gi;
   }
 });
 

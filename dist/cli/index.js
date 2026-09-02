@@ -2788,7 +2788,7 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync11 = (path) => fs.readFileSync(path, "utf-8");
+    var readFileSync12 = (path) => fs.readFileSync(path, "utf-8");
     var readFile = (path) => new Promise((resolve2, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
@@ -2800,7 +2800,7 @@ var require_filesystem = __commonJS({
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync11,
+      readFileSync: readFileSync12,
       readFile
     };
   }
@@ -2812,7 +2812,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync11 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync12 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command2 = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
@@ -2893,7 +2893,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync11(LDD_PATH);
+        const lddContent = readFileSync12(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -2950,7 +2950,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync11(LDD_PATH);
+        const lddContent = readFileSync12(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -16474,7 +16474,7 @@ var init_schema = __esm({
     init_sqlite_core();
     sessions = sqliteTable("sessions", {
       id: text("id").primaryKey(),
-      title: text("title").notNull().unique(),
+      title: text("title").notNull(),
       ai_tool: text("ai_tool"),
       created_at: text("created_at").notNull(),
       updated_at: text("updated_at").notNull(),
@@ -16591,6 +16591,49 @@ async function initDb(dbPath3) {
   if (!sessCols.includes("metadata")) {
     await client.execute("ALTER TABLE sessions ADD COLUMN metadata TEXT");
   }
+  const sessionsTableInfo = await client.execute(
+    "SELECT sql FROM sqlite_master WHERE type='table' AND name='sessions'"
+  );
+  const sessionsTableSql = String(sessionsTableInfo.rows[0]?.sql ?? "");
+  const hasLegacyTitleUnique = /\btitle\s+TEXT\s+NOT\s+NULL\s+UNIQUE\b/i.test(sessionsTableSql);
+  const compositeIdxExists = await client.execute(
+    "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_sessions_title_tool'"
+  );
+  if (hasLegacyTitleUnique || compositeIdxExists.rows.length === 0) {
+    await client.execute("PRAGMA foreign_keys = OFF");
+    await client.execute("BEGIN");
+    try {
+      await client.execute(`CREATE TABLE sessions_migration (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        ai_tool TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        parent_session_id TEXT,
+        external_ref TEXT,
+        public_key TEXT,
+        signature TEXT,
+        metadata TEXT
+      )`);
+      await client.execute(
+        "INSERT INTO sessions_migration SELECT id,title,ai_tool,created_at,updated_at,parent_session_id,external_ref,public_key,signature,metadata FROM sessions"
+      );
+      await client.execute("DROP TABLE sessions");
+      await client.execute("ALTER TABLE sessions_migration RENAME TO sessions");
+      await client.execute("COMMIT");
+    } catch (e) {
+      try {
+        await client.execute("ROLLBACK");
+      } catch {
+      }
+      throw e;
+    } finally {
+      await client.execute("PRAGMA foreign_keys = ON");
+    }
+    await client.execute(
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_title_tool ON sessions(title, COALESCE(ai_tool, ''))"
+    );
+  }
   const ftsCount = await client.execute("SELECT count(*) as n FROM messages_fts");
   const msgCount = await client.execute("SELECT count(*) as n FROM messages");
   if (Number(ftsCount.rows[0][0]) < Number(msgCount.rows[0][0])) {
@@ -16614,7 +16657,7 @@ var init_db2 = __esm({
     CREATE_SQL = [
       `CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
-    title TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
     ai_tool TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
@@ -16686,7 +16729,7 @@ var init_db2 = __esm({
     created_at TEXT NOT NULL,
     FOREIGN KEY (evidence_id) REFERENCES evidence_documents(id) ON DELETE CASCADE
   )`,
-      `CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_title ON sessions(title)`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_title_tool ON sessions(title, COALESCE(ai_tool, ''))`,
       `CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_session_id ON secrets_detected(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_message_id ON secrets_detected(message_id)`,
@@ -20057,7 +20100,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.53",
+      version: "0.1.55",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -20455,8 +20498,8 @@ var init_secrets = __esm({
 });
 
 // src/cli/mcp-config.ts
-function userMcpClientConfigs(home, cwd, platform3, appData) {
-  const claudeDesktop = platform3 === "win32" ? (0, import_path5.join)(appData ?? (0, import_path5.join)(home, "AppData", "Roaming"), "Claude", "claude_desktop_config.json") : (0, import_path5.join)(home, "Library", "Application Support", "Claude", "claude_desktop_config.json");
+function userMcpClientConfigs(home, cwd, platform4, appData) {
+  const claudeDesktop = platform4 === "win32" ? (0, import_path5.join)(appData ?? (0, import_path5.join)(home, "AppData", "Roaming"), "Claude", "claude_desktop_config.json") : (0, import_path5.join)(home, "Library", "Application Support", "Claude", "claude_desktop_config.json");
   return [
     { name: "Claude Desktop", path: claudeDesktop, type: "json", connectCommand: "chron doctor --fix" },
     { name: "Claude Code", path: (0, import_path5.join)(home, ".claude.json"), type: "json", connectCommand: "chron doctor --fix" },
@@ -22813,6 +22856,14 @@ function scanForSecrets(input) {
     deduped.sort((a, b) => a.priority - b.priority || a.start - b.start);
     deduped = deduplicateOverlaps(deduped);
   }
+  const possible = detectPossibleSecrets(input);
+  if (possible.length > 0) {
+    for (const s of possible) {
+      deduped.push({ ...s, priority: PATTERNS.length + 1 });
+    }
+    deduped.sort((a, b) => a.priority - b.priority || a.start - b.start);
+    deduped = deduplicateOverlaps(deduped);
+  }
   deduped.sort((a, b) => a.start - b.start);
   return deduped.map(({ priority: _p, ...s }) => annotate(s));
 }
@@ -22855,6 +22906,23 @@ function detectCredentialPairs(input, _existing) {
   }
   return results;
 }
+function detectPossibleSecrets(input) {
+  const results = [];
+  POSSIBLE_SECRET_RE.lastIndex = 0;
+  let match;
+  while ((match = POSSIBLE_SECRET_RE.exec(input)) !== null) {
+    const value = match[1];
+    if (!value) continue;
+    const valueStart = match.index + match[0].lastIndexOf(value);
+    results.push({
+      type: "possible_secret",
+      value,
+      start: valueStart,
+      end: valueStart + value.length
+    });
+  }
+  return results;
+}
 function deduplicateOverlaps(secrets) {
   const kept = [];
   for (const candidate of secrets) {
@@ -22863,7 +22931,7 @@ function deduplicateOverlaps(secrets) {
   }
   return kept;
 }
-var CONTEXT_WINDOW, DOB_KEYWORDS, PASS_KEYWORDS, SSN_KEYWORDS, PATTERNS, SEVERITY2, CATEGORY, EMAIL_RE, PAIR_WINDOW;
+var CONTEXT_WINDOW, DOB_KEYWORDS, PASS_KEYWORDS, SSN_KEYWORDS, PATTERNS, SEVERITY2, CATEGORY, EMAIL_RE, PAIR_WINDOW, POSSIBLE_SECRET_RE;
 var init_detect = __esm({
   "src/utils/detect.ts"() {
     "use strict";
@@ -22961,6 +23029,7 @@ var init_detect = __esm({
       url_credentials: "high",
       password: "high",
       credential_pair: "high",
+      possible_secret: "low",
       passport: "high",
       dob: "high",
       email: "medium",
@@ -22989,6 +23058,7 @@ var init_detect = __esm({
       url_credentials: "credential",
       password: "credential",
       credential_pair: "credential",
+      possible_secret: "credential",
       email: "contact",
       phone_us: "contact",
       phone_e164: "contact",
@@ -22997,12 +23067,14 @@ var init_detect = __esm({
     };
     EMAIL_RE = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
     PAIR_WINDOW = 100;
+    POSSIBLE_SECRET_RE = /\b(?:api[_\s-]?key|access[_\s-]?key|secret|token|credential|password)\b\s*(?:is\s*:?|[=:])?\s*["']?([A-Za-z0-9][A-Za-z0-9._\-]{11,127})["']?/gi;
   }
 });
 
 // src/cli/import.ts
 var import_exports = {};
 __export(import_exports, {
+  importClaudeAiConversations: () => importClaudeAiConversations,
   importGptConversations: () => importGptConversations,
   runImport: () => runImport
 });
@@ -23215,21 +23287,223 @@ ${BOLD9}chron import chatgpt${RESET9}  ${DIM8}${filePath}${RESET9}
 
 `);
 }
-async function runImport(args2) {
-  const [subcommand, filePath] = args2;
-  if (subcommand !== "chatgpt" || !filePath) {
-    process.stderr.write(
-      "Usage: chron import chatgpt <file>\n\n  <file>  Path to ChatGPT export ZIP (chatgpt-export-*.zip)\n          or extracted conversations.json\n\nExample:\n  chron import chatgpt ~/Downloads/chatgpt-export.zip\n  chron import chatgpt ~/Downloads/conversations.json\n"
-    );
-    process.exit(1);
+async function importClaudeAiConversations(db, conversations) {
+  let imported = 0;
+  let skipped = 0;
+  let totalMessages = 0;
+  let totalSecrets = 0;
+  const errors = [];
+  for (const conv of conversations) {
+    const externalRef = `claudeai:${conv.uuid}`;
+    const displayTitle = (conv.name ?? "Untitled").slice(0, 60);
+    const [existing] = await db.select({ id: sessions.id }).from(sessions).where(eq(sessions.external_ref, externalRef)).limit(1);
+    if (existing) {
+      skipped++;
+      continue;
+    }
+    const msgs = (conv.chat_messages ?? []).filter((m) => (m.sender === "human" || m.sender === "assistant") && m.text?.trim()).map((m) => ({
+      role: m.sender === "human" ? "user" : "assistant",
+      content: m.text.trim(),
+      ts: m.created_at ?? conv.created_at
+    }));
+    if (msgs.length === 0) {
+      skipped++;
+      continue;
+    }
+    try {
+      let sessionSecrets = 0;
+      await db.transaction(async (tx) => {
+        let baseTitle = (conv.name ?? "Untitled claude.ai conversation").slice(0, 500);
+        const [titleConflict] = await tx.select({ id: sessions.id }).from(sessions).where(eq(sessions.title, baseTitle)).limit(1);
+        if (titleConflict) {
+          const suffix = ` (${conv.uuid.slice(0, 8)})`;
+          baseTitle = `${baseTitle.slice(0, 500 - suffix.length)}${suffix}`;
+        }
+        const sessionId = v4_default();
+        let publicKey = null;
+        try {
+          publicKey = generateSessionKeypair(sessionId);
+        } catch {
+        }
+        await tx.insert(sessions).values({
+          id: sessionId,
+          title: baseTitle,
+          ai_tool: "claude",
+          created_at: conv.created_at,
+          updated_at: conv.updated_at,
+          external_ref: externalRef,
+          parent_session_id: null,
+          public_key: publicKey,
+          // Mark as imported so coverage and reports can distinguish
+          metadata: JSON.stringify({ source: "imported", import_format: "claudeai", partial: true })
+        });
+        let prevHash = null;
+        for (const m of msgs) {
+          const msgId = v4_default();
+          const hash2 = computeContentHash(sessionId, m.role, m.content, m.ts, prevHash, "message");
+          await tx.insert(messages).values({
+            id: msgId,
+            session_id: sessionId,
+            role: m.role,
+            content: m.content,
+            created_at: m.ts,
+            prev_hash: prevHash,
+            content_hash: hash2,
+            event_type: "message"
+          });
+          if (m.role === "user") {
+            const found = scanForSecrets(m.content);
+            if (found.length > 0) {
+              const now = (/* @__PURE__ */ new Date()).toISOString().replace("Z", "+00:00");
+              await tx.insert(secrets_detected).values(
+                found.map((s) => ({
+                  id: v4_default(),
+                  session_id: sessionId,
+                  message_id: msgId,
+                  type: s.type,
+                  masked_value: maskValue(s.value),
+                  detected_at: now
+                }))
+              );
+              sessionSecrets += found.length;
+              totalSecrets += found.length;
+            }
+          }
+          prevHash = hash2;
+        }
+      });
+      totalMessages += msgs.length;
+      imported++;
+      void sessionSecrets;
+    } catch (err) {
+      errors.push({ title: displayTitle, error: err?.message ?? String(err) });
+    }
   }
-  const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
-  if (!(0, import_fs13.existsSync)(resolved)) {
-    process.stderr.write(`File not found: ${resolved}
+  return { imported, skipped, totalMessages, totalSecrets, errors };
+}
+async function importClaudeAi(filePath) {
+  const db = await initDb();
+  let raw;
+  let tempDir = null;
+  const ext = (0, import_path11.extname)(filePath).toLowerCase();
+  if (ext === ".zip") {
+    tempDir = (0, import_path11.join)((0, import_os10.tmpdir)(), `chron-import-${Date.now()}`);
+    (0, import_fs13.mkdirSync)(tempDir, { recursive: true });
+    try {
+      (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "conversations.json", "-d", tempDir], { stdio: "pipe" });
+    } catch {
+      try {
+        (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "-d", tempDir], { stdio: "pipe" });
+      } catch {
+        process.stderr.write(`Failed to extract ${filePath}. Make sure 'unzip' is installed.
+`);
+        if (tempDir) (0, import_fs13.rmSync)(tempDir, { recursive: true, force: true });
+        process.exit(1);
+      }
+    }
+    const found = findFile(tempDir, "conversations.json");
+    if (!found) {
+      process.stderr.write(`conversations.json not found inside the ZIP.
+`);
+      if (tempDir) (0, import_fs13.rmSync)(tempDir, { recursive: true, force: true });
+      process.exit(1);
+    }
+    raw = (0, import_fs13.readFileSync)(found, "utf8");
+  } else if (ext === ".json") {
+    raw = (0, import_fs13.readFileSync)(filePath, "utf8");
+  } else {
+    process.stderr.write(`Unsupported file type: ${ext}. Pass the claude-ai-export-*.zip or conversations.json.
 `);
     process.exit(1);
   }
-  await importConversations(resolved);
+  let conversations;
+  try {
+    conversations = JSON.parse(raw);
+    if (!Array.isArray(conversations)) throw new Error("Expected a JSON array");
+  } catch {
+    process.stderr.write(`Failed to parse conversations JSON.
+`);
+    if (tempDir) (0, import_fs13.rmSync)(tempDir, { recursive: true, force: true });
+    process.exit(1);
+  }
+  process.stdout.write(`
+${BOLD9}chron import claude${RESET9}  ${DIM8}${filePath}${RESET9}
+`);
+  process.stdout.write(`${DIM8}${conversations.length} conversation(s) found${RESET9}
+`);
+  process.stdout.write(`${YELLOW7}Imported sessions are marked as partial evidence \u2014 tool calls and environment state are not captured in claude.ai exports.${RESET9}
+
+`);
+  const result = await importClaudeAiConversations(db, conversations);
+  for (const e of result.errors) {
+    process.stderr.write(`  ${YELLOW7}!${RESET9} Failed to import "${e.title}": ${e.error}
+`);
+  }
+  if (tempDir) (0, import_fs13.rmSync)(tempDir, { recursive: true, force: true });
+  process.stdout.write("\n");
+  process.stdout.write(`${BOLD9}Done.${RESET9}  `);
+  process.stdout.write(`${GREEN6}${result.imported} imported${RESET9}`);
+  if (result.skipped > 0) process.stdout.write(`  ${DIM8}${result.skipped} skipped (already in DB)${RESET9}`);
+  process.stdout.write(`  ${CYAN7}${result.totalMessages} messages total${RESET9}`);
+  if (result.totalSecrets > 0) process.stdout.write(`  ${YELLOW7}${result.totalSecrets} secret(s) detected${RESET9}`);
+  if (result.errors.length > 0) process.stdout.write(`  ${YELLOW7}${result.errors.length} error(s)${RESET9}`);
+  process.stdout.write("\n\n");
+  process.stdout.write(`${DIM8}Run 'chron history' to browse imported sessions.${RESET9}
+`);
+  process.stdout.write(`${DIM8}Run 'chron coverage' to see your full evidence boundary.${RESET9}
+
+`);
+}
+async function runImport(args2) {
+  const [subcommand, filePath] = args2;
+  if (subcommand === "chatgpt") {
+    if (!filePath) {
+      process.stderr.write(
+        "Usage: chron import chatgpt <file>\n\n  <file>  Path to ChatGPT export ZIP or conversations.json\nExample:\n  chron import chatgpt ~/Downloads/chatgpt-export.zip\n"
+      );
+      process.exit(1);
+    }
+    const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
+    if (!(0, import_fs13.existsSync)(resolved)) {
+      process.stderr.write(`File not found: ${resolved}
+`);
+      process.exit(1);
+    }
+    await importConversations(resolved);
+    return;
+  }
+  if (subcommand === "claude") {
+    if (!filePath) {
+      process.stderr.write(
+        'Usage: chron import claude <file>\n\n  <file>  Path to claude.ai data export ZIP or conversations.json\n\nHow to export from claude.ai:\n  1. Go to claude.ai \u2192 click your avatar \u2192 Settings \u2192 Privacy\n  2. Click "Export data" \u2192 Download the ZIP\n  3. Run: chron import claude ~/Downloads/claude-ai-export-*.zip\n'
+      );
+      process.exit(1);
+    }
+    const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
+    if (!(0, import_fs13.existsSync)(resolved)) {
+      process.stderr.write(`File not found: ${resolved}
+`);
+      process.exit(1);
+    }
+    await importClaudeAi(resolved);
+    return;
+  }
+  if (subcommand === "cursor" || subcommand === "codex") {
+    process.stderr.write(
+      `chron import ${subcommand}: not yet implemented.
+
+${subcommand === "cursor" ? "Cursor" : "Codex"} does not currently expose a local conversation export format.
+This importer will be added in a future release when an export path is available.
+
+Available importers: chatgpt, claude
+`
+    );
+    process.exit(1);
+  }
+  process.stderr.write(
+    "Usage: chron import <source> <file>\n\nSources:\n  chatgpt <file>   Import from ChatGPT data export (.zip or conversations.json)\n  claude  <file>   Import from claude.ai data export (.zip or conversations.json)\n\nImported sessions are marked as partial evidence \u2014 they lack tool calls,\nfile access records, and environment state captured in live Chron sessions.\n"
+  );
+  process.exit(1);
 }
 var import_fs13, import_path11, import_os10, import_child_process4, RESET9, BOLD9, DIM8, GREEN6, YELLOW7, CYAN7;
 var init_import = __esm({
@@ -26094,18 +26368,215 @@ var init_setup = __esm({
   }
 });
 
+// src/cli/coverage.ts
+var coverage_exports = {};
+__export(coverage_exports, {
+  computeCoverage: () => computeCoverage,
+  runCoverage: () => runCoverage
+});
+function checkConfigured(def, home, cwd) {
+  if (def.importOnly) return false;
+  const configs = userMcpClientConfigs(home, cwd, (0, import_os14.platform)(), process.env.APPDATA);
+  return def.configNames.some((name) => {
+    const c = configs.find((mc) => mc.name === name);
+    if (!c || !(0, import_fs20.existsSync)(c.path)) return false;
+    try {
+      const content = (0, import_fs20.readFileSync)(c.path, "utf8");
+      return c.type === "codex-toml" ? hasChronCodexToml(content) : hasChronJsonMcp(content) === true;
+    } catch {
+      return false;
+    }
+  });
+}
+function relativeTime(iso) {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 6e4);
+  if (mins < 2) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return "yesterday";
+  return `${days} days ago`;
+}
+function fmtDate7(iso) {
+  return iso.slice(0, 16).replace("T", " ");
+}
+async function computeCoverage(since) {
+  const db = await initDb();
+  const home = (0, import_os14.homedir)();
+  const cwd = process.cwd();
+  const baseQuery = since ? db.select({
+    ai_tool: sessions.ai_tool,
+    count: sql`count(*)`,
+    last: sql`max(${sessions.updated_at})`
+  }).from(sessions).where(gte(sessions.updated_at, since)).groupBy(sessions.ai_tool) : db.select({
+    ai_tool: sessions.ai_tool,
+    count: sql`count(*)`,
+    last: sql`max(${sessions.updated_at})`
+  }).from(sessions).groupBy(sessions.ai_tool);
+  const rows = await baseQuery;
+  const globalQuery = since ? db.select({
+    first: sql`min(${sessions.created_at})`,
+    last: sql`max(${sessions.updated_at})`,
+    total: sql`count(*)`
+  }).from(sessions).where(gte(sessions.updated_at, since)) : db.select({
+    first: sql`min(${sessions.created_at})`,
+    last: sql`max(${sessions.updated_at})`,
+    total: sql`count(*)`
+  }).from(sessions);
+  const globalRows = await globalQuery;
+  const global = globalRows[0];
+  const toolMap = /* @__PURE__ */ new Map();
+  for (const r of rows) {
+    if (r.ai_tool) toolMap.set(r.ai_tool, { count: Number(r.count), last: r.last });
+  }
+  const tools = [];
+  const seenTools = /* @__PURE__ */ new Set();
+  for (const def of KNOWN_TOOLS) {
+    const stats = def.aliases.map((alias) => toolMap.get(alias)).filter((stat2) => Boolean(stat2));
+    const stat = stats.length > 0 ? {
+      count: stats.reduce((sum, item) => sum + item.count, 0),
+      last: stats.map((item) => item.last).sort().at(-1)
+    } : void 0;
+    const configured = checkConfigured(def, home, cwd);
+    const hasSessions = (stat?.count ?? 0) > 0;
+    if (!configured && !hasSessions) continue;
+    if (seenTools.has(def.ai_tool)) continue;
+    seenTools.add(def.ai_tool);
+    for (const alias of def.aliases) seenTools.add(alias);
+    tools.push({
+      tool: def.label,
+      ai_tool: def.ai_tool,
+      configured,
+      import_only: def.importOnly,
+      sessions: stat?.count ?? 0,
+      last_seen: stat?.last ?? null
+    });
+  }
+  for (const [ai_tool, stat] of toolMap) {
+    if (!seenTools.has(ai_tool)) {
+      tools.push({ tool: ai_tool, ai_tool, configured: false, import_only: true, sessions: stat.count, last_seen: stat.last });
+    }
+  }
+  return {
+    boundary: { first: global?.first ?? null, latest: global?.last ?? null, total_sessions: Number(global?.total ?? 0) },
+    tools,
+    caveat: "Chron can only review sessions captured after logging was enabled. Earlier AI work is outside the evidence boundary unless imported.",
+    since
+  };
+}
+function printCoverage(r) {
+  process.stdout.write(`${BOLD15}Chron Coverage${RESET15}
+
+`);
+  if (r.since) {
+    process.stdout.write(`${DIM14}Filtered to sessions updated since ${r.since}${RESET15}
+
+`);
+  }
+  process.stdout.write(`${CYAN13}Evidence boundary${RESET15}
+`);
+  if (r.boundary.first) {
+    process.stdout.write(`  First logged session:  ${fmtDate7(r.boundary.first)}
+`);
+    process.stdout.write(`  Latest logged session: ${fmtDate7(r.boundary.latest)}
+`);
+    process.stdout.write(`  Total logged sessions: ${r.boundary.total_sessions}
+`);
+  } else {
+    process.stdout.write(`  ${YELLOW13}No sessions logged yet${RESET15}
+`);
+    process.stdout.write(`  Run ${CYAN13}chron doctor --fix${RESET15} to configure AI tool logging.
+`);
+  }
+  process.stdout.write("\n");
+  process.stdout.write(`${CYAN13}Tool coverage${RESET15}
+`);
+  if (r.tools.length === 0) {
+    process.stdout.write(`  ${DIM14}No AI tools configured or sessions logged yet${RESET15}
+`);
+  } else {
+    const labelW = Math.max(...r.tools.map((t) => t.tool.length), 10);
+    for (const t of r.tools) {
+      const label = t.tool.padEnd(labelW);
+      let configCol;
+      if (t.import_only) {
+        configCol = `${DIM14}import only  ${RESET15}`;
+      } else if (t.configured) {
+        configCol = `${GREEN9}configured \u2713 ${RESET15}`;
+      } else {
+        configCol = `${RED11}not configured${RESET15}`;
+      }
+      let sessionCol;
+      if (t.sessions === 0) {
+        sessionCol = `${YELLOW13}no sessions yet${RESET15}`;
+      } else {
+        const ago = t.last_seen ? relativeTime(t.last_seen) : "";
+        sessionCol = `${GREEN9}logged \u2713${RESET15}  ${DIM14}last seen ${ago}${RESET15}`;
+      }
+      process.stdout.write(`  ${label}  ${configCol}  ${sessionCol}
+`);
+    }
+  }
+  process.stdout.write("\n");
+  process.stdout.write(`${DIM14}Coverage caveat
+`);
+  process.stdout.write(`  ${r.caveat}${RESET15}
+`);
+}
+async function runCoverage(args2) {
+  const jsonMode = args2.includes("--json");
+  const sinceArg = args2.find((a) => a.startsWith("--since="))?.split("=")[1];
+  const since = sinceArg ? parseSince(sinceArg) : void 0;
+  const result = await computeCoverage(since);
+  if (jsonMode) {
+    process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+    return;
+  }
+  printCoverage(result);
+}
+var import_fs20, import_os14, RESET15, BOLD15, DIM14, GREEN9, YELLOW13, CYAN13, RED11, KNOWN_TOOLS;
+var init_coverage = __esm({
+  "src/cli/coverage.ts"() {
+    "use strict";
+    import_fs20 = require("fs");
+    import_os14 = require("os");
+    init_drizzle_orm();
+    init_db2();
+    init_schema();
+    init_mcp_config();
+    init_report();
+    RESET15 = "\x1B[0m";
+    BOLD15 = "\x1B[1m";
+    DIM14 = "\x1B[2m";
+    GREEN9 = "\x1B[32m";
+    YELLOW13 = "\x1B[33m";
+    CYAN13 = "\x1B[36m";
+    RED11 = "\x1B[31m";
+    KNOWN_TOOLS = [
+      { label: "Claude Code", ai_tool: "claude", aliases: ["claude", "Claude Code", "claude-code", "chron-chat/claude", "chron-chat/claude-cli"], configNames: ["Claude Code", "Claude Desktop"], importOnly: false },
+      { label: "Cursor", ai_tool: "cursor", aliases: ["cursor"], configNames: ["Cursor (global)", "Cursor (project)"], importOnly: false },
+      { label: "Codex", ai_tool: "codex", aliases: ["codex"], configNames: ["Codex (global)", "Codex (project)"], importOnly: false },
+      { label: "Gemini CLI", ai_tool: "gemini", aliases: ["gemini"], configNames: ["Gemini CLI"], importOnly: false },
+      { label: "Windsurf", ai_tool: "windsurf", aliases: ["windsurf"], configNames: ["Windsurf"], importOnly: false },
+      { label: "ChatGPT", ai_tool: "chatgpt", aliases: ["chatgpt"], configNames: [], importOnly: true }
+    ];
+  }
+});
+
 // src/bootstrap.ts
 var bootstrap_exports = {};
 __export(bootstrap_exports, {
   bootstrapProjectLogging: () => bootstrapProjectLogging
 });
 function isRealProject(cwd) {
-  return PROJECT_INDICATORS.some((indicator) => (0, import_fs20.existsSync)((0, import_path15.join)(cwd, indicator)));
+  return PROJECT_INDICATORS.some((indicator) => (0, import_fs21.existsSync)((0, import_path15.join)(cwd, indicator)));
 }
 function bootstrapProjectLogging(cwd = process.cwd()) {
   try {
     if (process.env.CHRON_DISABLE_PROJECT_BOOTSTRAP === "1") return;
-    if (cwd === (0, import_os14.homedir)()) return;
+    if (cwd === (0, import_os15.homedir)()) return;
     if (cwd.includes("node_modules")) return;
     if (cwd.includes(".npm")) return;
     if (!isRealProject(cwd)) return;
@@ -26120,12 +26591,12 @@ function bootstrapProjectLogging(cwd = process.cwd()) {
   } catch {
   }
 }
-var import_fs20, import_os14, import_path15, PROJECT_INDICATORS;
+var import_fs21, import_os15, import_path15, PROJECT_INDICATORS;
 var init_bootstrap = __esm({
   "src/bootstrap.ts"() {
     "use strict";
-    import_fs20 = require("fs");
-    import_os14 = require("os");
+    import_fs21 = require("fs");
+    import_os15 = require("os");
     import_path15 = require("path");
     init_connect();
     PROJECT_INDICATORS = [
@@ -26150,13 +26621,13 @@ async function resolveSession(prefix) {
   const all = await db.select({ id: sessions.id, title: sessions.title, signature: sessions.signature }).from(sessions);
   const matches = all.filter((s) => s.id.startsWith(prefix));
   if (matches.length === 0) {
-    process.stderr.write(`${RED11}\u2717${RESET15} No session found matching prefix: ${prefix}
+    process.stderr.write(`${RED12}\u2717${RESET16} No session found matching prefix: ${prefix}
 `);
     process.exit(1);
   }
   if (matches.length > 1) {
     process.stderr.write(
-      `${RED11}\u2717${RESET15} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
+      `${RED12}\u2717${RESET16} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
 `
     );
     process.exit(1);
@@ -26176,8 +26647,8 @@ async function renameSession(args2) {
   const { db, session } = await resolveSession(prefix);
   if (session.signature) {
     process.stderr.write(
-      `${RED11}\u2717${RESET15} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
-  Use ${CYAN13}chron session rename${RESET15} only on unsigned sessions.
+      `${RED12}\u2717${RESET16} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
+  Use ${CYAN14}chron session rename${RESET16} only on unsigned sessions.
 `
     );
     process.exit(1);
@@ -26185,9 +26656,9 @@ async function renameSession(args2) {
   const oldTitle = session.title;
   await db.update(sessions).set({ title: newTitle }).where(eq(sessions.id, session.id));
   process.stdout.write(
-    `${GREEN9}\u2713${RESET15} Session ${CYAN13}${session.id.slice(0, 8)}${RESET15} renamed
-  ${DIM14}before:${RESET15} ${oldTitle}
-  ${DIM14}after: ${RESET15} ${BOLD15}${newTitle}${RESET15}
+    `${GREEN10}\u2713${RESET16} Session ${CYAN14}${session.id.slice(0, 8)}${RESET16} renamed
+  ${DIM15}before:${RESET16} ${oldTitle}
+  ${DIM15}after: ${RESET16} ${BOLD16}${newTitle}${RESET16}
 
 Messages and timestamps are unchanged.
 `
@@ -26210,19 +26681,19 @@ Subcommands:
       if (subcommand) process.exit(1);
   }
 }
-var RESET15, BOLD15, DIM14, CYAN13, GREEN9, RED11;
+var RESET16, BOLD16, DIM15, CYAN14, GREEN10, RED12;
 var init_session3 = __esm({
   "src/cli/session.ts"() {
     "use strict";
     init_drizzle_orm();
     init_db2();
     init_schema();
-    RESET15 = "\x1B[0m";
-    BOLD15 = "\x1B[1m";
-    DIM14 = "\x1B[2m";
-    CYAN13 = "\x1B[36m";
-    GREEN9 = "\x1B[32m";
-    RED11 = "\x1B[31m";
+    RESET16 = "\x1B[0m";
+    BOLD16 = "\x1B[1m";
+    DIM15 = "\x1B[2m";
+    CYAN14 = "\x1B[36m";
+    GREEN10 = "\x1B[32m";
+    RED12 = "\x1B[31m";
   }
 });
 
@@ -26341,6 +26812,11 @@ async function main() {
       await runSetup2();
       break;
     }
+    case "coverage": {
+      const { runCoverage: runCoverage2 } = await Promise.resolve().then(() => (init_coverage(), coverage_exports));
+      await runCoverage2(args);
+      break;
+    }
     case "bootstrap": {
       const { bootstrapProjectLogging: bootstrapProjectLogging2 } = await Promise.resolve().then(() => (init_bootstrap(), bootstrap_exports));
       bootstrapProjectLogging2(process.cwd());
@@ -26366,6 +26842,7 @@ function printHelp2() {
 
 Commands:
   session         Manage sessions (rename, ...)
+  coverage        Show audit evidence boundary and per-tool logging coverage
   history         List sessions or show full log for a session
   report          Aggregate audit stats across sessions
   export          Export a session as markdown
@@ -26415,6 +26892,10 @@ Options (prune):
   --dry-run          Show what would be deleted without deleting
   --confirm          Required flag to actually delete
 
+Options (coverage):
+  --since=<range>   Limit to sessions since: 7d, 30d, or YYYY-MM-DD (default: all time)
+  --json            Machine-readable JSON output
+
 Options (doctor):
   --json                     Machine-readable JSON output
   --fix                      Auto-configure Chron MCP + logging instructions in supported AI clients
@@ -26422,6 +26903,7 @@ Options (doctor):
 
 Options (import):
   chatgpt <file>     Import from ChatGPT export (.zip or conversations.json)
+  claude  <file>     Import from claude.ai data export (.zip or conversations.json)
 
 Options (review):
   --framework=<name>  Framework to review against: soc2, iso27001, euaiact, nist-ai-rmf
