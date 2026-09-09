@@ -33,6 +33,83 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
+// package.json
+var require_package = __commonJS({
+  "package.json"(exports2, module2) {
+    module2.exports = {
+      name: "chron-mcp",
+      version: "0.1.56",
+      mcpName: "io.github.sirinivask/chron",
+      description: "Audit-grade timestamped logs for every AI conversation",
+      repository: {
+        type: "git",
+        url: "https://github.com/sirinivask/chron.git"
+      },
+      main: "dist/index.js",
+      vitest: {
+        include: [
+          "tests/**/*.test.ts"
+        ],
+        globals: true
+      },
+      bin: {
+        "chron-mcp": "dist/index.js",
+        chron: "dist/cli/index.js"
+      },
+      files: [
+        "dist",
+        "skills",
+        ".claude-plugin",
+        "assets",
+        "dashboards",
+        "README.md"
+      ],
+      engines: {
+        node: ">=18"
+      },
+      scripts: {
+        build: "npx esbuild src/index.ts --bundle --format=cjs --outfile=dist/index.js --platform=node && chmod +x dist/index.js && npx esbuild src/cli/index.ts --bundle --format=cjs --outfile=dist/cli/index.js --platform=node && chmod +x dist/cli/index.js",
+        "build:cli": "npx esbuild src/cli/index.ts --bundle --format=cjs --outfile=dist/cli/index.js --platform=node && chmod +x dist/cli/index.js",
+        typecheck: "tsc --noEmit",
+        dev: "tsc --watch",
+        start: "node dist/index.js",
+        test: "vitest run",
+        "test:watch": "vitest",
+        postinstall: "node dist/cli/index.js setup 2>/dev/null || true",
+        prepublishOnly: "npm run typecheck && npm test && npm run build"
+      },
+      keywords: [
+        "mcp",
+        "ai",
+        "audit",
+        "logging",
+        "claude",
+        "cursor"
+      ],
+      license: "SEE LICENSE IN LICENSE",
+      dependencies: {
+        "@libsql/client": "^0.17.3",
+        "@modelcontextprotocol/sdk": "^1.30.0",
+        "drizzle-orm": "^0.45.2",
+        express: "^4.22.2",
+        uuid: "^11.1.1",
+        zod: "^3.22.4"
+      },
+      devDependencies: {
+        "@types/express": "^4.17.21",
+        "@types/node": "^20.0.0",
+        "@types/uuid": "^9.0.0",
+        esbuild: "^0.25.12",
+        typescript: "^5.4.5",
+        vitest: "^3.2.7"
+      },
+      overrides: {
+        "@hono/node-server": "^2.0.5"
+      }
+    };
+  }
+});
+
 // node_modules/drizzle-orm/entity.js
 function is(value, type) {
   if (!value || typeof value !== "object") {
@@ -20095,83 +20172,6 @@ var init_signing = __esm({
   }
 });
 
-// package.json
-var require_package = __commonJS({
-  "package.json"(exports2, module2) {
-    module2.exports = {
-      name: "chron-mcp",
-      version: "0.1.55",
-      mcpName: "io.github.sirinivask/chron",
-      description: "Audit-grade timestamped logs for every AI conversation",
-      repository: {
-        type: "git",
-        url: "https://github.com/sirinivask/chron.git"
-      },
-      main: "dist/index.js",
-      vitest: {
-        include: [
-          "tests/**/*.test.ts"
-        ],
-        globals: true
-      },
-      bin: {
-        "chron-mcp": "dist/index.js",
-        chron: "dist/cli/index.js"
-      },
-      files: [
-        "dist",
-        "skills",
-        ".claude-plugin",
-        "assets",
-        "dashboards",
-        "README.md"
-      ],
-      engines: {
-        node: ">=18"
-      },
-      scripts: {
-        build: "npx esbuild src/index.ts --bundle --format=cjs --outfile=dist/index.js --platform=node && chmod +x dist/index.js && npx esbuild src/cli/index.ts --bundle --format=cjs --outfile=dist/cli/index.js --platform=node && chmod +x dist/cli/index.js",
-        "build:cli": "npx esbuild src/cli/index.ts --bundle --format=cjs --outfile=dist/cli/index.js --platform=node && chmod +x dist/cli/index.js",
-        typecheck: "tsc --noEmit",
-        dev: "tsc --watch",
-        start: "node dist/index.js",
-        test: "vitest run",
-        "test:watch": "vitest",
-        postinstall: "node dist/cli/index.js setup 2>/dev/null || true",
-        prepublishOnly: "npm test && npm run build"
-      },
-      keywords: [
-        "mcp",
-        "ai",
-        "audit",
-        "logging",
-        "claude",
-        "cursor"
-      ],
-      license: "SEE LICENSE IN LICENSE",
-      dependencies: {
-        "@libsql/client": "^0.17.3",
-        "@modelcontextprotocol/sdk": "^1.30.0",
-        "drizzle-orm": "^0.45.2",
-        express: "^4.22.2",
-        uuid: "^11.1.1",
-        zod: "^3.22.4"
-      },
-      devDependencies: {
-        "@types/express": "^4.17.21",
-        "@types/node": "^20.0.0",
-        "@types/uuid": "^9.0.0",
-        esbuild: "^0.25.12",
-        typescript: "^5.4.5",
-        vitest: "^3.2.7"
-      },
-      overrides: {
-        "@hono/node-server": "^2.0.5"
-      }
-    };
-  }
-});
-
 // src/cli/export-bundle.ts
 var export_bundle_exports = {};
 __export(export_bundle_exports, {
@@ -21861,6 +21861,69 @@ var init_hash = __esm({
   }
 });
 
+// src/utils/evidence.ts
+function parseSessionMetadata(raw) {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+function mergeSessionMetadata(existing, patch) {
+  return JSON.stringify({ ...parseSessionMetadata(existing), ...patch });
+}
+function evidenceSourceOf(meta) {
+  const source = meta.source;
+  return source && EVIDENCE_SOURCES.includes(source) ? source : EVIDENCE_SOURCE.WITNESSED;
+}
+function isPartialEvidence(meta) {
+  if (meta.partial === true) return true;
+  return evidenceSourceOf(meta) !== EVIDENCE_SOURCE.WITNESSED;
+}
+function liveAttachMetadata() {
+  return {
+    source: EVIDENCE_SOURCE.LIVE_ATTACH,
+    partial: true,
+    attach_reason: ATTACH_REASON_MID_SESSION
+  };
+}
+function chainScopeLabel(meta) {
+  return isPartialEvidence(meta) ? "Hash chain valid from attach point" : "Hash chain covers complete session";
+}
+function describeEvidenceBoundary(meta) {
+  switch (evidenceSourceOf(meta)) {
+    case EVIDENCE_SOURCE.LIVE_ATTACH:
+      return "Chron began recording after this conversation had already started. Evidence is valid from the attach point forward; earlier turns are outside the evidence boundary.";
+    case EVIDENCE_SOURCE.IMPORTED:
+      return "Imported from a vendor export. Tool calls, file access, and environment state are not captured by the export.";
+    case EVIDENCE_SOURCE.TRANSCRIPT_BACKFILL:
+      return "Recovered from a local client transcript. Chron ingested this record rather than observing it directly.";
+    case EVIDENCE_SOURCE.WITNESSED:
+    default:
+      return null;
+  }
+}
+var EVIDENCE_SOURCE, EVIDENCE_SOURCES, ATTACH_REASON_MID_SESSION;
+var init_evidence = __esm({
+  "src/utils/evidence.ts"() {
+    "use strict";
+    EVIDENCE_SOURCE = {
+      /** Chron was called as the conversation happened. The default, and the strongest. */
+      WITNESSED: "witnessed",
+      /** The user imported a vendor export after the fact. */
+      IMPORTED: "imported",
+      /** Chron started recording partway through a conversation already in progress. */
+      LIVE_ATTACH: "live_attach",
+      /** Recovered from a local transcript the AI client wrote. Reserved; not yet implemented. */
+      TRANSCRIPT_BACKFILL: "transcript_backfill"
+    };
+    EVIDENCE_SOURCES = Object.values(EVIDENCE_SOURCE);
+    ATTACH_REASON_MID_SESSION = "chron_available_mid_session";
+  }
+});
+
 // src/cli/verify.ts
 var verify_exports = {};
 __export(verify_exports, {
@@ -21907,7 +21970,7 @@ ${BOLD7}File integrity${RESET7}
       const filePath = (0, import_path9.join)(tempDir, rel);
       try {
         const content = (0, import_fs11.readFileSync)(filePath);
-        const actual = (0, import_fs11.createHash)("sha256").update(content).digest("hex");
+        const actual = (0, import_crypto6.createHash)("sha256").update(content).digest("hex");
         if (actual === expectedHash) {
           ok(rel);
         } else {
@@ -21977,12 +22040,13 @@ ${BOLD7}Verifying session ${session.id.slice(0, 8)}${RESET7} \u2014 ${session.ti
 
 `);
   const rows = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(asc(messages.created_at), asc(sql`rowid`));
+  const sessionMeta = parseSessionMetadata(session.metadata);
   process.stdout.write(`${BOLD7}Hash chain${RESET7} (${rows.length} messages)
 `);
   const chained = rows.filter((r) => r.content_hash !== null);
   let chainOk = true;
   if (chained.length === 0) {
-    warn("No chained messages \u2014 session pre-dates hash chaining");
+    warn(rows.length === 0 ? "No messages logged yet \u2014 nothing to chain" : "No chained messages \u2014 session pre-dates hash chaining");
   } else {
     for (let i = 0; i < chained.length; i++) {
       const row = chained[i];
@@ -21999,14 +22063,23 @@ ${BOLD7}Verifying session ${session.id.slice(0, 8)}${RESET7} \u2014 ${session.ti
         break;
       }
     }
-    if (chainOk) ok(`All ${chained.length} hashes valid`);
+    if (chainOk) {
+      ok(`All ${chained.length} hashes valid \u2014 ${chainScopeLabel(sessionMeta)}`);
+    }
+  }
+  const boundary = describeEvidenceBoundary(sessionMeta);
+  if (boundary) {
+    process.stdout.write(`
+${BOLD7}Evidence boundary${RESET7}
+`);
+    warn(boundary);
   }
   process.stdout.write(`
 ${BOLD7}Clock attestation${RESET7}
 `);
   if (session.metadata) {
     try {
-      const meta = JSON.parse(session.metadata);
+      const meta = sessionMeta;
       const status = meta.clock_sync_status ?? "unknown";
       if (status === "synchronized") {
         const offset = meta.clock_offset_ms !== void 0 ? ` (offset: ${meta.clock_offset_ms > 0 ? "+" : ""}${meta.clock_offset_ms}ms)` : "";
@@ -22052,18 +22125,20 @@ ${BOLD7}Signature${RESET7}
   const allOk = chainOk && (session.signature ? true : true);
   process.exit(allOk ? 0 : 1);
 }
-var import_fs11, import_path9, import_os8, import_child_process2, RESET7, BOLD7, GREEN4, RED4, DIM6, YELLOW5;
+var import_fs11, import_crypto6, import_path9, import_os8, import_child_process2, RESET7, BOLD7, GREEN4, RED4, DIM6, YELLOW5;
 var init_verify = __esm({
   "src/cli/verify.ts"() {
     "use strict";
     init_drizzle_orm();
     import_fs11 = require("fs");
+    import_crypto6 = require("crypto");
     import_path9 = require("path");
     import_os8 = require("os");
     import_child_process2 = require("child_process");
     init_db2();
     init_schema();
     init_hash();
+    init_evidence();
     init_signing();
     RESET7 = "\x1B[0m";
     BOLD7 = "\x1B[1m";
@@ -22726,26 +22801,26 @@ var init_stringify = __esm({
 // node_modules/uuid/dist/esm/rng.js
 function rng() {
   if (poolPtr > rnds8Pool.length - 16) {
-    (0, import_crypto6.randomFillSync)(rnds8Pool);
+    (0, import_crypto7.randomFillSync)(rnds8Pool);
     poolPtr = 0;
   }
   return rnds8Pool.slice(poolPtr, poolPtr += 16);
 }
-var import_crypto6, rnds8Pool, poolPtr;
+var import_crypto7, rnds8Pool, poolPtr;
 var init_rng = __esm({
   "node_modules/uuid/dist/esm/rng.js"() {
-    import_crypto6 = require("crypto");
+    import_crypto7 = require("crypto");
     rnds8Pool = new Uint8Array(256);
     poolPtr = rnds8Pool.length;
   }
 });
 
 // node_modules/uuid/dist/esm/native.js
-var import_crypto7, native_default;
+var import_crypto8, native_default;
 var init_native = __esm({
   "node_modules/uuid/dist/esm/native.js"() {
-    import_crypto7 = require("crypto");
-    native_default = { randomUUID: import_crypto7.randomUUID };
+    import_crypto8 = require("crypto");
+    native_default = { randomUUID: import_crypto8.randomUUID };
   }
 });
 
@@ -23531,7 +23606,7 @@ var init_import = __esm({
 
 // src/review/workflow.ts
 function findingId(ruleId, sessionId) {
-  return (0, import_crypto8.createHash)("sha256").update(`${ruleId}:${sessionId}`).digest("hex");
+  return (0, import_crypto9.createHash)("sha256").update(`${ruleId}:${sessionId}`).digest("hex");
 }
 async function hydrateFindingStatuses(db, findings) {
   if (findings.length === 0) return findings;
@@ -23603,11 +23678,11 @@ async function loadFindingStates(client, ids) {
     reviewed_at: row.reviewed_at == null ? null : String(row.reviewed_at)
   }));
 }
-var import_crypto8;
+var import_crypto9;
 var init_workflow = __esm({
   "src/review/workflow.ts"() {
     "use strict";
-    import_crypto8 = require("crypto");
+    import_crypto9 = require("crypto");
   }
 });
 
@@ -25579,9 +25654,148 @@ async function getAzureToken(tenantId, clientId, clientSecret) {
 }
 function getMachineId() {
   if (!_machineId) {
-    _machineId = "sha256:" + (0, import_crypto9.createHash)("sha256").update((0, import_os12.hostname)()).digest("hex").slice(0, 16);
+    _machineId = "sha256:" + (0, import_crypto10.createHash)("sha256").update((0, import_os12.hostname)()).digest("hex").slice(0, 16);
   }
   return _machineId;
+}
+function toSplunkEvent(payload) {
+  const event = {
+    event_type: payload.event_type,
+    session_id_prefix: payload.session.id_prefix,
+    ai_tool: payload.session.ai_tool ?? "",
+    os: process.platform,
+    chron_version: import_package3.version
+  };
+  if (payload.event_type === "message_logged") {
+    event.role = payload.message.role;
+  } else if (payload.event_type === "secret_detected") {
+    event.detection_type = payload.detection.type;
+    event.masked_value = payload.detection.masked_value;
+  }
+  return {
+    time: new Date(payload.timestamp).getTime() / 1e3,
+    host: (0, import_os12.hostname)(),
+    source: "chron-mcp",
+    sourcetype: "chron:event",
+    event
+  };
+}
+function emitToSplunk(payload) {
+  const cfg = getSplunkConfig();
+  if (!cfg) return;
+  const url = `${cfg.url.replace(/\/$/, "")}/services/collector/event`;
+  setImmediate(
+    () => fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Splunk ${cfg.token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(toSplunkEvent(payload))
+    }).catch(() => void 0)
+  );
+}
+function toSentinelRecord(payload) {
+  const record = {
+    TimeGenerated: payload.timestamp,
+    EventType: payload.event_type,
+    SessionIdPrefix: payload.session.id_prefix,
+    AiTool: payload.session.ai_tool ?? "",
+    OS: process.platform,
+    ChronVersion: import_package3.version,
+    Computer: (0, import_os12.hostname)(),
+    Role: "",
+    DetectionType: "",
+    MaskedValue: ""
+  };
+  if (payload.event_type === "message_logged") {
+    record.Role = payload.message.role;
+  } else if (payload.event_type === "secret_detected") {
+    record.DetectionType = payload.detection.type;
+    record.MaskedValue = payload.detection.masked_value;
+  }
+  return record;
+}
+function emitToSentinel(payload) {
+  const cfg = getSentinelConfig();
+  if (!cfg) return;
+  setImmediate(async () => {
+    try {
+      const token = await getAzureToken(cfg.tenantId, cfg.clientId, cfg.clientSecret);
+      if (!token) return;
+      const url = `${cfg.dce}/dataCollectionRules/${cfg.dcrId}/streams/${cfg.stream}?api-version=2023-01-01`;
+      await fetch(url, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify([toSentinelRecord(payload)])
+      });
+    } catch {
+    }
+  });
+}
+function toLogScaleAttributes(payload) {
+  const attrs = {
+    event_type: payload.event_type,
+    session_id_prefix: payload.session.id_prefix,
+    ai_tool: payload.session.ai_tool ?? "",
+    os: process.platform,
+    chron_version: import_package3.version
+  };
+  if (payload.event_type === "message_logged") {
+    attrs.role = payload.message.role;
+  } else if (payload.event_type === "secret_detected") {
+    attrs.detection_type = payload.detection.type;
+    attrs.masked_value = payload.detection.masked_value;
+  }
+  return attrs;
+}
+function emitToLogScale(payload) {
+  const url = process.env.CHRON_LOGSCALE_URL;
+  const token = process.env.CHRON_LOGSCALE_TOKEN;
+  if (!url || !token) return;
+  const body = JSON.stringify([{
+    tags: { host: (0, import_os12.hostname)(), source: "chron-mcp" },
+    events: [{ timestamp: payload.timestamp, attributes: toLogScaleAttributes(payload) }]
+  }]);
+  setImmediate(
+    () => fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body
+    }).catch(() => void 0)
+  );
+}
+function emitEvent(payload) {
+  const url = process.env.CHRON_RELAY_URL;
+  const token = process.env.CHRON_RELAY_TOKEN;
+  if (url && token) {
+    const event = {
+      schema_version: "1.0",
+      chron_version: import_package3.version,
+      machine_id: getMachineId(),
+      os: process.platform,
+      ...payload
+    };
+    setImmediate(
+      () => fetch(url, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(event)
+      }).catch(() => void 0)
+    );
+  }
+  emitToLogScale(payload);
+  emitToSentinel(payload);
+  emitToSplunk(payload);
 }
 function toSplunkRiskEvent(payload) {
   const base = {
@@ -25710,13 +25924,13 @@ function emitRiskEvent(payload) {
     );
   }
 }
-var import_fs17, import_path12, import_crypto9, import_os12, import_package3, _splunkCache, _splunkCacheExpiry, _sentinelCache, _sentinelCacheExpiry, _azureTokenCache, _machineId;
+var import_fs17, import_path12, import_crypto10, import_os12, import_package3, _splunkCache, _splunkCacheExpiry, _sentinelCache, _sentinelCacheExpiry, _azureTokenCache, _machineId;
 var init_relay = __esm({
   "src/utils/relay.ts"() {
     "use strict";
     import_fs17 = require("fs");
     import_path12 = require("path");
-    import_crypto9 = require("crypto");
+    import_crypto10 = require("crypto");
     import_os12 = require("os");
     import_package3 = __toESM(require_package());
     if (process.env.CHRON_SPLUNK_INSECURE === "1") {
@@ -25904,7 +26118,7 @@ __export(evidence_exports, {
   runEvidence: () => runEvidence
 });
 function hash(input) {
-  return (0, import_crypto10.createHash)("sha256").update(input).digest("hex");
+  return (0, import_crypto11.createHash)("sha256").update(input).digest("hex");
 }
 function argValue(args2, name) {
   const prefix = `--${name}=`;
@@ -26121,11 +26335,11 @@ async function runEvidence(args2) {
   }
   throw new Error(`Unknown evidence command: ${subcommand}`);
 }
-var import_crypto10, import_path13, import_fs18, FW_LABELS5;
-var init_evidence = __esm({
+var import_crypto11, import_path13, import_fs18, FW_LABELS5;
+var init_evidence2 = __esm({
   "src/cli/evidence.ts"() {
     "use strict";
-    import_crypto10 = require("crypto");
+    import_crypto11 = require("crypto");
     import_path13 = require("path");
     import_fs18 = require("fs");
     init_drizzle_orm();
@@ -26459,8 +26673,20 @@ async function computeCoverage(since) {
       tools.push({ tool: ai_tool, ai_tool, configured: false, import_only: true, sessions: stat.count, last_seen: stat.last });
     }
   }
+  const metaRows = since ? await db.select({ metadata: sessions.metadata }).from(sessions).where(gte(sessions.updated_at, since)) : await db.select({ metadata: sessions.metadata }).from(sessions);
+  const partial = { live_attach: 0, imported: 0, transcript_backfill: 0, total: 0 };
+  for (const row of metaRows) {
+    const meta = parseSessionMetadata(row.metadata);
+    const src = evidenceSourceOf(meta);
+    if (src === EVIDENCE_SOURCE.WITNESSED) continue;
+    partial.total++;
+    if (src === EVIDENCE_SOURCE.LIVE_ATTACH) partial.live_attach++;
+    else if (src === EVIDENCE_SOURCE.IMPORTED) partial.imported++;
+    else if (src === EVIDENCE_SOURCE.TRANSCRIPT_BACKFILL) partial.transcript_backfill++;
+  }
   return {
     boundary: { first: global?.first ?? null, latest: global?.last ?? null, total_sessions: Number(global?.total ?? 0) },
+    partial,
     tools,
     caveat: "Chron can only review sessions captured after logging was enabled. Earlier AI work is outside the evidence boundary unless imported.",
     since
@@ -26484,6 +26710,23 @@ function printCoverage(r) {
 `);
     process.stdout.write(`  Total logged sessions: ${r.boundary.total_sessions}
 `);
+    if (r.partial.total > 0) {
+      const witnessed = r.boundary.total_sessions - r.partial.total;
+      process.stdout.write(`  ${YELLOW13}Partial evidence:${RESET15}      ${r.partial.total} of ${r.boundary.total_sessions} (${witnessed} witnessed in full)
+`);
+      if (r.partial.live_attach > 0) {
+        process.stdout.write(`    ${DIM14}${r.partial.live_attach} live attach \u2014 Chron began recording after the conversation had already started${RESET15}
+`);
+      }
+      if (r.partial.imported > 0) {
+        process.stdout.write(`    ${DIM14}${r.partial.imported} imported \u2014 from a vendor export, no tool calls or environment state${RESET15}
+`);
+      }
+      if (r.partial.transcript_backfill > 0) {
+        process.stdout.write(`    ${DIM14}${r.partial.transcript_backfill} transcript backfill \u2014 ingested from a client log, not directly observed${RESET15}
+`);
+      }
+    }
   } else {
     process.stdout.write(`  ${YELLOW13}No sessions logged yet${RESET15}
 `);
@@ -26545,6 +26788,7 @@ var init_coverage = __esm({
     init_drizzle_orm();
     init_db2();
     init_schema();
+    init_evidence();
     init_mcp_config();
     init_report();
     RESET15 = "\x1B[0m";
@@ -26611,6 +26855,373 @@ var init_bootstrap = __esm({
   }
 });
 
+// src/utils/time.ts
+function localISOString() {
+  const d = /* @__PURE__ */ new Date();
+  const offsetMin = -d.getTimezoneOffset();
+  const sign = offsetMin >= 0 ? "+" : "-";
+  const absMin = Math.abs(offsetMin);
+  const hh = String(Math.floor(absMin / 60)).padStart(2, "0");
+  const mm = String(absMin % 60).padStart(2, "0");
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const seconds = String(d.getSeconds()).padStart(2, "0");
+  const ms = String(d.getMilliseconds()).padStart(3, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}${sign}${hh}:${mm}`;
+}
+var init_time = __esm({
+  "src/utils/time.ts"() {
+    "use strict";
+  }
+});
+
+// src/utils/ntp.ts
+function queryNtpUdp(server, timeout) {
+  return new Promise((resolve2, reject) => {
+    const client = (0, import_dgram.createSocket)("udp4");
+    const timer = setTimeout(() => {
+      try {
+        client.close();
+      } catch {
+      }
+      reject(new Error("NTP timeout"));
+    }, timeout);
+    const t1 = Date.now();
+    const packet = Buffer.alloc(48, 0);
+    packet[0] = 27;
+    client.once("message", (msg) => {
+      clearTimeout(timer);
+      try {
+        client.close();
+      } catch {
+      }
+      if (msg.length < 48) {
+        reject(new Error("Short NTP response"));
+        return;
+      }
+      const t4 = Date.now();
+      const secs = msg.readUInt32BE(40);
+      const frac = msg.readUInt32BE(44);
+      const t3 = (secs - NTP_OFFSET) * 1e3 + frac / 4294967296 * 1e3;
+      const offset_ms = Math.round(t3 - (t1 + t4) / 2);
+      resolve2({ offset_ms });
+    });
+    client.once("error", (err) => {
+      clearTimeout(timer);
+      try {
+        client.close();
+      } catch {
+      }
+      reject(err);
+    });
+    client.send(packet, 0, 48, 123, server, (err) => {
+      if (err) {
+        clearTimeout(timer);
+        try {
+          client.close();
+        } catch {
+        }
+        reject(err);
+      }
+    });
+  });
+}
+async function checkNtpSync(server = "pool.ntp.org", timeout = 2e3) {
+  try {
+    const { offset_ms } = await queryNtpUdp(server, timeout);
+    const status = Math.abs(offset_ms) <= 1e3 ? "synchronized" : "not_synchronized";
+    return { clock_sync_status: status, clock_offset_ms: offset_ms, ntp_server: server };
+  } catch {
+    return { clock_sync_status: "unknown", ntp_server: server };
+  }
+}
+var import_dgram, NTP_OFFSET;
+var init_ntp = __esm({
+  "src/utils/ntp.ts"() {
+    "use strict";
+    import_dgram = require("dgram");
+    NTP_OFFSET = 2208988800;
+  }
+});
+
+// src/utils/terminal.ts
+function resolvedLevel() {
+  const raw = (process.env.CHRON_LOG_LEVEL ?? "").toLowerCase();
+  if (raw === "off" || raw === "false" || raw === "0") return "off";
+  if (raw === "summary") return "summary";
+  const legacy = process.env.CHRON_TERMINAL_AUDIT;
+  if (legacy && DISABLE_VALUES.has(legacy.toLowerCase())) return "off";
+  return "verbose";
+}
+function terminalAudit(message, level = "message") {
+  const mode = resolvedLevel();
+  if (mode === "off") return;
+  if (mode === "summary" && level === "message") return;
+  process.stderr.write(`[chron] ${message}
+`);
+}
+var DISABLE_VALUES;
+var init_terminal = __esm({
+  "src/utils/terminal.ts"() {
+    "use strict";
+    DISABLE_VALUES = /* @__PURE__ */ new Set(["0", "false", "off", "no"]);
+  }
+});
+
+// src/tools/sessions.ts
+function attachNtpMetadata(db, sessionId) {
+  setImmediate(() => {
+    checkNtpSync().then(async (result) => {
+      try {
+        const [row] = await db.select({ metadata: sessions.metadata }).from(sessions).where(eq(sessions.id, sessionId)).limit(1);
+        await db.update(sessions).set({ metadata: mergeSessionMetadata(row?.metadata ?? null, { ...result }) }).where(eq(sessions.id, sessionId));
+      } catch {
+      }
+    }).catch(() => void 0);
+  });
+}
+function resolveEvidenceMetadata(attach, metadata) {
+  if (attach && !metadata) return liveAttachMetadata();
+  if (!metadata?.source) return attach ? liveAttachMetadata() : null;
+  const source = metadata.source;
+  const resolved = { source };
+  if (source !== EVIDENCE_SOURCE.WITNESSED) resolved.partial = true;
+  if (source === EVIDENCE_SOURCE.LIVE_ATTACH) {
+    resolved.attach_reason = metadata.attach_reason ?? liveAttachMetadata().attach_reason;
+  }
+  if (metadata.client) resolved.client = metadata.client;
+  return resolved;
+}
+function initSession(db) {
+  return async (args2) => {
+    const id = v4_default();
+    const now = localISOString();
+    let session_id;
+    let created;
+    let ai_tool;
+    if (args2.resume_latest) {
+      const windowMs = parseInt(process.env.CHRON_RESUME_WINDOW_MINUTES ?? "30", 10) * 6e4;
+      const requestedTool = args2.ai_tool ?? null;
+      const shouldRecoverLatest = /compact|resume|continue|lost|unknown/i.test(args2.title) || args2.title.trim().length === 0;
+      const latest = requestedTool ? await db.select().from(sessions).where(eq(sessions.ai_tool, requestedTool)).orderBy(desc(sessions.updated_at)).limit(1) : await db.select().from(sessions).orderBy(desc(sessions.updated_at)).limit(1);
+      if (latest.length > 0) {
+        const session = latest[0];
+        const ageMs = Date.now() - new Date(session.updated_at).getTime();
+        if (shouldRecoverLatest && ageMs <= windowMs) {
+          await db.update(sessions).set({ updated_at: now }).where(eq(sessions.id, session.id));
+          session_id = session.id;
+          created = false;
+          ai_tool = session.ai_tool;
+          emitEvent({ event_type: "session_started", timestamp: now, session: { id_prefix: session.id.slice(0, 8), ai_tool } });
+          terminalAudit(`session ${session.id.slice(0, 8)} resumed at ${now} (${ai_tool ?? "unknown"}: ${session.title}) [resume_latest]`, "session");
+          const limit2 = args2.limit ?? 10;
+          const [countRow2] = await db.select({
+            count: sql`count(*)`,
+            first_message_at: sql`min(${messages.created_at})`
+          }).from(messages).where(eq(messages.session_id, session_id));
+          const total2 = countRow2?.count ?? 0;
+          const first_message_at2 = countRow2?.first_message_at ?? null;
+          const recentRows2 = await db.select().from(messages).where(eq(messages.session_id, session_id)).orderBy(desc(messages.created_at), desc(sql`rowid`)).limit(limit2);
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify({
+                session_id,
+                created,
+                ai_tool,
+                message_count: total2,
+                first_message_at: first_message_at2,
+                messages: recentRows2.reverse().map((m) => ({ role: m.role, content: m.content, created_at: m.created_at }))
+              })
+            }]
+          };
+        }
+      }
+    }
+    try {
+      let publicKey = null;
+      try {
+        publicKey = generateSessionKeypair(id);
+      } catch {
+      }
+      const evidence = resolveEvidenceMetadata(args2.attach, args2.metadata);
+      await db.insert(sessions).values({
+        id,
+        title: args2.title,
+        ai_tool: args2.ai_tool ?? null,
+        created_at: now,
+        updated_at: now,
+        parent_session_id: args2.parent_session_id ?? null,
+        external_ref: args2.external_ref ?? null,
+        public_key: publicKey,
+        metadata: evidence ? JSON.stringify(evidence) : null
+      });
+      session_id = id;
+      created = true;
+      ai_tool = args2.ai_tool ?? null;
+      attachNtpMetadata(db, id);
+      const boundary = evidence?.source === EVIDENCE_SOURCE.LIVE_ATTACH ? " [live attach \u2014 partial evidence]" : "";
+      terminalAudit(`session ${id.slice(0, 8)} started at ${now} (${ai_tool ?? "unknown"}: ${args2.title})${boundary}`, "session");
+    } catch (e) {
+      const isUnique = e?.message?.includes("UNIQUE constraint failed") || e?.code === "SQLITE_CONSTRAINT_UNIQUE" || e?.cause?.message?.includes("UNIQUE constraint failed") || e?.cause?.extendedCode === "SQLITE_CONSTRAINT_UNIQUE";
+      if (!isUnique) throw e;
+      const requestedTool = args2.ai_tool ?? null;
+      const toolWhere = requestedTool !== null ? and(eq(sessions.title, args2.title), eq(sessions.ai_tool, requestedTool)) : and(eq(sessions.title, args2.title), isNull(sessions.ai_tool));
+      const existing = await db.select().from(sessions).where(toolWhere).limit(1);
+      if (existing.length === 0) {
+        throw new Error(`session_title_conflict: title "${args2.title}" is owned by a different AI tool`);
+      }
+      const session = existing[0];
+      await db.update(sessions).set({ updated_at: now }).where(eq(sessions.id, session.id));
+      session_id = session.id;
+      created = false;
+      ai_tool = session.ai_tool;
+      terminalAudit(`session ${session.id.slice(0, 8)} resumed at ${now} (${ai_tool ?? "unknown"}: ${session.title})`, "session");
+    }
+    emitEvent({ event_type: "session_started", timestamp: now, session: { id_prefix: session_id.slice(0, 8), ai_tool } });
+    const limit = args2.limit ?? 10;
+    const [countRow] = await db.select({
+      count: sql`count(*)`,
+      first_message_at: sql`min(${messages.created_at})`
+    }).from(messages).where(eq(messages.session_id, session_id));
+    const total = countRow?.count ?? 0;
+    const first_message_at = countRow?.first_message_at ?? null;
+    const recentRows = await db.select().from(messages).where(eq(messages.session_id, session_id)).orderBy(desc(messages.created_at), desc(sql`rowid`)).limit(limit);
+    const recent = recentRows.reverse();
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          session_id,
+          created,
+          ai_tool,
+          message_count: total,
+          first_message_at,
+          messages: recent.map((m) => ({ role: m.role, content: m.content, created_at: m.created_at }))
+        })
+      }]
+    };
+  };
+}
+var init_sessions = __esm({
+  "src/tools/sessions.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    init_esm();
+    init_schema();
+    init_time();
+    init_relay();
+    init_signing();
+    init_ntp();
+    init_terminal();
+    init_evidence();
+  }
+});
+
+// src/cli/attach.ts
+var attach_exports = {};
+__export(attach_exports, {
+  KNOWN_TOOLS: () => KNOWN_TOOLS2,
+  createAttachSession: () => createAttachSession,
+  defaultAttachTitle: () => defaultAttachTitle,
+  normalizeTool: () => normalizeTool,
+  runAttach: () => runAttach
+});
+function normalizeTool(input) {
+  return KNOWN_TOOLS2[input.trim().toLowerCase()] ?? null;
+}
+function defaultAttachTitle(aiTool, now) {
+  return `Live attach \u2014 ${aiTool} \u2014 ${now.slice(0, 19)}`;
+}
+async function createAttachSession(db, aiTool, title) {
+  const resolvedTitle = title?.trim() || defaultAttachTitle(aiTool, localISOString());
+  const res = await initSession(db)({ title: resolvedTitle, ai_tool: aiTool, attach: true });
+  const data = JSON.parse(res.content[0].text);
+  return { session_id: data.session_id, created: data.created, ai_tool: aiTool, title: resolvedTitle };
+}
+async function runAttach(args2) {
+  const toolArg = args2.find((a) => !a.startsWith("--"));
+  if (!toolArg) {
+    process.stderr.write(
+      `Usage: chron attach <tool> [--title="..."]
+
+Tools: ${Object.keys(KNOWN_TOOLS2).join(", ")}
+
+Starts recording a conversation that is already in progress. Everything
+from this point forward is captured; earlier turns are not, and the
+session is marked as partial evidence to say so.
+`
+    );
+    process.exit(1);
+  }
+  const aiTool = normalizeTool(toolArg);
+  if (!aiTool) {
+    process.stderr.write(`Unknown tool: ${toolArg}
+Tools: ${Object.keys(KNOWN_TOOLS2).join(", ")}
+`);
+    process.exit(1);
+  }
+  const titleArg = args2.find((a) => a.startsWith("--title="))?.split("=").slice(1).join("=");
+  const db = await initDb();
+  const { session_id, created, title } = await createAttachSession(db, aiTool, titleArg);
+  const short = session_id.slice(0, 8);
+  process.stdout.write(`
+${BOLD16}chron attach${RESET16} ${aiTool}
+
+`);
+  if (created) {
+    process.stdout.write(`  ${GREEN10}\u2713${RESET16} session ${BOLD16}${short}${RESET16} created \u2014 ${title}
+`);
+  } else {
+    process.stdout.write(`  ${GREEN10}\u2713${RESET16} resumed existing session ${BOLD16}${short}${RESET16} \u2014 ${title}
+`);
+  }
+  process.stdout.write(`  ${YELLOW14}!${RESET16} Marked as partial evidence. Chron did not observe this
+`);
+  process.stdout.write(`    conversation before now, and does not claim to know what came before.
+
+`);
+  process.stdout.write(`${BOLD16}Paste this into the session you want recorded:${RESET16}
+
+`);
+  process.stdout.write(`${DIM15}  Log this conversation to Chron from now on using session_id ${session_id}.
+`);
+  process.stdout.write(`  Call log_message for this and every following exchange.
+`);
+  process.stdout.write(`  Do not attempt to reconstruct earlier messages.${RESET16}
+
+`);
+  process.stdout.write(`${DIM15}  chron history ${short}   chron verify ${short}${RESET16}
+
+`);
+}
+var RESET16, BOLD16, DIM15, GREEN10, YELLOW14, KNOWN_TOOLS2;
+var init_attach = __esm({
+  "src/cli/attach.ts"() {
+    "use strict";
+    init_db2();
+    init_sessions();
+    init_time();
+    RESET16 = "\x1B[0m";
+    BOLD16 = "\x1B[1m";
+    DIM15 = "\x1B[2m";
+    GREEN10 = "\x1B[32m";
+    YELLOW14 = "\x1B[33m";
+    KNOWN_TOOLS2 = {
+      claude: "claude",
+      "claude-code": "claude",
+      cursor: "cursor",
+      codex: "codex",
+      gemini: "gemini",
+      windsurf: "windsurf",
+      copilot: "copilot"
+    };
+  }
+});
+
 // src/cli/session.ts
 var session_exports = {};
 __export(session_exports, {
@@ -26621,13 +27232,13 @@ async function resolveSession(prefix) {
   const all = await db.select({ id: sessions.id, title: sessions.title, signature: sessions.signature }).from(sessions);
   const matches = all.filter((s) => s.id.startsWith(prefix));
   if (matches.length === 0) {
-    process.stderr.write(`${RED12}\u2717${RESET16} No session found matching prefix: ${prefix}
+    process.stderr.write(`${RED12}\u2717${RESET17} No session found matching prefix: ${prefix}
 `);
     process.exit(1);
   }
   if (matches.length > 1) {
     process.stderr.write(
-      `${RED12}\u2717${RESET16} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
+      `${RED12}\u2717${RESET17} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
 `
     );
     process.exit(1);
@@ -26647,8 +27258,8 @@ async function renameSession(args2) {
   const { db, session } = await resolveSession(prefix);
   if (session.signature) {
     process.stderr.write(
-      `${RED12}\u2717${RESET16} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
-  Use ${CYAN14}chron session rename${RESET16} only on unsigned sessions.
+      `${RED12}\u2717${RESET17} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
+  Use ${CYAN14}chron session rename${RESET17} only on unsigned sessions.
 `
     );
     process.exit(1);
@@ -26656,9 +27267,9 @@ async function renameSession(args2) {
   const oldTitle = session.title;
   await db.update(sessions).set({ title: newTitle }).where(eq(sessions.id, session.id));
   process.stdout.write(
-    `${GREEN10}\u2713${RESET16} Session ${CYAN14}${session.id.slice(0, 8)}${RESET16} renamed
-  ${DIM15}before:${RESET16} ${oldTitle}
-  ${DIM15}after: ${RESET16} ${BOLD16}${newTitle}${RESET16}
+    `${GREEN11}\u2713${RESET17} Session ${CYAN14}${session.id.slice(0, 8)}${RESET17} renamed
+  ${DIM16}before:${RESET17} ${oldTitle}
+  ${DIM16}after: ${RESET17} ${BOLD17}${newTitle}${RESET17}
 
 Messages and timestamps are unchanged.
 `
@@ -26681,23 +27292,45 @@ Subcommands:
       if (subcommand) process.exit(1);
   }
 }
-var RESET16, BOLD16, DIM15, CYAN14, GREEN10, RED12;
+var RESET17, BOLD17, DIM16, CYAN14, GREEN11, RED12;
 var init_session3 = __esm({
   "src/cli/session.ts"() {
     "use strict";
     init_drizzle_orm();
     init_db2();
     init_schema();
-    RESET16 = "\x1B[0m";
-    BOLD16 = "\x1B[1m";
-    DIM15 = "\x1B[2m";
+    RESET17 = "\x1B[0m";
+    BOLD17 = "\x1B[1m";
+    DIM16 = "\x1B[2m";
     CYAN14 = "\x1B[36m";
-    GREEN10 = "\x1B[32m";
+    GREEN11 = "\x1B[32m";
     RED12 = "\x1B[31m";
   }
 });
 
+// src/cli/version.ts
+var version_exports = {};
+__export(version_exports, {
+  VERSION_FLAGS: () => VERSION_FLAGS,
+  formatVersion: () => formatVersion,
+  isVersionCommand: () => isVersionCommand
+});
+function isVersionCommand(command2) {
+  return command2 !== void 0 && VERSION_FLAGS.includes(command2);
+}
+function formatVersion(version5) {
+  return `chron-mcp ${version5}`;
+}
+var VERSION_FLAGS;
+var init_version2 = __esm({
+  "src/cli/version.ts"() {
+    "use strict";
+    VERSION_FLAGS = ["version", "--version", "-v"];
+  }
+});
+
 // src/cli/index.ts
+var import_package4 = __toESM(require_package());
 var [, , command, ...args] = process.argv;
 async function main() {
   switch (command) {
@@ -26798,7 +27431,7 @@ async function main() {
       break;
     }
     case "evidence": {
-      const { runEvidence: runEvidence2 } = await Promise.resolve().then(() => (init_evidence(), evidence_exports));
+      const { runEvidence: runEvidence2 } = await Promise.resolve().then(() => (init_evidence2(), evidence_exports));
       await runEvidence2(args);
       break;
     }
@@ -26822,9 +27455,24 @@ async function main() {
       bootstrapProjectLogging2(process.cwd());
       break;
     }
+    case "attach": {
+      const { runAttach: runAttach2 } = await Promise.resolve().then(() => (init_attach(), attach_exports));
+      await runAttach2(args);
+      break;
+    }
     case "session": {
       const { runSession: runSession2 } = await Promise.resolve().then(() => (init_session3(), session_exports));
       await runSession2(args);
+      break;
+    }
+    // Matches the chron-mcp binary's flag handling. Formatting lives in
+    // ./version so it can be unit tested without spawning the built binary.
+    case "version":
+    case "--version":
+    case "-v": {
+      const { formatVersion: formatVersion2 } = await Promise.resolve().then(() => (init_version2(), version_exports));
+      process.stdout.write(`${formatVersion2(import_package4.version)}
+`);
       break;
     }
     default: {
@@ -26863,6 +27511,8 @@ Commands:
   evidence        Import and link policy/evidence documents to controls or findings
   reviews         Review queue \u2014 flag sessions for human review, track SLA compliance
   update          Update chron to the latest version
+  attach          Start recording a conversation already in progress (partial evidence)
+  version         Print the installed chron-mcp version (also --version, -v)
 
 Options (history):
   --limit=<n>       Max sessions to show (default: 20)

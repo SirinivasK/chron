@@ -38589,7 +38589,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.55",
+      version: "0.1.56",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -38627,7 +38627,7 @@ var require_package = __commonJS({
         test: "vitest run",
         "test:watch": "vitest",
         postinstall: "node dist/cli/index.js setup 2>/dev/null || true",
-        prepublishOnly: "npm test && npm run build"
+        prepublishOnly: "npm run typecheck && npm test && npm run build"
       },
       keywords: [
         "mcp",
@@ -39038,11 +39038,78 @@ var init_terminal = __esm({
   }
 });
 
+// src/utils/evidence.ts
+function parseSessionMetadata(raw) {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+function mergeSessionMetadata(existing, patch) {
+  return JSON.stringify({ ...parseSessionMetadata(existing), ...patch });
+}
+function evidenceSourceOf(meta) {
+  const source = meta.source;
+  return source && EVIDENCE_SOURCES.includes(source) ? source : EVIDENCE_SOURCE.WITNESSED;
+}
+function isPartialEvidence(meta) {
+  if (meta.partial === true) return true;
+  return evidenceSourceOf(meta) !== EVIDENCE_SOURCE.WITNESSED;
+}
+function liveAttachMetadata() {
+  return {
+    source: EVIDENCE_SOURCE.LIVE_ATTACH,
+    partial: true,
+    attach_reason: ATTACH_REASON_MID_SESSION
+  };
+}
+function chainScopeLabel(meta) {
+  return isPartialEvidence(meta) ? "Hash chain valid from attach point" : "Hash chain covers complete session";
+}
+function describeEvidenceBoundary(meta) {
+  switch (evidenceSourceOf(meta)) {
+    case EVIDENCE_SOURCE.LIVE_ATTACH:
+      return "Chron began recording after this conversation had already started. Evidence is valid from the attach point forward; earlier turns are outside the evidence boundary.";
+    case EVIDENCE_SOURCE.IMPORTED:
+      return "Imported from a vendor export. Tool calls, file access, and environment state are not captured by the export.";
+    case EVIDENCE_SOURCE.TRANSCRIPT_BACKFILL:
+      return "Recovered from a local client transcript. Chron ingested this record rather than observing it directly.";
+    case EVIDENCE_SOURCE.WITNESSED:
+    default:
+      return null;
+  }
+}
+var EVIDENCE_SOURCE, EVIDENCE_SOURCES, ATTACH_REASON_MID_SESSION;
+var init_evidence = __esm({
+  "src/utils/evidence.ts"() {
+    "use strict";
+    EVIDENCE_SOURCE = {
+      /** Chron was called as the conversation happened. The default, and the strongest. */
+      WITNESSED: "witnessed",
+      /** The user imported a vendor export after the fact. */
+      IMPORTED: "imported",
+      /** Chron started recording partway through a conversation already in progress. */
+      LIVE_ATTACH: "live_attach",
+      /** Recovered from a local transcript the AI client wrote. Reserved; not yet implemented. */
+      TRANSCRIPT_BACKFILL: "transcript_backfill"
+    };
+    EVIDENCE_SOURCES = Object.values(EVIDENCE_SOURCE);
+    ATTACH_REASON_MID_SESSION = "chron_available_mid_session";
+  }
+});
+
 // src/tools/sessions.ts
 function attachNtpMetadata(db, sessionId) {
   setImmediate(() => {
-    checkNtpSync().then((result) => {
-      db.update(sessions).set({ metadata: JSON.stringify(result) }).where(eq(sessions.id, sessionId)).catch(() => void 0);
+    checkNtpSync().then(async (result) => {
+      try {
+        const [row] = await db.select({ metadata: sessions.metadata }).from(sessions).where(eq(sessions.id, sessionId)).limit(1);
+        await db.update(sessions).set({ metadata: mergeSessionMetadata(row?.metadata ?? null, { ...result }) }).where(eq(sessions.id, sessionId));
+      } catch {
+      }
     }).catch(() => void 0);
   });
 }
@@ -39103,6 +39170,18 @@ function startSession(db) {
     }
   };
 }
+function resolveEvidenceMetadata(attach, metadata) {
+  if (attach && !metadata) return liveAttachMetadata();
+  if (!metadata?.source) return attach ? liveAttachMetadata() : null;
+  const source = metadata.source;
+  const resolved = { source };
+  if (source !== EVIDENCE_SOURCE.WITNESSED) resolved.partial = true;
+  if (source === EVIDENCE_SOURCE.LIVE_ATTACH) {
+    resolved.attach_reason = metadata.attach_reason ?? liveAttachMetadata().attach_reason;
+  }
+  if (metadata.client) resolved.client = metadata.client;
+  return resolved;
+}
 function initSession(db) {
   return async (args) => {
     const id = v4_default();
@@ -39155,6 +39234,7 @@ function initSession(db) {
         publicKey = generateSessionKeypair(id);
       } catch {
       }
+      const evidence = resolveEvidenceMetadata(args.attach, args.metadata);
       await db.insert(sessions).values({
         id,
         title: args.title,
@@ -39163,13 +39243,15 @@ function initSession(db) {
         updated_at: now,
         parent_session_id: args.parent_session_id ?? null,
         external_ref: args.external_ref ?? null,
-        public_key: publicKey
+        public_key: publicKey,
+        metadata: evidence ? JSON.stringify(evidence) : null
       });
       session_id = id;
       created = true;
       ai_tool = args.ai_tool ?? null;
       attachNtpMetadata(db, id);
-      terminalAudit(`session ${id.slice(0, 8)} started at ${now} (${ai_tool ?? "unknown"}: ${args.title})`, "session");
+      const boundary = evidence?.source === EVIDENCE_SOURCE.LIVE_ATTACH ? " [live attach \u2014 partial evidence]" : "";
+      terminalAudit(`session ${id.slice(0, 8)} started at ${now} (${ai_tool ?? "unknown"}: ${args.title})${boundary}`, "session");
     } catch (e) {
       const isUnique = e?.message?.includes("UNIQUE constraint failed") || e?.code === "SQLITE_CONSTRAINT_UNIQUE" || e?.cause?.message?.includes("UNIQUE constraint failed") || e?.cause?.extendedCode === "SQLITE_CONSTRAINT_UNIQUE";
       if (!isUnique) throw e;
@@ -39274,6 +39356,7 @@ var init_sessions = __esm({
     init_signing();
     init_ntp();
     init_terminal();
+    init_evidence();
   }
 });
 
@@ -39803,10 +39886,19 @@ function verifySession(db) {
     const rows = await db.select().from(messages).where(eq(messages.session_id, args.session_id)).orderBy(asc(messages.created_at), asc(sql`rowid`));
     const chained = rows.filter((r) => r.content_hash !== null);
     if (chained.length === 0) {
+      const emptyMeta = parseSessionMetadata(sessionRow?.metadata ?? null);
       return {
         content: [{
           type: "text",
-          text: JSON.stringify({ valid: true, messages: rows.length, chained: 0, note: "No chained messages \u2014 pre-dates hash chaining" })
+          text: JSON.stringify({
+            valid: true,
+            messages: rows.length,
+            chained: 0,
+            note: rows.length === 0 ? "No messages logged yet \u2014 nothing to chain" : "No chained messages \u2014 pre-dates hash chaining",
+            evidence_source: evidenceSourceOf(emptyMeta),
+            partial_evidence: isPartialEvidence(emptyMeta),
+            evidence_boundary: describeEvidenceBoundary(emptyMeta)
+          })
         }]
       };
     }
@@ -39851,10 +39943,23 @@ function verifySession(db) {
       } catch {
       }
     }
+    const meta = parseSessionMetadata(sessionRow?.metadata ?? null);
+    const evidence_source = evidenceSourceOf(meta);
+    const partial_evidence = isPartialEvidence(meta);
     return {
       content: [{
         type: "text",
-        text: JSON.stringify({ valid: true, messages: rows.length, chained: chained.length, signature_valid, clock_attestation })
+        text: JSON.stringify({
+          valid: true,
+          messages: rows.length,
+          chained: chained.length,
+          signature_valid,
+          clock_attestation,
+          evidence_source,
+          partial_evidence,
+          chain_scope: chainScopeLabel(meta),
+          evidence_boundary: describeEvidenceBoundary(meta)
+        })
       }]
     };
   };
@@ -39866,6 +39971,7 @@ var init_verify = __esm({
     init_schema();
     init_hash();
     init_signing();
+    init_evidence();
   }
 });
 
@@ -40177,12 +40283,16 @@ var init_search = __esm({
 });
 
 // src/server.ts
+function registerTool(server, name, description, shape, handler) {
+  server.tool(name, description, shape, handler);
+}
 function createServer(db) {
   const server = new McpServer({
     name: "chron-mcp",
     version: import_package2.version
   });
-  server.tool(
+  registerTool(
+    server,
     "init_session",
     "Initialize or resume an audit session. Returns session_id, message_count, first_message_at, and recent messages in a single call \u2014 use this instead of calling start_session + get_session_history separately.",
     {
@@ -40191,11 +40301,18 @@ function createServer(db) {
       limit: external_exports.number().int().positive().optional().describe("Number of recent messages to return (default: 10)"),
       parent_session_id: external_exports.string().optional().describe("Parent session ID if this is a subagent session spawned by another session"),
       external_ref: external_exports.string().optional().describe('External ticket/PR reference, e.g. "jira:ENG-123" or "github:org/repo#456"'),
-      resume_latest: external_exports.boolean().optional().describe("When true, resumes the most recently active session instead of matching by title. Use this to survive context compaction without breaking the audit chain.")
+      resume_latest: external_exports.boolean().optional().describe("When true, resumes the most recently active session instead of matching by title. Use this to survive context compaction without breaking the audit chain."),
+      attach: external_exports.boolean().optional().describe("Set true when Chron is being started partway through a conversation that has already begun. Marks the session as partial evidence valid from the attach point forward. Do not estimate how many earlier messages there were \u2014 that is self-report, not evidence."),
+      metadata: external_exports.object({
+        source: external_exports.enum(["witnessed", "imported", "live_attach", "transcript_backfill"]).optional().describe("How Chron obtained this session. Defaults to witnessed."),
+        attach_reason: external_exports.string().optional(),
+        client: external_exports.string().optional()
+      }).optional().describe("Evidence provenance. `partial` is derived by Chron and cannot be set by the caller.")
     },
     initSession(db)
   );
-  server.tool(
+  registerTool(
+    server,
     "start_session",
     "Create a new audit session or resume an existing one by title. Call this at the start of every conversation.",
     {
@@ -40206,7 +40323,8 @@ function createServer(db) {
     },
     startSession(db)
   );
-  server.tool(
+  registerTool(
+    server,
     "log_message",
     "Record a single message (user or assistant) with the current local datetime and timezone offset. Call before responding for user messages, and before sending for assistant messages.",
     {
@@ -40216,7 +40334,8 @@ function createServer(db) {
     },
     logMessage(db)
   );
-  server.tool(
+  registerTool(
+    server,
     "log_tool_call",
     "Record an AI tool invocation as a first-class audit event (event_type=tool_call). Call immediately before executing a tool. Returns tool_call_id to pass to log_tool_result.",
     {
@@ -40227,7 +40346,8 @@ function createServer(db) {
     },
     logToolCall(db)
   );
-  server.tool(
+  registerTool(
+    server,
     "log_tool_result",
     "Record the result of a tool call as a first-class audit event (event_type=tool_result). Call immediately after receiving tool output. Links back to log_tool_call via tool_call_id.",
     {
@@ -40238,7 +40358,8 @@ function createServer(db) {
     },
     logToolResult(db)
   );
-  server.tool(
+  registerTool(
+    server,
     "log_code_change",
     "Record a file edit as a first-class audit event (event_type=code_change). Call after every Edit or Write tool call with the unified diff. Diff content is included in the hash chain.",
     {
@@ -40249,7 +40370,8 @@ function createServer(db) {
     },
     logCodeChange(db)
   );
-  server.tool(
+  registerTool(
+    server,
     "log_exchange",
     "Record a user+assistant exchange from historical or batch imports only. Do NOT use for live conversations \u2014 both timestamps are captured at the same instant with no real gap. For live sessions always call log_message twice: once for the user message, once for the assistant response.",
     {
@@ -40259,7 +40381,8 @@ function createServer(db) {
     },
     logExchange(db)
   );
-  server.tool(
+  registerTool(
+    server,
     "list_sessions",
     "List all audit sessions ordered by most recently active. Returns id, title, ai_tool, message_count, created_at, updated_at.",
     {
@@ -40267,7 +40390,8 @@ function createServer(db) {
     },
     listSessions(db)
   );
-  server.tool(
+  registerTool(
+    server,
     "get_session_history",
     "Retrieve the full timestamped audit log for a session, oldest first.",
     {
@@ -40276,7 +40400,8 @@ function createServer(db) {
     },
     getSessionHistory(db)
   );
-  server.tool(
+  registerTool(
+    server,
     "verify_session",
     "Verify the tamper-evident hash chain for a session. Returns valid=true if no rows were edited after logging, or the first broken link if tampering is detected.",
     {
@@ -40284,7 +40409,8 @@ function createServer(db) {
     },
     verifySession(db)
   );
-  server.tool(
+  registerTool(
+    server,
     "scan_prompt",
     "Scan a prompt for secrets and sensitive data before sending to any AI. Returns detected secrets, a redacted version with tokens, and a token_map to restore the real values after the AI responds.",
     {
@@ -40292,7 +40418,8 @@ function createServer(db) {
     },
     scanPrompt()
   );
-  server.tool(
+  registerTool(
+    server,
     "delete_session",
     "Permanently delete a session and all its messages. Cascades to secrets_detected. Returns deleted=true or deleted=false if not found.",
     {
@@ -40300,7 +40427,8 @@ function createServer(db) {
     },
     deleteSession(db)
   );
-  server.tool(
+  registerTool(
+    server,
     "search_sessions",
     'Full-text search across all logged AI conversations. Returns matching sessions with excerpts. Uses SQLite FTS5 with porter stemming \u2014 supports phrases ("exact match"), boolean (term1 OR term2), and prefix (migrat*).',
     {
@@ -40309,7 +40437,8 @@ function createServer(db) {
     },
     searchSessions(db)
   );
-  server.tool(
+  registerTool(
+    server,
     "summarize_session",
     "Return a structured summary of a session: timeline with latencies, mutations detected, secrets touched, and possible prod-account references. Useful for compliance review and change-control evidence.",
     {
@@ -40317,7 +40446,8 @@ function createServer(db) {
     },
     summarizeSession(db)
   );
-  server.tool(
+  registerTool(
+    server,
     "rehydrate_response",
     "Restore real secret values into an AI response that contains $CHRON_* tokens. Pass the token_map returned by scan_prompt.",
     {
