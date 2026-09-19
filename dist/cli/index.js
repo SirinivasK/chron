@@ -38,7 +38,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.56",
+      version: "0.1.57",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -3054,33 +3054,33 @@ var require_detect_libc = __commonJS({
       }
       return null;
     };
-    var version5 = async () => {
-      let version6 = null;
+    var version6 = async () => {
+      let version7 = null;
       if (isLinux()) {
-        version6 = await versionFromFilesystem();
-        if (!version6) {
-          version6 = versionFromReport();
+        version7 = await versionFromFilesystem();
+        if (!version7) {
+          version7 = versionFromReport();
         }
-        if (!version6) {
+        if (!version7) {
           const out = await safeCommand();
-          version6 = versionFromCommand(out);
+          version7 = versionFromCommand(out);
         }
       }
-      return version6;
+      return version7;
     };
     var versionSync = () => {
-      let version6 = null;
+      let version7 = null;
       if (isLinux()) {
-        version6 = versionFromFilesystemSync();
-        if (!version6) {
-          version6 = versionFromReport();
+        version7 = versionFromFilesystemSync();
+        if (!version7) {
+          version7 = versionFromReport();
         }
-        if (!version6) {
+        if (!version7) {
           const out = safeCommandSync();
-          version6 = versionFromCommand(out);
+          version7 = versionFromCommand(out);
         }
       }
-      return version6;
+      return version7;
     };
     module2.exports = {
       GLIBC,
@@ -3089,7 +3089,7 @@ var require_detect_libc = __commonJS({
       familySync,
       isNonGlibcLinux,
       isNonGlibcLinuxSync,
-      version: version5,
+      version: version6,
       versionSync
     };
   }
@@ -6209,7 +6209,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash10 } = require("crypto");
+    var { randomBytes, createHash: createHash11 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -6877,7 +6877,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash10("sha1").update(key + GUID).digest("base64");
+        const digest = createHash11("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -7246,7 +7246,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash10 } = require("crypto");
+    var { createHash: createHash11 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -7447,7 +7447,7 @@ var require_websocket_server = __commonJS({
         socket.on("error", socketOnError);
         const key = req.headers["sec-websocket-key"];
         const upgrade = req.headers.upgrade;
-        const version5 = +req.headers["sec-websocket-version"];
+        const version6 = +req.headers["sec-websocket-version"];
         if (req.method !== "GET") {
           const message = "Invalid HTTP method";
           abortHandshakeOrEmitwsClientError(this, req, socket, 405, message);
@@ -7463,7 +7463,7 @@ var require_websocket_server = __commonJS({
           abortHandshakeOrEmitwsClientError(this, req, socket, 400, message);
           return;
         }
-        if (version5 !== 13 && version5 !== 8) {
+        if (version6 !== 13 && version6 !== 8) {
           const message = "Missing or invalid Sec-WebSocket-Version header";
           abortHandshakeOrEmitwsClientError(this, req, socket, 400, message, {
             "Sec-WebSocket-Version": "13, 8"
@@ -7507,7 +7507,7 @@ var require_websocket_server = __commonJS({
         }
         if (this.options.verifyClient) {
           const info2 = {
-            origin: req.headers[`${version5 === 8 ? "sec-websocket-origin" : "origin"}`],
+            origin: req.headers[`${version6 === 8 ? "sec-websocket-origin" : "origin"}`],
             secure: !!(req.socket.authorized || req.socket.encrypted),
             req
           };
@@ -7553,7 +7553,7 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest = createHash10("sha1").update(key + GUID).digest("base64");
+        const digest = createHash11("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -11322,7 +11322,7 @@ var init_lib_esm = __esm({
 });
 
 // node_modules/@libsql/client/lib-esm/hrana.js
-async function executeHranaBatch(mode, version5, batch, hranaStmts, disableForeignKeys = false) {
+async function executeHranaBatch(mode, version6, batch, hranaStmts, disableForeignKeys = false) {
   if (disableForeignKeys) {
     batch.step().run("PRAGMA foreign_keys=off");
   }
@@ -11331,7 +11331,7 @@ async function executeHranaBatch(mode, version5, batch, hranaStmts, disableForei
   let lastStep = beginStep;
   const stmtPromises = hranaStmts.map((hranaStmt) => {
     const stmtStep = batch.step().condition(BatchCond.ok(lastStep));
-    if (version5 >= 3) {
+    if (version6 >= 3) {
       stmtStep.condition(BatchCond.not(BatchCond.isAutocommit(batch)));
     }
     const stmtPromise = stmtStep.query(hranaStmt);
@@ -11339,7 +11339,7 @@ async function executeHranaBatch(mode, version5, batch, hranaStmts, disableForei
     return stmtPromise;
   });
   const commitStep = batch.step().condition(BatchCond.ok(lastStep));
-  if (version5 >= 3) {
+  if (version6 >= 3) {
     commitStep.condition(BatchCond.not(BatchCond.isAutocommit(batch)));
   }
   const commitPromise = commitStep.run("COMMIT");
@@ -11442,9 +11442,9 @@ var init_hrana = __esm({
       // BEGIN statement yet.
       #started;
       /** @private */
-      constructor(mode, version5) {
+      constructor(mode, version6) {
         this.#mode = mode;
-        this.#version = version5;
+        this.#version = version6;
         this.#started = void 0;
       }
       execute(stmt) {
@@ -11875,10 +11875,10 @@ var init_ws = __esm({
               return stmt;
             });
             const hranaStmts = normalizedStmts.map(stmtToHrana);
-            const version5 = await streamState.conn.client.getVersion();
+            const version6 = await streamState.conn.client.getVersion();
             streamState.conn.sqlCache.apply(hranaStmts);
-            const batch = streamState.stream.batch(version5 >= 3);
-            const resultsPromise = executeHranaBatch(mode, version5, batch, hranaStmts);
+            const batch = streamState.stream.batch(version6 >= 3);
+            const resultsPromise = executeHranaBatch(mode, version6, batch, hranaStmts);
             const results = await resultsPromise;
             return results;
           } catch (e) {
@@ -11893,9 +11893,9 @@ var init_ws = __esm({
           const streamState = await this.#openStream();
           try {
             const hranaStmts = stmts.map(stmtToHrana);
-            const version5 = await streamState.conn.client.getVersion();
-            const batch = streamState.stream.batch(version5 >= 3);
-            const resultsPromise = executeHranaBatch("deferred", version5, batch, hranaStmts, true);
+            const version6 = await streamState.conn.client.getVersion();
+            const batch = streamState.stream.batch(version6 >= 3);
+            const resultsPromise = executeHranaBatch("deferred", version6, batch, hranaStmts, true);
             const results = await resultsPromise;
             return results;
           } catch (e) {
@@ -11909,8 +11909,8 @@ var init_ws = __esm({
         return this.limit(async () => {
           const streamState = await this.#openStream();
           try {
-            const version5 = await streamState.conn.client.getVersion();
-            return new WsTransaction(this, streamState, mode, version5);
+            const version6 = await streamState.conn.client.getVersion();
+            return new WsTransaction(this, streamState, mode, version6);
           } catch (e) {
             this._closeStream(streamState);
             throw mapHranaError(e);
@@ -12017,8 +12017,8 @@ var init_ws = __esm({
           this.#futureConnState = void 0;
         }
         const next = this.#openConn();
-        const version5 = await next.client.getVersion();
-        next.useSqlCache = version5 >= 2;
+        const version6 = await next.client.getVersion();
+        next.useSqlCache = version6 >= 2;
         if (next.useSqlCache) {
           next.sqlCache.capacity = sqlCacheCapacity;
         }
@@ -12050,8 +12050,8 @@ var init_ws = __esm({
       #client;
       #streamState;
       /** @private */
-      constructor(client, state, mode, version5) {
-        super(mode, version5);
+      constructor(client, state, mode, version6) {
+        super(mode, version6);
         this.#client = client;
         this.#streamState = state;
       }
@@ -12168,14 +12168,14 @@ var init_http = __esm({
               return stmt;
             });
             const hranaStmts = normalizedStmts.map(stmtToHrana);
-            const version5 = await this.#client.getVersion();
+            const version6 = await this.#client.getVersion();
             let resultsPromise;
             const stream = this.#client.openStream();
             try {
               const sqlCache = new SqlCache(stream, sqlCacheCapacity2);
               sqlCache.apply(hranaStmts);
               const batch = stream.batch(false);
-              resultsPromise = executeHranaBatch(mode, version5, batch, hranaStmts);
+              resultsPromise = executeHranaBatch(mode, version6, batch, hranaStmts);
             } finally {
               stream.closeGracefully();
             }
@@ -12190,12 +12190,12 @@ var init_http = __esm({
         return this.limit(async () => {
           try {
             const hranaStmts = stmts.map(stmtToHrana);
-            const version5 = await this.#client.getVersion();
+            const version6 = await this.#client.getVersion();
             let resultsPromise;
             const stream = this.#client.openStream();
             try {
               const batch = stream.batch(false);
-              resultsPromise = executeHranaBatch("deferred", version5, batch, hranaStmts, true);
+              resultsPromise = executeHranaBatch("deferred", version6, batch, hranaStmts, true);
             } finally {
               stream.closeGracefully();
             }
@@ -12209,8 +12209,8 @@ var init_http = __esm({
       async transaction(mode = "write") {
         return this.limit(async () => {
           try {
-            const version5 = await this.#client.getVersion();
-            return new HttpTransaction(this.#client.openStream(), mode, version5);
+            const version6 = await this.#client.getVersion();
+            return new HttpTransaction(this.#client.openStream(), mode, version6);
           } catch (e) {
             throw mapHranaError(e);
           }
@@ -12256,8 +12256,8 @@ var init_http = __esm({
       #stream;
       #sqlCache;
       /** @private */
-      constructor(stream, mode, version5) {
-        super(mode, version5);
+      constructor(stream, mode, version6) {
+        super(mode, version6);
         this.#stream = stream;
         this.#sqlCache = new SqlCache(stream, sqlCacheCapacity2);
       }
@@ -22291,8 +22291,8 @@ function npmLatestVersion() {
     return null;
   }
 }
-function versionParts(version5) {
-  return version5.split("-")[0].split(".").map((part) => Number.parseInt(part, 10)).map((part) => Number.isFinite(part) ? part : 0);
+function versionParts(version6) {
+  return version6.split("-")[0].split(".").map((part) => Number.parseInt(part, 10)).map((part) => Number.isFinite(part) ? part : 0);
 }
 function compareVersions(a, b) {
   const left = versionParts(a);
@@ -26855,6 +26855,571 @@ var init_bootstrap = __esm({
   }
 });
 
+// src/otel/semconv.ts
+function providerName(aiTool) {
+  if (!aiTool) return "unknown";
+  const key = aiTool.toLowerCase();
+  return PROVIDER_BY_TOOL[key] ?? key;
+}
+function operationForEvent(eventType) {
+  if (!eventType) return OPERATION.CHAT;
+  return OPERATION_BY_EVENT[eventType] ?? null;
+}
+var GEN_AI, CHRON, OPERATION, PROVIDER_BY_TOOL, OPERATION_BY_EVENT;
+var init_semconv = __esm({
+  "src/otel/semconv.ts"() {
+    "use strict";
+    GEN_AI = {
+      OPERATION_NAME: "gen_ai.operation.name",
+      PROVIDER_NAME: "gen_ai.provider.name",
+      CONVERSATION_ID: "gen_ai.conversation.id",
+      AGENT_NAME: "gen_ai.agent.name",
+      AGENT_ID: "gen_ai.agent.id",
+      TOOL_NAME: "gen_ai.tool.name",
+      TOOL_CALL_ID: "gen_ai.tool.call.id",
+      TOOL_TYPE: "gen_ai.tool.type",
+      // Opt-in in the spec because they carry raw prompt/response content.
+      // Chron treats them the same way: never emitted unless explicitly enabled.
+      INPUT_MESSAGES: "gen_ai.input.messages",
+      OUTPUT_MESSAGES: "gen_ai.output.messages"
+    };
+    CHRON = {
+      SESSION_ID: "chron.session.id",
+      SESSION_TITLE: "chron.session.title",
+      SESSION_AI_TOOL: "chron.session.ai_tool",
+      SESSION_EXTERNAL_REF: "chron.session.external_ref",
+      SESSION_PARENT_ID: "chron.session.parent_session_id",
+      SESSION_SIGNED: "chron.session.signed",
+      SESSION_MESSAGE_COUNT: "chron.session.message_count",
+      MESSAGE_ID: "chron.message.id",
+      MESSAGE_ROLE: "chron.message.role",
+      MESSAGE_CONTENT_HASH: "chron.message.content_hash",
+      MESSAGE_PREV_HASH: "chron.message.prev_hash",
+      MESSAGE_CONTENT_LENGTH: "chron.message.content_length",
+      EVENT_TYPE: "chron.event.type",
+      SECRET_COUNT: "chron.secret.count",
+      SECRET_TYPES: "chron.secret.types"
+    };
+    OPERATION = {
+      INVOKE_AGENT: "invoke_agent",
+      CHAT: "chat",
+      EXECUTE_TOOL: "execute_tool"
+    };
+    PROVIDER_BY_TOOL = {
+      claude: "anthropic",
+      "claude-code": "anthropic",
+      codex: "openai",
+      chatgpt: "openai",
+      gemini: "gcp.gemini"
+    };
+    OPERATION_BY_EVENT = {
+      message: OPERATION.CHAT,
+      tool_call: OPERATION.EXECUTE_TOOL,
+      tool_result: OPERATION.EXECUTE_TOOL
+    };
+  }
+});
+
+// src/otel/spans.ts
+function deriveId(input, bytes) {
+  const hex = (0, import_crypto12.createHash)("sha256").update(input).digest("hex").slice(0, bytes * 2);
+  return /^0+$/.test(hex) ? hex.slice(0, -1) + "1" : hex;
+}
+function traceIdForSession(sessionId) {
+  return deriveId(`chron:trace:${sessionId}`, 16);
+}
+function spanIdForSession(sessionId) {
+  return deriveId(`chron:span:session:${sessionId}`, 8);
+}
+function spanIdForMessage(messageId) {
+  return deriveId(`chron:span:message:${messageId}`, 8);
+}
+function toUnixNano(iso) {
+  const ms = Date.parse(iso);
+  if (Number.isNaN(ms)) throw new Error(`invalid timestamp: ${iso}`);
+  return (BigInt(ms) * 1000000n).toString();
+}
+function put(attrs, key, value) {
+  if (value === null || value === void 0 || value === "") return;
+  attrs[key] = value;
+}
+function buildSessionSpan(session, messageCount = 0, opts = {}) {
+  const attrs = {};
+  attrs[GEN_AI.OPERATION_NAME] = OPERATION.INVOKE_AGENT;
+  attrs[GEN_AI.PROVIDER_NAME] = providerName(session.ai_tool);
+  attrs[GEN_AI.CONVERSATION_ID] = session.id;
+  put(attrs, GEN_AI.AGENT_NAME, session.ai_tool ?? void 0);
+  attrs[CHRON.SESSION_ID] = session.id;
+  if (opts.includeContent) {
+    attrs[CHRON.SESSION_TITLE] = session.title;
+    put(attrs, CHRON.SESSION_EXTERNAL_REF, session.external_ref ?? void 0);
+  }
+  put(attrs, CHRON.SESSION_AI_TOOL, session.ai_tool ?? void 0);
+  put(attrs, CHRON.SESSION_PARENT_ID, session.parent_session_id ?? void 0);
+  attrs[CHRON.SESSION_SIGNED] = Boolean(session.signature);
+  attrs[CHRON.SESSION_MESSAGE_COUNT] = messageCount;
+  const label = session.ai_tool ?? "unknown";
+  return {
+    traceId: traceIdForSession(session.id),
+    spanId: spanIdForSession(session.id),
+    name: `${OPERATION.INVOKE_AGENT} ${label}`,
+    startTimeUnixNano: toUnixNano(session.created_at),
+    endTimeUnixNano: toUnixNano(session.updated_at),
+    attributes: attrs
+  };
+}
+function buildMessageSpan(message, session, previous, opts = {}) {
+  const attrs = {};
+  const operation = operationForEvent(message.event_type);
+  if (operation) {
+    attrs[GEN_AI.OPERATION_NAME] = operation;
+    attrs[GEN_AI.PROVIDER_NAME] = providerName(session.ai_tool);
+  }
+  attrs[GEN_AI.CONVERSATION_ID] = message.session_id;
+  attrs[CHRON.MESSAGE_ID] = message.id;
+  attrs[CHRON.MESSAGE_ROLE] = message.role;
+  attrs[CHRON.EVENT_TYPE] = message.event_type ?? "message";
+  attrs[CHRON.MESSAGE_CONTENT_LENGTH] = message.content.length;
+  put(attrs, CHRON.MESSAGE_CONTENT_HASH, message.content_hash ?? void 0);
+  put(attrs, CHRON.MESSAGE_PREV_HASH, message.prev_hash ?? void 0);
+  if (opts.includeContent) {
+    const key = message.role === "assistant" ? GEN_AI.OUTPUT_MESSAGES : GEN_AI.INPUT_MESSAGES;
+    attrs[key] = message.content;
+  }
+  const secrets = opts.secretsByMessage?.[message.id];
+  if (secrets && secrets.length > 0) {
+    attrs[CHRON.SECRET_COUNT] = secrets.length;
+    attrs[CHRON.SECRET_TYPES] = [...new Set(secrets)].sort().join(",");
+  }
+  const end = toUnixNano(message.created_at);
+  const spansGeneration = message.role === "assistant" && previous?.role === "user";
+  const start = spansGeneration ? toUnixNano(previous.created_at) : end;
+  return {
+    traceId: traceIdForSession(message.session_id),
+    spanId: spanIdForMessage(message.id),
+    parentSpanId: spanIdForSession(message.session_id),
+    name: operation ? `${operation} ${message.role}` : `chron.${message.event_type}`,
+    startTimeUnixNano: start,
+    endTimeUnixNano: end,
+    attributes: attrs
+  };
+}
+function buildSessionTrace(session, messages3, opts = {}) {
+  const ordered = [...messages3].sort(
+    (a, b) => Date.parse(a.created_at) - Date.parse(b.created_at)
+  );
+  return [
+    buildSessionSpan(session, ordered.length, opts),
+    ...ordered.map((m, i) => buildMessageSpan(m, session, ordered[i - 1], opts))
+  ];
+}
+var import_crypto12;
+var init_spans = __esm({
+  "src/otel/spans.ts"() {
+    "use strict";
+    import_crypto12 = require("crypto");
+    init_semconv();
+  }
+});
+
+// src/otel/otlp.ts
+function toAnyValue(v) {
+  if (typeof v === "boolean") return { boolValue: v };
+  if (typeof v === "number") {
+    return Number.isInteger(v) ? { intValue: String(v) } : { doubleValue: String(v) };
+  }
+  return { stringValue: v };
+}
+function toOtlpAttributes(attrs) {
+  return Object.keys(attrs).sort().map((key) => ({ key, value: toAnyValue(attrs[key]) }));
+}
+function toOtlpSpan(span) {
+  const out = {
+    traceId: span.traceId,
+    spanId: span.spanId,
+    name: span.name,
+    kind: SPAN_KIND_INTERNAL,
+    startTimeUnixNano: span.startTimeUnixNano,
+    endTimeUnixNano: span.endTimeUnixNano,
+    attributes: toOtlpAttributes(span.attributes),
+    status: {}
+  };
+  if (span.parentSpanId) out.parentSpanId = span.parentSpanId;
+  return out;
+}
+function toResourceSpans(spans, resource) {
+  const { serviceName, serviceVersion, ...extra } = resource;
+  const resourceAttrs = {
+    "service.name": serviceName,
+    "service.version": serviceVersion,
+    ...extra
+  };
+  return {
+    resourceSpans: [{
+      resource: { attributes: toOtlpAttributes(resourceAttrs) },
+      scopeSpans: [{
+        scope: { name: SCOPE_NAME, version: serviceVersion },
+        spans: spans.map(toOtlpSpan)
+      }]
+    }]
+  };
+}
+function batchSpans(spans, size) {
+  if (size <= 0) throw new Error("batch size must be positive");
+  const out = [];
+  for (let i = 0; i < spans.length; i += size) out.push(spans.slice(i, i + size));
+  return out;
+}
+var SCOPE_NAME, SPAN_KIND_INTERNAL;
+var init_otlp = __esm({
+  "src/otel/otlp.ts"() {
+    "use strict";
+    SCOPE_NAME = "chron";
+    SPAN_KIND_INTERNAL = 1;
+  }
+});
+
+// src/otel/exporter.ts
+function isTransientStatus(status) {
+  return status === 408 || status === 429 || status >= 500 && status <= 599;
+}
+function errorCodes(err) {
+  const codes = [];
+  let cur = err;
+  for (let i = 0; i < 5 && cur; i++) {
+    const e = cur;
+    if (typeof e.code === "string") codes.push(e.code);
+    if (typeof e.name === "string") codes.push(e.name);
+    cur = e.cause;
+  }
+  return codes;
+}
+function classifyTransportError(err) {
+  const codes = errorCodes(err);
+  if (codes.some((c) => ESTABLISHED_NON_DELIVERY.has(c))) return "failed";
+  return "unknown";
+}
+async function postBatch(spans, config, resource, deps) {
+  const body = JSON.stringify(toResourceSpans(spans, resource));
+  let attempts = 0;
+  let last = {};
+  let possiblyDelivered = false;
+  while (attempts <= deps.maxRetries) {
+    attempts++;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), config.timeoutMs);
+    try {
+      const res = await deps.fetchImpl(config.endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...config.headers },
+        body,
+        signal: controller.signal
+      });
+      if (res.status >= 200 && res.status < 300) {
+        return { spans: spans.length, status: "sent", httpStatus: res.status, attempts };
+      }
+      const detail = (await res.text().catch(() => "")).slice(0, 300);
+      last = { httpStatus: res.status, error: detail || `HTTP ${res.status}` };
+      if (!isTransientStatus(res.status)) {
+        return { spans: spans.length, status: "rejected", httpStatus: res.status, error: last.error, attempts };
+      }
+    } catch (e) {
+      last = { error: e instanceof Error ? e.message : String(e) };
+      if (classifyTransportError(e) === "unknown") possiblyDelivered = true;
+    } finally {
+      clearTimeout(timer);
+    }
+    if (attempts <= deps.maxRetries) await deps.sleep(250 * 2 ** (attempts - 1));
+  }
+  return {
+    spans: spans.length,
+    status: possiblyDelivered ? "unknown" : "failed",
+    ...last,
+    attempts
+  };
+}
+async function exportSpans(spans, config, resource, deps = {}) {
+  const resolved = {
+    fetchImpl: deps.fetchImpl ?? globalThis.fetch,
+    sleep: deps.sleep ?? defaultSleep,
+    maxRetries: deps.maxRetries ?? 2
+  };
+  if (!resolved.fetchImpl) {
+    throw new Error("No fetch implementation available \u2014 Node 18 or newer is required.");
+  }
+  const result = { sent: 0, rejected: 0, failed: 0, unknown: 0, batches: [], complete: false };
+  if (spans.length === 0) {
+    result.complete = true;
+    return result;
+  }
+  for (const batch of batchSpans(spans, config.batchSize)) {
+    const outcome = await postBatch(batch, config, resource, resolved);
+    result.batches.push(outcome);
+    if (outcome.status === "sent") result.sent += outcome.spans;
+    else if (outcome.status === "rejected") result.rejected += outcome.spans;
+    else if (outcome.status === "unknown") result.unknown += outcome.spans;
+    else result.failed += outcome.spans;
+  }
+  result.complete = result.sent === spans.length && result.rejected === 0 && result.failed === 0 && result.unknown === 0;
+  return result;
+}
+var ESTABLISHED_NON_DELIVERY, defaultSleep;
+var init_exporter = __esm({
+  "src/otel/exporter.ts"() {
+    "use strict";
+    init_otlp();
+    ESTABLISHED_NON_DELIVERY = /* @__PURE__ */ new Set([
+      "ECONNREFUSED",
+      // TCP refused before any bytes were sent
+      "ENOTFOUND",
+      // DNS never resolved
+      "EAI_AGAIN",
+      // DNS lookup failed
+      "ERR_INVALID_URL",
+      "ECONNABORTED"
+    ]);
+    defaultSleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  }
+});
+
+// src/otel/config.ts
+function appendTracesPath(base) {
+  return `${base.replace(/\/+$/, "")}/v1/traces`;
+}
+function resolveProtocol(env) {
+  const configured = env.OTEL_EXPORTER_OTLP_TRACES_PROTOCOL ?? env.OTEL_EXPORTER_OTLP_PROTOCOL;
+  if (!configured || configured === SUPPORTED_PROTOCOL) return SUPPORTED_PROTOCOL;
+  throw new OtelConfigError(
+    `Chron exports OTLP over ${SUPPORTED_PROTOCOL} only, but ${configured} is configured. Point Chron at an OTLP/HTTP collector endpoint, or unset OTEL_EXPORTER_OTLP_PROTOCOL. gRPC and protobuf encoding are not supported.`
+  );
+}
+function resolveEndpoint(env, overrides = {}) {
+  if (overrides.tracesEndpoint) return overrides.tracesEndpoint;
+  if (overrides.endpoint) return appendTracesPath(overrides.endpoint);
+  if (env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT) return env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT;
+  if (env.OTEL_EXPORTER_OTLP_ENDPOINT) return appendTracesPath(env.OTEL_EXPORTER_OTLP_ENDPOINT);
+  throw new OtelConfigError(
+    "No OTLP endpoint configured. Set OTEL_EXPORTER_OTLP_ENDPOINT (for example http://localhost:4318), or pass --endpoint. Use --dry-run to inspect the payload without sending anything."
+  );
+}
+function parseOtlpHeaders(raw) {
+  if (!raw?.trim()) return {};
+  const out = {};
+  for (const pair of raw.split(",")) {
+    const idx = pair.indexOf("=");
+    if (idx <= 0) continue;
+    const key = pair.slice(0, idx).trim();
+    const value = pair.slice(idx + 1).trim();
+    if (!key) continue;
+    try {
+      out[key] = decodeURIComponent(value);
+    } catch {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+function resolveHeaders(env) {
+  const raw = env.OTEL_EXPORTER_OTLP_TRACES_HEADERS ?? env.OTEL_EXPORTER_OTLP_HEADERS;
+  return parseOtlpHeaders(raw);
+}
+function positiveInt(raw, fallback) {
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+}
+function resolveConfig(env, overrides = {}) {
+  resolveProtocol(env);
+  return {
+    endpoint: resolveEndpoint(env, overrides),
+    headers: resolveHeaders(env),
+    timeoutMs: overrides.timeoutMs ?? positiveInt(env.OTEL_EXPORTER_OTLP_TRACES_TIMEOUT ?? env.OTEL_EXPORTER_OTLP_TIMEOUT, DEFAULT_TIMEOUT_MS),
+    batchSize: overrides.batchSize ?? DEFAULT_BATCH_SIZE,
+    includeContent: overrides.includeContent ?? false
+  };
+}
+function redactHeaders(headers) {
+  const out = {};
+  for (const [k, v] of Object.entries(headers)) {
+    out[k] = v.length <= 4 ? "****" : `${v.slice(0, 2)}****${v.slice(-2)} (${v.length} chars)`;
+  }
+  return out;
+}
+var DEFAULT_TIMEOUT_MS, DEFAULT_BATCH_SIZE, SUPPORTED_PROTOCOL, OtelConfigError;
+var init_config2 = __esm({
+  "src/otel/config.ts"() {
+    "use strict";
+    DEFAULT_TIMEOUT_MS = 1e4;
+    DEFAULT_BATCH_SIZE = 512;
+    SUPPORTED_PROTOCOL = "http/json";
+    OtelConfigError = class extends Error {
+    };
+  }
+});
+
+// src/cli/otel.ts
+var otel_exports = {};
+__export(otel_exports, {
+  runOtel: () => runOtel
+});
+function usage() {
+  return "Usage: chron otel export [options]\n\nExport logged sessions as OpenTelemetry spans.\n\nProtocol: OTLP over HTTP with JSON encoding (http/json). This is the only\nprotocol Chron speaks. If OTEL_EXPORTER_OTLP_PROTOCOL is set to grpc or\nhttp/protobuf, the export is refused rather than silently downgraded.\n\nExport is deliberate and manual. Chron never sends evidence off the machine\non its own; nothing leaves until you run this command.\n\nOptions:\n  --dry-run            Print the payload and send nothing. Fully offline.\n  --session=<prefix>   Export a single session\n  --since=<range>      7d, 30d, or YYYY-MM-DD\n  --endpoint=<url>     Base URL; /v1/traces is appended\n  --traces-endpoint=<url>  Full traces URL, used exactly as given\n  --include-content    Include human-authored text: messages, session titles\n                       and external references (off by default)\n  --batch-size=<n>     Spans per request (default 512)\n\nEnvironment (standard OTel variables):\n  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT   used as-is\n  OTEL_EXPORTER_OTLP_ENDPOINT          base URL, /v1/traces appended\n  OTEL_EXPORTER_OTLP_HEADERS           key1=value1,key2=value2\n  OTEL_EXPORTER_OTLP_TIMEOUT           milliseconds (default 10000)\n";
+}
+function flag(args2, name) {
+  return args2.find((a) => a.startsWith(`--${name}=`))?.split("=").slice(1).join("=");
+}
+async function collectSpans(sessionPrefix, since, includeContent) {
+  const db = await initDb();
+  const allSessions = await db.select().from(sessions);
+  let selected = allSessions;
+  if (sessionPrefix) selected = allSessions.filter((s) => s.id.startsWith(sessionPrefix));
+  else if (since) selected = allSessions.filter((s) => s.updated_at >= since);
+  const spans = [];
+  for (const s of selected) {
+    const rows = await db.select().from(messages).where(eq(messages.session_id, s.id)).orderBy(asc(messages.created_at), asc(sql`rowid`));
+    spans.push(...buildSessionTrace(s, rows, { includeContent }));
+  }
+  return { spans, sessionCount: selected.length };
+}
+async function runOtel(args2) {
+  const sub = args2.find((a) => !a.startsWith("--"));
+  if (!sub || sub !== "export") {
+    process.stderr.write(usage());
+    process.exit(1);
+  }
+  const dryRun = args2.includes("--dry-run");
+  const includeContent = args2.includes("--include-content");
+  const sinceRaw = flag(args2, "since");
+  const since = sinceRaw ? parseSince(sinceRaw) : void 0;
+  const batchSize = flag(args2, "batch-size") ? Number(flag(args2, "batch-size")) : void 0;
+  let config;
+  if (!dryRun) {
+    try {
+      config = resolveConfig(process.env, {
+        endpoint: flag(args2, "endpoint"),
+        tracesEndpoint: flag(args2, "traces-endpoint"),
+        batchSize,
+        includeContent
+      });
+    } catch (e) {
+      if (e instanceof OtelConfigError) {
+        process.stderr.write(`
+${RED12}\u2717${RESET16} ${e.message}
+
+`);
+        process.exit(1);
+      }
+      throw e;
+    }
+  }
+  const { spans, sessionCount } = await collectSpans(flag(args2, "session"), since, includeContent);
+  const resource = { serviceName: "chron", serviceVersion: import_package4.version };
+  process.stdout.write(`
+${BOLD16}chron otel export${RESET16}
+
+`);
+  process.stdout.write(`  ${sessionCount} session(s), ${spans.length} span(s)
+`);
+  if (includeContent) {
+    process.stdout.write(`  ${YELLOW14}!${RESET16} Human-authored text (messages, titles, external references) is included.
+`);
+  } else {
+    process.stdout.write(`  ${DIM15}content excluded \u2014 identifiers, hashes and lengths only${RESET16}
+`);
+  }
+  if (dryRun) {
+    process.stdout.write(`
+${BOLD16}Dry run \u2014 nothing sent${RESET16}
+
+`);
+    process.stdout.write(`${JSON.stringify(toResourceSpans(spans.slice(0, 2), resource), null, 2)}
+`);
+    if (spans.length > 2) process.stdout.write(`${DIM15}... ${spans.length - 2} more span(s) not shown${RESET16}
+`);
+    try {
+      const cfg = resolveConfig(process.env, { endpoint: flag(args2, "endpoint"), tracesEndpoint: flag(args2, "traces-endpoint") });
+      process.stdout.write(`
+${DIM15}would POST to: ${cfg.endpoint}${RESET16}
+`);
+      const red = redactHeaders(cfg.headers);
+      if (Object.keys(red).length > 0) {
+        process.stdout.write(`${DIM15}headers: ${JSON.stringify(red)}${RESET16}
+`);
+      }
+    } catch {
+      process.stdout.write(`
+${DIM15}no endpoint configured \u2014 dry run does not need one${RESET16}
+`);
+    }
+    process.stdout.write("\n");
+    return;
+  }
+  process.stdout.write(`  endpoint: ${config.endpoint}
+
+`);
+  const result = await exportSpans(spans, config, resource);
+  if (result.complete) {
+    process.stdout.write(`  ${GREEN10}\u2713${RESET16} ${result.sent} span(s) accepted by the collector
+
+`);
+    return;
+  }
+  process.stdout.write(`  ${GREEN10}sent${RESET16}     ${result.sent}
+`);
+  process.stdout.write(`  ${RED12}rejected${RESET16} ${result.rejected}
+`);
+  process.stdout.write(`  ${RED12}failed${RESET16}   ${result.failed}
+`);
+  process.stdout.write(`  ${YELLOW14}unknown${RESET16}  ${result.unknown}
+
+`);
+  for (const b of result.batches.filter((x) => x.status !== "sent")) {
+    const code = b.httpStatus ? `HTTP ${b.httpStatus}` : "no response";
+    const mark = b.status === "unknown" ? `${YELLOW14}?${RESET16}` : `${RED12}\u2717${RESET16}`;
+    process.stderr.write(`  ${mark} ${b.spans} span(s) ${b.status} after ${b.attempts} attempt(s): ${code}${b.error ? ` \u2014 ${b.error}` : ""}
+`);
+  }
+  process.stderr.write("\n");
+  if (result.rejected > 0 || result.failed > 0) {
+    process.stderr.write(`${RED12}Not delivered.${RESET16} ${result.rejected + result.failed} span(s) did not reach the collector.
+`);
+    process.stderr.write(`  Check the endpoint, credentials and configuration, then export again.
+`);
+  }
+  if (result.unknown > 0) {
+    process.stderr.write(`${YELLOW14}Delivery unknown.${RESET16} ${result.unknown} span(s) may or may not have reached the collector;
+`);
+    process.stderr.write(`  the request was sent but no trustworthy response came back.
+`);
+    process.stderr.write(`  Re-exporting is safe: span ids are derived from Chron's own identifiers,
+`);
+    process.stderr.write(`  so a repeat updates the same spans rather than duplicating them.
+`);
+  }
+  process.stderr.write("\n");
+  process.exit(1);
+}
+var import_package4, RESET16, BOLD16, DIM15, GREEN10, RED12, YELLOW14;
+var init_otel = __esm({
+  "src/cli/otel.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    init_db2();
+    init_schema();
+    init_spans();
+    init_otlp();
+    init_exporter();
+    init_config2();
+    init_report();
+    import_package4 = __toESM(require_package());
+    RESET16 = "\x1B[0m";
+    BOLD16 = "\x1B[1m";
+    DIM15 = "\x1B[2m";
+    GREEN10 = "\x1B[32m";
+    RED12 = "\x1B[31m";
+    YELLOW14 = "\x1B[33m";
+  }
+});
+
 // src/utils/time.ts
 function localISOString() {
   const d = /* @__PURE__ */ new Date();
@@ -27169,47 +27734,47 @@ Tools: ${Object.keys(KNOWN_TOOLS2).join(", ")}
   const { session_id, created, title } = await createAttachSession(db, aiTool, titleArg);
   const short = session_id.slice(0, 8);
   process.stdout.write(`
-${BOLD16}chron attach${RESET16} ${aiTool}
+${BOLD17}chron attach${RESET17} ${aiTool}
 
 `);
   if (created) {
-    process.stdout.write(`  ${GREEN10}\u2713${RESET16} session ${BOLD16}${short}${RESET16} created \u2014 ${title}
+    process.stdout.write(`  ${GREEN11}\u2713${RESET17} session ${BOLD17}${short}${RESET17} created \u2014 ${title}
 `);
   } else {
-    process.stdout.write(`  ${GREEN10}\u2713${RESET16} resumed existing session ${BOLD16}${short}${RESET16} \u2014 ${title}
+    process.stdout.write(`  ${GREEN11}\u2713${RESET17} resumed existing session ${BOLD17}${short}${RESET17} \u2014 ${title}
 `);
   }
-  process.stdout.write(`  ${YELLOW14}!${RESET16} Marked as partial evidence. Chron did not observe this
+  process.stdout.write(`  ${YELLOW15}!${RESET17} Marked as partial evidence. Chron did not observe this
 `);
   process.stdout.write(`    conversation before now, and does not claim to know what came before.
 
 `);
-  process.stdout.write(`${BOLD16}Paste this into the session you want recorded:${RESET16}
+  process.stdout.write(`${BOLD17}Paste this into the session you want recorded:${RESET17}
 
 `);
-  process.stdout.write(`${DIM15}  Log this conversation to Chron from now on using session_id ${session_id}.
+  process.stdout.write(`${DIM16}  Log this conversation to Chron from now on using session_id ${session_id}.
 `);
   process.stdout.write(`  Call log_message for this and every following exchange.
 `);
-  process.stdout.write(`  Do not attempt to reconstruct earlier messages.${RESET16}
+  process.stdout.write(`  Do not attempt to reconstruct earlier messages.${RESET17}
 
 `);
-  process.stdout.write(`${DIM15}  chron history ${short}   chron verify ${short}${RESET16}
+  process.stdout.write(`${DIM16}  chron history ${short}   chron verify ${short}${RESET17}
 
 `);
 }
-var RESET16, BOLD16, DIM15, GREEN10, YELLOW14, KNOWN_TOOLS2;
+var RESET17, BOLD17, DIM16, GREEN11, YELLOW15, KNOWN_TOOLS2;
 var init_attach = __esm({
   "src/cli/attach.ts"() {
     "use strict";
     init_db2();
     init_sessions();
     init_time();
-    RESET16 = "\x1B[0m";
-    BOLD16 = "\x1B[1m";
-    DIM15 = "\x1B[2m";
-    GREEN10 = "\x1B[32m";
-    YELLOW14 = "\x1B[33m";
+    RESET17 = "\x1B[0m";
+    BOLD17 = "\x1B[1m";
+    DIM16 = "\x1B[2m";
+    GREEN11 = "\x1B[32m";
+    YELLOW15 = "\x1B[33m";
     KNOWN_TOOLS2 = {
       claude: "claude",
       "claude-code": "claude",
@@ -27232,13 +27797,13 @@ async function resolveSession(prefix) {
   const all = await db.select({ id: sessions.id, title: sessions.title, signature: sessions.signature }).from(sessions);
   const matches = all.filter((s) => s.id.startsWith(prefix));
   if (matches.length === 0) {
-    process.stderr.write(`${RED12}\u2717${RESET17} No session found matching prefix: ${prefix}
+    process.stderr.write(`${RED13}\u2717${RESET18} No session found matching prefix: ${prefix}
 `);
     process.exit(1);
   }
   if (matches.length > 1) {
     process.stderr.write(
-      `${RED12}\u2717${RESET17} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
+      `${RED13}\u2717${RESET18} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
 `
     );
     process.exit(1);
@@ -27258,8 +27823,8 @@ async function renameSession(args2) {
   const { db, session } = await resolveSession(prefix);
   if (session.signature) {
     process.stderr.write(
-      `${RED12}\u2717${RESET17} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
-  Use ${CYAN14}chron session rename${RESET17} only on unsigned sessions.
+      `${RED13}\u2717${RESET18} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
+  Use ${CYAN14}chron session rename${RESET18} only on unsigned sessions.
 `
     );
     process.exit(1);
@@ -27267,9 +27832,9 @@ async function renameSession(args2) {
   const oldTitle = session.title;
   await db.update(sessions).set({ title: newTitle }).where(eq(sessions.id, session.id));
   process.stdout.write(
-    `${GREEN11}\u2713${RESET17} Session ${CYAN14}${session.id.slice(0, 8)}${RESET17} renamed
-  ${DIM16}before:${RESET17} ${oldTitle}
-  ${DIM16}after: ${RESET17} ${BOLD17}${newTitle}${RESET17}
+    `${GREEN12}\u2713${RESET18} Session ${CYAN14}${session.id.slice(0, 8)}${RESET18} renamed
+  ${DIM17}before:${RESET18} ${oldTitle}
+  ${DIM17}after: ${RESET18} ${BOLD18}${newTitle}${RESET18}
 
 Messages and timestamps are unchanged.
 `
@@ -27292,19 +27857,19 @@ Subcommands:
       if (subcommand) process.exit(1);
   }
 }
-var RESET17, BOLD17, DIM16, CYAN14, GREEN11, RED12;
+var RESET18, BOLD18, DIM17, CYAN14, GREEN12, RED13;
 var init_session3 = __esm({
   "src/cli/session.ts"() {
     "use strict";
     init_drizzle_orm();
     init_db2();
     init_schema();
-    RESET17 = "\x1B[0m";
-    BOLD17 = "\x1B[1m";
-    DIM16 = "\x1B[2m";
+    RESET18 = "\x1B[0m";
+    BOLD18 = "\x1B[1m";
+    DIM17 = "\x1B[2m";
     CYAN14 = "\x1B[36m";
-    GREEN11 = "\x1B[32m";
-    RED12 = "\x1B[31m";
+    GREEN12 = "\x1B[32m";
+    RED13 = "\x1B[31m";
   }
 });
 
@@ -27318,8 +27883,8 @@ __export(version_exports, {
 function isVersionCommand(command2) {
   return command2 !== void 0 && VERSION_FLAGS.includes(command2);
 }
-function formatVersion(version5) {
-  return `chron-mcp ${version5}`;
+function formatVersion(version6) {
+  return `chron-mcp ${version6}`;
 }
 var VERSION_FLAGS;
 var init_version2 = __esm({
@@ -27330,7 +27895,7 @@ var init_version2 = __esm({
 });
 
 // src/cli/index.ts
-var import_package4 = __toESM(require_package());
+var import_package5 = __toESM(require_package());
 var [, , command, ...args] = process.argv;
 async function main() {
   switch (command) {
@@ -27455,6 +28020,11 @@ async function main() {
       bootstrapProjectLogging2(process.cwd());
       break;
     }
+    case "otel": {
+      const { runOtel: runOtel2 } = await Promise.resolve().then(() => (init_otel(), otel_exports));
+      await runOtel2(args);
+      break;
+    }
     case "attach": {
       const { runAttach: runAttach2 } = await Promise.resolve().then(() => (init_attach(), attach_exports));
       await runAttach2(args);
@@ -27471,7 +28041,7 @@ async function main() {
     case "--version":
     case "-v": {
       const { formatVersion: formatVersion2 } = await Promise.resolve().then(() => (init_version2(), version_exports));
-      process.stdout.write(`${formatVersion2(import_package4.version)}
+      process.stdout.write(`${formatVersion2(import_package5.version)}
 `);
       break;
     }
@@ -27512,6 +28082,7 @@ Commands:
   reviews         Review queue \u2014 flag sessions for human review, track SLA compliance
   update          Update chron to the latest version
   attach          Start recording a conversation already in progress (partial evidence)
+  otel            Export sessions as OpenTelemetry spans (OTLP/HTTP JSON)
   version         Print the installed chron-mcp version (also --version, -v)
 
 Options (history):
