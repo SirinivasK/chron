@@ -22695,13 +22695,19 @@ var init_schema = __esm({
     messages = sqliteTable("messages", {
       id: text("id").primaryKey(),
       session_id: text("session_id").notNull().references(() => sessions.id),
-      role: text("role", { enum: ["user", "assistant"] }).notNull(),
+      // 'system' is reserved for events that belong to neither participant, such as
+      // compaction_boundary, which marks where a client transcript lost continuity.
+      role: text("role", { enum: ["user", "assistant", "system"] }).notNull(),
       content: text("content").notNull(),
       created_at: text("created_at").notNull(),
       prev_hash: text("prev_hash"),
       content_hash: text("content_hash"),
       // NULL = pre-migration row (treated as 'message'); set for all new rows
-      event_type: text("event_type")
+      event_type: text("event_type"),
+      // Line ordinal from an imported source transcript. NULL for live-witnessed
+      // rows, where insertion order is the sequence. See db/index.ts for why this
+      // cannot be derived from created_at.
+      source_sequence: integer2("source_sequence")
     });
     secrets_detected = sqliteTable("secrets_detected", {
       id: text("id").primaryKey(),
@@ -22773,14 +22779,82 @@ async function initDb(dbPath) {
   }
   const msgInfo = await client.execute("PRAGMA table_info(messages)");
   const msgCols = msgInfo.rows.map((r) => r[1]);
-  if (!msgCols.includes("prev_hash")) {
-    await client.execute("ALTER TABLE messages ADD COLUMN prev_hash TEXT");
-  }
-  if (!msgCols.includes("content_hash")) {
-    await client.execute("ALTER TABLE messages ADD COLUMN content_hash TEXT");
-  }
-  if (!msgCols.includes("event_type")) {
-    await client.execute("ALTER TABLE messages ADD COLUMN event_type TEXT");
+  const MESSAGE_COLUMNS = [
+    ["prev_hash", "TEXT"],
+    ["content_hash", "TEXT"],
+    ["event_type", "TEXT"],
+    // Ordinal from the source transcript's line order. NULL for anything Chron
+    // witnessed live, where insertion order already is the sequence. For
+    // imported records it carries evidence the timestamp cannot: Claude Code
+    // transcripts contain timestamps that run backwards, so file order and
+    // wall-clock order are two separate facts and neither may overwrite the
+    // other.
+    ["source_sequence", "INTEGER"]
+  ];
+  const missingMessageColumns = MESSAGE_COLUMNS.filter(([name]) => !msgCols.includes(name));
+  const messagesTableInfo = await client.execute(
+    "SELECT sql FROM sqlite_master WHERE type='table' AND name='messages'"
+  );
+  const messagesTableSql = String(messagesTableInfo.rows[0]?.sql ?? "");
+  const roleAdmitsSystem = /CHECK\s*\(\s*role\s+IN\s*\([^)]*'system'[^)]*\)/i.test(messagesTableSql);
+  const needsRoleRebuild = Boolean(messagesTableSql) && !roleAdmitsSystem;
+  if (missingMessageColumns.length > 0 || needsRoleRebuild) {
+    await client.execute("PRAGMA foreign_keys = OFF");
+    await client.execute("BEGIN");
+    try {
+      for (const [name, type] of missingMessageColumns) {
+        await client.execute(`ALTER TABLE messages ADD COLUMN ${name} ${type}`);
+      }
+      if (needsRoleRebuild) {
+        await client.execute("DROP TABLE IF EXISTS messages_migration");
+        await client.execute(`CREATE TABLE messages_migration (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
+        content TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        prev_hash TEXT,
+        content_hash TEXT,
+        event_type TEXT,
+        source_sequence INTEGER,
+        FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+      )`);
+        await client.execute(
+          "INSERT INTO messages_migration (rowid,id,session_id,role,content,created_at,prev_hash,content_hash,event_type,source_sequence) SELECT rowid,id,session_id,role,content,created_at,prev_hash,content_hash,event_type,source_sequence FROM messages"
+        );
+        await client.execute("DROP TABLE messages");
+        await client.execute("ALTER TABLE messages_migration RENAME TO messages");
+        await client.execute(`CREATE TRIGGER messages_fts_ai
+        AFTER INSERT ON messages BEGIN
+          INSERT INTO messages_fts(rowid, content, session_id)
+          VALUES (new.rowid, new.content, new.session_id);
+        END`);
+        await client.execute(`CREATE TRIGGER messages_fts_ad
+        AFTER DELETE ON messages BEGIN
+          DELETE FROM messages_fts WHERE rowid = old.rowid;
+        END`);
+        await client.execute("CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)");
+        await client.execute("DELETE FROM messages_fts");
+        await client.execute(
+          "INSERT INTO messages_fts(rowid, content, session_id) SELECT rowid, content, session_id FROM messages"
+        );
+      }
+      await client.execute("COMMIT");
+    } catch (e) {
+      try {
+        await client.execute("ROLLBACK");
+      } catch {
+      }
+      throw e;
+    } finally {
+      await client.execute("PRAGMA foreign_keys = ON");
+    }
+    if (needsRoleRebuild) {
+      const fkIssues = await client.execute("PRAGMA foreign_key_check");
+      if (fkIssues.rows.length > 0) {
+        throw new Error(`messages role migration left ${fkIssues.rows.length} foreign key violation(s)`);
+      }
+    }
   }
   const sessInfo = await client.execute("PRAGMA table_info(sessions)");
   const sessCols = sessInfo.rows.map((r) => r[1]);
@@ -22878,12 +22952,13 @@ var init_db2 = __esm({
       `CREATE TABLE IF NOT EXISTS messages (
     id TEXT PRIMARY KEY,
     session_id TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+    role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
     content TEXT NOT NULL,
     created_at TEXT NOT NULL,
     prev_hash TEXT,
     content_hash TEXT,
     event_type TEXT,
+    source_sequence INTEGER,
     FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
   )`,
       `CREATE TABLE IF NOT EXISTS secrets_detected (
@@ -38589,7 +38664,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.57",
+      version: "0.1.58",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -38601,7 +38676,10 @@ var require_package = __commonJS({
         include: [
           "tests/**/*.test.ts"
         ],
-        globals: true
+        globals: true,
+        setupFiles: [
+          "./tests/setup.ts"
+        ]
       },
       bin: {
         "chron-mcp": "dist/index.js",
@@ -38895,7 +38973,8 @@ var init_relay = __esm({
 
 // src/utils/signing.ts
 function keysDir() {
-  return (0, import_path3.join)((0, import_os3.homedir)(), ".chron", "keys");
+  const override = process.env.CHRON_KEYS_DIR;
+  return override && override.trim() ? override : (0, import_path3.join)((0, import_os3.homedir)(), ".chron", "keys");
 }
 function privKeyPath(sessionId) {
   return (0, import_path3.join)(keysDir(), `${sessionId}.key`);
@@ -39067,7 +39146,17 @@ function liveAttachMetadata() {
   };
 }
 function chainScopeLabel(meta) {
-  return isPartialEvidence(meta) ? "Hash chain valid from attach point" : "Hash chain covers complete session";
+  switch (evidenceSourceOf(meta)) {
+    case EVIDENCE_SOURCE.LIVE_ATTACH:
+      return "Hash chain valid from attach point";
+    case EVIDENCE_SOURCE.TRANSCRIPT_BACKFILL:
+      return "Hash chain covers Chron's imported representation of this client transcript. Chron did not witness the original events.";
+    case EVIDENCE_SOURCE.IMPORTED:
+      return "Hash chain covers Chron's imported representation of this vendor export. Chron did not witness the original events.";
+    case EVIDENCE_SOURCE.WITNESSED:
+    default:
+      return meta.partial === true ? "Hash chain covers the records Chron holds for this session" : "Hash chain covers complete session";
+  }
 }
 function describeEvidenceBoundary(meta) {
   switch (evidenceSourceOf(meta)) {

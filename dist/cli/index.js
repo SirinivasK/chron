@@ -38,7 +38,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.57",
+      version: "0.1.58",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -50,7 +50,10 @@ var require_package = __commonJS({
         include: [
           "tests/**/*.test.ts"
         ],
-        globals: true
+        globals: true,
+        setupFiles: [
+          "./tests/setup.ts"
+        ]
       },
       bin: {
         "chron-mcp": "dist/index.js",
@@ -1259,7 +1262,7 @@ var init_sql = __esm({
         return new SQL([new StringChunk(str)]);
       }
       sql22.raw = raw;
-      function join15(chunks, separator) {
+      function join16(chunks, separator) {
         const result = [];
         for (const [i, chunk] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -1269,7 +1272,7 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql22.join = join15;
+      sql22.join = join16;
       function identifier(value) {
         return new Name(value);
       }
@@ -2865,7 +2868,7 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync12 = (path) => fs.readFileSync(path, "utf-8");
+    var readFileSync13 = (path) => fs.readFileSync(path, "utf-8");
     var readFile = (path) => new Promise((resolve2, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
@@ -2877,7 +2880,7 @@ var require_filesystem = __commonJS({
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync12,
+      readFileSync: readFileSync13,
       readFile
     };
   }
@@ -2889,7 +2892,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync12 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync13 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command2 = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
@@ -2970,7 +2973,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync12(LDD_PATH);
+        const lddContent = readFileSync13(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -3027,7 +3030,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync12(LDD_PATH);
+        const lddContent = readFileSync13(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -6209,7 +6212,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash11 } = require("crypto");
+    var { randomBytes, createHash: createHash12 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -6877,7 +6880,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash11("sha1").update(key + GUID).digest("base64");
+        const digest = createHash12("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -7246,7 +7249,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash11 } = require("crypto");
+    var { createHash: createHash12 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -7553,7 +7556,7 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest = createHash11("sha1").update(key + GUID).digest("base64");
+        const digest = createHash12("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -14267,7 +14270,7 @@ var init_select2 = __esm({
           const baseTableName = this.tableName;
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table)) this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join15) => join15.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join16) => join16.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -15153,7 +15156,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join15) => join15.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join16) => join16.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -16564,13 +16567,19 @@ var init_schema = __esm({
     messages = sqliteTable("messages", {
       id: text("id").primaryKey(),
       session_id: text("session_id").notNull().references(() => sessions.id),
-      role: text("role", { enum: ["user", "assistant"] }).notNull(),
+      // 'system' is reserved for events that belong to neither participant, such as
+      // compaction_boundary, which marks where a client transcript lost continuity.
+      role: text("role", { enum: ["user", "assistant", "system"] }).notNull(),
       content: text("content").notNull(),
       created_at: text("created_at").notNull(),
       prev_hash: text("prev_hash"),
       content_hash: text("content_hash"),
       // NULL = pre-migration row (treated as 'message'); set for all new rows
-      event_type: text("event_type")
+      event_type: text("event_type"),
+      // Line ordinal from an imported source transcript. NULL for live-witnessed
+      // rows, where insertion order is the sequence. See db/index.ts for why this
+      // cannot be derived from created_at.
+      source_sequence: integer("source_sequence")
     });
     secrets_detected = sqliteTable("secrets_detected", {
       id: text("id").primaryKey(),
@@ -16622,6 +16631,9 @@ var init_schema = __esm({
 });
 
 // src/db/index.ts
+function getDbPathForRead() {
+  return getDbPath();
+}
 function getDbPath() {
   const envPath = process.env.CHRON_DB_PATH;
   if (envPath) return envPath;
@@ -16642,14 +16654,82 @@ async function initDb(dbPath3) {
   }
   const msgInfo = await client.execute("PRAGMA table_info(messages)");
   const msgCols = msgInfo.rows.map((r) => r[1]);
-  if (!msgCols.includes("prev_hash")) {
-    await client.execute("ALTER TABLE messages ADD COLUMN prev_hash TEXT");
-  }
-  if (!msgCols.includes("content_hash")) {
-    await client.execute("ALTER TABLE messages ADD COLUMN content_hash TEXT");
-  }
-  if (!msgCols.includes("event_type")) {
-    await client.execute("ALTER TABLE messages ADD COLUMN event_type TEXT");
+  const MESSAGE_COLUMNS = [
+    ["prev_hash", "TEXT"],
+    ["content_hash", "TEXT"],
+    ["event_type", "TEXT"],
+    // Ordinal from the source transcript's line order. NULL for anything Chron
+    // witnessed live, where insertion order already is the sequence. For
+    // imported records it carries evidence the timestamp cannot: Claude Code
+    // transcripts contain timestamps that run backwards, so file order and
+    // wall-clock order are two separate facts and neither may overwrite the
+    // other.
+    ["source_sequence", "INTEGER"]
+  ];
+  const missingMessageColumns = MESSAGE_COLUMNS.filter(([name]) => !msgCols.includes(name));
+  const messagesTableInfo = await client.execute(
+    "SELECT sql FROM sqlite_master WHERE type='table' AND name='messages'"
+  );
+  const messagesTableSql = String(messagesTableInfo.rows[0]?.sql ?? "");
+  const roleAdmitsSystem = /CHECK\s*\(\s*role\s+IN\s*\([^)]*'system'[^)]*\)/i.test(messagesTableSql);
+  const needsRoleRebuild = Boolean(messagesTableSql) && !roleAdmitsSystem;
+  if (missingMessageColumns.length > 0 || needsRoleRebuild) {
+    await client.execute("PRAGMA foreign_keys = OFF");
+    await client.execute("BEGIN");
+    try {
+      for (const [name, type] of missingMessageColumns) {
+        await client.execute(`ALTER TABLE messages ADD COLUMN ${name} ${type}`);
+      }
+      if (needsRoleRebuild) {
+        await client.execute("DROP TABLE IF EXISTS messages_migration");
+        await client.execute(`CREATE TABLE messages_migration (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
+        content TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        prev_hash TEXT,
+        content_hash TEXT,
+        event_type TEXT,
+        source_sequence INTEGER,
+        FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+      )`);
+        await client.execute(
+          "INSERT INTO messages_migration (rowid,id,session_id,role,content,created_at,prev_hash,content_hash,event_type,source_sequence) SELECT rowid,id,session_id,role,content,created_at,prev_hash,content_hash,event_type,source_sequence FROM messages"
+        );
+        await client.execute("DROP TABLE messages");
+        await client.execute("ALTER TABLE messages_migration RENAME TO messages");
+        await client.execute(`CREATE TRIGGER messages_fts_ai
+        AFTER INSERT ON messages BEGIN
+          INSERT INTO messages_fts(rowid, content, session_id)
+          VALUES (new.rowid, new.content, new.session_id);
+        END`);
+        await client.execute(`CREATE TRIGGER messages_fts_ad
+        AFTER DELETE ON messages BEGIN
+          DELETE FROM messages_fts WHERE rowid = old.rowid;
+        END`);
+        await client.execute("CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)");
+        await client.execute("DELETE FROM messages_fts");
+        await client.execute(
+          "INSERT INTO messages_fts(rowid, content, session_id) SELECT rowid, content, session_id FROM messages"
+        );
+      }
+      await client.execute("COMMIT");
+    } catch (e) {
+      try {
+        await client.execute("ROLLBACK");
+      } catch {
+      }
+      throw e;
+    } finally {
+      await client.execute("PRAGMA foreign_keys = ON");
+    }
+    if (needsRoleRebuild) {
+      const fkIssues = await client.execute("PRAGMA foreign_key_check");
+      if (fkIssues.rows.length > 0) {
+        throw new Error(`messages role migration left ${fkIssues.rows.length} foreign key violation(s)`);
+      }
+    }
   }
   const sessInfo = await client.execute("PRAGMA table_info(sessions)");
   const sessCols = sessInfo.rows.map((r) => r[1]);
@@ -16747,12 +16827,13 @@ var init_db2 = __esm({
       `CREATE TABLE IF NOT EXISTS messages (
     id TEXT PRIMARY KEY,
     session_id TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+    role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
     content TEXT NOT NULL,
     created_at TEXT NOT NULL,
     prev_hash TEXT,
     content_hash TEXT,
     event_type TEXT,
+    source_sequence INTEGER,
     FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
   )`,
       `CREATE TABLE IF NOT EXISTS secrets_detected (
@@ -16832,6 +16913,20 @@ var init_db2 = __esm({
       DELETE FROM messages_fts WHERE rowid = old.rowid;
     END`
     ];
+  }
+});
+
+// src/utils/roles.ts
+function isSystemRole(role) {
+  return role === "system";
+}
+function roleLabel(role, providerLabel = "assistant") {
+  if (isSystemRole(role)) return "system boundary";
+  return role === "user" ? "you" : providerLabel;
+}
+var init_roles = __esm({
+  "src/utils/roles.ts"() {
+    "use strict";
   }
 });
 
@@ -17601,12 +17696,20 @@ ${msg.content}
 `);
       }
     } else {
-      const roleColor = msg.role === "user" ? YELLOW : CYAN;
-      process.stdout.write(`${DIM}[${ts}]${RESET} ${BOLD}${roleColor}${msg.role}${RESET}
+      if (isSystemRole(msg.role)) {
+        process.stdout.write(`${DIM}[${ts}]${RESET} ${DIM}\u2500\u2500 ${roleLabel(msg.role)} \u2500\u2500${RESET}
 `);
-      process.stdout.write(`${msg.content}
+        process.stdout.write(`${DIM}${msg.content}${RESET}
 
 `);
+      } else {
+        const roleColor = msg.role === "user" ? YELLOW : CYAN;
+        process.stdout.write(`${DIM}[${ts}]${RESET} ${BOLD}${roleColor}${msg.role}${RESET}
+`);
+        process.stdout.write(`${msg.content}
+
+`);
+      }
     }
   }
 }
@@ -17658,6 +17761,7 @@ var init_history = __esm({
     "use strict";
     init_drizzle_orm();
     init_db2();
+    init_roles();
     init_schema();
     init_search();
     init_risk();
@@ -20104,7 +20208,8 @@ var init_report = __esm({
 
 // src/utils/signing.ts
 function keysDir() {
-  return (0, import_path2.join)((0, import_os3.homedir)(), ".chron", "keys");
+  const override = process.env.CHRON_KEYS_DIR;
+  return override && override.trim() ? override : (0, import_path2.join)((0, import_os3.homedir)(), ".chron", "keys");
 }
 function privKeyPath(sessionId) {
   return (0, import_path2.join)(keysDir(), `${sessionId}.key`);
@@ -20359,14 +20464,21 @@ async function runExport(args2) {
 `);
   for (const msg of msgs) {
     const ts = fmtTimestamp2(msg.created_at);
-    const roleLabel = msg.role === "user" ? "you" : provider;
-    process.stdout.write(`
+    if (isSystemRole(msg.role)) {
+      process.stdout.write(`
 ---
 
-**[${ts}] ${roleLabel}**
+> **[${ts}] ${roleLabel(msg.role)}** \u2014 ${msg.content}
+`);
+    } else {
+      process.stdout.write(`
+---
+
+**[${ts}] ${roleLabel(msg.role, provider)}**
 
 ${msg.content}
 `);
+    }
   }
   process.stdout.write("\n");
 }
@@ -20375,6 +20487,7 @@ var init_export = __esm({
     "use strict";
     init_drizzle_orm();
     init_db2();
+    init_roles();
     init_schema();
   }
 });
@@ -21878,10 +21991,6 @@ function evidenceSourceOf(meta) {
   const source = meta.source;
   return source && EVIDENCE_SOURCES.includes(source) ? source : EVIDENCE_SOURCE.WITNESSED;
 }
-function isPartialEvidence(meta) {
-  if (meta.partial === true) return true;
-  return evidenceSourceOf(meta) !== EVIDENCE_SOURCE.WITNESSED;
-}
 function liveAttachMetadata() {
   return {
     source: EVIDENCE_SOURCE.LIVE_ATTACH,
@@ -21890,7 +21999,17 @@ function liveAttachMetadata() {
   };
 }
 function chainScopeLabel(meta) {
-  return isPartialEvidence(meta) ? "Hash chain valid from attach point" : "Hash chain covers complete session";
+  switch (evidenceSourceOf(meta)) {
+    case EVIDENCE_SOURCE.LIVE_ATTACH:
+      return "Hash chain valid from attach point";
+    case EVIDENCE_SOURCE.TRANSCRIPT_BACKFILL:
+      return "Hash chain covers Chron's imported representation of this client transcript. Chron did not witness the original events.";
+    case EVIDENCE_SOURCE.IMPORTED:
+      return "Hash chain covers Chron's imported representation of this vendor export. Chron did not witness the original events.";
+    case EVIDENCE_SOURCE.WITNESSED:
+    default:
+      return meta.partial === true ? "Hash chain covers the records Chron holds for this session" : "Hash chain covers complete session";
+  }
 }
 function describeEvidenceBoundary(meta) {
   switch (evidenceSourceOf(meta)) {
@@ -23146,6 +23265,596 @@ var init_detect = __esm({
   }
 });
 
+// src/db/readonly.ts
+function openReadOnly(path) {
+  if (!path.startsWith(":") && !(0, import_fs13.existsSync)(path)) return null;
+  const client = createClient({ url: path.startsWith(":") ? path : `file:${path}` });
+  return {
+    db: drizzle(client, { schema: schema_exports }),
+    close: () => {
+      try {
+        client.close();
+      } catch {
+      }
+    }
+  };
+}
+async function enforceReadOnly(handle) {
+  await handle.db.run(sql.raw("PRAGMA query_only = ON"));
+}
+var import_fs13;
+var init_readonly = __esm({
+  "src/db/readonly.ts"() {
+    "use strict";
+    init_node2();
+    init_drizzle_orm();
+    init_libsql();
+    import_fs13 = require("fs");
+    init_schema();
+  }
+});
+
+// src/utils/redact.ts
+function redactSecrets(input) {
+  const detected = scanForSecrets(input);
+  if (detected.length === 0) {
+    return { redacted: input, secrets: [] };
+  }
+  const counters = {};
+  const secrets = [];
+  for (const s of detected) {
+    counters[s.type] = (counters[s.type] ?? 0) + 1;
+    secrets.push({
+      type: s.type,
+      value: s.value,
+      token: `$CHRON_${s.type.toUpperCase()}_${counters[s.type]}`
+    });
+  }
+  const sorted = detected.map((s, i) => ({ ...s, token: secrets[i].token })).sort((a, b) => b.start - a.start);
+  let redacted = input;
+  for (const s of sorted) {
+    redacted = redacted.slice(0, s.start) + s.token + redacted.slice(s.end);
+  }
+  return { redacted, secrets };
+}
+var init_redact = __esm({
+  "src/utils/redact.ts"() {
+    "use strict";
+    init_detect();
+  }
+});
+
+// src/import/claude-code.ts
+function emptyExclusions() {
+  return {
+    thinking: { blocks: 0, bytes: 0 },
+    hook_attachments: { lines: 0, bytes: 0, exit_status: {} },
+    meta_lines: 0,
+    compaction_summaries: { count: 0, bytes: 0 },
+    tool_output_truncated: { results: 0, original_bytes: 0, kept_bytes: 0 }
+  };
+}
+function textOf(content) {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content.filter((b) => !!b && typeof b === "object").filter((b) => b.type === "text").map((b) => b.text ?? "").join("\n").trim();
+}
+function toolResultText(content) {
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content.map((b) => b && typeof b === "object" && "text" in b ? String(b.text ?? "") : JSON.stringify(b)).join("\n");
+  }
+  return content === void 0 || content === null ? "" : JSON.stringify(content);
+}
+function summarizeToolResult(raw, opts = {}) {
+  const originalBytes = Buffer.byteLength(raw, "utf8");
+  const detected = scanForSecrets(raw);
+  if (opts.includeToolOutput) {
+    return { content: raw, truncated: false, originalBytes, keptBytes: originalBytes, secrets: detected.length };
+  }
+  const { redacted } = redactSecrets(raw);
+  const slice = redacted.slice(0, TOOL_OUTPUT_EXCERPT_BYTES);
+  const truncated = redacted.length > slice.length;
+  const hash2 = (0, import_crypto9.createHash)("sha256").update(raw).digest("hex");
+  const header = `[tool output not ingested in full \u2014 ${originalBytes} bytes, sha256:${hash2.slice(0, 16)}` + (detected.length ? `, ${detected.length} secret detection(s)` : "") + "]";
+  const body = truncated ? `${slice}
+[... truncated, ${originalBytes - Buffer.byteLength(slice, "utf8")} bytes not ingested]` : slice;
+  return {
+    content: `${header}
+${body}`,
+    truncated,
+    originalBytes,
+    keptBytes: Buffer.byteLength(slice, "utf8"),
+    secrets: detected.length
+  };
+}
+function parseTranscript(raw, opts = {}) {
+  const exclusions = emptyExclusions();
+  const events = [];
+  let sessionId = "";
+  let seq = 0;
+  let maxSeen = null;
+  let outOfOrder = 0;
+  let first = null;
+  let last = null;
+  let secrets = 0;
+  for (const line of raw.split("\n")) {
+    if (!line.trim()) continue;
+    let d;
+    try {
+      d = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (!sessionId && typeof d.sessionId === "string") sessionId = d.sessionId;
+    const ts = typeof d.timestamp === "string" ? d.timestamp : void 0;
+    if (ts) {
+      if (!first) first = ts;
+      last = ts;
+      if (maxSeen !== null && ts < maxSeen) outOfOrder++;
+      if (maxSeen === null || ts > maxSeen) maxSeen = ts;
+    }
+    if (d.type === "attachment") {
+      const a = d.attachment ?? d;
+      exclusions.hook_attachments.lines++;
+      exclusions.hook_attachments.bytes += Buffer.byteLength(String(a.stdout ?? ""), "utf8") + Buffer.byteLength(String(a.stderr ?? ""), "utf8") + Buffer.byteLength(String(a.command ?? ""), "utf8");
+      const code = a.exitCode === void 0 || a.exitCode === null ? "unknown" : String(a.exitCode);
+      exclusions.hook_attachments.exit_status[code] = (exclusions.hook_attachments.exit_status[code] ?? 0) + 1;
+      continue;
+    }
+    if (d.type !== "user" && d.type !== "assistant") continue;
+    if (d.isMeta) {
+      exclusions.meta_lines++;
+      continue;
+    }
+    const msg = d.message ?? {};
+    const role = d.type === "user" ? "user" : "assistant";
+    const uuid = String(d.uuid ?? "");
+    const at = ts ?? "";
+    if (d.isCompactSummary) {
+      const body = textOf(msg.content);
+      exclusions.compaction_summaries.count++;
+      exclusions.compaction_summaries.bytes += Buffer.byteLength(body, "utf8");
+      events.push({
+        // 'system', never the surrounding participant. A compaction boundary is
+        // a fact about the record, not something either party said, and the
+        // role vocabulary was widened precisely so this does not have to borrow
+        // a participant's identity.
+        role: "system",
+        content: COMPACTION_BOUNDARY_TEXT,
+        event_type: "compaction_boundary",
+        created_at: at,
+        source_sequence: seq++,
+        source_uuid: uuid
+      });
+      continue;
+    }
+    const blocks = Array.isArray(msg.content) ? msg.content : null;
+    if (!blocks) {
+      const body = textOf(msg.content);
+      if (body) {
+        secrets += scanForSecrets(body).length;
+        events.push({ role, content: body, event_type: "message", created_at: at, source_sequence: seq++, source_uuid: uuid });
+      }
+      continue;
+    }
+    for (const b of blocks) {
+      if (!b || typeof b !== "object") continue;
+      if (b.type === "thinking") {
+        exclusions.thinking.blocks++;
+        exclusions.thinking.bytes += Buffer.byteLength(String(b.thinking ?? ""), "utf8");
+        continue;
+      }
+      if (b.type === "text") {
+        const body = String(b.text ?? "").trim();
+        if (!body) continue;
+        secrets += scanForSecrets(body).length;
+        events.push({ role, content: body, event_type: "message", created_at: at, source_sequence: seq++, source_uuid: `${uuid}:text:${seq}` });
+        continue;
+      }
+      if (b.type === "tool_use") {
+        const input = JSON.stringify(b.input ?? {});
+        secrets += scanForSecrets(input).length;
+        events.push({
+          role: "assistant",
+          content: `${b.name ?? "unknown"} ${input}`,
+          event_type: "tool_call",
+          created_at: at,
+          source_sequence: seq++,
+          source_uuid: String(b.id ?? `${uuid}:tool_use:${seq}`)
+        });
+        continue;
+      }
+      if (b.type === "tool_result") {
+        const rawText = toolResultText(b.content);
+        const s = summarizeToolResult(rawText, opts);
+        secrets += s.secrets;
+        if (s.truncated) {
+          exclusions.tool_output_truncated.results++;
+          exclusions.tool_output_truncated.original_bytes += s.originalBytes;
+          exclusions.tool_output_truncated.kept_bytes += s.keptBytes;
+        }
+        events.push({
+          role: "user",
+          content: s.content,
+          event_type: "tool_result",
+          created_at: at,
+          source_sequence: seq++,
+          source_uuid: String(b.tool_use_id ?? `${uuid}:tool_result:${seq}`)
+        });
+      }
+    }
+  }
+  return {
+    session_id: sessionId,
+    events,
+    exclusions,
+    first_timestamp: first,
+    last_timestamp: last,
+    out_of_order_timestamps: outOfOrder,
+    content_hash: (0, import_crypto9.createHash)("sha256").update(raw).digest("hex"),
+    secrets_found: secrets
+  };
+}
+var import_crypto9, TOOL_OUTPUT_EXCERPT_BYTES, COMPACTION_BOUNDARY_TEXT;
+var init_claude_code = __esm({
+  "src/import/claude-code.ts"() {
+    "use strict";
+    import_crypto9 = require("crypto");
+    init_detect();
+    init_redact();
+    TOOL_OUTPUT_EXCERPT_BYTES = 400;
+    COMPACTION_BOUNDARY_TEXT = "Client transcript compacted here; synthesized summary was not ingested.";
+  }
+});
+
+// src/import/discover.ts
+function transcriptRoot() {
+  const override = process.env.CHRON_CLAUDE_PROJECTS_DIR;
+  return override && override.trim() ? override : (0, import_path11.join)((0, import_os10.homedir)(), ".claude", "projects");
+}
+function sessionIdOf(file) {
+  if (!file.endsWith(".jsonl")) return null;
+  const id = file.slice(0, -".jsonl".length);
+  return id.length > 0 ? id : null;
+}
+function discoverTranscripts(root = transcriptRoot()) {
+  if (!(0, import_fs14.existsSync)(root)) return [];
+  const found = [];
+  let projects;
+  try {
+    projects = (0, import_fs14.readdirSync)(root);
+  } catch {
+    return [];
+  }
+  for (const project of projects) {
+    const projectDir = (0, import_path11.join)(root, project);
+    let stat;
+    try {
+      stat = (0, import_fs14.statSync)(projectDir);
+    } catch {
+      continue;
+    }
+    if (!stat.isDirectory()) continue;
+    let entries;
+    try {
+      entries = (0, import_fs14.readdirSync)(projectDir);
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const sessionId = sessionIdOf(entry);
+      if (!sessionId) continue;
+      const path = (0, import_path11.join)(projectDir, entry);
+      try {
+        const s = (0, import_fs14.statSync)(path);
+        if (!s.isFile()) continue;
+        found.push({
+          path,
+          session_id: sessionId,
+          project,
+          size_bytes: s.size,
+          modified_at: s.mtime.toISOString()
+        });
+      } catch {
+      }
+    }
+  }
+  return found.sort((a, b) => b.modified_at.localeCompare(a.modified_at));
+}
+function countNestedTranscripts(root = transcriptRoot()) {
+  if (!(0, import_fs14.existsSync)(root)) return 0;
+  let count = 0;
+  const walk = (dir, depth) => {
+    if (depth > 6) return;
+    let entries;
+    try {
+      entries = (0, import_fs14.readdirSync)(dir);
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const full = (0, import_path11.join)(dir, entry);
+      let s;
+      try {
+        s = (0, import_fs14.statSync)(full);
+      } catch {
+        continue;
+      }
+      if (s.isDirectory()) walk(full, depth + 1);
+      else if (entry.endsWith(".jsonl")) count++;
+    }
+  };
+  for (const project of (() => {
+    try {
+      return (0, import_fs14.readdirSync)(root);
+    } catch {
+      return [];
+    }
+  })()) {
+    const projectDir = (0, import_path11.join)(root, project);
+    try {
+      if (!(0, import_fs14.statSync)(projectDir).isDirectory()) continue;
+    } catch {
+      continue;
+    }
+    for (const entry of (() => {
+      try {
+        return (0, import_fs14.readdirSync)(projectDir);
+      } catch {
+        return [];
+      }
+    })()) {
+      const full = (0, import_path11.join)(projectDir, entry);
+      try {
+        if ((0, import_fs14.statSync)(full).isDirectory()) walk(full, 1);
+      } catch {
+      }
+    }
+  }
+  return count;
+}
+var import_fs14, import_path11, import_os10;
+var init_discover = __esm({
+  "src/import/discover.ts"() {
+    "use strict";
+    import_fs14 = require("fs");
+    import_path11 = require("path");
+    import_os10 = require("os");
+  }
+});
+
+// src/import/claude-code-preview.ts
+function externalRefFor(sessionId) {
+  return `claude-code:${sessionId}`;
+}
+async function findAlreadyImported(db, files) {
+  if (!db || files.length === 0) return /* @__PURE__ */ new Set();
+  const refs = files.map((f) => externalRefFor(f.session_id));
+  const rows = await db.select({ external_ref: sessions.external_ref }).from(sessions).where(inArray(sessions.external_ref, refs));
+  return new Set(
+    rows.map((r) => String(r.external_ref ?? "").replace(/^claude-code:/, "")).filter(Boolean)
+  );
+}
+async function buildPreview(db, opts = {}) {
+  const files = discoverTranscripts(opts.root);
+  const imported = await findAlreadyImported(db, files);
+  const transcripts = [];
+  let events = 0;
+  let unreadable = 0;
+  for (const f of files) {
+    const base = {
+      session_id: f.session_id,
+      project: f.project,
+      size_bytes: f.size_bytes,
+      modified_at: f.modified_at,
+      already_imported: imported.has(f.session_id)
+    };
+    let raw;
+    try {
+      raw = (0, import_fs15.readFileSync)(f.path, "utf8");
+    } catch (e) {
+      unreadable++;
+      transcripts.push({
+        ...base,
+        events: 0,
+        by_event_type: {},
+        exclusions: emptyExclusionsShape(),
+        out_of_order_timestamps: 0,
+        secrets_found: 0,
+        content_hash: "",
+        error: e instanceof Error ? e.message : String(e)
+      });
+      continue;
+    }
+    const parsed = parseTranscript(raw, opts);
+    const byType = {};
+    for (const e of parsed.events) byType[e.event_type] = (byType[e.event_type] ?? 0) + 1;
+    if (!base.already_imported) events += parsed.events.length;
+    transcripts.push({
+      ...base,
+      events: parsed.events.length,
+      by_event_type: byType,
+      exclusions: parsed.exclusions,
+      out_of_order_timestamps: parsed.out_of_order_timestamps,
+      secrets_found: parsed.secrets_found,
+      content_hash: parsed.content_hash
+    });
+  }
+  return {
+    root: opts.root ?? "",
+    transcripts,
+    nested_excluded: countNestedTranscripts(opts.root),
+    totals: {
+      candidates: transcripts.filter((t) => !t.already_imported && !t.error).length,
+      already_imported: transcripts.filter((t) => t.already_imported).length,
+      events,
+      unreadable
+    }
+  };
+}
+function emptyExclusionsShape() {
+  return {
+    thinking: { blocks: 0, bytes: 0 },
+    hook_attachments: { lines: 0, bytes: 0, exit_status: {} },
+    meta_lines: 0,
+    compaction_summaries: { count: 0, bytes: 0 },
+    tool_output_truncated: { results: 0, original_bytes: 0, kept_bytes: 0 }
+  };
+}
+function totalExclusions(result) {
+  const t = emptyExclusionsShape();
+  for (const p of result.transcripts) {
+    t.thinking.blocks += p.exclusions.thinking.blocks;
+    t.thinking.bytes += p.exclusions.thinking.bytes;
+    t.hook_attachments.lines += p.exclusions.hook_attachments.lines;
+    t.hook_attachments.bytes += p.exclusions.hook_attachments.bytes;
+    for (const [code, n] of Object.entries(p.exclusions.hook_attachments.exit_status)) {
+      t.hook_attachments.exit_status[code] = (t.hook_attachments.exit_status[code] ?? 0) + n;
+    }
+    t.meta_lines += p.exclusions.meta_lines;
+    t.compaction_summaries.count += p.exclusions.compaction_summaries.count;
+    t.compaction_summaries.bytes += p.exclusions.compaction_summaries.bytes;
+    t.tool_output_truncated.results += p.exclusions.tool_output_truncated.results;
+    t.tool_output_truncated.original_bytes += p.exclusions.tool_output_truncated.original_bytes;
+    t.tool_output_truncated.kept_bytes += p.exclusions.tool_output_truncated.kept_bytes;
+  }
+  return t;
+}
+var import_fs15;
+var init_claude_code_preview = __esm({
+  "src/import/claude-code-preview.ts"() {
+    "use strict";
+    import_fs15 = require("fs");
+    init_drizzle_orm();
+    init_schema();
+    init_claude_code();
+    init_discover();
+  }
+});
+
+// src/cli/import-claude-code.ts
+var import_claude_code_exports = {};
+__export(import_claude_code_exports, {
+  renderPreview: () => renderPreview,
+  runClaudeCodeDryRun: () => runClaudeCodeDryRun
+});
+function bytes(n) {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+function renderPreview(r, root) {
+  const out = [];
+  const ex = totalExclusions(r);
+  out.push(`
+${BOLD9}chron import claude-code${RESET9} ${DIM8}(dry run \u2014 nothing will be written)${RESET9}
+`);
+  out.push(`  source: ${DIM8}${root}${RESET9}
+
+`);
+  if (r.transcripts.length === 0) {
+    out.push(`  ${YELLOW7}No Claude Code transcripts found.${RESET9}
+`);
+    out.push(`
+${DIM8}Nothing was written. The import write path is not built yet.${RESET9}
+
+`);
+    return out.join("");
+  }
+  out.push(`${CYAN7}Transcripts${RESET9}
+`);
+  for (const t of r.transcripts) {
+    const mark = t.error ? `${YELLOW7}!${RESET9}` : t.already_imported ? `${DIM8}\xB7${RESET9}` : `${GREEN6}+${RESET9}`;
+    const status = t.error ? `${YELLOW7}unreadable${RESET9}` : t.already_imported ? `${DIM8}already imported${RESET9}` : `${GREEN6}new${RESET9}`;
+    out.push(`  ${mark} ${t.session_id.slice(0, 8)}  ${String(t.events).padStart(6)} events  ${bytes(t.size_bytes).padStart(8)}  ${t.modified_at.slice(0, 10)}  ${status}
+`);
+    if (t.error) out.push(`      ${YELLOW7}${t.error}${RESET9}
+`);
+  }
+  out.push(`
+${CYAN7}Would ingest${RESET9}
+`);
+  out.push(`  ${r.totals.candidates} new session(s), ${r.totals.events} event(s)
+`);
+  if (r.totals.already_imported > 0) {
+    out.push(`  ${DIM8}${r.totals.already_imported} already imported, would be skipped${RESET9}
+`);
+  }
+  if (r.totals.unreadable > 0) {
+    out.push(`  ${YELLOW7}${r.totals.unreadable} unreadable, would be skipped${RESET9}
+`);
+  }
+  out.push(`
+${CYAN7}Would NOT ingest${RESET9}
+`);
+  out.push(`  ${ex.thinking.blocks} thinking block(s), ${bytes(ex.thinking.bytes)}   ${DIM8}model reasoning, never shown to you${RESET9}
+`);
+  out.push(`  ${ex.hook_attachments.lines} hook record(s), ${bytes(ex.hook_attachments.bytes)}   ${DIM8}raw stdout/stderr${RESET9}
+`);
+  out.push(`  ${ex.meta_lines} system-injected line(s)   ${DIM8}not authored by you${RESET9}
+`);
+  out.push(`  ${ex.compaction_summaries.count} compaction summar(ies), ${bytes(ex.compaction_summaries.bytes)}   ${DIM8}kept as boundary events only${RESET9}
+`);
+  out.push(`  ${bytes(ex.tool_output_truncated.original_bytes - ex.tool_output_truncated.kept_bytes)} of tool output across ${ex.tool_output_truncated.results} result(s)   ${DIM8}redacted and excerpted${RESET9}
+`);
+  if (r.nested_excluded > 0) {
+    out.push(`  ${r.nested_excluded} nested subagent/workflow transcript(s)   ${DIM8}not in default scope${RESET9}
+`);
+  }
+  const secrets = r.transcripts.reduce((n, t) => n + t.secrets_found, 0);
+  const outOfOrder = r.transcripts.reduce((n, t) => n + t.out_of_order_timestamps, 0);
+  if (secrets > 0 || outOfOrder > 0) {
+    out.push(`
+${CYAN7}Notes${RESET9}
+`);
+    if (secrets > 0) {
+      out.push(`  ${secrets} secret detection(s) across these transcripts   ${DIM8}redacted before excerpting${RESET9}
+`);
+    }
+    if (outOfOrder > 0) {
+      out.push(`  ${outOfOrder} line(s) whose timestamp precedes an earlier line   ${DIM8}source order preserved separately${RESET9}
+`);
+    }
+  }
+  out.push(`
+${DIM8}Nothing was written. The import write path is not built yet.${RESET9}
+
+`);
+  return out.join("");
+}
+async function runClaudeCodeDryRun(args2) {
+  const includeToolOutput = args2.includes("--include-tool-output");
+  const root = transcriptRoot();
+  process.stderr.write(
+    "Scanning local Claude Code transcripts; large histories can take a few minutes...\n"
+  );
+  const handle = openReadOnly(getDbPathForRead());
+  try {
+    if (handle) await enforceReadOnly(handle);
+    const result = await buildPreview(handle?.db ?? null, { includeToolOutput, root });
+    process.stdout.write(renderPreview(result, root));
+  } finally {
+    handle?.close();
+  }
+}
+var RESET9, BOLD9, DIM8, GREEN6, YELLOW7, CYAN7;
+var init_import_claude_code = __esm({
+  "src/cli/import-claude-code.ts"() {
+    "use strict";
+    init_db2();
+    init_readonly();
+    init_claude_code_preview();
+    init_discover();
+    RESET9 = "\x1B[0m";
+    BOLD9 = "\x1B[1m";
+    DIM8 = "\x1B[2m";
+    GREEN6 = "\x1B[32m";
+    YELLOW7 = "\x1B[33m";
+    CYAN7 = "\x1B[36m";
+  }
+});
+
 // src/cli/import.ts
 var import_exports = {};
 __export(import_exports, {
@@ -23192,10 +23901,10 @@ function messagesFromConversation(conv) {
   return result;
 }
 function findFile(dir, name) {
-  for (const entry of (0, import_fs13.readdirSync)(dir)) {
-    const full = (0, import_path11.join)(dir, entry);
+  for (const entry of (0, import_fs16.readdirSync)(dir)) {
+    const full = (0, import_path12.join)(dir, entry);
     try {
-      if ((0, import_fs13.statSync)(full).isDirectory()) {
+      if ((0, import_fs16.statSync)(full).isDirectory()) {
         const found = findFile(full, name);
         if (found) return found;
       } else if (entry === name) {
@@ -23297,10 +24006,10 @@ async function importConversations(filePath) {
   const db = await initDb();
   let raw;
   let tempDir = null;
-  const ext = (0, import_path11.extname)(filePath).toLowerCase();
+  const ext = (0, import_path12.extname)(filePath).toLowerCase();
   if (ext === ".zip") {
-    tempDir = (0, import_path11.join)((0, import_os10.tmpdir)(), `chron-import-${Date.now()}`);
-    (0, import_fs13.mkdirSync)(tempDir, { recursive: true });
+    tempDir = (0, import_path12.join)((0, import_os11.tmpdir)(), `chron-import-${Date.now()}`);
+    (0, import_fs16.mkdirSync)(tempDir, { recursive: true });
     try {
       (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "conversations.json", "-d", tempDir], { stdio: "pipe" });
     } catch {
@@ -23309,7 +24018,7 @@ async function importConversations(filePath) {
       } catch {
         process.stderr.write(`Failed to extract ${filePath}. Make sure 'unzip' is installed.
 `);
-        (0, import_fs13.rmSync)(tempDir, { recursive: true, force: true });
+        (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
         process.exit(1);
       }
     }
@@ -23317,12 +24026,12 @@ async function importConversations(filePath) {
     if (!found) {
       process.stderr.write(`conversations.json not found inside the ZIP.
 `);
-      (0, import_fs13.rmSync)(tempDir, { recursive: true, force: true });
+      (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
       process.exit(1);
     }
-    raw = (0, import_fs13.readFileSync)(found, "utf8");
+    raw = (0, import_fs16.readFileSync)(found, "utf8");
   } else if (ext === ".json") {
-    raw = (0, import_fs13.readFileSync)(filePath, "utf8");
+    raw = (0, import_fs16.readFileSync)(filePath, "utf8");
   } else {
     process.stderr.write(`Unsupported file type: ${ext}. Pass a .zip export or a conversations.json file.
 `);
@@ -23335,30 +24044,30 @@ async function importConversations(filePath) {
   } catch {
     process.stderr.write(`Failed to parse conversations JSON.
 `);
-    if (tempDir) (0, import_fs13.rmSync)(tempDir, { recursive: true, force: true });
+    if (tempDir) (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   process.stdout.write(`
-${BOLD9}chron import chatgpt${RESET9}  ${DIM8}${filePath}${RESET9}
+${BOLD10}chron import chatgpt${RESET10}  ${DIM9}${filePath}${RESET10}
 `);
-  process.stdout.write(`${DIM8}${conversations.length} conversation(s) found${RESET9}
+  process.stdout.write(`${DIM9}${conversations.length} conversation(s) found${RESET10}
 
 `);
   const result = await importGptConversations(db, conversations);
   for (const e of result.errors) {
-    process.stderr.write(`  ${YELLOW7}!${RESET9} Failed to import "${e.title}": ${e.error}
+    process.stderr.write(`  ${YELLOW8}!${RESET10} Failed to import "${e.title}": ${e.error}
 `);
   }
-  if (tempDir) (0, import_fs13.rmSync)(tempDir, { recursive: true, force: true });
+  if (tempDir) (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
   process.stdout.write("\n");
-  process.stdout.write(`${BOLD9}Done.${RESET9}  `);
-  process.stdout.write(`${GREEN6}${result.imported} imported${RESET9}`);
-  if (result.skipped > 0) process.stdout.write(`  ${DIM8}${result.skipped} skipped (already in DB)${RESET9}`);
-  process.stdout.write(`  ${CYAN7}${result.totalMessages} messages total${RESET9}`);
-  if (result.totalSecrets > 0) process.stdout.write(`  ${YELLOW7}${result.totalSecrets} secret(s) detected${RESET9}`);
-  if (result.errors.length > 0) process.stdout.write(`  ${YELLOW7}${result.errors.length} error(s)${RESET9}`);
+  process.stdout.write(`${BOLD10}Done.${RESET10}  `);
+  process.stdout.write(`${GREEN7}${result.imported} imported${RESET10}`);
+  if (result.skipped > 0) process.stdout.write(`  ${DIM9}${result.skipped} skipped (already in DB)${RESET10}`);
+  process.stdout.write(`  ${CYAN8}${result.totalMessages} messages total${RESET10}`);
+  if (result.totalSecrets > 0) process.stdout.write(`  ${YELLOW8}${result.totalSecrets} secret(s) detected${RESET10}`);
+  if (result.errors.length > 0) process.stdout.write(`  ${YELLOW8}${result.errors.length} error(s)${RESET10}`);
   process.stdout.write("\n\n");
-  process.stdout.write(`${DIM8}Run 'chron history' to browse imported sessions.${RESET9}
+  process.stdout.write(`${DIM9}Run 'chron history' to browse imported sessions.${RESET10}
 
 `);
 }
@@ -23460,10 +24169,10 @@ async function importClaudeAi(filePath) {
   const db = await initDb();
   let raw;
   let tempDir = null;
-  const ext = (0, import_path11.extname)(filePath).toLowerCase();
+  const ext = (0, import_path12.extname)(filePath).toLowerCase();
   if (ext === ".zip") {
-    tempDir = (0, import_path11.join)((0, import_os10.tmpdir)(), `chron-import-${Date.now()}`);
-    (0, import_fs13.mkdirSync)(tempDir, { recursive: true });
+    tempDir = (0, import_path12.join)((0, import_os11.tmpdir)(), `chron-import-${Date.now()}`);
+    (0, import_fs16.mkdirSync)(tempDir, { recursive: true });
     try {
       (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "conversations.json", "-d", tempDir], { stdio: "pipe" });
     } catch {
@@ -23472,7 +24181,7 @@ async function importClaudeAi(filePath) {
       } catch {
         process.stderr.write(`Failed to extract ${filePath}. Make sure 'unzip' is installed.
 `);
-        if (tempDir) (0, import_fs13.rmSync)(tempDir, { recursive: true, force: true });
+        if (tempDir) (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
         process.exit(1);
       }
     }
@@ -23480,12 +24189,12 @@ async function importClaudeAi(filePath) {
     if (!found) {
       process.stderr.write(`conversations.json not found inside the ZIP.
 `);
-      if (tempDir) (0, import_fs13.rmSync)(tempDir, { recursive: true, force: true });
+      if (tempDir) (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
       process.exit(1);
     }
-    raw = (0, import_fs13.readFileSync)(found, "utf8");
+    raw = (0, import_fs16.readFileSync)(found, "utf8");
   } else if (ext === ".json") {
-    raw = (0, import_fs13.readFileSync)(filePath, "utf8");
+    raw = (0, import_fs16.readFileSync)(filePath, "utf8");
   } else {
     process.stderr.write(`Unsupported file type: ${ext}. Pass the claude-ai-export-*.zip or conversations.json.
 `);
@@ -23498,34 +24207,34 @@ async function importClaudeAi(filePath) {
   } catch {
     process.stderr.write(`Failed to parse conversations JSON.
 `);
-    if (tempDir) (0, import_fs13.rmSync)(tempDir, { recursive: true, force: true });
+    if (tempDir) (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   process.stdout.write(`
-${BOLD9}chron import claude${RESET9}  ${DIM8}${filePath}${RESET9}
+${BOLD10}chron import claude${RESET10}  ${DIM9}${filePath}${RESET10}
 `);
-  process.stdout.write(`${DIM8}${conversations.length} conversation(s) found${RESET9}
+  process.stdout.write(`${DIM9}${conversations.length} conversation(s) found${RESET10}
 `);
-  process.stdout.write(`${YELLOW7}Imported sessions are marked as partial evidence \u2014 tool calls and environment state are not captured in claude.ai exports.${RESET9}
+  process.stdout.write(`${YELLOW8}Imported sessions are marked as partial evidence \u2014 tool calls and environment state are not captured in claude.ai exports.${RESET10}
 
 `);
   const result = await importClaudeAiConversations(db, conversations);
   for (const e of result.errors) {
-    process.stderr.write(`  ${YELLOW7}!${RESET9} Failed to import "${e.title}": ${e.error}
+    process.stderr.write(`  ${YELLOW8}!${RESET10} Failed to import "${e.title}": ${e.error}
 `);
   }
-  if (tempDir) (0, import_fs13.rmSync)(tempDir, { recursive: true, force: true });
+  if (tempDir) (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
   process.stdout.write("\n");
-  process.stdout.write(`${BOLD9}Done.${RESET9}  `);
-  process.stdout.write(`${GREEN6}${result.imported} imported${RESET9}`);
-  if (result.skipped > 0) process.stdout.write(`  ${DIM8}${result.skipped} skipped (already in DB)${RESET9}`);
-  process.stdout.write(`  ${CYAN7}${result.totalMessages} messages total${RESET9}`);
-  if (result.totalSecrets > 0) process.stdout.write(`  ${YELLOW7}${result.totalSecrets} secret(s) detected${RESET9}`);
-  if (result.errors.length > 0) process.stdout.write(`  ${YELLOW7}${result.errors.length} error(s)${RESET9}`);
+  process.stdout.write(`${BOLD10}Done.${RESET10}  `);
+  process.stdout.write(`${GREEN7}${result.imported} imported${RESET10}`);
+  if (result.skipped > 0) process.stdout.write(`  ${DIM9}${result.skipped} skipped (already in DB)${RESET10}`);
+  process.stdout.write(`  ${CYAN8}${result.totalMessages} messages total${RESET10}`);
+  if (result.totalSecrets > 0) process.stdout.write(`  ${YELLOW8}${result.totalSecrets} secret(s) detected${RESET10}`);
+  if (result.errors.length > 0) process.stdout.write(`  ${YELLOW8}${result.errors.length} error(s)${RESET10}`);
   process.stdout.write("\n\n");
-  process.stdout.write(`${DIM8}Run 'chron history' to browse imported sessions.${RESET9}
+  process.stdout.write(`${DIM9}Run 'chron history' to browse imported sessions.${RESET10}
 `);
-  process.stdout.write(`${DIM8}Run 'chron coverage' to see your full evidence boundary.${RESET9}
+  process.stdout.write(`${DIM9}Run 'chron coverage' to see your full evidence boundary.${RESET10}
 
 `);
 }
@@ -23539,7 +24248,7 @@ async function runImport(args2) {
       process.exit(1);
     }
     const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
-    if (!(0, import_fs13.existsSync)(resolved)) {
+    if (!(0, import_fs16.existsSync)(resolved)) {
       process.stderr.write(`File not found: ${resolved}
 `);
       process.exit(1);
@@ -23555,12 +24264,24 @@ async function runImport(args2) {
       process.exit(1);
     }
     const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
-    if (!(0, import_fs13.existsSync)(resolved)) {
+    if (!(0, import_fs16.existsSync)(resolved)) {
       process.stderr.write(`File not found: ${resolved}
 `);
       process.exit(1);
     }
     await importClaudeAi(resolved);
+    return;
+  }
+  if (subcommand === "claude-code") {
+    const dryRun = args2.includes("--dry-run");
+    if (!dryRun) {
+      process.stderr.write(
+        "Usage: chron import claude-code --dry-run\n\n  Only --dry-run is implemented. It reads local Claude Code transcripts\n  and reports what an import would ingest, and what it would leave out.\n  It writes nothing to the database.\n\n  The write path is deliberately not built yet: the preview is meant to\n  be read by a human before any of it becomes evidence.\n"
+      );
+      process.exit(1);
+    }
+    const { runClaudeCodeDryRun: runClaudeCodeDryRun2 } = await Promise.resolve().then(() => (init_import_claude_code(), import_claude_code_exports));
+    await runClaudeCodeDryRun2(args2);
     return;
   }
   if (subcommand === "cursor" || subcommand === "codex") {
@@ -23576,17 +24297,17 @@ Available importers: chatgpt, claude
     process.exit(1);
   }
   process.stderr.write(
-    "Usage: chron import <source> <file>\n\nSources:\n  chatgpt <file>   Import from ChatGPT data export (.zip or conversations.json)\n  claude  <file>   Import from claude.ai data export (.zip or conversations.json)\n\nImported sessions are marked as partial evidence \u2014 they lack tool calls,\nfile access records, and environment state captured in live Chron sessions.\n"
+    "Usage: chron import <source> <file>\n       chron import claude-code --dry-run\n\nSources:\n  chatgpt <file>   Import from ChatGPT data export (.zip or conversations.json)\n  claude  <file>   Import from claude.ai data export (.zip or conversations.json)\n\nImported sessions are marked as partial evidence \u2014 they lack tool calls,\nfile access records, and environment state captured in live Chron sessions.\n"
   );
   process.exit(1);
 }
-var import_fs13, import_path11, import_os10, import_child_process4, RESET9, BOLD9, DIM8, GREEN6, YELLOW7, CYAN7;
+var import_fs16, import_path12, import_os11, import_child_process4, RESET10, BOLD10, DIM9, GREEN7, YELLOW8, CYAN8;
 var init_import = __esm({
   "src/cli/import.ts"() {
     "use strict";
-    import_fs13 = require("fs");
-    import_path11 = require("path");
-    import_os10 = require("os");
+    import_fs16 = require("fs");
+    import_path12 = require("path");
+    import_os11 = require("os");
     import_child_process4 = require("child_process");
     init_drizzle_orm();
     init_esm();
@@ -23595,18 +24316,18 @@ var init_import = __esm({
     init_hash();
     init_detect();
     init_signing();
-    RESET9 = "\x1B[0m";
-    BOLD9 = "\x1B[1m";
-    DIM8 = "\x1B[2m";
-    GREEN6 = "\x1B[32m";
-    YELLOW7 = "\x1B[33m";
-    CYAN7 = "\x1B[36m";
+    RESET10 = "\x1B[0m";
+    BOLD10 = "\x1B[1m";
+    DIM9 = "\x1B[2m";
+    GREEN7 = "\x1B[32m";
+    YELLOW8 = "\x1B[33m";
+    CYAN8 = "\x1B[36m";
   }
 });
 
 // src/review/workflow.ts
 function findingId(ruleId, sessionId) {
-  return (0, import_crypto9.createHash)("sha256").update(`${ruleId}:${sessionId}`).digest("hex");
+  return (0, import_crypto10.createHash)("sha256").update(`${ruleId}:${sessionId}`).digest("hex");
 }
 async function hydrateFindingStatuses(db, findings) {
   if (findings.length === 0) return findings;
@@ -23678,11 +24399,11 @@ async function loadFindingStates(client, ids) {
     reviewed_at: row.reviewed_at == null ? null : String(row.reviewed_at)
   }));
 }
-var import_crypto9;
+var import_crypto10;
 var init_workflow = __esm({
   "src/review/workflow.ts"() {
     "use strict";
-    import_crypto9 = require("crypto");
+    import_crypto10 = require("crypto");
   }
 });
 
@@ -23880,56 +24601,56 @@ function printFindings(findings, framework, sessionCount, showAll) {
   const controlsHit = new Set(findings.flatMap((f) => f.controls));
   process.stdout.write(
     `
-${BOLD10}Chron Review${RESET10}  ${CYAN8}${framework.toUpperCase()}${RESET10}  ${DIM9}${sessionCount} session(s) reviewed${showAll ? " \xB7 all statuses" : " \xB7 open findings"}${RESET10}
+${BOLD11}Chron Review${RESET11}  ${CYAN9}${framework.toUpperCase()}${RESET11}  ${DIM10}${sessionCount} session(s) reviewed${showAll ? " \xB7 all statuses" : " \xB7 open findings"}${RESET11}
 
 `
   );
   if (findings.length === 0) {
     process.stdout.write(
-      showAll ? `${DIM9}No findings. No sessions matched any control review criteria.${RESET10}
+      showAll ? `${DIM10}No findings. No sessions matched any control review criteria.${RESET11}
 
-` : `${DIM9}No open findings. Use --all to include accepted, dismissed, and resolved findings.${RESET10}
+` : `${DIM10}No open findings. Use --all to include accepted, dismissed, and resolved findings.${RESET11}
 
 `
     );
     return;
   }
   process.stdout.write(
-    `${BOLD10}${findings.length}${RESET10} finding${findings.length === 1 ? "" : "s"}  across  ${BOLD10}${controlsHit.size}${RESET10} control${controlsHit.size === 1 ? "" : "s"}
+    `${BOLD11}${findings.length}${RESET11} finding${findings.length === 1 ? "" : "s"}  across  ${BOLD11}${controlsHit.size}${RESET11} control${controlsHit.size === 1 ? "" : "s"}
 
 `
   );
   process.stdout.write(
-    `${DIM9}This report identifies AI-session evidence that may require control-owner review.
-It is not a certification of compliance or evidence of any violation.${RESET10}
+    `${DIM10}This report identifies AI-session evidence that may require control-owner review.
+It is not a certification of compliance or evidence of any violation.${RESET11}
 
 `
   );
   for (const f of findings) {
-    const sevColor = SEV_COLOR[f.severity] ?? DIM9;
-    const statusColor = STATUS_COLOR[f.status] ?? DIM9;
+    const sevColor = SEV_COLOR[f.severity] ?? DIM10;
+    const statusColor = STATUS_COLOR[f.status] ?? DIM10;
     const controls = f.controls.join(", ");
     const sev = f.severity.toUpperCase().padEnd(8);
     const status = f.status.toUpperCase().padEnd(9);
     process.stdout.write(
-      `  ${sevColor}${BOLD10}${sev}${RESET10}  ${statusColor}${status}${RESET10}  ${MAGENTA2}${controls.padEnd(16)}${RESET10}  ${CYAN8}${f.session_prefix}${RESET10}  ${f.session_title}
+      `  ${sevColor}${BOLD11}${sev}${RESET11}  ${statusColor}${status}${RESET11}  ${MAGENTA2}${controls.padEnd(16)}${RESET11}  ${CYAN9}${f.session_prefix}${RESET11}  ${f.session_title}
 `
     );
-    process.stdout.write(`    ${DIM9}id: ${f.id.slice(0, 16)}${RESET10}
+    process.stdout.write(`    ${DIM10}id: ${f.id.slice(0, 16)}${RESET11}
 `);
     process.stdout.write(`    ${f.finding}
 `);
     for (const item of f.evidence_items.slice(0, 5)) {
-      process.stdout.write(`    ${DIM9}\u2022 ${item}${RESET10}
+      process.stdout.write(`    ${DIM10}\u2022 ${item}${RESET11}
 `);
     }
     if (f.evidence_items.length > 5) {
-      process.stdout.write(`    ${DIM9}  \u2026 ${f.evidence_items.length - 5} more event(s)${RESET10}
+      process.stdout.write(`    ${DIM10}  \u2026 ${f.evidence_items.length - 5} more event(s)${RESET11}
 `);
     }
-    process.stdout.write(`    ${DIM9}Suggested: ${f.suggested_evidence[0]}${RESET10}
+    process.stdout.write(`    ${DIM10}Suggested: ${f.suggested_evidence[0]}${RESET11}
 `);
-    if (f.note) process.stdout.write(`    ${DIM9}Note: ${f.note}${RESET10}
+    if (f.note) process.stdout.write(`    ${DIM10}Note: ${f.note}${RESET11}
 `);
     process.stdout.write("\n");
   }
@@ -23947,16 +24668,16 @@ function renderFullMapCli(framework, map, info2) {
   const counts = { covered: 0, needs_evidence: 0, manual_review: 0, out_of_scope: 0 };
   for (const e of map) counts[e.coverage] = (counts[e.coverage] ?? 0) + 1;
   process.stdout.write(`
-${BOLD10}Control Map \u2014 ${info2.title}${RESET10}
+${BOLD11}Control Map \u2014 ${info2.title}${RESET11}
 
 `);
-  process.stdout.write(`  ${CYAN8}Covered by session evidence:${RESET10}  ${BOLD10}${counts["covered"] ?? 0}${RESET10}
+  process.stdout.write(`  ${CYAN9}Covered by session evidence:${RESET11}  ${BOLD11}${counts["covered"] ?? 0}${RESET11}
 `);
-  process.stdout.write(`  ${YELLOW8}Needs additional evidence:${RESET10}   ${BOLD10}${counts["needs_evidence"] ?? 0}${RESET10}
+  process.stdout.write(`  ${YELLOW9}Needs additional evidence:${RESET11}   ${BOLD11}${counts["needs_evidence"] ?? 0}${RESET11}
 `);
-  process.stdout.write(`  ${DIM9}Manual review required:${RESET10}      ${BOLD10}${counts["manual_review"] ?? 0}${RESET10}
+  process.stdout.write(`  ${DIM10}Manual review required:${RESET11}      ${BOLD11}${counts["manual_review"] ?? 0}${RESET11}
 `);
-  process.stdout.write(`  ${DIM9}Out of scope:${RESET10}                ${BOLD10}${counts["out_of_scope"] ?? 0}${RESET10}
+  process.stdout.write(`  ${DIM10}Out of scope:${RESET11}                ${BOLD11}${counts["out_of_scope"] ?? 0}${RESET11}
 
 `);
   const groups = { covered: [], needs_evidence: [], manual_review: [], out_of_scope: [] };
@@ -23964,23 +24685,23 @@ ${BOLD10}Control Map \u2014 ${info2.title}${RESET10}
   for (const cov of COV_ORDER) {
     const entries = groups[cov];
     if (!entries || entries.length === 0) continue;
-    process.stdout.write(`${BOLD10}${COV_LABELS[cov]}:${RESET10}
+    process.stdout.write(`${BOLD11}${COV_LABELS[cov]}:${RESET11}
 `);
     for (const e of entries) {
       const id = e.id.padEnd(22);
       const title = e.title.length > 50 ? e.title.slice(0, 47) + "\u2026" : e.title.padEnd(50);
       let suffix = "";
-      if (cov === "covered") suffix = `${DIM9}rule: ${e.rule_id}${RESET10}`;
-      if (cov === "needs_evidence") suffix = `${DIM9}source: ${e.required_source}${RESET10}`;
-      if (cov === "manual_review") suffix = `${DIM9}human judgement required${RESET10}`;
-      process.stdout.write(`  ${CYAN8}${id}${RESET10}  ${title}  ${suffix}
+      if (cov === "covered") suffix = `${DIM10}rule: ${e.rule_id}${RESET11}`;
+      if (cov === "needs_evidence") suffix = `${DIM10}source: ${e.required_source}${RESET11}`;
+      if (cov === "manual_review") suffix = `${DIM10}human judgement required${RESET11}`;
+      process.stdout.write(`  ${CYAN9}${id}${RESET11}  ${title}  ${suffix}
 `);
     }
     process.stdout.write("\n");
   }
   process.stdout.write(
-    `${DIM9}Covered does not mean compliant. It means Chron has a deterministic session-evidence rule for this control.
-A full framework assessment requires policy documents, auditor judgement, and evidence beyond session logs.${RESET10}
+    `${DIM10}Covered does not mean compliant. It means Chron has a deterministic session-evidence rule for this control.
+A full framework assessment requires policy documents, auditor judgement, and evidence beyond session logs.${RESET11}
 
 `
   );
@@ -24259,13 +24980,13 @@ async function runReview2(args2) {
     }
     const html = buildReviewHtml({
       framework: frameworkArg,
-      host: (0, import_os11.hostname)(),
+      host: (0, import_os12.hostname)(),
       generatedAt,
       sessionCount,
       findings,
       coverageMapHtml
     });
-    (0, import_fs14.writeFileSync)(outputArg, html, "utf8");
+    (0, import_fs17.writeFileSync)(outputArg, html, "utf8");
     process.stdout.write(`Review report written to ${outputArg}
 `);
   }
@@ -24297,36 +25018,36 @@ async function runReviewAction(action, args2) {
     process.exit(1);
   }
 }
-var import_fs14, import_os11, RESET10, BOLD10, DIM9, RED6, YELLOW8, CYAN8, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
+var import_fs17, import_os12, RESET11, BOLD11, DIM10, RED6, YELLOW9, CYAN9, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
 var init_review = __esm({
   "src/cli/review.ts"() {
     "use strict";
-    import_fs14 = require("fs");
-    import_os11 = require("os");
+    import_fs17 = require("fs");
+    import_os12 = require("os");
     init_db2();
     init_report();
     init_rules();
     init_control_map();
     init_engine();
     init_workflow();
-    RESET10 = "\x1B[0m";
-    BOLD10 = "\x1B[1m";
-    DIM9 = "\x1B[2m";
+    RESET11 = "\x1B[0m";
+    BOLD11 = "\x1B[1m";
+    DIM10 = "\x1B[2m";
     RED6 = "\x1B[31m";
-    YELLOW8 = "\x1B[33m";
-    CYAN8 = "\x1B[36m";
+    YELLOW9 = "\x1B[33m";
+    CYAN9 = "\x1B[36m";
     MAGENTA2 = "\x1B[35m";
     SEV_COLOR = {
       critical: RED6,
-      high: YELLOW8,
-      medium: CYAN8,
-      low: DIM9
+      high: YELLOW9,
+      medium: CYAN9,
+      low: DIM10
     };
     STATUS_COLOR = {
-      open: YELLOW8,
-      accepted: CYAN8,
-      dismissed: DIM9,
-      resolved: CYAN8
+      open: YELLOW9,
+      accepted: CYAN9,
+      dismissed: DIM10,
+      resolved: CYAN9
     };
     REPORT_CSS = `
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -24493,11 +25214,11 @@ async function runRisk(args2) {
   const scored = rows.map((r) => ({ ...r, risk: scores.get(r.id) })).filter((r) => showAll || r.risk.score > 0).sort((a, b) => b.risk.score - a.risk.score);
   const label = since ? `since ${sinceArg}` : "all time";
   process.stdout.write(`
-${BOLD11}Sessions requiring attention${RESET11}  ${DIM10}(${label})${RESET11}
+${BOLD12}Sessions requiring attention${RESET12}  ${DIM11}(${label})${RESET12}
 
 `);
   if (scored.length === 0) {
-    process.stdout.write(`${DIM10}No sessions with attention signals detected.${RESET11}
+    process.stdout.write(`${DIM11}No sessions with attention signals detected.${RESET12}
 
 `);
     return;
@@ -24511,11 +25232,11 @@ ${BOLD11}Sessions requiring attention${RESET11}  ${DIM10}(${label})${RESET11}
     const date = fmtDate4(row.updated_at);
     const tool = row.ai_tool ?? "unknown";
     process.stdout.write(
-      `  ${color}${BOLD11}${score}${RESET11}  ${color}${dots}${RESET11}  ${CYAN9}${prefix}${RESET11}  ${DIM10}${tool.padEnd(12)}${RESET11}  ${DIM10}${date}${RESET11}  ${row.title}
+      `  ${color}${BOLD12}${score}${RESET12}  ${color}${dots}${RESET12}  ${CYAN10}${prefix}${RESET12}  ${DIM11}${tool.padEnd(12)}${RESET12}  ${DIM11}${date}${RESET12}  ${row.title}
 `
     );
     for (const reason of risk.reasons.slice(0, 3)) {
-      process.stdout.write(`      ${DIM10}\u21B3 ${reason}${RESET11}
+      process.stdout.write(`      ${DIM11}\u21B3 ${reason}${RESET12}
 `);
     }
     process.stdout.write("\n");
@@ -24524,15 +25245,15 @@ ${BOLD11}Sessions requiring attention${RESET11}  ${DIM10}(${label})${RESET11}
   const critical = scored.filter((r) => r.risk.band === "critical").length;
   const high = scored.filter((r) => r.risk.band === "high").length;
   const summary = [];
-  if (critical > 0) summary.push(`${RED7}${BOLD11}${critical} critical${RESET11}`);
-  if (high > 0) summary.push(`${YELLOW9}${high} high${RESET11}`);
+  if (critical > 0) summary.push(`${RED7}${BOLD12}${critical} critical${RESET12}`);
+  if (high > 0) summary.push(`${YELLOW10}${high} high${RESET12}`);
   const rest = total - critical - high;
-  if (rest > 0) summary.push(`${DIM10}${rest} review${RESET11}`);
-  process.stdout.write(`  ${BOLD11}${total}${RESET11} session${total === 1 ? "" : "s"} flagged`);
+  if (rest > 0) summary.push(`${DIM11}${rest} review${RESET12}`);
+  process.stdout.write(`  ${BOLD12}${total}${RESET12} session${total === 1 ? "" : "s"} flagged`);
   if (summary.length > 0) process.stdout.write(`  \xB7  ${summary.join("  ")}`);
   process.stdout.write("\n\n");
 }
-var RESET11, BOLD11, DIM10, RED7, YELLOW9, CYAN9, BAND_COLOR2, BAND_DOTS;
+var RESET12, BOLD12, DIM11, RED7, YELLOW10, CYAN10, BAND_COLOR2, BAND_DOTS;
 var init_risk2 = __esm({
   "src/cli/risk.ts"() {
     "use strict";
@@ -24541,17 +25262,17 @@ var init_risk2 = __esm({
     init_schema();
     init_report();
     init_risk();
-    RESET11 = "\x1B[0m";
-    BOLD11 = "\x1B[1m";
-    DIM10 = "\x1B[2m";
+    RESET12 = "\x1B[0m";
+    BOLD12 = "\x1B[1m";
+    DIM11 = "\x1B[2m";
     RED7 = "\x1B[31m";
-    YELLOW9 = "\x1B[33m";
-    CYAN9 = "\x1B[36m";
+    YELLOW10 = "\x1B[33m";
+    CYAN10 = "\x1B[36m";
     BAND_COLOR2 = {
       critical: RED7,
-      high: YELLOW9,
-      review: YELLOW9,
-      normal: DIM10
+      high: YELLOW10,
+      review: YELLOW10,
+      normal: DIM11
     };
     BAND_DOTS = {
       critical: "\u25CF\u25CF\u25CF\u25CF",
@@ -24703,6 +25424,13 @@ function buildTimelineEntry(msg, secrets) {
         <span class="tl-ts">${esc4(ts)}</span>
       </div>
       <div class="tl-label dim">result received</div>
+    </div>`;
+  }
+  if (isSystemRole(msg.role)) {
+    return `
+    <div class="tl-entry boundary" style="border-left:3px solid #94a3b8; opacity:.8;">
+      <div class="tl-header"><span class="tl-role">${esc4(roleLabel(msg.role))}</span><span class="tl-time">${esc4(ts)}</span></div>
+      <div class="tl-body"><em>${esc4(msg.content)}</em></div>
     </div>`;
   }
   const role = msg.role === "user" ? "user" : "assistant";
@@ -24892,7 +25620,7 @@ async function runSessionDetail(prefix, outputArg) {
   const html = buildDetailHtml(session, msgs, secretsByMsg, findings, risk, tamper, generatedAt);
   const defaultOut = `chron-session-${session.id.slice(0, 8)}.html`;
   const outFile = outputArg !== "chron-dashboard.html" ? outputArg : defaultOut;
-  (0, import_fs15.writeFileSync)(outFile, html, "utf8");
+  (0, import_fs18.writeFileSync)(outFile, html, "utf8");
   const openCount = findings.filter((f) => f.status === "open").length;
   process.stdout.write(
     `
@@ -24906,13 +25634,14 @@ async function runSessionDetail(prefix, outputArg) {
 `
   );
 }
-var import_fs15, RULE_META3, FW_LABELS3, DETAIL_CSS;
+var import_fs18, RULE_META3, FW_LABELS3, DETAIL_CSS;
 var init_session_detail = __esm({
   "src/cli/session-detail.ts"() {
     "use strict";
-    import_fs15 = require("fs");
+    import_fs18 = require("fs");
     init_drizzle_orm();
     init_db2();
+    init_roles();
     init_schema();
     init_risk();
     init_rules();
@@ -25388,7 +26117,7 @@ async function runDashboard(args2) {
     minute: "2-digit"
   });
   const html = buildDashboardHtml(rows, findings, requirements, sessionIds.length, since, sinceArg, generatedAt, now);
-  (0, import_fs16.writeFileSync)(outputArg, html, "utf8");
+  (0, import_fs19.writeFileSync)(outputArg, html, "utf8");
   const criticalCount = rows.filter((r) => r.risk.band === "critical").length;
   const highCount = rows.filter((r) => r.risk.band === "high").length;
   process.stdout.write(
@@ -25402,11 +26131,11 @@ async function runDashboard(args2) {
 `
   );
 }
-var import_fs16, RULE_META4, FW_LABELS4, DASHBOARD_CSS, REASON_LABEL;
+var import_fs19, RULE_META4, FW_LABELS4, DASHBOARD_CSS, REASON_LABEL;
 var init_dashboard = __esm({
   "src/cli/dashboard.ts"() {
     "use strict";
-    import_fs16 = require("fs");
+    import_fs19 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -25524,11 +26253,11 @@ async function runPatterns(args2) {
   }
   const rangeLabel = sinceArg ? `last ${sinceArg}` : "all time";
   process.stdout.write(`
-${BOLD12}Chron Patterns${RESET12}  ${DIM11}${rangeLabel} \xB7 ${sessionCount} session${sessionCount === 1 ? "" : "s"}${RESET12}
+${BOLD13}Chron Patterns${RESET13}  ${DIM12}${rangeLabel} \xB7 ${sessionCount} session${sessionCount === 1 ? "" : "s"}${RESET13}
 
 `);
   if (patterns.length === 0) {
-    process.stdout.write(`${DIM11}No patterns detected \u2014 no repeated signals across sessions.${RESET12}
+    process.stdout.write(`${DIM12}No patterns detected \u2014 no repeated signals across sessions.${RESET13}
 
 `);
     return;
@@ -25537,18 +26266,18 @@ ${BOLD12}Chron Patterns${RESET12}  ${DIM11}${rangeLabel} \xB7 ${sessionCount} se
     const color = SEV_COLOR2[p.severity];
     const dots = SEV_DOTS[p.severity];
     const sev = p.severity.toUpperCase().padEnd(6);
-    process.stdout.write(`${color}${dots}${RESET12} ${color}${BOLD12}${sev}${RESET12}  ${BOLD12}${p.title}${RESET12}
+    process.stdout.write(`${color}${dots}${RESET13} ${color}${BOLD13}${sev}${RESET13}  ${BOLD13}${p.title}${RESET13}
 `);
-    process.stdout.write(`       ${DIM11}${p.detail}${RESET12}
+    process.stdout.write(`       ${DIM12}${p.detail}${RESET13}
 `);
     if (p.evidence.length > 0) {
       for (const line of p.evidence) {
-        process.stdout.write(`       ${DIM11}\xB7 ${line}${RESET12}
+        process.stdout.write(`       ${DIM12}\xB7 ${line}${RESET13}
 `);
       }
     }
-    const prefixes = p.session_ids.slice(0, 5).map((id) => `${CYAN10}${id.slice(0, 8)}${RESET12}`);
-    const more = p.session_ids.length > 5 ? ` ${DIM11}+${p.session_ids.length - 5} more${RESET12}` : "";
+    const prefixes = p.session_ids.slice(0, 5).map((id) => `${CYAN11}${id.slice(0, 8)}${RESET13}`);
+    const more = p.session_ids.length > 5 ? ` ${DIM12}+${p.session_ids.length - 5} more${RESET13}` : "";
     process.stdout.write(`       Sessions: ${prefixes.join("  ")}${more}
 
 `);
@@ -25557,26 +26286,26 @@ ${BOLD12}Chron Patterns${RESET12}  ${DIM11}${rangeLabel} \xB7 ${sessionCount} se
   const medium = patterns.filter((p) => p.severity === "medium").length;
   const low = patterns.filter((p) => p.severity === "low").length;
   process.stdout.write(
-    `${DIM11}${patterns.length} pattern${patterns.length === 1 ? "" : "s"} detected${RESET12}` + (high ? `  ${RED8}${high} high${RESET12}` : "") + (medium ? `  ${YELLOW10}${medium} medium${RESET12}` : "") + (low ? `  ${DIM11}${low} low${RESET12}` : "") + "\n\n"
+    `${DIM12}${patterns.length} pattern${patterns.length === 1 ? "" : "s"} detected${RESET13}` + (high ? `  ${RED8}${high} high${RESET13}` : "") + (medium ? `  ${YELLOW11}${medium} medium${RESET13}` : "") + (low ? `  ${DIM12}${low} low${RESET13}` : "") + "\n\n"
   );
 }
-var RESET12, BOLD12, DIM11, RED8, YELLOW10, CYAN10, SEV_COLOR2, SEV_DOTS;
+var RESET13, BOLD13, DIM12, RED8, YELLOW11, CYAN11, SEV_COLOR2, SEV_DOTS;
 var init_patterns2 = __esm({
   "src/cli/patterns.ts"() {
     "use strict";
     init_db2();
     init_report();
     init_patterns();
-    RESET12 = "\x1B[0m";
-    BOLD12 = "\x1B[1m";
-    DIM11 = "\x1B[2m";
+    RESET13 = "\x1B[0m";
+    BOLD13 = "\x1B[1m";
+    DIM12 = "\x1B[2m";
     RED8 = "\x1B[31m";
-    YELLOW10 = "\x1B[33m";
-    CYAN10 = "\x1B[36m";
+    YELLOW11 = "\x1B[33m";
+    CYAN11 = "\x1B[36m";
     SEV_COLOR2 = {
       high: RED8,
-      medium: YELLOW10,
-      low: DIM11
+      medium: YELLOW11,
+      low: DIM12
     };
     SEV_DOTS = {
       high: "\u25CF\u25CF\u25CF\u25CF",
@@ -25597,7 +26326,7 @@ function getSplunkConfig() {
   if (now < _splunkCacheExpiry) return _splunkCache;
   _splunkCacheExpiry = now + 1e4;
   try {
-    const cfg = JSON.parse((0, import_fs17.readFileSync)((0, import_path12.join)((0, import_os12.homedir)(), ".chron", "config.json"), "utf8"));
+    const cfg = JSON.parse((0, import_fs20.readFileSync)((0, import_path13.join)((0, import_os13.homedir)(), ".chron", "config.json"), "utf8"));
     const s = cfg?.splunk;
     _splunkCache = s?.url && s?.token ? { url: s.url, token: s.token, insecure: s.insecure ?? false } : null;
   } catch {
@@ -25620,7 +26349,7 @@ function getSentinelConfig() {
   if (now < _sentinelCacheExpiry) return _sentinelCache;
   _sentinelCacheExpiry = now + 1e4;
   try {
-    const cfg = JSON.parse((0, import_fs17.readFileSync)((0, import_path12.join)((0, import_os12.homedir)(), ".chron", "config.json"), "utf8"));
+    const cfg = JSON.parse((0, import_fs20.readFileSync)((0, import_path13.join)((0, import_os13.homedir)(), ".chron", "config.json"), "utf8"));
     const s = cfg?.sentinel;
     _sentinelCache = s?.dce && s?.dcrId && s?.stream && s?.tenantId && s?.clientId && s?.clientSecret ? { dce: s.dce, dcrId: s.dcrId, stream: s.stream, tenantId: s.tenantId, clientId: s.clientId, clientSecret: s.clientSecret } : null;
   } catch {
@@ -25654,7 +26383,7 @@ async function getAzureToken(tenantId, clientId, clientSecret) {
 }
 function getMachineId() {
   if (!_machineId) {
-    _machineId = "sha256:" + (0, import_crypto10.createHash)("sha256").update((0, import_os12.hostname)()).digest("hex").slice(0, 16);
+    _machineId = "sha256:" + (0, import_crypto11.createHash)("sha256").update((0, import_os13.hostname)()).digest("hex").slice(0, 16);
   }
   return _machineId;
 }
@@ -25674,7 +26403,7 @@ function toSplunkEvent(payload) {
   }
   return {
     time: new Date(payload.timestamp).getTime() / 1e3,
-    host: (0, import_os12.hostname)(),
+    host: (0, import_os13.hostname)(),
     source: "chron-mcp",
     sourcetype: "chron:event",
     event
@@ -25703,7 +26432,7 @@ function toSentinelRecord(payload) {
     AiTool: payload.session.ai_tool ?? "",
     OS: process.platform,
     ChronVersion: import_package3.version,
-    Computer: (0, import_os12.hostname)(),
+    Computer: (0, import_os13.hostname)(),
     Role: "",
     DetectionType: "",
     MaskedValue: ""
@@ -25757,7 +26486,7 @@ function emitToLogScale(payload) {
   const token = process.env.CHRON_LOGSCALE_TOKEN;
   if (!url || !token) return;
   const body = JSON.stringify([{
-    tags: { host: (0, import_os12.hostname)(), source: "chron-mcp" },
+    tags: { host: (0, import_os13.hostname)(), source: "chron-mcp" },
     events: [{ timestamp: payload.timestamp, attributes: toLogScaleAttributes(payload) }]
   }]);
   setImmediate(
@@ -25820,7 +26549,7 @@ function toSplunkRiskEvent(payload) {
     base.signals_code_changes = payload.signals.code_changes;
     base.signals_findings = payload.signals.findings;
   }
-  return { time: new Date(payload.timestamp).getTime() / 1e3, host: (0, import_os12.hostname)(), source: "chron", sourcetype: "chron:risk", event: base };
+  return { time: new Date(payload.timestamp).getTime() / 1e3, host: (0, import_os13.hostname)(), source: "chron", sourcetype: "chron:risk", event: base };
 }
 function toSentinelRiskRecord(payload) {
   const base = {
@@ -25828,7 +26557,7 @@ function toSentinelRiskRecord(payload) {
     EventType: payload.event_type,
     OS: process.platform,
     ChronVersion: import_package3.version,
-    Computer: (0, import_os12.hostname)()
+    Computer: (0, import_os13.hostname)()
   };
   if (payload.event_type === "pattern_detected") {
     base.PatternId = payload.pattern_id;
@@ -25885,7 +26614,7 @@ function emitRiskEvent(payload) {
   const lsToken = process.env.CHRON_LOGSCALE_TOKEN;
   if (lsUrl && lsToken) {
     const body = JSON.stringify([{
-      tags: { host: (0, import_os12.hostname)(), source: "chron" },
+      tags: { host: (0, import_os13.hostname)(), source: "chron" },
       events: [{ timestamp: payload.timestamp, attributes: toLogScaleRiskAttributes(payload) }]
     }]);
     setImmediate(
@@ -25924,14 +26653,14 @@ function emitRiskEvent(payload) {
     );
   }
 }
-var import_fs17, import_path12, import_crypto10, import_os12, import_package3, _splunkCache, _splunkCacheExpiry, _sentinelCache, _sentinelCacheExpiry, _azureTokenCache, _machineId;
+var import_fs20, import_path13, import_crypto11, import_os13, import_package3, _splunkCache, _splunkCacheExpiry, _sentinelCache, _sentinelCacheExpiry, _azureTokenCache, _machineId;
 var init_relay = __esm({
   "src/utils/relay.ts"() {
     "use strict";
-    import_fs17 = require("fs");
-    import_path12 = require("path");
-    import_crypto10 = require("crypto");
-    import_os12 = require("os");
+    import_fs20 = require("fs");
+    import_path13 = require("path");
+    import_crypto11 = require("crypto");
+    import_os13 = require("os");
     import_package3 = __toESM(require_package());
     if (process.env.CHRON_SPLUNK_INSECURE === "1") {
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -26012,11 +26741,11 @@ async function runEvents(args2) {
   }
   const rangeLabel = sinceArg ? `last ${sinceArg}` : "all time";
   process.stdout.write(`
-${BOLD13}Chron Events${RESET13}  ${DIM12}${rangeLabel} \xB7 ${sessionCount} session${sessionCount === 1 ? "" : "s"}${RESET13}
+${BOLD14}Chron Events${RESET14}  ${DIM13}${rangeLabel} \xB7 ${sessionCount} session${sessionCount === 1 ? "" : "s"}${RESET14}
 
 `);
   if (events.length === 0) {
-    process.stdout.write(`${DIM12}No risk events \u2014 no patterns detected and no sessions with attention score > 0.${RESET13}
+    process.stdout.write(`${DIM13}No risk events \u2014 no patterns detected and no sessions with attention score > 0.${RESET14}
 
 `);
     return;
@@ -26025,61 +26754,61 @@ ${BOLD13}Chron Events${RESET13}  ${DIM12}${rangeLabel} \xB7 ${sessionCount} sess
   const highAttn = events.filter((e) => e.event_type === "high_attention_session");
   const allScored = events.filter((e) => e.event_type === "attention_score_computed");
   if (patterns.length > 0) {
-    process.stdout.write(`${BOLD13}Pattern events${RESET13}  ${DIM12}${patterns.length} detected${RESET13}
+    process.stdout.write(`${BOLD14}Pattern events${RESET14}  ${DIM13}${patterns.length} detected${RESET14}
 
 `);
     for (const ev of patterns) {
       if (ev.event_type !== "pattern_detected") continue;
-      const color = SEV_COLOR3[ev.severity] ?? DIM12;
-      process.stdout.write(`  ${color}${BOLD13}${ev.severity.toUpperCase()}${RESET13}  ${BOLD13}${ev.title}${RESET13}
+      const color = SEV_COLOR3[ev.severity] ?? DIM13;
+      process.stdout.write(`  ${color}${BOLD14}${ev.severity.toUpperCase()}${RESET14}  ${BOLD14}${ev.title}${RESET14}
 `);
-      process.stdout.write(`  ${DIM12}id: ${ev.pattern_id}${RESET13}
+      process.stdout.write(`  ${DIM13}id: ${ev.pattern_id}${RESET14}
 `);
-      process.stdout.write(`  ${DIM12}${ev.detail}${RESET13}
+      process.stdout.write(`  ${DIM13}${ev.detail}${RESET14}
 `);
-      const prefixes = ev.session_ids.slice(0, 5).map((id) => `${CYAN11}${id.slice(0, 8)}${RESET13}`);
-      const more = ev.session_ids.length > 5 ? ` ${DIM12}+${ev.session_ids.length - 5} more${RESET13}` : "";
+      const prefixes = ev.session_ids.slice(0, 5).map((id) => `${CYAN12}${id.slice(0, 8)}${RESET14}`);
+      const more = ev.session_ids.length > 5 ? ` ${DIM13}+${ev.session_ids.length - 5} more${RESET14}` : "";
       process.stdout.write(`  sessions: ${prefixes.join("  ")}${more}
 
 `);
     }
   }
   if (highAttn.length > 0) {
-    process.stdout.write(`${BOLD13}High-attention sessions${RESET13}  ${DIM12}${highAttn.length} flagged${RESET13}
+    process.stdout.write(`${BOLD14}High-attention sessions${RESET14}  ${DIM13}${highAttn.length} flagged${RESET14}
 
 `);
     for (const ev of highAttn) {
       if (ev.event_type !== "high_attention_session") continue;
-      const color = BAND_COLOR3[ev.band] ?? DIM12;
-      process.stdout.write(`  ${color}${BOLD13}${ev.band.toUpperCase()}${RESET13}  score ${BOLD13}${ev.score}${RESET13}  ${CYAN11}${ev.session_id.slice(0, 8)}${RESET13}
+      const color = BAND_COLOR3[ev.band] ?? DIM13;
+      process.stdout.write(`  ${color}${BOLD14}${ev.band.toUpperCase()}${RESET14}  score ${BOLD14}${ev.score}${RESET14}  ${CYAN12}${ev.session_id.slice(0, 8)}${RESET14}
 `);
       if (ev.reasons.length > 0) {
-        process.stdout.write(`  ${DIM12}${ev.reasons[0]}${ev.reasons.length > 1 ? ` +${ev.reasons.length - 1} more` : ""}${RESET13}
+        process.stdout.write(`  ${DIM13}${ev.reasons[0]}${ev.reasons.length > 1 ? ` +${ev.reasons.length - 1} more` : ""}${RESET14}
 `);
       }
       process.stdout.write("\n");
     }
   }
   if (allScored.length > 0 && allScored.length !== highAttn.length) {
-    process.stdout.write(`${DIM12}+ ${allScored.length} attention_score_computed event${allScored.length === 1 ? "" : "s"} (sessions with score > 0)${RESET13}
+    process.stdout.write(`${DIM13}+ ${allScored.length} attention_score_computed event${allScored.length === 1 ? "" : "s"} (sessions with score > 0)${RESET14}
 
 `);
   }
   const total = events.length;
-  process.stdout.write(`${DIM12}${total} event${total === 1 ? "" : "s"} total${RESET13}`);
+  process.stdout.write(`${DIM13}${total} event${total === 1 ? "" : "s"} total${RESET14}`);
   if (emitMode) {
     for (const ev of events) emitRiskEvent(ev);
     await new Promise((r) => setTimeout(r, 800));
-    process.stdout.write(`  ${GREEN7}${BOLD13}\u2713 emitted${RESET13}
+    process.stdout.write(`  ${GREEN8}${BOLD14}\u2713 emitted${RESET14}
 
 `);
   } else {
-    process.stdout.write(`  ${DIM12}(use --emit to send to configured SIEM targets)${RESET13}
+    process.stdout.write(`  ${DIM13}(use --emit to send to configured SIEM targets)${RESET14}
 
 `);
   }
 }
-var RESET13, BOLD13, DIM12, RED9, YELLOW11, CYAN11, GREEN7, BAND_COLOR3, SEV_COLOR3;
+var RESET14, BOLD14, DIM13, RED9, YELLOW12, CYAN12, GREEN8, BAND_COLOR3, SEV_COLOR3;
 var init_events = __esm({
   "src/cli/events.ts"() {
     "use strict";
@@ -26087,23 +26816,23 @@ var init_events = __esm({
     init_report();
     init_patterns();
     init_relay();
-    RESET13 = "\x1B[0m";
-    BOLD13 = "\x1B[1m";
-    DIM12 = "\x1B[2m";
+    RESET14 = "\x1B[0m";
+    BOLD14 = "\x1B[1m";
+    DIM13 = "\x1B[2m";
     RED9 = "\x1B[31m";
-    YELLOW11 = "\x1B[33m";
-    CYAN11 = "\x1B[36m";
-    GREEN7 = "\x1B[32m";
+    YELLOW12 = "\x1B[33m";
+    CYAN12 = "\x1B[36m";
+    GREEN8 = "\x1B[32m";
     BAND_COLOR3 = {
       critical: RED9,
       high: RED9,
-      review: YELLOW11,
-      normal: DIM12
+      review: YELLOW12,
+      normal: DIM13
     };
     SEV_COLOR3 = {
       high: RED9,
-      medium: YELLOW11,
-      low: DIM12
+      medium: YELLOW12,
+      low: DIM13
     };
   }
 });
@@ -26118,7 +26847,7 @@ __export(evidence_exports, {
   runEvidence: () => runEvidence
 });
 function hash(input) {
-  return (0, import_crypto11.createHash)("sha256").update(input).digest("hex");
+  return (0, import_crypto12.createHash)("sha256").update(input).digest("hex");
 }
 function argValue(args2, name) {
   const prefix = `--${name}=`;
@@ -26184,12 +26913,12 @@ async function createEvidenceLink(db, evidenceId, targetType, targetId, now, not
   return id;
 }
 async function importEvidenceDocument(db, params) {
-  const filePath = (0, import_path13.resolve)(params.file);
-  const buf = (0, import_fs18.readFileSync)(filePath);
-  const stat = (0, import_fs18.statSync)(filePath);
+  const filePath = (0, import_path14.resolve)(params.file);
+  const buf = (0, import_fs21.readFileSync)(filePath);
+  const stat = (0, import_fs21.statSync)(filePath);
   const sha256 = hash(buf);
   const now = params.now ?? (/* @__PURE__ */ new Date()).toISOString();
-  const title = (0, import_path13.basename)(filePath);
+  const title = (0, import_path14.basename)(filePath);
   const documentId = sha256;
   await db.$client.execute({
     sql: `INSERT INTO evidence_documents (id, title, file_path, sha256, size_bytes, imported_at)
@@ -26335,13 +27064,13 @@ async function runEvidence(args2) {
   }
   throw new Error(`Unknown evidence command: ${subcommand}`);
 }
-var import_crypto11, import_path13, import_fs18, FW_LABELS5;
+var import_crypto12, import_path14, import_fs21, FW_LABELS5;
 var init_evidence2 = __esm({
   "src/cli/evidence.ts"() {
     "use strict";
-    import_crypto11 = require("crypto");
-    import_path13 = require("path");
-    import_fs18 = require("fs");
+    import_crypto12 = require("crypto");
+    import_path14 = require("path");
+    import_fs21 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -26379,7 +27108,7 @@ function printReviewList(reqs, now, overdueOnly) {
   const visible = overdueOnly ? reqs.filter((r) => isOverdue(r, now)) : reqs.filter((r) => r.status !== "reviewed");
   if (visible.length === 0) {
     const msg = overdueOnly ? "No overdue reviews." : "No pending reviews.";
-    process.stdout.write(`${DIM13}${msg}${RESET14}
+    process.stdout.write(`${DIM14}${msg}${RESET15}
 
 `);
     return;
@@ -26388,13 +27117,13 @@ function printReviewList(reqs, now, overdueOnly) {
   for (const [sessionId, items] of grouped) {
     const prefix = sessionId.slice(0, 8);
     const hasOverdue = items.some((r) => isOverdue(r, now));
-    const badge = hasOverdue ? `${RED10}${BOLD14}OVERDUE${RESET14}` : `${YELLOW12}${BOLD14}PENDING${RESET14}`;
+    const badge = hasOverdue ? `${RED10}${BOLD15}OVERDUE${RESET15}` : `${YELLOW13}${BOLD15}PENDING${RESET15}`;
     const deadline = items[0].required_by;
-    process.stdout.write(`  ${badge}  ${CYAN12}${prefix}${RESET14}  ${DIM13}review by ${fmtDt(deadline)}${RESET14}
+    process.stdout.write(`  ${badge}  ${CYAN13}${prefix}${RESET15}  ${DIM14}review by ${fmtDt(deadline)}${RESET15}
 `);
     for (const r of items) {
-      const color = SEV_COLOR4[r.severity] ?? DIM13;
-      process.stdout.write(`    ${DIM13}\xB7${RESET14} ${color}${r.severity}${RESET14}  ${REASON_LABEL2[r.reason] ?? r.reason}
+      const color = SEV_COLOR4[r.severity] ?? DIM14;
+      process.stdout.write(`    ${DIM14}\xB7${RESET15} ${color}${r.severity}${RESET15}  ${REASON_LABEL2[r.reason] ?? r.reason}
 `);
     }
     process.stdout.write("\n");
@@ -26402,7 +27131,7 @@ function printReviewList(reqs, now, overdueOnly) {
 }
 function printAllList(reqs, now) {
   if (reqs.length === 0) {
-    process.stdout.write(`${DIM13}No review requirements recorded yet. Run chron reviews to scan.${RESET14}
+    process.stdout.write(`${DIM14}No review requirements recorded yet. Run chron reviews to scan.${RESET15}
 
 `);
     return;
@@ -26411,15 +27140,15 @@ function printAllList(reqs, now) {
   for (const [sessionId, items] of grouped) {
     const prefix = sessionId.slice(0, 8);
     const isRev = items[0].status === "reviewed";
-    const statusStr = isRev ? `${GREEN8}${BOLD14}REVIEWED${RESET14}` : isOverdue(items[0], now) ? `${RED10}${BOLD14}OVERDUE${RESET14}` : `${YELLOW12}${BOLD14}PENDING${RESET14}`;
-    process.stdout.write(`  ${statusStr}  ${CYAN12}${prefix}${RESET14}`);
+    const statusStr = isRev ? `${GREEN9}${BOLD15}REVIEWED${RESET15}` : isOverdue(items[0], now) ? `${RED10}${BOLD15}OVERDUE${RESET15}` : `${YELLOW13}${BOLD15}PENDING${RESET15}`;
+    process.stdout.write(`  ${statusStr}  ${CYAN13}${prefix}${RESET15}`);
     if (isRev && items[0].reviewer) {
-      process.stdout.write(`  ${DIM13}by ${items[0].reviewer} at ${fmtDt(items[0].reviewed_at)}${RESET14}`);
+      process.stdout.write(`  ${DIM14}by ${items[0].reviewer} at ${fmtDt(items[0].reviewed_at)}${RESET15}`);
     }
     process.stdout.write("\n");
     for (const r of items) {
-      const color = SEV_COLOR4[r.severity] ?? DIM13;
-      process.stdout.write(`    ${DIM13}\xB7${RESET14} ${color}${r.severity}${RESET14}  ${REASON_LABEL2[r.reason] ?? r.reason}
+      const color = SEV_COLOR4[r.severity] ?? DIM14;
+      process.stdout.write(`    ${DIM14}\xB7${RESET15} ${color}${r.severity}${RESET15}  ${REASON_LABEL2[r.reason] ?? r.reason}
 `);
     }
     process.stdout.write("\n");
@@ -26436,12 +27165,12 @@ async function runReviews(args2) {
     const now2 = (/* @__PURE__ */ new Date()).toISOString();
     const { sessionId, count } = await markReviewed(db2, sessionPrefix, reviewer, now2);
     if (count === 0) {
-      process.stdout.write(`${DIM13}No pending review requirements found for session ${sessionId.slice(0, 8)}.${RESET14}
+      process.stdout.write(`${DIM14}No pending review requirements found for session ${sessionId.slice(0, 8)}.${RESET15}
 
 `);
     } else {
       process.stdout.write(
-        `${GREEN8}${BOLD14}\u2713 Marked reviewed${RESET14}  ${CYAN12}${sessionId.slice(0, 8)}${RESET14}  ${DIM13}by ${reviewer}  \xB7  ${count} requirement${count === 1 ? "" : "s"}${RESET14}
+        `${GREEN9}${BOLD15}\u2713 Marked reviewed${RESET15}  ${CYAN13}${sessionId.slice(0, 8)}${RESET15}  ${DIM14}by ${reviewer}  \xB7  ${count} requirement${count === 1 ? "" : "s"}${RESET15}
 
 `
       );
@@ -26467,14 +27196,14 @@ async function runReviews(args2) {
   const flagPct = stats.scanned > 0 ? Math.round(stats.flagRate * 100) : null;
   const flagLabel = flagPct !== null ? `flag rate ${flagPct}% (${stats.flagged}/${stats.scanned})` : "";
   process.stdout.write(`
-${BOLD14}Chron Reviews${RESET14}  ${DIM13}${rangeLabel}${RESET14}
+${BOLD15}Chron Reviews${RESET15}  ${DIM14}${rangeLabel}${RESET15}
 `);
   process.stdout.write(
-    `${DIM13}${stats.overdue} overdue  \xB7  ${stats.pending} pending  \xB7  ${stats.reviewed} reviewed  \xB7  ${slaLabel}` + (flagLabel ? `  \xB7  ${flagLabel}` : "") + `${RESET14}` + (newFlags > 0 ? `  ${DIM13}(+${newFlags} new)${RESET14}` : "") + "\n\n"
+    `${DIM14}${stats.overdue} overdue  \xB7  ${stats.pending} pending  \xB7  ${stats.reviewed} reviewed  \xB7  ${slaLabel}` + (flagLabel ? `  \xB7  ${flagLabel}` : "") + `${RESET15}` + (newFlags > 0 ? `  ${DIM14}(+${newFlags} new)${RESET15}` : "") + "\n\n"
   );
   if (stats.highFlagRate) {
     process.stdout.write(
-      `${YELLOW12}${BOLD14}\u26A0  Review queue is flagging more than 20% of sessions. Tune triggers to avoid review fatigue.${RESET14}
+      `${YELLOW13}${BOLD15}\u26A0  Review queue is flagging more than 20% of sessions. Tune triggers to avoid review fatigue.${RESET15}
 
 `
     );
@@ -26482,7 +27211,7 @@ ${BOLD14}Chron Reviews${RESET14}  ${DIM13}${rangeLabel}${RESET14}
   const breakdownEntries = Object.entries(stats.reasonBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 3);
   if (breakdownEntries.length > 0) {
     const parts = breakdownEntries.map(([r, n]) => `${REASON_LABEL2[r] ?? r} (${n})`);
-    process.stdout.write(`${DIM13}Reasons: ${parts.join("  \xB7  ")}${RESET14}
+    process.stdout.write(`${DIM14}Reasons: ${parts.join("  \xB7  ")}${RESET15}
 
 `);
   }
@@ -26491,31 +27220,31 @@ ${BOLD14}Chron Reviews${RESET14}  ${DIM13}${rangeLabel}${RESET14}
   } else {
     printReviewList(reqs, now, overdueOnly);
     if (!overdueOnly && stats.reviewed > 0) {
-      process.stdout.write(`${DIM13}${stats.reviewed} reviewed session${stats.reviewed === 1 ? "" : "s"} hidden \u2014 use --all to include${RESET14}
+      process.stdout.write(`${DIM14}${stats.reviewed} reviewed session${stats.reviewed === 1 ? "" : "s"} hidden \u2014 use --all to include${RESET15}
 
 `);
     }
   }
   if (reqs.filter((r) => r.status !== "reviewed").length > 0) {
-    process.stdout.write(`${DIM13}To mark reviewed: chron reviews mark <session-prefix> --reviewer=<name>${RESET14}
+    process.stdout.write(`${DIM14}To mark reviewed: chron reviews mark <session-prefix> --reviewer=<name>${RESET15}
 
 `);
   }
 }
-var RESET14, BOLD14, DIM13, RED10, YELLOW12, GREEN8, CYAN12, REASON_LABEL2, SEV_COLOR4;
+var RESET15, BOLD15, DIM14, RED10, YELLOW13, GREEN9, CYAN13, REASON_LABEL2, SEV_COLOR4;
 var init_reviews = __esm({
   "src/cli/reviews.ts"() {
     "use strict";
     init_db2();
     init_report();
     init_queue2();
-    RESET14 = "\x1B[0m";
-    BOLD14 = "\x1B[1m";
-    DIM13 = "\x1B[2m";
+    RESET15 = "\x1B[0m";
+    BOLD15 = "\x1B[1m";
+    DIM14 = "\x1B[2m";
     RED10 = "\x1B[31m";
-    YELLOW12 = "\x1B[33m";
-    GREEN8 = "\x1B[32m";
-    CYAN12 = "\x1B[36m";
+    YELLOW13 = "\x1B[33m";
+    GREEN9 = "\x1B[32m";
+    CYAN13 = "\x1B[36m";
     REASON_LABEL2 = {
       secrets_detected: "secret detected",
       auth_code_change: "auth/access-control code changed",
@@ -26525,7 +27254,7 @@ var init_reviews = __esm({
     };
     SEV_COLOR4 = {
       critical: RED10,
-      high: YELLOW12
+      high: YELLOW13
     };
   }
 });
@@ -26536,15 +27265,15 @@ __export(setup_exports, {
   runSetup: () => runSetup
 });
 async function runSetup() {
-  const home = (0, import_os13.homedir)();
-  const plat = (0, import_os13.platform)();
+  const home = (0, import_os14.homedir)();
+  const plat = (0, import_os14.platform)();
   const configs = userMcpClientConfigs(home, process.cwd(), plat, process.env.APPDATA);
   const GLOBAL_ONLY = ["Claude Code", "Cursor (global)", "Gemini CLI", "Codex (global)"];
   const fixable = configs.filter((c) => {
     if (c.name === "Codex (project)" || c.name === "Cursor (project)") return false;
-    if ((0, import_fs19.existsSync)(c.path)) return true;
+    if ((0, import_fs22.existsSync)(c.path)) return true;
     if (GLOBAL_ONLY.includes(c.name)) return true;
-    if ((0, import_fs19.existsSync)((0, import_path14.dirname)(c.path))) return true;
+    if ((0, import_fs22.existsSync)((0, import_path15.dirname)(c.path))) return true;
     return false;
   });
   const added = [];
@@ -26570,13 +27299,13 @@ async function runSetup() {
 `);
   }
 }
-var import_os13, import_path14, import_fs19;
+var import_os14, import_path15, import_fs22;
 var init_setup = __esm({
   "src/cli/setup.ts"() {
     "use strict";
-    import_os13 = require("os");
-    import_path14 = require("path");
-    import_fs19 = require("fs");
+    import_os14 = require("os");
+    import_path15 = require("path");
+    import_fs22 = require("fs");
     init_mcp_config();
     init_connect();
   }
@@ -26590,12 +27319,12 @@ __export(coverage_exports, {
 });
 function checkConfigured(def, home, cwd) {
   if (def.importOnly) return false;
-  const configs = userMcpClientConfigs(home, cwd, (0, import_os14.platform)(), process.env.APPDATA);
+  const configs = userMcpClientConfigs(home, cwd, (0, import_os15.platform)(), process.env.APPDATA);
   return def.configNames.some((name) => {
     const c = configs.find((mc) => mc.name === name);
-    if (!c || !(0, import_fs20.existsSync)(c.path)) return false;
+    if (!c || !(0, import_fs23.existsSync)(c.path)) return false;
     try {
-      const content = (0, import_fs20.readFileSync)(c.path, "utf8");
+      const content = (0, import_fs23.readFileSync)(c.path, "utf8");
       return c.type === "codex-toml" ? hasChronCodexToml(content) : hasChronJsonMcp(content) === true;
     } catch {
       return false;
@@ -26618,7 +27347,7 @@ function fmtDate7(iso) {
 }
 async function computeCoverage(since) {
   const db = await initDb();
-  const home = (0, import_os14.homedir)();
+  const home = (0, import_os15.homedir)();
   const cwd = process.cwd();
   const baseQuery = since ? db.select({
     ai_tool: sessions.ai_tool,
@@ -26693,15 +27422,15 @@ async function computeCoverage(since) {
   };
 }
 function printCoverage(r) {
-  process.stdout.write(`${BOLD15}Chron Coverage${RESET15}
+  process.stdout.write(`${BOLD16}Chron Coverage${RESET16}
 
 `);
   if (r.since) {
-    process.stdout.write(`${DIM14}Filtered to sessions updated since ${r.since}${RESET15}
+    process.stdout.write(`${DIM15}Filtered to sessions updated since ${r.since}${RESET16}
 
 `);
   }
-  process.stdout.write(`${CYAN13}Evidence boundary${RESET15}
+  process.stdout.write(`${CYAN14}Evidence boundary${RESET16}
 `);
   if (r.boundary.first) {
     process.stdout.write(`  First logged session:  ${fmtDate7(r.boundary.first)}
@@ -26712,32 +27441,32 @@ function printCoverage(r) {
 `);
     if (r.partial.total > 0) {
       const witnessed = r.boundary.total_sessions - r.partial.total;
-      process.stdout.write(`  ${YELLOW13}Partial evidence:${RESET15}      ${r.partial.total} of ${r.boundary.total_sessions} (${witnessed} witnessed in full)
+      process.stdout.write(`  ${YELLOW14}Partial evidence:${RESET16}      ${r.partial.total} of ${r.boundary.total_sessions} (${witnessed} witnessed in full)
 `);
       if (r.partial.live_attach > 0) {
-        process.stdout.write(`    ${DIM14}${r.partial.live_attach} live attach \u2014 Chron began recording after the conversation had already started${RESET15}
+        process.stdout.write(`    ${DIM15}${r.partial.live_attach} live attach \u2014 Chron began recording after the conversation had already started${RESET16}
 `);
       }
       if (r.partial.imported > 0) {
-        process.stdout.write(`    ${DIM14}${r.partial.imported} imported \u2014 from a vendor export, no tool calls or environment state${RESET15}
+        process.stdout.write(`    ${DIM15}${r.partial.imported} imported \u2014 from a vendor export, no tool calls or environment state${RESET16}
 `);
       }
       if (r.partial.transcript_backfill > 0) {
-        process.stdout.write(`    ${DIM14}${r.partial.transcript_backfill} transcript backfill \u2014 ingested from a client log, not directly observed${RESET15}
+        process.stdout.write(`    ${DIM15}${r.partial.transcript_backfill} transcript backfill \u2014 ingested from a client log, not directly observed${RESET16}
 `);
       }
     }
   } else {
-    process.stdout.write(`  ${YELLOW13}No sessions logged yet${RESET15}
+    process.stdout.write(`  ${YELLOW14}No sessions logged yet${RESET16}
 `);
-    process.stdout.write(`  Run ${CYAN13}chron doctor --fix${RESET15} to configure AI tool logging.
+    process.stdout.write(`  Run ${CYAN14}chron doctor --fix${RESET16} to configure AI tool logging.
 `);
   }
   process.stdout.write("\n");
-  process.stdout.write(`${CYAN13}Tool coverage${RESET15}
+  process.stdout.write(`${CYAN14}Tool coverage${RESET16}
 `);
   if (r.tools.length === 0) {
-    process.stdout.write(`  ${DIM14}No AI tools configured or sessions logged yet${RESET15}
+    process.stdout.write(`  ${DIM15}No AI tools configured or sessions logged yet${RESET16}
 `);
   } else {
     const labelW = Math.max(...r.tools.map((t) => t.tool.length), 10);
@@ -26745,27 +27474,27 @@ function printCoverage(r) {
       const label = t.tool.padEnd(labelW);
       let configCol;
       if (t.import_only) {
-        configCol = `${DIM14}import only  ${RESET15}`;
+        configCol = `${DIM15}import only  ${RESET16}`;
       } else if (t.configured) {
-        configCol = `${GREEN9}configured \u2713 ${RESET15}`;
+        configCol = `${GREEN10}configured \u2713 ${RESET16}`;
       } else {
-        configCol = `${RED11}not configured${RESET15}`;
+        configCol = `${RED11}not configured${RESET16}`;
       }
       let sessionCol;
       if (t.sessions === 0) {
-        sessionCol = `${YELLOW13}no sessions yet${RESET15}`;
+        sessionCol = `${YELLOW14}no sessions yet${RESET16}`;
       } else {
         const ago = t.last_seen ? relativeTime(t.last_seen) : "";
-        sessionCol = `${GREEN9}logged \u2713${RESET15}  ${DIM14}last seen ${ago}${RESET15}`;
+        sessionCol = `${GREEN10}logged \u2713${RESET16}  ${DIM15}last seen ${ago}${RESET16}`;
       }
       process.stdout.write(`  ${label}  ${configCol}  ${sessionCol}
 `);
     }
   }
   process.stdout.write("\n");
-  process.stdout.write(`${DIM14}Coverage caveat
+  process.stdout.write(`${DIM15}Coverage caveat
 `);
-  process.stdout.write(`  ${r.caveat}${RESET15}
+  process.stdout.write(`  ${r.caveat}${RESET16}
 `);
 }
 async function runCoverage(args2) {
@@ -26779,24 +27508,24 @@ async function runCoverage(args2) {
   }
   printCoverage(result);
 }
-var import_fs20, import_os14, RESET15, BOLD15, DIM14, GREEN9, YELLOW13, CYAN13, RED11, KNOWN_TOOLS;
+var import_fs23, import_os15, RESET16, BOLD16, DIM15, GREEN10, YELLOW14, CYAN14, RED11, KNOWN_TOOLS;
 var init_coverage = __esm({
   "src/cli/coverage.ts"() {
     "use strict";
-    import_fs20 = require("fs");
-    import_os14 = require("os");
+    import_fs23 = require("fs");
+    import_os15 = require("os");
     init_drizzle_orm();
     init_db2();
     init_schema();
     init_evidence();
     init_mcp_config();
     init_report();
-    RESET15 = "\x1B[0m";
-    BOLD15 = "\x1B[1m";
-    DIM14 = "\x1B[2m";
-    GREEN9 = "\x1B[32m";
-    YELLOW13 = "\x1B[33m";
-    CYAN13 = "\x1B[36m";
+    RESET16 = "\x1B[0m";
+    BOLD16 = "\x1B[1m";
+    DIM15 = "\x1B[2m";
+    GREEN10 = "\x1B[32m";
+    YELLOW14 = "\x1B[33m";
+    CYAN14 = "\x1B[36m";
     RED11 = "\x1B[31m";
     KNOWN_TOOLS = [
       { label: "Claude Code", ai_tool: "claude", aliases: ["claude", "Claude Code", "claude-code", "chron-chat/claude", "chron-chat/claude-cli"], configNames: ["Claude Code", "Claude Desktop"], importOnly: false },
@@ -26815,12 +27544,12 @@ __export(bootstrap_exports, {
   bootstrapProjectLogging: () => bootstrapProjectLogging
 });
 function isRealProject(cwd) {
-  return PROJECT_INDICATORS.some((indicator) => (0, import_fs21.existsSync)((0, import_path15.join)(cwd, indicator)));
+  return PROJECT_INDICATORS.some((indicator) => (0, import_fs24.existsSync)((0, import_path16.join)(cwd, indicator)));
 }
 function bootstrapProjectLogging(cwd = process.cwd()) {
   try {
     if (process.env.CHRON_DISABLE_PROJECT_BOOTSTRAP === "1") return;
-    if (cwd === (0, import_os15.homedir)()) return;
+    if (cwd === (0, import_os16.homedir)()) return;
     if (cwd.includes("node_modules")) return;
     if (cwd.includes(".npm")) return;
     if (!isRealProject(cwd)) return;
@@ -26835,13 +27564,13 @@ function bootstrapProjectLogging(cwd = process.cwd()) {
   } catch {
   }
 }
-var import_fs21, import_os15, import_path15, PROJECT_INDICATORS;
+var import_fs24, import_os16, import_path16, PROJECT_INDICATORS;
 var init_bootstrap = __esm({
   "src/bootstrap.ts"() {
     "use strict";
-    import_fs21 = require("fs");
-    import_os15 = require("os");
-    import_path15 = require("path");
+    import_fs24 = require("fs");
+    import_os16 = require("os");
+    import_path16 = require("path");
     init_connect();
     PROJECT_INDICATORS = [
       ".git",
@@ -26921,8 +27650,8 @@ var init_semconv = __esm({
 });
 
 // src/otel/spans.ts
-function deriveId(input, bytes) {
-  const hex = (0, import_crypto12.createHash)("sha256").update(input).digest("hex").slice(0, bytes * 2);
+function deriveId(input, bytes2) {
+  const hex = (0, import_crypto13.createHash)("sha256").update(input).digest("hex").slice(0, bytes2 * 2);
   return /^0+$/.test(hex) ? hex.slice(0, -1) + "1" : hex;
 }
 function traceIdForSession(sessionId) {
@@ -27013,11 +27742,11 @@ function buildSessionTrace(session, messages3, opts = {}) {
     ...ordered.map((m, i) => buildMessageSpan(m, session, ordered[i - 1], opts))
   ];
 }
-var import_crypto12;
+var import_crypto13;
 var init_spans = __esm({
   "src/otel/spans.ts"() {
     "use strict";
-    import_crypto12 = require("crypto");
+    import_crypto13 = require("crypto");
     init_semconv();
   }
 });
@@ -27303,7 +28032,7 @@ async function runOtel(args2) {
     } catch (e) {
       if (e instanceof OtelConfigError) {
         process.stderr.write(`
-${RED12}\u2717${RESET16} ${e.message}
+${RED12}\u2717${RESET17} ${e.message}
 
 `);
         process.exit(1);
@@ -27314,40 +28043,40 @@ ${RED12}\u2717${RESET16} ${e.message}
   const { spans, sessionCount } = await collectSpans(flag(args2, "session"), since, includeContent);
   const resource = { serviceName: "chron", serviceVersion: import_package4.version };
   process.stdout.write(`
-${BOLD16}chron otel export${RESET16}
+${BOLD17}chron otel export${RESET17}
 
 `);
   process.stdout.write(`  ${sessionCount} session(s), ${spans.length} span(s)
 `);
   if (includeContent) {
-    process.stdout.write(`  ${YELLOW14}!${RESET16} Human-authored text (messages, titles, external references) is included.
+    process.stdout.write(`  ${YELLOW15}!${RESET17} Human-authored text (messages, titles, external references) is included.
 `);
   } else {
-    process.stdout.write(`  ${DIM15}content excluded \u2014 identifiers, hashes and lengths only${RESET16}
+    process.stdout.write(`  ${DIM16}content excluded \u2014 identifiers, hashes and lengths only${RESET17}
 `);
   }
   if (dryRun) {
     process.stdout.write(`
-${BOLD16}Dry run \u2014 nothing sent${RESET16}
+${BOLD17}Dry run \u2014 nothing sent${RESET17}
 
 `);
     process.stdout.write(`${JSON.stringify(toResourceSpans(spans.slice(0, 2), resource), null, 2)}
 `);
-    if (spans.length > 2) process.stdout.write(`${DIM15}... ${spans.length - 2} more span(s) not shown${RESET16}
+    if (spans.length > 2) process.stdout.write(`${DIM16}... ${spans.length - 2} more span(s) not shown${RESET17}
 `);
     try {
       const cfg = resolveConfig(process.env, { endpoint: flag(args2, "endpoint"), tracesEndpoint: flag(args2, "traces-endpoint") });
       process.stdout.write(`
-${DIM15}would POST to: ${cfg.endpoint}${RESET16}
+${DIM16}would POST to: ${cfg.endpoint}${RESET17}
 `);
       const red = redactHeaders(cfg.headers);
       if (Object.keys(red).length > 0) {
-        process.stdout.write(`${DIM15}headers: ${JSON.stringify(red)}${RESET16}
+        process.stdout.write(`${DIM16}headers: ${JSON.stringify(red)}${RESET17}
 `);
       }
     } catch {
       process.stdout.write(`
-${DIM15}no endpoint configured \u2014 dry run does not need one${RESET16}
+${DIM16}no endpoint configured \u2014 dry run does not need one${RESET17}
 `);
     }
     process.stdout.write("\n");
@@ -27358,35 +28087,35 @@ ${DIM15}no endpoint configured \u2014 dry run does not need one${RESET16}
 `);
   const result = await exportSpans(spans, config, resource);
   if (result.complete) {
-    process.stdout.write(`  ${GREEN10}\u2713${RESET16} ${result.sent} span(s) accepted by the collector
+    process.stdout.write(`  ${GREEN11}\u2713${RESET17} ${result.sent} span(s) accepted by the collector
 
 `);
     return;
   }
-  process.stdout.write(`  ${GREEN10}sent${RESET16}     ${result.sent}
+  process.stdout.write(`  ${GREEN11}sent${RESET17}     ${result.sent}
 `);
-  process.stdout.write(`  ${RED12}rejected${RESET16} ${result.rejected}
+  process.stdout.write(`  ${RED12}rejected${RESET17} ${result.rejected}
 `);
-  process.stdout.write(`  ${RED12}failed${RESET16}   ${result.failed}
+  process.stdout.write(`  ${RED12}failed${RESET17}   ${result.failed}
 `);
-  process.stdout.write(`  ${YELLOW14}unknown${RESET16}  ${result.unknown}
+  process.stdout.write(`  ${YELLOW15}unknown${RESET17}  ${result.unknown}
 
 `);
   for (const b of result.batches.filter((x) => x.status !== "sent")) {
     const code = b.httpStatus ? `HTTP ${b.httpStatus}` : "no response";
-    const mark = b.status === "unknown" ? `${YELLOW14}?${RESET16}` : `${RED12}\u2717${RESET16}`;
+    const mark = b.status === "unknown" ? `${YELLOW15}?${RESET17}` : `${RED12}\u2717${RESET17}`;
     process.stderr.write(`  ${mark} ${b.spans} span(s) ${b.status} after ${b.attempts} attempt(s): ${code}${b.error ? ` \u2014 ${b.error}` : ""}
 `);
   }
   process.stderr.write("\n");
   if (result.rejected > 0 || result.failed > 0) {
-    process.stderr.write(`${RED12}Not delivered.${RESET16} ${result.rejected + result.failed} span(s) did not reach the collector.
+    process.stderr.write(`${RED12}Not delivered.${RESET17} ${result.rejected + result.failed} span(s) did not reach the collector.
 `);
     process.stderr.write(`  Check the endpoint, credentials and configuration, then export again.
 `);
   }
   if (result.unknown > 0) {
-    process.stderr.write(`${YELLOW14}Delivery unknown.${RESET16} ${result.unknown} span(s) may or may not have reached the collector;
+    process.stderr.write(`${YELLOW15}Delivery unknown.${RESET17} ${result.unknown} span(s) may or may not have reached the collector;
 `);
     process.stderr.write(`  the request was sent but no trustworthy response came back.
 `);
@@ -27398,7 +28127,7 @@ ${DIM15}no endpoint configured \u2014 dry run does not need one${RESET16}
   process.stderr.write("\n");
   process.exit(1);
 }
-var import_package4, RESET16, BOLD16, DIM15, GREEN10, RED12, YELLOW14;
+var import_package4, RESET17, BOLD17, DIM16, GREEN11, RED12, YELLOW15;
 var init_otel = __esm({
   "src/cli/otel.ts"() {
     "use strict";
@@ -27411,12 +28140,12 @@ var init_otel = __esm({
     init_config2();
     init_report();
     import_package4 = __toESM(require_package());
-    RESET16 = "\x1B[0m";
-    BOLD16 = "\x1B[1m";
-    DIM15 = "\x1B[2m";
-    GREEN10 = "\x1B[32m";
+    RESET17 = "\x1B[0m";
+    BOLD17 = "\x1B[1m";
+    DIM16 = "\x1B[2m";
+    GREEN11 = "\x1B[32m";
     RED12 = "\x1B[31m";
-    YELLOW14 = "\x1B[33m";
+    YELLOW15 = "\x1B[33m";
   }
 });
 
@@ -27734,47 +28463,47 @@ Tools: ${Object.keys(KNOWN_TOOLS2).join(", ")}
   const { session_id, created, title } = await createAttachSession(db, aiTool, titleArg);
   const short = session_id.slice(0, 8);
   process.stdout.write(`
-${BOLD17}chron attach${RESET17} ${aiTool}
+${BOLD18}chron attach${RESET18} ${aiTool}
 
 `);
   if (created) {
-    process.stdout.write(`  ${GREEN11}\u2713${RESET17} session ${BOLD17}${short}${RESET17} created \u2014 ${title}
+    process.stdout.write(`  ${GREEN12}\u2713${RESET18} session ${BOLD18}${short}${RESET18} created \u2014 ${title}
 `);
   } else {
-    process.stdout.write(`  ${GREEN11}\u2713${RESET17} resumed existing session ${BOLD17}${short}${RESET17} \u2014 ${title}
+    process.stdout.write(`  ${GREEN12}\u2713${RESET18} resumed existing session ${BOLD18}${short}${RESET18} \u2014 ${title}
 `);
   }
-  process.stdout.write(`  ${YELLOW15}!${RESET17} Marked as partial evidence. Chron did not observe this
+  process.stdout.write(`  ${YELLOW16}!${RESET18} Marked as partial evidence. Chron did not observe this
 `);
   process.stdout.write(`    conversation before now, and does not claim to know what came before.
 
 `);
-  process.stdout.write(`${BOLD17}Paste this into the session you want recorded:${RESET17}
+  process.stdout.write(`${BOLD18}Paste this into the session you want recorded:${RESET18}
 
 `);
-  process.stdout.write(`${DIM16}  Log this conversation to Chron from now on using session_id ${session_id}.
+  process.stdout.write(`${DIM17}  Log this conversation to Chron from now on using session_id ${session_id}.
 `);
   process.stdout.write(`  Call log_message for this and every following exchange.
 `);
-  process.stdout.write(`  Do not attempt to reconstruct earlier messages.${RESET17}
+  process.stdout.write(`  Do not attempt to reconstruct earlier messages.${RESET18}
 
 `);
-  process.stdout.write(`${DIM16}  chron history ${short}   chron verify ${short}${RESET17}
+  process.stdout.write(`${DIM17}  chron history ${short}   chron verify ${short}${RESET18}
 
 `);
 }
-var RESET17, BOLD17, DIM16, GREEN11, YELLOW15, KNOWN_TOOLS2;
+var RESET18, BOLD18, DIM17, GREEN12, YELLOW16, KNOWN_TOOLS2;
 var init_attach = __esm({
   "src/cli/attach.ts"() {
     "use strict";
     init_db2();
     init_sessions();
     init_time();
-    RESET17 = "\x1B[0m";
-    BOLD17 = "\x1B[1m";
-    DIM16 = "\x1B[2m";
-    GREEN11 = "\x1B[32m";
-    YELLOW15 = "\x1B[33m";
+    RESET18 = "\x1B[0m";
+    BOLD18 = "\x1B[1m";
+    DIM17 = "\x1B[2m";
+    GREEN12 = "\x1B[32m";
+    YELLOW16 = "\x1B[33m";
     KNOWN_TOOLS2 = {
       claude: "claude",
       "claude-code": "claude",
@@ -27797,13 +28526,13 @@ async function resolveSession(prefix) {
   const all = await db.select({ id: sessions.id, title: sessions.title, signature: sessions.signature }).from(sessions);
   const matches = all.filter((s) => s.id.startsWith(prefix));
   if (matches.length === 0) {
-    process.stderr.write(`${RED13}\u2717${RESET18} No session found matching prefix: ${prefix}
+    process.stderr.write(`${RED13}\u2717${RESET19} No session found matching prefix: ${prefix}
 `);
     process.exit(1);
   }
   if (matches.length > 1) {
     process.stderr.write(
-      `${RED13}\u2717${RESET18} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
+      `${RED13}\u2717${RESET19} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
 `
     );
     process.exit(1);
@@ -27823,8 +28552,8 @@ async function renameSession(args2) {
   const { db, session } = await resolveSession(prefix);
   if (session.signature) {
     process.stderr.write(
-      `${RED13}\u2717${RESET18} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
-  Use ${CYAN14}chron session rename${RESET18} only on unsigned sessions.
+      `${RED13}\u2717${RESET19} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
+  Use ${CYAN15}chron session rename${RESET19} only on unsigned sessions.
 `
     );
     process.exit(1);
@@ -27832,9 +28561,9 @@ async function renameSession(args2) {
   const oldTitle = session.title;
   await db.update(sessions).set({ title: newTitle }).where(eq(sessions.id, session.id));
   process.stdout.write(
-    `${GREEN12}\u2713${RESET18} Session ${CYAN14}${session.id.slice(0, 8)}${RESET18} renamed
-  ${DIM17}before:${RESET18} ${oldTitle}
-  ${DIM17}after: ${RESET18} ${BOLD18}${newTitle}${RESET18}
+    `${GREEN13}\u2713${RESET19} Session ${CYAN15}${session.id.slice(0, 8)}${RESET19} renamed
+  ${DIM18}before:${RESET19} ${oldTitle}
+  ${DIM18}after: ${RESET19} ${BOLD19}${newTitle}${RESET19}
 
 Messages and timestamps are unchanged.
 `
@@ -27857,18 +28586,18 @@ Subcommands:
       if (subcommand) process.exit(1);
   }
 }
-var RESET18, BOLD18, DIM17, CYAN14, GREEN12, RED13;
+var RESET19, BOLD19, DIM18, CYAN15, GREEN13, RED13;
 var init_session3 = __esm({
   "src/cli/session.ts"() {
     "use strict";
     init_drizzle_orm();
     init_db2();
     init_schema();
-    RESET18 = "\x1B[0m";
-    BOLD18 = "\x1B[1m";
-    DIM17 = "\x1B[2m";
-    CYAN14 = "\x1B[36m";
-    GREEN12 = "\x1B[32m";
+    RESET19 = "\x1B[0m";
+    BOLD19 = "\x1B[1m";
+    DIM18 = "\x1B[2m";
+    CYAN15 = "\x1B[36m";
+    GREEN13 = "\x1B[32m";
     RED13 = "\x1B[31m";
   }
 });
