@@ -6438,15 +6438,15 @@ var init_base64 = __esm({
     _mkUriSafe = (src) => src.replace(/=/g, "").replace(/[+\/]/g, (m0) => m0 == "+" ? "-" : "_");
     _tidyB64 = (s) => s.replace(/[^A-Za-z0-9\+\/]/g, "");
     btoaPolyfill = (bin) => {
-      let u32, c0, c1, c2, asc2 = "";
+      let u32, c0, c1, c2, asc3 = "";
       const pad = bin.length % 3;
       for (let i = 0; i < bin.length; ) {
         if ((c0 = bin.charCodeAt(i++)) > 255 || (c1 = bin.charCodeAt(i++)) > 255 || (c2 = bin.charCodeAt(i++)) > 255)
           throw new TypeError("invalid character found");
         u32 = c0 << 16 | c1 << 8 | c2;
-        asc2 += b64chs[u32 >> 18 & 63] + b64chs[u32 >> 12 & 63] + b64chs[u32 >> 6 & 63] + b64chs[u32 & 63];
+        asc3 += b64chs[u32 >> 18 & 63] + b64chs[u32 >> 12 & 63] + b64chs[u32 >> 6 & 63] + b64chs[u32 & 63];
       }
-      return pad ? asc2.slice(0, pad - 3) + "===".substring(pad) : asc2;
+      return pad ? asc3.slice(0, pad - 3) + "===".substring(pad) : asc3;
     };
     _btoa = typeof btoa === "function" ? (bin) => btoa(bin) : _hasBuffer ? (bin) => Buffer.from(bin, "binary").toString("base64") : btoaPolyfill;
     _fromUint8Array = _hasBuffer ? (u8a) => Buffer.from(u8a).toString("base64") : (u8a) => {
@@ -6485,15 +6485,15 @@ var init_base64 = __esm({
       }
     };
     btou = (b) => b.replace(re_btou, cb_btou);
-    atobPolyfill = (asc2) => {
-      asc2 = asc2.replace(/\s+/g, "");
-      if (!b64re.test(asc2))
+    atobPolyfill = (asc3) => {
+      asc3 = asc3.replace(/\s+/g, "");
+      if (!b64re.test(asc3))
         throw new TypeError("malformed base64.");
-      asc2 += "==".slice(2 - (asc2.length & 3));
+      asc3 += "==".slice(2 - (asc3.length & 3));
       let u24, r1, r2;
       let binArray = [];
-      for (let i = 0; i < asc2.length; ) {
-        u24 = b64tab[asc2.charAt(i++)] << 18 | b64tab[asc2.charAt(i++)] << 12 | (r1 = b64tab[asc2.charAt(i++)]) << 6 | (r2 = b64tab[asc2.charAt(i++)]);
+      for (let i = 0; i < asc3.length; ) {
+        u24 = b64tab[asc3.charAt(i++)] << 18 | b64tab[asc3.charAt(i++)] << 12 | (r1 = b64tab[asc3.charAt(i++)]) << 6 | (r2 = b64tab[asc3.charAt(i++)]);
         if (r1 === 64) {
           binArray.push(_fromCC(u24 >> 16 & 255));
         } else if (r2 === 64) {
@@ -6504,7 +6504,7 @@ var init_base64 = __esm({
       }
       return binArray.join("");
     };
-    _atob = typeof atob === "function" ? (asc2) => atob(_tidyB64(asc2)) : _hasBuffer ? (asc2) => Buffer.from(asc2, "base64").toString("binary") : atobPolyfill;
+    _atob = typeof atob === "function" ? (asc3) => atob(_tidyB64(asc3)) : _hasBuffer ? (asc3) => Buffer.from(asc3, "base64").toString("binary") : atobPolyfill;
     _toUint8Array = _hasBuffer ? (a) => _U8Afrom(Buffer.from(a, "base64")) : (a) => _U8Afrom(_atob(a).split("").map((c) => c.charCodeAt(0)));
     toUint8Array = (a) => _toUint8Array(_unURI(a));
     _decode = _hasBuffer ? (a) => Buffer.from(a, "base64").toString("utf8") : _TD ? (a) => _TD.decode(_toUint8Array(a)) : (a) => btou(_atob(a));
@@ -7276,9 +7276,9 @@ var require_libsql = __commonJS({
        *
        * @param {string} sql - The SQL statement string to prepare.
        */
-      prepare(sql2) {
+      prepare(sql4) {
         try {
-          const stmt = databasePrepareSync.call(this.db, sql2);
+          const stmt = databasePrepareSync.call(this.db, sql4);
           return new Statement(stmt);
         } catch (err) {
           throw convertError(err);
@@ -7385,9 +7385,9 @@ var require_libsql = __commonJS({
        *
        * @param {string} sql - The SQL statement string to execute.
        */
-      exec(sql2) {
+      exec(sql4) {
         try {
-          databaseExecSync.call(this.db, sql2);
+          databaseExecSync.call(this.db, sql4);
         } catch (err) {
           throw convertError(err);
         }
@@ -7596,13 +7596,13 @@ function _createClient(config2) {
   return new Sqlite3Client(path, options, db, config2.intMode);
 }
 function executeStmt(db, stmt, intMode) {
-  let sql2;
+  let sql4;
   let args;
   if (typeof stmt === "string") {
-    sql2 = stmt;
+    sql4 = stmt;
     args = [];
   } else {
-    sql2 = stmt.sql;
+    sql4 = stmt.sql;
     if (Array.isArray(stmt.args)) {
       args = stmt.args.map((value) => valueToSql(value, intMode));
     } else {
@@ -7614,7 +7614,7 @@ function executeStmt(db, stmt, intMode) {
     }
   }
   try {
-    const sqlStmt = db.prepare(sql2);
+    const sqlStmt = db.prepare(sql4);
     sqlStmt.safeIntegers(true);
     let returnsData = true;
     try {
@@ -7708,9 +7708,9 @@ function valueToSql(value, intMode) {
     return value;
   }
 }
-function executeMultiple(db, sql2) {
+function executeMultiple(db, sql4) {
   try {
-    db.exec(sql2);
+    db.exec(sql4);
   } catch (e) {
     throw mapSqliteError(e);
   }
@@ -7838,11 +7838,11 @@ var init_sqlite3 = __esm({
         this.#db = null;
         return new Sqlite3Transaction(db, this.#intMode);
       }
-      async executeMultiple(sql2) {
+      async executeMultiple(sql4) {
         this.#checkNotClosed();
         const db = this.#getDb();
         try {
-          return executeMultiple(db, sql2);
+          return executeMultiple(db, sql4);
         } finally {
           if (db.inTransaction) {
             executeStmt(db, "ROLLBACK", this.#intMode);
@@ -7928,9 +7928,9 @@ var init_sqlite3 = __esm({
         }
         return resultSets;
       }
-      async executeMultiple(sql2) {
+      async executeMultiple(sql4) {
         this.#checkNotClosed();
-        return executeMultiple(this.#database, sql2);
+        return executeMultiple(this.#database, sql4);
       }
       async rollback() {
         if (!this.#database.open) {
@@ -12385,11 +12385,11 @@ var init_result = __esm({
 });
 
 // node_modules/@libsql/hrana-client/lib-esm/sql.js
-function sqlToProto(owner, sql2) {
-  if (sql2 instanceof Sql) {
-    return { sqlId: sql2._getSqlId(owner) };
+function sqlToProto(owner, sql4) {
+  if (sql4 instanceof Sql) {
+    return { sqlId: sql4._getSqlId(owner) };
   } else {
-    return { sql: "" + sql2 };
+    return { sql: "" + sql4 };
   }
 }
 var Sql;
@@ -12488,8 +12488,8 @@ function stmtToProto(sqlOwner, stmt, wantRows) {
   } else {
     inSql = stmt;
   }
-  const { sql: sql2, sqlId } = sqlToProto(sqlOwner, inSql);
-  return { sql: sql2, sqlId, args, namedArgs, wantRows };
+  const { sql: sql4, sqlId } = sqlToProto(sqlOwner, inSql);
+  return { sql: sql4, sqlId, args, namedArgs, wantRows };
 }
 var Stmt;
 var init_stmt = __esm({
@@ -12504,8 +12504,8 @@ var init_stmt = __esm({
       /** @private */
       _namedArgs;
       /** Initialize the statement with given SQL text. */
-      constructor(sql2) {
-        this.sql = sql2;
+      constructor(sql4) {
+        this.sql = sql4;
         this._args = [];
         this._namedArgs = /* @__PURE__ */ new Map();
       }
@@ -14291,13 +14291,13 @@ var init_client2 = __esm({
         return WsStream.open(this);
       }
       /** Cache a SQL text on the server. This requires protocol version 2 or higher. */
-      storeSql(sql2) {
+      storeSql(sql4) {
         this._ensureVersion(2, "storeSql()");
         const sqlId = this.#sqlIdAlloc.alloc();
         const sqlObj = new Sql(this, sqlId);
         const responseCallback = () => void 0;
         const errorCallback = (e) => sqlObj._setClosed(e);
-        const request = { type: "store_sql", sqlId, sql: sql2 };
+        const request = { type: "store_sql", sqlId, sql: sql4 };
         this._sendRequest(request, { responseCallback, errorCallback });
         return sqlObj;
       }
@@ -14927,9 +14927,9 @@ var init_stream3 = __esm({
         return this;
       }
       /** Cache a SQL text on the server. */
-      storeSql(sql2) {
+      storeSql(sql4) {
         const sqlId = this.#sqlIdAlloc.alloc();
-        this.#sendStreamRequest({ type: "store_sql", sqlId, sql: sql2 }).then(() => void 0, (error2) => this._setClosed(error2));
+        this.#sendStreamRequest({ type: "store_sql", sqlId, sql: sql4 }).then(() => void 0, (error2) => this._setClosed(error2));
         return new Sql(this, sqlId);
       }
       /** @private */
@@ -15397,17 +15397,17 @@ async function executeHranaBatch(mode, version7, batch, hranaStmts, disableForei
   return resultSets;
 }
 function stmtToHrana(stmt) {
-  let sql2;
+  let sql4;
   let args;
   if (Array.isArray(stmt)) {
-    [sql2, args] = stmt;
+    [sql4, args] = stmt;
   } else if (typeof stmt === "string") {
-    sql2 = stmt;
+    sql4 = stmt;
   } else {
-    sql2 = stmt.sql;
+    sql4 = stmt.sql;
     args = stmt.args;
   }
-  const hranaStmt = new Stmt(sql2);
+  const hranaStmt = new Stmt(sql4);
   if (args) {
     if (Array.isArray(args)) {
       hranaStmt.bindIndexes(args);
@@ -15552,7 +15552,7 @@ var init_hrana = __esm({
           throw mapHranaError(e);
         }
       }
-      async executeMultiple(sql2) {
+      async executeMultiple(sql4) {
         const stream = this._getStream();
         if (stream.closed) {
           throw new LibsqlError("Cannot execute statements because the transaction is closed", "TRANSACTION_CLOSED");
@@ -15569,7 +15569,7 @@ var init_hrana = __esm({
           } else {
             await this.#started;
           }
-          await stream.sequence(sql2);
+          await stream.sequence(sql4);
         } catch (e) {
           throw mapHranaError(e);
         }
@@ -15941,11 +15941,11 @@ var init_ws = __esm({
           }
         });
       }
-      async executeMultiple(sql2) {
+      async executeMultiple(sql4) {
         return this.limit(async () => {
           const streamState = await this.#openStream();
           try {
-            const promise = streamState.stream.sequence(sql2);
+            const promise = streamState.stream.sequence(sql4);
             streamState.stream.closeGracefully();
             await promise;
           } catch (e) {
@@ -16240,13 +16240,13 @@ var init_http = __esm({
           }
         });
       }
-      async executeMultiple(sql2) {
+      async executeMultiple(sql4) {
         return this.limit(async () => {
           try {
             let promise;
             const stream = this.#client.openStream();
             try {
-              promise = stream.sequence(sql2);
+              promise = stream.sequence(sql4);
             } finally {
               stream.closeGracefully();
             }
@@ -17010,10 +17010,10 @@ var init_subquery = __esm({
     init_entity();
     Subquery = class {
       static [entityKind] = "Subquery";
-      constructor(sql2, fields, alias, isWith = false, usedTables = []) {
+      constructor(sql4, fields, alias, isWith = false, usedTables = []) {
         this._ = {
           brand: "Subquery",
-          sql: sql2,
+          sql: sql4,
           selectedFields: fields,
           alias,
           isWith,
@@ -17462,19 +17462,19 @@ var init_sql2 = __esm({
         return new SQL([this]);
       }
     };
-    ((sql2) => {
+    ((sql22) => {
       function empty() {
         return new SQL([]);
       }
-      sql2.empty = empty;
+      sql22.empty = empty;
       function fromList(list) {
         return new SQL(list);
       }
-      sql2.fromList = fromList;
+      sql22.fromList = fromList;
       function raw(str) {
         return new SQL([new StringChunk(str)]);
       }
-      sql2.raw = raw;
+      sql22.raw = raw;
       function join9(chunks, separator) {
         const result = [];
         for (const [i, chunk] of chunks.entries()) {
@@ -17485,24 +17485,24 @@ var init_sql2 = __esm({
         }
         return new SQL(result);
       }
-      sql2.join = join9;
+      sql22.join = join9;
       function identifier(value) {
         return new Name(value);
       }
-      sql2.identifier = identifier;
+      sql22.identifier = identifier;
       function placeholder2(name2) {
         return new Placeholder(name2);
       }
-      sql2.placeholder = placeholder2;
+      sql22.placeholder = placeholder2;
       function param2(value, encoder) {
         return new Param(value, encoder);
       }
-      sql2.param = param2;
+      sql22.param = param2;
     })(sql || (sql = {}));
     ((SQL2) => {
       class Aliased {
-        constructor(sql2, fieldAlias) {
-          this.sql = sql2;
+        constructor(sql22, fieldAlias) {
+          this.sql = sql22;
           this.fieldAlias = fieldAlias;
         }
         static [entityKind] = "SQL.Aliased";
@@ -19950,8 +19950,8 @@ var init_dialect = __esm({
         const onConflictSql = onConflict?.length ? sql.join(onConflict) : void 0;
         return sql`${withSql}insert into ${table} ${insertOrder} ${valuesSql}${onConflictSql}${returningSql}`;
       }
-      sqlToQuery(sql2, invokeSource) {
-        return sql2.toQuery({
+      sqlToQuery(sql22, invokeSource) {
+        return sql22.toQuery({
           casing: this.casing,
           escapeName: this.escapeName,
           escapeParam: this.escapeParam,
@@ -21971,8 +21971,8 @@ var init_db = __esm({
 });
 
 // node_modules/drizzle-orm/cache/core/cache.js
-async function hashQuery(sql2, params) {
-  const dataToHash = `${sql2}-${JSON.stringify(params)}`;
+async function hashQuery(sql4, params) {
+  const dataToHash = `${sql4}-${JSON.stringify(params)}`;
   const encoder = new TextEncoder();
   const data = encoder.encode(dataToHash);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
@@ -22199,8 +22199,8 @@ var init_session = __esm({
       values(query) {
         return this.prepareOneTimeQuery(this.dialect.sqlToQuery(query), void 0, "run", false).values();
       }
-      async count(sql2) {
-        const result = await this.values(sql2);
+      async count(sql4) {
+        const result = await this.values(sql4);
         return result[0][0];
       }
       /** @internal */
@@ -22774,8 +22774,8 @@ async function initDb(dbPath) {
   await client.execute("PRAGMA wal_checkpoint(PASSIVE)");
   await client.execute("PRAGMA busy_timeout = 5000");
   await client.execute("PRAGMA foreign_keys = ON");
-  for (const sql2 of CREATE_SQL) {
-    await client.execute(sql2);
+  for (const sql4 of CREATE_SQL) {
+    await client.execute(sql4);
   }
   const msgInfo = await client.execute("PRAGMA table_info(messages)");
   const msgCols = msgInfo.rows.map((r) => r[1]);
@@ -38664,7 +38664,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.58",
+      version: "0.1.59",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -39463,6 +39463,18 @@ var init_hash = __esm({
   }
 });
 
+// src/utils/content.ts
+function canonicalContent(content) {
+  return content.replace(UNREPRESENTABLE, "\uFFFD");
+}
+var UNREPRESENTABLE;
+var init_content = __esm({
+  "src/utils/content.ts"() {
+    "use strict";
+    UNREPRESENTABLE = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
+  }
+});
+
 // src/utils/detect.ts
 var detect_exports = {};
 __export(detect_exports, {
@@ -39774,17 +39786,18 @@ function isFkError(e) {
   return e?.message?.includes("FOREIGN KEY constraint failed") || e?.code === "SQLITE_CONSTRAINT_FOREIGNKEY" || e?.cause?.message?.includes("FOREIGN KEY constraint failed") || e?.cause?.extendedCode === "SQLITE_CONSTRAINT_FOREIGNKEY";
 }
 async function insertMessage(db, session_id, role, content, event_type) {
+  const stored = canonicalContent(content);
   return db.transaction(async (tx) => {
     const last = await tx.select({ content_hash: messages.content_hash, created_at: messages.created_at }).from(messages).where(eq(messages.session_id, session_id)).orderBy(desc(messages.created_at), desc(sql`rowid`)).limit(1);
     const ts = localISOString();
     const msgId = v4_default();
     const prevHash = last[0]?.content_hash ?? null;
-    const hash = computeContentHash(session_id, role, content, ts, prevHash, event_type);
+    const hash = computeContentHash(session_id, role, stored, ts, prevHash, event_type);
     await tx.insert(messages).values({
       id: msgId,
       session_id,
       role,
-      content,
+      content: stored,
       created_at: ts,
       prev_hash: prevHash,
       content_hash: hash,
@@ -39879,13 +39892,15 @@ function logExchange(db) {
         const aNow = localISOString();
         const aId = v4_default();
         const prevHash = last[0]?.content_hash ?? null;
-        const uHash = computeContentHash(args.session_id, "user", args.user_content, uNow, prevHash, "message");
-        const aHash = computeContentHash(args.session_id, "assistant", args.assistant_content, aNow, uHash, "message");
+        const userStored = canonicalContent(args.user_content);
+        const assistantStored = canonicalContent(args.assistant_content);
+        const uHash = computeContentHash(args.session_id, "user", userStored, uNow, prevHash, "message");
+        const aHash = computeContentHash(args.session_id, "assistant", assistantStored, aNow, uHash, "message");
         await tx.insert(messages).values({
           id: uId,
           session_id: args.session_id,
           role: "user",
-          content: args.user_content,
+          content: userStored,
           created_at: uNow,
           prev_hash: prevHash,
           content_hash: uHash,
@@ -39895,7 +39910,7 @@ function logExchange(db) {
           id: aId,
           session_id: args.session_id,
           role: "assistant",
-          content: args.assistant_content,
+          content: assistantStored,
           created_at: aNow,
           prev_hash: uHash,
           content_hash: aHash,
@@ -39962,9 +39977,27 @@ var init_messages = __esm({
     init_schema();
     init_time();
     init_hash();
+    init_content();
     init_detect();
     init_relay();
     init_terminal();
+  }
+});
+
+// src/db/message-order.ts
+function messageOrderAsc() {
+  return [
+    sql`CASE WHEN ${messages.source_sequence} IS NULL THEN 1 ELSE 0 END`,
+    asc(messages.source_sequence),
+    asc(messages.created_at),
+    asc(sql`rowid`)
+  ];
+}
+var init_message_order = __esm({
+  "src/db/message-order.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    init_schema();
   }
 });
 
@@ -39972,7 +40005,7 @@ var init_messages = __esm({
 function verifySession(db) {
   return async (args) => {
     const [sessionRow] = await db.select().from(sessions).where(eq(sessions.id, args.session_id)).limit(1);
-    const rows = await db.select().from(messages).where(eq(messages.session_id, args.session_id)).orderBy(asc(messages.created_at), asc(sql`rowid`));
+    const rows = await db.select().from(messages).where(eq(messages.session_id, args.session_id)).orderBy(...messageOrderAsc());
     const chained = rows.filter((r) => r.content_hash !== null);
     if (chained.length === 0) {
       const emptyMeta = parseSessionMetadata(sessionRow?.metadata ?? null);
@@ -40059,6 +40092,7 @@ var init_verify = __esm({
     init_drizzle_orm();
     init_schema();
     init_hash();
+    init_message_order();
     init_signing();
     init_evidence();
   }
@@ -40182,7 +40216,7 @@ async function buildSummary(sessionPrefix, existingDb) {
   const allSessions = await db.select().from(sessions);
   const session = allSessions.find((s) => s.id.startsWith(sessionPrefix));
   if (!session) return null;
-  const msgs = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(asc(messages.created_at), asc(sql`rowid`));
+  const msgs = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(...messageOrderAsc());
   const secs = await db.select().from(secrets_detected).where(eq(secrets_detected.session_id, session.id)).orderBy(asc(secrets_detected.detected_at));
   const timeline = [];
   const mutationsList = [];
@@ -40231,6 +40265,7 @@ var init_summary = __esm({
     init_drizzle_orm();
     init_db2();
     init_schema();
+    init_message_order();
     MUTATION_PATTERNS = [
       { label: "file write", re: /\b(?:wrote?|created?|saved?|updated?) (?:file |the file )?["']?([^\s"']{1,80})/i },
       { label: "git", re: /\bgit (?:commit|push|merge|rebase|reset|checkout)\b/i },

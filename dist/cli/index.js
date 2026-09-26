@@ -38,7 +38,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.58",
+      version: "0.1.59",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -797,10 +797,10 @@ var init_subquery = __esm({
     init_entity();
     Subquery = class {
       static [entityKind] = "Subquery";
-      constructor(sql3, fields, alias, isWith = false, usedTables = []) {
+      constructor(sql9, fields, alias, isWith = false, usedTables = []) {
         this._ = {
           brand: "Subquery",
-          sql: sql3,
+          sql: sql9,
           selectedFields: fields,
           alias,
           isWith,
@@ -1016,11 +1016,11 @@ var init_sql = __esm({
     SQL = class _SQL {
       constructor(queryChunks) {
         this.queryChunks = queryChunks;
-        for (const chunk of queryChunks) {
-          if (is(chunk, Table)) {
-            const schemaName = chunk[Table.Symbol.Schema];
+        for (const chunk2 of queryChunks) {
+          if (is(chunk2, Table)) {
+            const schemaName = chunk2[Table.Symbol.Schema];
             this.usedTables.push(
-              schemaName === void 0 ? chunk[Table.Symbol.Name] : schemaName + "." + chunk[Table.Symbol.Name]
+              schemaName === void 0 ? chunk2[Table.Symbol.Name] : schemaName + "." + chunk2[Table.Symbol.Name]
             );
           }
         }
@@ -1058,65 +1058,65 @@ var init_sql = __esm({
           inlineParams,
           paramStartIndex
         } = config;
-        return mergeQueries(chunks.map((chunk) => {
-          if (is(chunk, StringChunk)) {
-            return { sql: chunk.value.join(""), params: [] };
+        return mergeQueries(chunks.map((chunk2) => {
+          if (is(chunk2, StringChunk)) {
+            return { sql: chunk2.value.join(""), params: [] };
           }
-          if (is(chunk, Name)) {
-            return { sql: escapeName(chunk.value), params: [] };
+          if (is(chunk2, Name)) {
+            return { sql: escapeName(chunk2.value), params: [] };
           }
-          if (chunk === void 0) {
+          if (chunk2 === void 0) {
             return { sql: "", params: [] };
           }
-          if (Array.isArray(chunk)) {
+          if (Array.isArray(chunk2)) {
             const result = [new StringChunk("(")];
-            for (const [i, p] of chunk.entries()) {
+            for (const [i, p] of chunk2.entries()) {
               result.push(p);
-              if (i < chunk.length - 1) {
+              if (i < chunk2.length - 1) {
                 result.push(new StringChunk(", "));
               }
             }
             result.push(new StringChunk(")"));
             return this.buildQueryFromSourceParams(result, config);
           }
-          if (is(chunk, _SQL)) {
-            return this.buildQueryFromSourceParams(chunk.queryChunks, {
+          if (is(chunk2, _SQL)) {
+            return this.buildQueryFromSourceParams(chunk2.queryChunks, {
               ...config,
-              inlineParams: inlineParams || chunk.shouldInlineParams
+              inlineParams: inlineParams || chunk2.shouldInlineParams
             });
           }
-          if (is(chunk, Table)) {
-            const schemaName = chunk[Table.Symbol.Schema];
-            const tableName = chunk[Table.Symbol.Name];
+          if (is(chunk2, Table)) {
+            const schemaName = chunk2[Table.Symbol.Schema];
+            const tableName = chunk2[Table.Symbol.Name];
             return {
-              sql: schemaName === void 0 || chunk[IsAlias] ? escapeName(tableName) : escapeName(schemaName) + "." + escapeName(tableName),
+              sql: schemaName === void 0 || chunk2[IsAlias] ? escapeName(tableName) : escapeName(schemaName) + "." + escapeName(tableName),
               params: []
             };
           }
-          if (is(chunk, Column)) {
-            const columnName = casing.getColumnCasing(chunk);
+          if (is(chunk2, Column)) {
+            const columnName = casing.getColumnCasing(chunk2);
             if (_config.invokeSource === "indexes") {
               return { sql: escapeName(columnName), params: [] };
             }
-            const schemaName = chunk.table[Table.Symbol.Schema];
+            const schemaName = chunk2.table[Table.Symbol.Schema];
             return {
-              sql: chunk.table[IsAlias] || schemaName === void 0 ? escapeName(chunk.table[Table.Symbol.Name]) + "." + escapeName(columnName) : escapeName(schemaName) + "." + escapeName(chunk.table[Table.Symbol.Name]) + "." + escapeName(columnName),
+              sql: chunk2.table[IsAlias] || schemaName === void 0 ? escapeName(chunk2.table[Table.Symbol.Name]) + "." + escapeName(columnName) : escapeName(schemaName) + "." + escapeName(chunk2.table[Table.Symbol.Name]) + "." + escapeName(columnName),
               params: []
             };
           }
-          if (is(chunk, View)) {
-            const schemaName = chunk[ViewBaseConfig].schema;
-            const viewName = chunk[ViewBaseConfig].name;
+          if (is(chunk2, View)) {
+            const schemaName = chunk2[ViewBaseConfig].schema;
+            const viewName = chunk2[ViewBaseConfig].name;
             return {
-              sql: schemaName === void 0 || chunk[ViewBaseConfig].isAlias ? escapeName(viewName) : escapeName(schemaName) + "." + escapeName(viewName),
+              sql: schemaName === void 0 || chunk2[ViewBaseConfig].isAlias ? escapeName(viewName) : escapeName(schemaName) + "." + escapeName(viewName),
               params: []
             };
           }
-          if (is(chunk, Param)) {
-            if (is(chunk.value, Placeholder)) {
-              return { sql: escapeParam(paramStartIndex.value++, chunk), params: [chunk], typings: ["none"] };
+          if (is(chunk2, Param)) {
+            if (is(chunk2.value, Placeholder)) {
+              return { sql: escapeParam(paramStartIndex.value++, chunk2), params: [chunk2], typings: ["none"] };
             }
-            const mappedValue = chunk.value === null ? null : chunk.encoder.mapToDriverValue(chunk.value);
+            const mappedValue = chunk2.value === null ? null : chunk2.encoder.mapToDriverValue(chunk2.value);
             if (is(mappedValue, _SQL)) {
               return this.buildQueryFromSourceParams([mappedValue], config);
             }
@@ -1125,67 +1125,67 @@ var init_sql = __esm({
             }
             let typings = ["none"];
             if (prepareTyping) {
-              typings = [prepareTyping(chunk.encoder)];
+              typings = [prepareTyping(chunk2.encoder)];
             }
             return { sql: escapeParam(paramStartIndex.value++, mappedValue), params: [mappedValue], typings };
           }
-          if (is(chunk, Placeholder)) {
-            return { sql: escapeParam(paramStartIndex.value++, chunk), params: [chunk], typings: ["none"] };
+          if (is(chunk2, Placeholder)) {
+            return { sql: escapeParam(paramStartIndex.value++, chunk2), params: [chunk2], typings: ["none"] };
           }
-          if (is(chunk, _SQL.Aliased) && chunk.fieldAlias !== void 0) {
-            return { sql: escapeName(chunk.fieldAlias), params: [] };
+          if (is(chunk2, _SQL.Aliased) && chunk2.fieldAlias !== void 0) {
+            return { sql: escapeName(chunk2.fieldAlias), params: [] };
           }
-          if (is(chunk, Subquery)) {
-            if (chunk._.isWith) {
-              return { sql: escapeName(chunk._.alias), params: [] };
+          if (is(chunk2, Subquery)) {
+            if (chunk2._.isWith) {
+              return { sql: escapeName(chunk2._.alias), params: [] };
             }
             return this.buildQueryFromSourceParams([
               new StringChunk("("),
-              chunk._.sql,
+              chunk2._.sql,
               new StringChunk(") "),
-              new Name(chunk._.alias)
+              new Name(chunk2._.alias)
             ], config);
           }
-          if (isPgEnum(chunk)) {
-            if (chunk.schema) {
-              return { sql: escapeName(chunk.schema) + "." + escapeName(chunk.enumName), params: [] };
+          if (isPgEnum(chunk2)) {
+            if (chunk2.schema) {
+              return { sql: escapeName(chunk2.schema) + "." + escapeName(chunk2.enumName), params: [] };
             }
-            return { sql: escapeName(chunk.enumName), params: [] };
+            return { sql: escapeName(chunk2.enumName), params: [] };
           }
-          if (isSQLWrapper(chunk)) {
-            if (chunk.shouldOmitSQLParens?.()) {
-              return this.buildQueryFromSourceParams([chunk.getSQL()], config);
+          if (isSQLWrapper(chunk2)) {
+            if (chunk2.shouldOmitSQLParens?.()) {
+              return this.buildQueryFromSourceParams([chunk2.getSQL()], config);
             }
             return this.buildQueryFromSourceParams([
               new StringChunk("("),
-              chunk.getSQL(),
+              chunk2.getSQL(),
               new StringChunk(")")
             ], config);
           }
           if (inlineParams) {
-            return { sql: this.mapInlineParam(chunk, config), params: [] };
+            return { sql: this.mapInlineParam(chunk2, config), params: [] };
           }
-          return { sql: escapeParam(paramStartIndex.value++, chunk), params: [chunk], typings: ["none"] };
+          return { sql: escapeParam(paramStartIndex.value++, chunk2), params: [chunk2], typings: ["none"] };
         }));
       }
-      mapInlineParam(chunk, { escapeString }) {
-        if (chunk === null) {
+      mapInlineParam(chunk2, { escapeString }) {
+        if (chunk2 === null) {
           return "null";
         }
-        if (typeof chunk === "number" || typeof chunk === "boolean") {
-          return chunk.toString();
+        if (typeof chunk2 === "number" || typeof chunk2 === "boolean") {
+          return chunk2.toString();
         }
-        if (typeof chunk === "string") {
-          return escapeString(chunk);
+        if (typeof chunk2 === "string") {
+          return escapeString(chunk2);
         }
-        if (typeof chunk === "object") {
-          const mappedValueAsString = chunk.toString();
+        if (typeof chunk2 === "object") {
+          const mappedValueAsString = chunk2.toString();
           if (mappedValueAsString === "[object Object]") {
-            return escapeString(JSON.stringify(chunk));
+            return escapeString(JSON.stringify(chunk2));
           }
           return escapeString(mappedValueAsString);
         }
-        throw new Error("Unexpected param value: " + chunk);
+        throw new Error("Unexpected param value: " + chunk2);
       }
       getSQL() {
         return this;
@@ -1264,11 +1264,11 @@ var init_sql = __esm({
       sql22.raw = raw;
       function join16(chunks, separator) {
         const result = [];
-        for (const [i, chunk] of chunks.entries()) {
+        for (const [i, chunk2] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
             result.push(separator);
           }
-          result.push(chunk);
+          result.push(chunk2);
         }
         return new SQL(result);
       }
@@ -2417,15 +2417,15 @@ var init_base64 = __esm({
     _mkUriSafe = (src) => src.replace(/=/g, "").replace(/[+\/]/g, (m0) => m0 == "+" ? "-" : "_");
     _tidyB64 = (s) => s.replace(/[^A-Za-z0-9\+\/]/g, "");
     btoaPolyfill = (bin) => {
-      let u32, c0, c1, c2, asc2 = "";
+      let u32, c0, c1, c2, asc8 = "";
       const pad = bin.length % 3;
       for (let i = 0; i < bin.length; ) {
         if ((c0 = bin.charCodeAt(i++)) > 255 || (c1 = bin.charCodeAt(i++)) > 255 || (c2 = bin.charCodeAt(i++)) > 255)
           throw new TypeError("invalid character found");
         u32 = c0 << 16 | c1 << 8 | c2;
-        asc2 += b64chs[u32 >> 18 & 63] + b64chs[u32 >> 12 & 63] + b64chs[u32 >> 6 & 63] + b64chs[u32 & 63];
+        asc8 += b64chs[u32 >> 18 & 63] + b64chs[u32 >> 12 & 63] + b64chs[u32 >> 6 & 63] + b64chs[u32 & 63];
       }
-      return pad ? asc2.slice(0, pad - 3) + "===".substring(pad) : asc2;
+      return pad ? asc8.slice(0, pad - 3) + "===".substring(pad) : asc8;
     };
     _btoa = typeof btoa === "function" ? (bin) => btoa(bin) : _hasBuffer ? (bin) => Buffer.from(bin, "binary").toString("base64") : btoaPolyfill;
     _fromUint8Array = _hasBuffer ? (u8a) => Buffer.from(u8a).toString("base64") : (u8a) => {
@@ -2464,15 +2464,15 @@ var init_base64 = __esm({
       }
     };
     btou = (b) => b.replace(re_btou, cb_btou);
-    atobPolyfill = (asc2) => {
-      asc2 = asc2.replace(/\s+/g, "");
-      if (!b64re.test(asc2))
+    atobPolyfill = (asc8) => {
+      asc8 = asc8.replace(/\s+/g, "");
+      if (!b64re.test(asc8))
         throw new TypeError("malformed base64.");
-      asc2 += "==".slice(2 - (asc2.length & 3));
+      asc8 += "==".slice(2 - (asc8.length & 3));
       let u24, r1, r2;
       let binArray = [];
-      for (let i = 0; i < asc2.length; ) {
-        u24 = b64tab[asc2.charAt(i++)] << 18 | b64tab[asc2.charAt(i++)] << 12 | (r1 = b64tab[asc2.charAt(i++)]) << 6 | (r2 = b64tab[asc2.charAt(i++)]);
+      for (let i = 0; i < asc8.length; ) {
+        u24 = b64tab[asc8.charAt(i++)] << 18 | b64tab[asc8.charAt(i++)] << 12 | (r1 = b64tab[asc8.charAt(i++)]) << 6 | (r2 = b64tab[asc8.charAt(i++)]);
         if (r1 === 64) {
           binArray.push(_fromCC(u24 >> 16 & 255));
         } else if (r2 === 64) {
@@ -2483,7 +2483,7 @@ var init_base64 = __esm({
       }
       return binArray.join("");
     };
-    _atob = typeof atob === "function" ? (asc2) => atob(_tidyB64(asc2)) : _hasBuffer ? (asc2) => Buffer.from(asc2, "base64").toString("binary") : atobPolyfill;
+    _atob = typeof atob === "function" ? (asc8) => atob(_tidyB64(asc8)) : _hasBuffer ? (asc8) => Buffer.from(asc8, "base64").toString("binary") : atobPolyfill;
     _toUint8Array = _hasBuffer ? (a) => _U8Afrom(Buffer.from(a, "base64")) : (a) => _U8Afrom(_atob(a).split("").map((c) => c.charCodeAt(0)));
     toUint8Array = (a) => _toUint8Array(_unURI(a));
     _decode = _hasBuffer ? (a) => Buffer.from(a, "base64").toString("utf8") : _TD ? (a) => _TD.decode(_toUint8Array(a)) : (a) => btou(_atob(a));
@@ -2868,7 +2868,7 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync13 = (path) => fs.readFileSync(path, "utf-8");
+    var readFileSync14 = (path) => fs.readFileSync(path, "utf-8");
     var readFile = (path) => new Promise((resolve2, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
@@ -2880,7 +2880,7 @@ var require_filesystem = __commonJS({
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync13,
+      readFileSync: readFileSync14,
       readFile
     };
   }
@@ -2892,7 +2892,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync13 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync14 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command2 = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
@@ -2973,7 +2973,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync13(LDD_PATH);
+        const lddContent = readFileSync14(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -3030,7 +3030,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync13(LDD_PATH);
+        const lddContent = readFileSync14(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -3255,9 +3255,9 @@ var require_libsql = __commonJS({
        *
        * @param {string} sql - The SQL statement string to prepare.
        */
-      prepare(sql3) {
+      prepare(sql9) {
         try {
-          const stmt = databasePrepareSync.call(this.db, sql3);
+          const stmt = databasePrepareSync.call(this.db, sql9);
           return new Statement(stmt);
         } catch (err) {
           throw convertError(err);
@@ -3364,9 +3364,9 @@ var require_libsql = __commonJS({
        *
        * @param {string} sql - The SQL statement string to execute.
        */
-      exec(sql3) {
+      exec(sql9) {
         try {
-          databaseExecSync.call(this.db, sql3);
+          databaseExecSync.call(this.db, sql9);
         } catch (err) {
           throw convertError(err);
         }
@@ -3575,13 +3575,13 @@ function _createClient(config) {
   return new Sqlite3Client(path, options, db, config.intMode);
 }
 function executeStmt(db, stmt, intMode) {
-  let sql3;
+  let sql9;
   let args2;
   if (typeof stmt === "string") {
-    sql3 = stmt;
+    sql9 = stmt;
     args2 = [];
   } else {
-    sql3 = stmt.sql;
+    sql9 = stmt.sql;
     if (Array.isArray(stmt.args)) {
       args2 = stmt.args.map((value) => valueToSql(value, intMode));
     } else {
@@ -3593,7 +3593,7 @@ function executeStmt(db, stmt, intMode) {
     }
   }
   try {
-    const sqlStmt = db.prepare(sql3);
+    const sqlStmt = db.prepare(sql9);
     sqlStmt.safeIntegers(true);
     let returnsData = true;
     try {
@@ -3687,9 +3687,9 @@ function valueToSql(value, intMode) {
     return value;
   }
 }
-function executeMultiple(db, sql3) {
+function executeMultiple(db, sql9) {
   try {
-    db.exec(sql3);
+    db.exec(sql9);
   } catch (e) {
     throw mapSqliteError(e);
   }
@@ -3817,11 +3817,11 @@ var init_sqlite3 = __esm({
         this.#db = null;
         return new Sqlite3Transaction(db, this.#intMode);
       }
-      async executeMultiple(sql3) {
+      async executeMultiple(sql9) {
         this.#checkNotClosed();
         const db = this.#getDb();
         try {
-          return executeMultiple(db, sql3);
+          return executeMultiple(db, sql9);
         } finally {
           if (db.inTransaction) {
             executeStmt(db, "ROLLBACK", this.#intMode);
@@ -3907,9 +3907,9 @@ var init_sqlite3 = __esm({
         }
         return resultSets;
       }
-      async executeMultiple(sql3) {
+      async executeMultiple(sql9) {
         this.#checkNotClosed();
-        return executeMultiple(this.#database, sql3);
+        return executeMultiple(this.#database, sql9);
       }
       async rollback() {
         if (!this.#database.open) {
@@ -4476,14 +4476,14 @@ var require_permessage_deflate = __commonJS({
       }
     };
     module2.exports = PerMessageDeflate2;
-    function deflateOnData(chunk) {
-      this[kBuffers].push(chunk);
-      this[kTotalLength] += chunk.length;
+    function deflateOnData(chunk2) {
+      this[kBuffers].push(chunk2);
+      this[kTotalLength] += chunk2.length;
     }
-    function inflateOnData(chunk) {
-      this[kTotalLength] += chunk.length;
+    function inflateOnData(chunk2) {
+      this[kTotalLength] += chunk2.length;
       if (this[kPerMessageDeflate]._maxPayload < 1 || this[kTotalLength] <= this[kPerMessageDeflate]._maxPayload) {
-        this[kBuffers].push(chunk);
+        this[kBuffers].push(chunk2);
         return;
       }
       this[kError] = new RangeError("Max payload size exceeded");
@@ -4784,7 +4784,7 @@ var require_receiver = __commonJS({
        * @param {Function} cb Callback
        * @private
        */
-      _write(chunk, encoding, cb) {
+      _write(chunk2, encoding, cb) {
         if (this._opcode === 8 && this._state == GET_INFO) return cb();
         if (this._maxBufferedChunks > 0 && this._buffers.length >= this._maxBufferedChunks) {
           cb(
@@ -4798,8 +4798,8 @@ var require_receiver = __commonJS({
           );
           return;
         }
-        this._bufferedBytes += chunk.length;
-        this._buffers.push(chunk);
+        this._bufferedBytes += chunk2.length;
+        this._buffers.push(chunk2);
         this.startLoop(cb);
       }
       /**
@@ -6212,7 +6212,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash12 } = require("crypto");
+    var { randomBytes, createHash: createHash13 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -6880,7 +6880,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash12("sha1").update(key + GUID).digest("base64");
+        const digest = createHash13("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -7063,8 +7063,8 @@ var require_websocket = __commonJS({
       this.removeListener("end", socketOnEnd);
       websocket._readyState = WebSocket2.CLOSING;
       if (!this._readableState.endEmitted && !websocket._closeFrameReceived && !websocket._receiver._writableState.errorEmitted && this._readableState.length !== 0) {
-        const chunk = this.read(this._readableState.length);
-        websocket._receiver.write(chunk);
+        const chunk2 = this.read(this._readableState.length);
+        websocket._receiver.write(chunk2);
       }
       websocket._receiver.end();
       this[kWebSocket] = void 0;
@@ -7076,8 +7076,8 @@ var require_websocket = __commonJS({
         websocket._receiver.on("finish", receiverOnFinish);
       }
     }
-    function socketOnData(chunk) {
-      if (!this[kWebSocket]._receiver.write(chunk)) {
+    function socketOnData(chunk2) {
+      if (!this[kWebSocket]._receiver.write(chunk2)) {
         this.pause();
       }
     }
@@ -7180,14 +7180,14 @@ var require_stream = __commonJS({
       duplex._read = function() {
         if (ws.isPaused) ws.resume();
       };
-      duplex._write = function(chunk, encoding, callback) {
+      duplex._write = function(chunk2, encoding, callback) {
         if (ws.readyState === ws.CONNECTING) {
           ws.once("open", function open() {
-            duplex._write(chunk, encoding, callback);
+            duplex._write(chunk2, encoding, callback);
           });
           return;
         }
-        ws.send(chunk, callback);
+        ws.send(chunk2, callback);
       };
       duplex.on("end", duplexOnEnd);
       duplex.on("error", duplexOnError);
@@ -7249,7 +7249,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash12 } = require("crypto");
+    var { createHash: createHash13 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -7556,7 +7556,7 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest = createHash12("sha1").update(key + GUID).digest("base64");
+        const digest = createHash13("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -8364,11 +8364,11 @@ var init_result = __esm({
 });
 
 // node_modules/@libsql/hrana-client/lib-esm/sql.js
-function sqlToProto(owner, sql3) {
-  if (sql3 instanceof Sql) {
-    return { sqlId: sql3._getSqlId(owner) };
+function sqlToProto(owner, sql9) {
+  if (sql9 instanceof Sql) {
+    return { sqlId: sql9._getSqlId(owner) };
   } else {
-    return { sql: "" + sql3 };
+    return { sql: "" + sql9 };
   }
 }
 var Sql;
@@ -8467,8 +8467,8 @@ function stmtToProto(sqlOwner, stmt, wantRows) {
   } else {
     inSql = stmt;
   }
-  const { sql: sql3, sqlId } = sqlToProto(sqlOwner, inSql);
-  return { sql: sql3, sqlId, args: args2, namedArgs, wantRows };
+  const { sql: sql9, sqlId } = sqlToProto(sqlOwner, inSql);
+  return { sql: sql9, sqlId, args: args2, namedArgs, wantRows };
 }
 var Stmt;
 var init_stmt = __esm({
@@ -8483,8 +8483,8 @@ var init_stmt = __esm({
       /** @private */
       _namedArgs;
       /** Initialize the statement with given SQL text. */
-      constructor(sql3) {
-        this.sql = sql3;
+      constructor(sql9) {
+        this.sql = sql9;
         this._args = [];
         this._namedArgs = /* @__PURE__ */ new Map();
       }
@@ -10270,13 +10270,13 @@ var init_client2 = __esm({
         return WsStream.open(this);
       }
       /** Cache a SQL text on the server. This requires protocol version 2 or higher. */
-      storeSql(sql3) {
+      storeSql(sql9) {
         this._ensureVersion(2, "storeSql()");
         const sqlId = this.#sqlIdAlloc.alloc();
         const sqlObj = new Sql(this, sqlId);
         const responseCallback = () => void 0;
         const errorCallback = (e) => sqlObj._setClosed(e);
-        const request = { type: "store_sql", sqlId, sql: sql3 };
+        const request = { type: "store_sql", sqlId, sql: sql9 };
         this._sendRequest(request, { responseCallback, errorCallback });
         return sqlObj;
       }
@@ -10336,10 +10336,10 @@ var init_byte_queue = __esm({
       data() {
         return this.#array.slice(this.#shiftPos, this.#pushPos);
       }
-      push(chunk) {
-        this.#ensurePush(chunk.byteLength);
-        this.#array.set(chunk, this.#pushPos);
-        this.#pushPos += chunk.byteLength;
+      push(chunk2) {
+        this.#ensurePush(chunk2.byteLength);
+        this.#array.set(chunk2, this.#pushPos);
+        this.#pushPos += chunk2.byteLength;
       }
       #ensurePush(pushLength) {
         if (this.#pushPos + pushLength <= this.#array.byteLength) {
@@ -10906,9 +10906,9 @@ var init_stream3 = __esm({
         return this;
       }
       /** Cache a SQL text on the server. */
-      storeSql(sql3) {
+      storeSql(sql9) {
         const sqlId = this.#sqlIdAlloc.alloc();
-        this.#sendStreamRequest({ type: "store_sql", sqlId, sql: sql3 }).then(() => void 0, (error) => this._setClosed(error));
+        this.#sendStreamRequest({ type: "store_sql", sqlId, sql: sql9 }).then(() => void 0, (error) => this._setClosed(error));
         return new Sql(this, sqlId);
       }
       /** @private */
@@ -11376,17 +11376,17 @@ async function executeHranaBatch(mode, version6, batch, hranaStmts, disableForei
   return resultSets;
 }
 function stmtToHrana(stmt) {
-  let sql3;
+  let sql9;
   let args2;
   if (Array.isArray(stmt)) {
-    [sql3, args2] = stmt;
+    [sql9, args2] = stmt;
   } else if (typeof stmt === "string") {
-    sql3 = stmt;
+    sql9 = stmt;
   } else {
-    sql3 = stmt.sql;
+    sql9 = stmt.sql;
     args2 = stmt.args;
   }
-  const hranaStmt = new Stmt(sql3);
+  const hranaStmt = new Stmt(sql9);
   if (args2) {
     if (Array.isArray(args2)) {
       hranaStmt.bindIndexes(args2);
@@ -11531,7 +11531,7 @@ var init_hrana = __esm({
           throw mapHranaError(e);
         }
       }
-      async executeMultiple(sql3) {
+      async executeMultiple(sql9) {
         const stream = this._getStream();
         if (stream.closed) {
           throw new LibsqlError("Cannot execute statements because the transaction is closed", "TRANSACTION_CLOSED");
@@ -11548,7 +11548,7 @@ var init_hrana = __esm({
           } else {
             await this.#started;
           }
-          await stream.sequence(sql3);
+          await stream.sequence(sql9);
         } catch (e) {
           throw mapHranaError(e);
         }
@@ -11920,11 +11920,11 @@ var init_ws = __esm({
           }
         });
       }
-      async executeMultiple(sql3) {
+      async executeMultiple(sql9) {
         return this.limit(async () => {
           const streamState = await this.#openStream();
           try {
-            const promise = streamState.stream.sequence(sql3);
+            const promise = streamState.stream.sequence(sql9);
             streamState.stream.closeGracefully();
             await promise;
           } catch (e) {
@@ -12219,13 +12219,13 @@ var init_http = __esm({
           }
         });
       }
-      async executeMultiple(sql3) {
+      async executeMultiple(sql9) {
         return this.limit(async () => {
           try {
             let promise;
             const stream = this.#client.openStream();
             try {
-              promise = stream.sequence(sql3);
+              promise = stream.sequence(sql9);
             } finally {
               stream.closeGracefully();
             }
@@ -13547,13 +13547,13 @@ var init_dialect = __esm({
       buildSelection(fields, { isSingleTable = false } = {}) {
         const columnsLen = fields.length;
         const chunks = fields.flatMap(({ field }, i) => {
-          const chunk = [];
+          const chunk2 = [];
           if (is(field, SQL.Aliased) && field.isSelectionField) {
-            chunk.push(sql.identifier(field.fieldAlias));
+            chunk2.push(sql.identifier(field.fieldAlias));
           } else if (is(field, SQL.Aliased) || is(field, SQL)) {
             const query = is(field, SQL.Aliased) ? field.sql : field;
             if (isSingleTable) {
-              chunk.push(
+              chunk2.push(
                 new SQL(
                   query.queryChunks.map((c) => {
                     if (is(c, Column)) {
@@ -13564,28 +13564,28 @@ var init_dialect = __esm({
                 )
               );
             } else {
-              chunk.push(query);
+              chunk2.push(query);
             }
             if (is(field, SQL.Aliased)) {
-              chunk.push(sql` as ${sql.identifier(field.fieldAlias)}`);
+              chunk2.push(sql` as ${sql.identifier(field.fieldAlias)}`);
             }
           } else if (is(field, Column)) {
             const tableName = field.table[Table.Symbol.Name];
             if (field.columnType === "SQLiteNumericBigInt") {
               if (isSingleTable) {
-                chunk.push(
+                chunk2.push(
                   sql`cast(${sql.identifier(this.casing.getColumnCasing(field))} as text)`
                 );
               } else {
-                chunk.push(
+                chunk2.push(
                   sql`cast(${sql.identifier(tableName)}.${sql.identifier(this.casing.getColumnCasing(field))} as text)`
                 );
               }
             } else {
               if (isSingleTable) {
-                chunk.push(sql.identifier(this.casing.getColumnCasing(field)));
+                chunk2.push(sql.identifier(this.casing.getColumnCasing(field)));
               } else {
-                chunk.push(
+                chunk2.push(
                   sql`${sql.identifier(tableName)}.${sql.identifier(this.casing.getColumnCasing(field))}`
                 );
               }
@@ -13597,12 +13597,12 @@ var init_dialect = __esm({
               const fieldDecoder = is(entry, SQL) ? entry.decoder : is(entry, Column) ? { mapFromDriverValue: (v) => entry.mapFromDriverValue(v) } : entry.sql.decoder;
               if (fieldDecoder) field._.sql.decoder = fieldDecoder;
             }
-            chunk.push(field);
+            chunk2.push(field);
           }
           if (i < columnsLen - 1) {
-            chunk.push(sql`, `);
+            chunk2.push(sql`, `);
           }
-          return chunk;
+          return chunk2;
         });
         return sql.join(chunks);
       }
@@ -13745,10 +13745,10 @@ var init_dialect = __esm({
               orderByValues.push(sql.identifier(singleOrderBy.name));
             } else if (is(singleOrderBy, SQL)) {
               for (let i = 0; i < singleOrderBy.queryChunks.length; i++) {
-                const chunk = singleOrderBy.queryChunks[i];
-                if (is(chunk, SQLiteColumn)) {
+                const chunk2 = singleOrderBy.queryChunks[i];
+                if (is(chunk2, SQLiteColumn)) {
                   singleOrderBy.queryChunks[i] = sql.identifier(
-                    this.casing.getColumnCasing(chunk)
+                    this.casing.getColumnCasing(chunk2)
                   );
                 }
               }
@@ -15843,8 +15843,8 @@ var init_db = __esm({
 });
 
 // node_modules/drizzle-orm/cache/core/cache.js
-async function hashQuery(sql3, params) {
-  const dataToHash = `${sql3}-${JSON.stringify(params)}`;
+async function hashQuery(sql9, params) {
+  const dataToHash = `${sql9}-${JSON.stringify(params)}`;
   const encoder = new TextEncoder();
   const data = encoder.encode(dataToHash);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
@@ -16071,8 +16071,8 @@ var init_session = __esm({
       values(query) {
         return this.prepareOneTimeQuery(this.dialect.sqlToQuery(query), void 0, "run", false).values();
       }
-      async count(sql3) {
-        const result = await this.values(sql3);
+      async count(sql9) {
+        const result = await this.values(sql9);
         return result[0][0];
       }
       /** @internal */
@@ -16649,8 +16649,8 @@ async function initDb(dbPath3) {
   await client.execute("PRAGMA wal_checkpoint(PASSIVE)");
   await client.execute("PRAGMA busy_timeout = 5000");
   await client.execute("PRAGMA foreign_keys = ON");
-  for (const sql3 of CREATE_SQL) {
-    await client.execute(sql3);
+  for (const sql9 of CREATE_SQL) {
+    await client.execute(sql9);
   }
   const msgInfo = await client.execute("PRAGMA table_info(messages)");
   const msgCols = msgInfo.rows.map((r) => r[1]);
@@ -16980,6 +16980,31 @@ async function runSearch(db, query, limit = 10) {
 var init_search = __esm({
   "src/tools/search.ts"() {
     "use strict";
+  }
+});
+
+// src/db/message-order.ts
+function messageOrderAsc() {
+  return [
+    sql`CASE WHEN ${messages.source_sequence} IS NULL THEN 1 ELSE 0 END`,
+    asc(messages.source_sequence),
+    asc(messages.created_at),
+    asc(sql`rowid`)
+  ];
+}
+function messageOrderDesc() {
+  return [
+    desc(sql`CASE WHEN ${messages.source_sequence} IS NULL THEN 1 ELSE 0 END`),
+    desc(messages.source_sequence),
+    desc(messages.created_at),
+    desc(sql`rowid`)
+  ];
+}
+var init_message_order = __esm({
+  "src/db/message-order.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    init_schema();
   }
 });
 
@@ -17651,7 +17676,7 @@ async function printDetail(prefix) {
     process.exit(1);
   }
   const session = matches[0];
-  const msgs = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(asc(messages.created_at), asc(sql`rowid`));
+  const msgs = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(...messageOrderAsc());
   process.stdout.write(`
 ${BOLD}${session.title}${RESET}
 
@@ -17764,6 +17789,7 @@ var init_history = __esm({
     init_roles();
     init_schema();
     init_search();
+    init_message_order();
     init_risk();
     RESET = "\x1B[0m";
     BOLD = "\x1B[1m";
@@ -17787,8 +17813,8 @@ var soc2_exports = {};
 __export(soc2_exports, {
   buildSoc2Report: () => buildSoc2Report
 });
-async function q(db, sql3) {
-  const res = await db.$client.execute(sql3);
+async function q(db, sql9) {
+  const res = await db.$client.execute(sql9);
   return res.rows;
 }
 async function queryOverview(db) {
@@ -20328,7 +20354,7 @@ async function runExportBundle(args2) {
     const msgsPath = (0, import_path3.join)(tempDir, "messages.jsonl");
     const msgsStream = (0, import_fs5.createWriteStream)(msgsPath);
     for (const sid of sessionIds) {
-      const msgs = await db.select().from(messages).where(eq(messages.session_id, sid)).orderBy(asc(messages.created_at), asc(sql`rowid`));
+      const msgs = await db.select().from(messages).where(eq(messages.session_id, sid)).orderBy(...messageOrderAsc());
       for (const m of msgs) msgsStream.write(JSON.stringify(m) + "\n");
     }
     await new Promise((resolve2) => msgsStream.end(resolve2));
@@ -20406,6 +20432,7 @@ var init_export_bundle = __esm({
     init_drizzle_orm();
     init_db2();
     init_schema();
+    init_message_order();
     init_signing();
     import_package = __toESM(require_package());
   }
@@ -20454,7 +20481,7 @@ async function runExport(args2) {
     process.exit(1);
   }
   const session = matches[0];
-  const msgs = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(asc(messages.created_at), asc(sql`rowid`));
+  const msgs = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(...messageOrderAsc());
   const provider = session.ai_tool?.replace("chron-chat/", "") ?? "ai";
   const date = session.created_at.slice(0, 10);
   process.stdout.write(`# ${session.title}
@@ -20489,6 +20516,7 @@ var init_export = __esm({
     init_db2();
     init_roles();
     init_schema();
+    init_message_order();
   }
 });
 
@@ -21630,7 +21658,7 @@ async function buildSummary(sessionPrefix, existingDb) {
   const allSessions = await db.select().from(sessions);
   const session = allSessions.find((s) => s.id.startsWith(sessionPrefix));
   if (!session) return null;
-  const msgs = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(asc(messages.created_at), asc(sql`rowid`));
+  const msgs = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(...messageOrderAsc());
   const secs = await db.select().from(secrets_detected).where(eq(secrets_detected.session_id, session.id)).orderBy(asc(secrets_detected.detected_at));
   const timeline = [];
   const mutationsList = [];
@@ -21748,6 +21776,7 @@ var init_summary = __esm({
     init_drizzle_orm();
     init_db2();
     init_schema();
+    init_message_order();
     RESET6 = "\x1B[0m";
     BOLD6 = "\x1B[1m";
     DIM5 = "\x1B[2m";
@@ -21898,18 +21927,16 @@ async function runSign(args2) {
     process.stderr.write("The key is stored on the machine where the session was created.\n");
     process.exit(1);
   }
-  const [countRow] = await db.select({
-    count: sql`count(*)`,
-    first_created_at: sql`min(${messages.created_at})`
-  }).from(messages).where(eq(messages.session_id, session.id));
+  const [countRow] = await db.select({ count: sql`count(*)` }).from(messages).where(eq(messages.session_id, session.id));
   const messageCount = countRow?.count ?? 0;
-  const firstCreatedAt = countRow?.first_created_at ?? "";
+  const firstRow = await db.select({ created_at: messages.created_at }).from(messages).where(eq(messages.session_id, session.id)).orderBy(...messageOrderAsc()).limit(1);
+  const firstCreatedAt = firstRow[0]?.created_at ?? "";
   if (messageCount === 0) {
     process.stderr.write("Session has no messages \u2014 nothing to sign.\n");
     process.exit(1);
   }
-  const lastMsg = await db.select({ content_hash: messages.content_hash }).from(messages).where(eq(messages.session_id, session.id)).orderBy(asc(sql`rowid`)).limit(1e3);
-  const finalContentHash = lastMsg[lastMsg.length - 1]?.content_hash ?? "";
+  const lastMsg = await db.select({ content_hash: messages.content_hash }).from(messages).where(eq(messages.session_id, session.id)).orderBy(...messageOrderDesc()).limit(1);
+  const finalContentHash = lastMsg[0]?.content_hash ?? "";
   if (!finalContentHash) {
     process.stderr.write("Session has no hash chain \u2014 cannot sign.\n");
     process.exit(1);
@@ -21957,6 +21984,7 @@ var init_sign = __esm({
     init_schema();
     init_signing();
     import_fs10 = require("fs");
+    init_message_order();
   }
 });
 
@@ -22024,7 +22052,7 @@ function describeEvidenceBoundary(meta) {
       return null;
   }
 }
-var EVIDENCE_SOURCE, EVIDENCE_SOURCES, ATTACH_REASON_MID_SESSION;
+var EVIDENCE_SOURCE, EVIDENCE_SOURCES, ATTACH_REASON_MID_SESSION, OVERLAP_DISCLOSURE;
 var init_evidence = __esm({
   "src/utils/evidence.ts"() {
     "use strict";
@@ -22040,6 +22068,7 @@ var init_evidence = __esm({
     };
     EVIDENCE_SOURCES = Object.values(EVIDENCE_SOURCE);
     ATTACH_REASON_MID_SESSION = "chron_available_mid_session";
+    OVERLAP_DISCLOSURE = "Transcript backfills may overlap conversations already witnessed by Chron. Both evidence records are retained; Chron does not infer that they are the same conversation.";
   }
 });
 
@@ -22158,7 +22187,7 @@ async function runVerify(args2) {
 ${BOLD7}Verifying session ${session.id.slice(0, 8)}${RESET7} \u2014 ${session.title}
 
 `);
-  const rows = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(asc(messages.created_at), asc(sql`rowid`));
+  const rows = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(...messageOrderAsc());
   const sessionMeta = parseSessionMetadata(session.metadata);
   process.stdout.write(`${BOLD7}Hash chain${RESET7} (${rows.length} messages)
 `);
@@ -22257,6 +22286,7 @@ var init_verify = __esm({
     init_db2();
     init_schema();
     init_hash();
+    init_message_order();
     init_evidence();
     init_signing();
     RESET7 = "\x1B[0m";
@@ -22984,6 +23014,18 @@ var init_esm = __esm({
   }
 });
 
+// src/utils/content.ts
+function canonicalContent(content) {
+  return content.replace(UNREPRESENTABLE, "\uFFFD");
+}
+var UNREPRESENTABLE;
+var init_content = __esm({
+  "src/utils/content.ts"() {
+    "use strict";
+    UNREPRESENTABLE = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
+  }
+});
+
 // src/utils/detect.ts
 function luhnCheck(value) {
   const digits = value.replace(/\D/g, "");
@@ -23325,6 +23367,12 @@ var init_redact = __esm({
 });
 
 // src/import/claude-code.ts
+function maskValue(value) {
+  return value.length > 8 ? `${value.slice(0, 4)}****${value.slice(-4)}` : "****";
+}
+function maskedDetections(source_uuid, found) {
+  return found.map((secret) => ({ source_uuid, type: secret.type, masked_value: maskValue(secret.value) }));
+}
 function emptyExclusions() {
   return {
     thinking: { blocks: 0, bytes: 0 },
@@ -23378,7 +23426,8 @@ function parseTranscript(raw, opts = {}) {
   let first = null;
   let last = null;
   let secrets = 0;
-  for (const line of raw.split("\n")) {
+  const secret_detections = [];
+  for (const [lineIndex, line] of raw.split("\n").entries()) {
     if (!line.trim()) continue;
     let d;
     try {
@@ -23409,7 +23458,8 @@ function parseTranscript(raw, opts = {}) {
     }
     const msg = d.message ?? {};
     const role = d.type === "user" ? "user" : "assistant";
-    const uuid = String(d.uuid ?? "");
+    const lineIdentity = typeof d.uuid === "string" && d.uuid ? d.uuid : `line:${lineIndex}`;
+    const sourceLine = `${lineIndex}:${lineIdentity}`;
     const at = ts ?? "";
     if (d.isCompactSummary) {
       const body = textOf(msg.content);
@@ -23425,7 +23475,7 @@ function parseTranscript(raw, opts = {}) {
         event_type: "compaction_boundary",
         created_at: at,
         source_sequence: seq++,
-        source_uuid: uuid
+        source_uuid: `${sourceLine}:compaction`
       });
       continue;
     }
@@ -23433,12 +23483,15 @@ function parseTranscript(raw, opts = {}) {
     if (!blocks) {
       const body = textOf(msg.content);
       if (body) {
-        secrets += scanForSecrets(body).length;
-        events.push({ role, content: body, event_type: "message", created_at: at, source_sequence: seq++, source_uuid: uuid });
+        const found = scanForSecrets(body);
+        secrets += found.length;
+        const source_uuid = `${sourceLine}:message`;
+        events.push({ role, content: body, event_type: "message", created_at: at, source_sequence: seq++, source_uuid });
+        secret_detections.push(...maskedDetections(source_uuid, found));
       }
       continue;
     }
-    for (const b of blocks) {
+    for (const [blockIndex, b] of blocks.entries()) {
       if (!b || typeof b !== "object") continue;
       if (b.type === "thinking") {
         exclusions.thinking.blocks++;
@@ -23448,21 +23501,27 @@ function parseTranscript(raw, opts = {}) {
       if (b.type === "text") {
         const body = String(b.text ?? "").trim();
         if (!body) continue;
-        secrets += scanForSecrets(body).length;
-        events.push({ role, content: body, event_type: "message", created_at: at, source_sequence: seq++, source_uuid: `${uuid}:text:${seq}` });
+        const found = scanForSecrets(body);
+        secrets += found.length;
+        const source_uuid = `${sourceLine}:text:${blockIndex}`;
+        events.push({ role, content: body, event_type: "message", created_at: at, source_sequence: seq++, source_uuid });
+        secret_detections.push(...maskedDetections(source_uuid, found));
         continue;
       }
       if (b.type === "tool_use") {
         const input = JSON.stringify(b.input ?? {});
-        secrets += scanForSecrets(input).length;
+        const found = scanForSecrets(input);
+        secrets += found.length;
+        const source_uuid = `${sourceLine}:tool_use:${blockIndex}`;
         events.push({
           role: "assistant",
           content: `${b.name ?? "unknown"} ${input}`,
           event_type: "tool_call",
           created_at: at,
           source_sequence: seq++,
-          source_uuid: String(b.id ?? `${uuid}:tool_use:${seq}`)
+          source_uuid
         });
+        secret_detections.push(...maskedDetections(source_uuid, found));
         continue;
       }
       if (b.type === "tool_result") {
@@ -23474,14 +23533,16 @@ function parseTranscript(raw, opts = {}) {
           exclusions.tool_output_truncated.original_bytes += s.originalBytes;
           exclusions.tool_output_truncated.kept_bytes += s.keptBytes;
         }
+        const source_uuid = `${sourceLine}:tool_result:${blockIndex}`;
         events.push({
           role: "user",
           content: s.content,
           event_type: "tool_result",
           created_at: at,
           source_sequence: seq++,
-          source_uuid: String(b.tool_use_id ?? `${uuid}:tool_result:${seq}`)
+          source_uuid
         });
+        secret_detections.push(...maskedDetections(source_uuid, scanForSecrets(rawText)));
       }
     }
   }
@@ -23493,7 +23554,8 @@ function parseTranscript(raw, opts = {}) {
     last_timestamp: last,
     out_of_order_timestamps: outOfOrder,
     content_hash: (0, import_crypto9.createHash)("sha256").update(raw).digest("hex"),
-    secrets_found: secrets
+    secrets_found: secrets,
+    secret_detections
   };
 }
 var import_crypto9, TOOL_OUTPUT_EXCERPT_BYTES, COMPACTION_BOUNDARY_TEXT;
@@ -23733,11 +23795,255 @@ var init_claude_code_preview = __esm({
   }
 });
 
+// src/utils/time.ts
+function localISOString() {
+  const d = /* @__PURE__ */ new Date();
+  const offsetMin = -d.getTimezoneOffset();
+  const sign = offsetMin >= 0 ? "+" : "-";
+  const absMin = Math.abs(offsetMin);
+  const hh = String(Math.floor(absMin / 60)).padStart(2, "0");
+  const mm = String(absMin % 60).padStart(2, "0");
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const seconds = String(d.getSeconds()).padStart(2, "0");
+  const ms = String(d.getMilliseconds()).padStart(3, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}${sign}${hh}:${mm}`;
+}
+var init_time = __esm({
+  "src/utils/time.ts"() {
+    "use strict";
+  }
+});
+
+// src/import/claude-code-import.ts
+function stableId(...parts) {
+  return (0, import_crypto10.createHash)("sha256").update(parts.join("\0")).digest("hex");
+}
+function importedMessageId(transcriptSessionId, sourceUuid) {
+  return stableId("claude-code", transcriptSessionId, sourceUuid);
+}
+function importedDetectionId(messageId, type, maskedValue, occurrence) {
+  return stableId("claude-code-detection", messageId, type, maskedValue, String(occurrence));
+}
+function transcriptTitle(sessionId) {
+  return `Claude Code transcript ${sessionId}`;
+}
+function latestTimestamp(parsed) {
+  return parsed.events.reduce((latest, event) => event.created_at > latest ? event.created_at : latest, parsed.events[0].created_at);
+}
+function validateTranscript(file, parsed) {
+  if (!parsed.session_id) return "Transcript has no sessionId; nothing was imported.";
+  if (parsed.session_id !== file.session_id) {
+    return `Transcript sessionId (${parsed.session_id}) does not match filename (${file.session_id}).`;
+  }
+  if (parsed.events.some((event) => !event.created_at)) {
+    return "Transcript contains an event without a source timestamp; nothing was imported rather than inventing one.";
+  }
+  const sourceIds = /* @__PURE__ */ new Set();
+  for (const event of parsed.events) {
+    if (sourceIds.has(event.source_uuid)) return `Transcript repeats source event id ${event.source_uuid}; nothing was imported.`;
+    sourceIds.add(event.source_uuid);
+  }
+  return null;
+}
+function metadataFor(parsed, existing = null) {
+  return mergeSessionMetadata(existing, {
+    source: EVIDENCE_SOURCE.TRANSCRIPT_BACKFILL,
+    partial: true,
+    client: "claude-code",
+    import_format: "claude-code-jsonl",
+    source_transcript_sha256: parsed.content_hash,
+    source_event_count: parsed.events.length,
+    source_exclusions: parsed.exclusions,
+    source_out_of_order_timestamps: parsed.out_of_order_timestamps
+  });
+}
+function prepareEvents(chronSessionId, transcriptSessionId, events) {
+  let prev_hash = null;
+  return events.map((event) => {
+    const content = canonicalContent(event.content);
+    const content_hash = computeContentHash(chronSessionId, event.role, content, event.created_at, prev_hash, event.event_type);
+    const prepared = { event, id: importedMessageId(transcriptSessionId, event.source_uuid), content, prev_hash, content_hash };
+    prev_hash = content_hash;
+    return prepared;
+  });
+}
+async function importTranscript(db, file, includeToolOutput) {
+  let raw;
+  try {
+    raw = (0, import_fs16.readFileSync)(file.path, "utf8");
+  } catch (error) {
+    return { session_id: file.session_id, imported_events: 0, skipped_events: 0, secrets_detected: 0, status: "error", error: error instanceof Error ? error.message : String(error) };
+  }
+  const parsed = parseTranscript(raw, { includeToolOutput });
+  const validationError = validateTranscript(file, parsed);
+  if (validationError) {
+    return { session_id: file.session_id, imported_events: 0, skipped_events: 0, secrets_detected: 0, status: "error", error: validationError };
+  }
+  if (parsed.events.length === 0) {
+    return { session_id: file.session_id, imported_events: 0, skipped_events: 0, secrets_detected: 0, status: "skipped_empty" };
+  }
+  try {
+    return await db.transaction(async (tx) => {
+      const externalRef = externalRefFor(parsed.session_id);
+      const [existing] = await tx.select({ id: sessions.id, ai_tool: sessions.ai_tool, metadata: sessions.metadata, signature: sessions.signature }).from(sessions).where(eq(sessions.external_ref, externalRef)).limit(1);
+      let chronSessionId;
+      if (existing) {
+        if (existing.ai_tool !== "claude") {
+          throw new Error(`Existing ${externalRef} session belongs to ${existing.ai_tool ?? "an unknown tool"}, not Claude Code.`);
+        }
+        chronSessionId = existing.id;
+      } else {
+        chronSessionId = v4_default();
+        let publicKey = null;
+        try {
+          publicKey = generateSessionKeypair(chronSessionId);
+        } catch {
+        }
+        await tx.insert(sessions).values({
+          id: chronSessionId,
+          title: transcriptTitle(parsed.session_id),
+          ai_tool: "claude",
+          created_at: parsed.events[0].created_at,
+          updated_at: latestTimestamp(parsed),
+          external_ref: externalRef,
+          parent_session_id: null,
+          public_key: publicKey,
+          metadata: metadataFor(parsed)
+        });
+      }
+      const prepared = prepareEvents(chronSessionId, parsed.session_id, parsed.events);
+      const existingMessages = existing ? await tx.select({ id: messages.id, content_hash: messages.content_hash }).from(messages).where(eq(messages.session_id, chronSessionId)) : [];
+      const existingById = new Map(existingMessages.map((row) => [row.id, row]));
+      const expectedIds = new Set(prepared.map((row) => row.id));
+      if ([...existingById.keys()].some((id) => !expectedIds.has(id))) {
+        throw new Error("Existing imported session contains records not present in this transcript; refusing to rewrite its evidence chain.");
+      }
+      let prefix = 0;
+      while (prefix < prepared.length && existingById.has(prepared[prefix].id)) {
+        const row = existingById.get(prepared[prefix].id);
+        if (row.content_hash !== prepared[prefix].content_hash) {
+          throw new Error("Transcript changed an already-imported event; refusing to rewrite historical evidence.");
+        }
+        prefix++;
+      }
+      if (prepared.slice(prefix).some((row) => existingById.has(row.id))) {
+        throw new Error("Existing imported events are not a contiguous source prefix; refusing to create a forked evidence chain.");
+      }
+      const pending = prepared.slice(prefix);
+      if (pending.length === 0) {
+        return { session_id: parsed.session_id, imported_events: 0, skipped_events: prepared.length, secrets_detected: 0, status: "already_current" };
+      }
+      if (existing?.signature) {
+        throw new Error("Imported session is signed; refusing to append evidence that would invalidate its signature.");
+      }
+      for (let start = 0; start < pending.length; start += INSERT_BATCH_SIZE) {
+        await tx.insert(messages).values(pending.slice(start, start + INSERT_BATCH_SIZE).map((row) => ({
+          id: row.id,
+          session_id: chronSessionId,
+          role: row.event.role,
+          content: row.content,
+          created_at: row.event.created_at,
+          prev_hash: row.prev_hash,
+          content_hash: row.content_hash,
+          event_type: row.event.event_type,
+          source_sequence: row.event.source_sequence
+        })));
+      }
+      const importedSourceIds = new Set(pending.map((row) => row.event.source_uuid));
+      const detections = parsed.secret_detections.filter((detection) => importedSourceIds.has(detection.source_uuid));
+      const messageIdBySource = new Map(prepared.map((row) => [row.event.source_uuid, row.id]));
+      if (detections.length > 0) {
+        const occurrences = /* @__PURE__ */ new Map();
+        await tx.insert(secrets_detected).values(detections.map((detection) => {
+          const messageId = messageIdBySource.get(detection.source_uuid);
+          const identity = `${messageId}\0${detection.type}\0${detection.masked_value}`;
+          const occurrence = occurrences.get(identity) ?? 0;
+          occurrences.set(identity, occurrence + 1);
+          return {
+            id: importedDetectionId(messageId, detection.type, detection.masked_value, occurrence),
+            session_id: chronSessionId,
+            message_id: messageId,
+            type: detection.type,
+            masked_value: detection.masked_value,
+            // localISOString, not toISOString: every other writer of this column
+            // records local time with a UTC offset, and the real database holds
+            // offset-form values. Mixing 'Z' into the same column would put two
+            // timezone representations in one evidence field.
+            detected_at: localISOString()
+          };
+        }));
+      }
+      await tx.update(sessions).set({
+        updated_at: latestTimestamp(parsed),
+        metadata: metadataFor(parsed, existing?.metadata ?? null)
+      }).where(eq(sessions.id, chronSessionId));
+      return {
+        session_id: parsed.session_id,
+        imported_events: pending.length,
+        skipped_events: prefix,
+        secrets_detected: detections.length,
+        status: "imported"
+      };
+    });
+  } catch (error) {
+    return { session_id: file.session_id, imported_events: 0, skipped_events: 0, secrets_detected: 0, status: "error", error: error instanceof Error ? error.message : String(error) };
+  }
+}
+async function importClaudeCodeTranscripts(db, opts = {}) {
+  const result = {
+    imported_sessions: 0,
+    already_current: 0,
+    skipped_empty: 0,
+    imported_events: 0,
+    skipped_events: 0,
+    secrets_detected: 0,
+    errors: 0,
+    items: []
+  };
+  for (const file of discoverTranscripts(opts.root)) {
+    const item = await importTranscript(db, file, opts.includeToolOutput === true);
+    result.items.push(item);
+    result.imported_events += item.imported_events;
+    result.skipped_events += item.skipped_events;
+    result.secrets_detected += item.secrets_detected;
+    if (item.status === "imported") result.imported_sessions++;
+    else if (item.status === "already_current") result.already_current++;
+    else if (item.status === "skipped_empty") result.skipped_empty++;
+    else result.errors++;
+  }
+  return result;
+}
+var import_crypto10, import_fs16, INSERT_BATCH_SIZE;
+var init_claude_code_import = __esm({
+  "src/import/claude-code-import.ts"() {
+    "use strict";
+    import_crypto10 = require("crypto");
+    import_fs16 = require("fs");
+    init_drizzle_orm();
+    init_esm();
+    init_schema();
+    init_hash();
+    init_content();
+    init_time();
+    init_signing();
+    init_evidence();
+    init_discover();
+    init_claude_code_preview();
+    init_claude_code();
+    INSERT_BATCH_SIZE = 100;
+  }
+});
+
 // src/cli/import-claude-code.ts
 var import_claude_code_exports = {};
 __export(import_claude_code_exports, {
   renderPreview: () => renderPreview,
-  runClaudeCodeDryRun: () => runClaudeCodeDryRun
+  runClaudeCodeDryRun: () => runClaudeCodeDryRun,
+  runClaudeCodeImport: () => runClaudeCodeImport
 });
 function bytes(n) {
   if (n < 1024) return `${n} B`;
@@ -23757,7 +24063,7 @@ ${BOLD9}chron import claude-code${RESET9} ${DIM8}(dry run \u2014 nothing will be
     out.push(`  ${YELLOW7}No Claude Code transcripts found.${RESET9}
 `);
     out.push(`
-${DIM8}Nothing was written. The import write path is not built yet.${RESET9}
+${DIM8}Nothing was written. To import after reviewing this preview, run 'chron import claude-code --confirm'.${RESET9}
 
 `);
     return out.join("");
@@ -23818,7 +24124,10 @@ ${CYAN7}Notes${RESET9}
     }
   }
   out.push(`
-${DIM8}Nothing was written. The import write path is not built yet.${RESET9}
+${DIM8}${OVERLAP_DISCLOSURE}${RESET9}
+`);
+  out.push(`
+${DIM8}Nothing was written. To import after reviewing this preview, run 'chron import claude-code --confirm'.${RESET9}
 
 `);
   return out.join("");
@@ -23838,14 +24147,69 @@ async function runClaudeCodeDryRun(args2) {
     handle?.close();
   }
 }
+function renderImportResult(result, root) {
+  const out = [];
+  out.push(`
+${BOLD9}chron import claude-code${RESET9}
+`);
+  out.push(`  source: ${DIM8}${root}${RESET9}
+
+`);
+  out.push(`${GREEN6}Imported${RESET9}
+`);
+  out.push(`  ${result.imported_sessions} session(s), ${result.imported_events} event(s)
+`);
+  if (result.already_current > 0) out.push(`  ${DIM8}${result.already_current} transcript(s) already current (${result.skipped_events} event(s) unchanged)${RESET9}
+`);
+  if (result.skipped_empty > 0) out.push(`  ${DIM8}${result.skipped_empty} transcript(s) had no ingestible events${RESET9}
+`);
+  if (result.secrets_detected > 0) out.push(`  ${YELLOW7}${result.secrets_detected} secret detection(s) recorded with masked values${RESET9}
+`);
+  if (result.errors > 0) {
+    out.push(`
+${YELLOW7}Not imported${RESET9}
+`);
+    for (const item of result.items.filter((item2) => item2.status === "error")) {
+      out.push(`  ${YELLOW7}!${RESET9} ${item.session_id.slice(0, 8)}  ${item.error}
+`);
+    }
+  }
+  out.push(`
+${DIM8}Imported sessions are partial evidence: Chron ingested a Claude Code client transcript and did not witness the original events.${RESET9}
+`);
+  out.push(`${DIM8}${OVERLAP_DISCLOSURE}${RESET9}
+`);
+  out.push(`${DIM8}Run 'chron coverage --evidence-use' to see their local evidence boundary and review references.${RESET9}
+
+`);
+  return out.join("");
+}
+async function runClaudeCodeImport(args2) {
+  const includeToolOutput = args2.includes("--include-tool-output");
+  const root = transcriptRoot();
+  process.stderr.write(
+    "Importing local Claude Code transcripts; large histories can take a few minutes...\n"
+  );
+  if (includeToolOutput) {
+    process.stderr.write(
+      "Warning: --include-tool-output stores raw tool output from Claude Code transcripts. Review your dry run first.\n"
+    );
+  }
+  const db = await initDb();
+  const result = await importClaudeCodeTranscripts(db, { root, includeToolOutput });
+  process.stdout.write(renderImportResult(result, root));
+}
 var RESET9, BOLD9, DIM8, GREEN6, YELLOW7, CYAN7;
 var init_import_claude_code = __esm({
   "src/cli/import-claude-code.ts"() {
     "use strict";
     init_db2();
+    init_db2();
     init_readonly();
     init_claude_code_preview();
+    init_claude_code_import();
     init_discover();
+    init_evidence();
     RESET9 = "\x1B[0m";
     BOLD9 = "\x1B[1m";
     DIM8 = "\x1B[2m";
@@ -23871,7 +24235,7 @@ function extractText(content) {
   if (!content.parts) return "";
   return content.parts.filter((p) => typeof p === "string" && p.trim().length > 0).join("\n").trim();
 }
-function maskValue(v) {
+function maskValue2(v) {
   return v.length > 8 ? v.slice(0, 4) + "****" + v.slice(-4) : "****";
 }
 function linearize(mapping) {
@@ -23901,10 +24265,10 @@ function messagesFromConversation(conv) {
   return result;
 }
 function findFile(dir, name) {
-  for (const entry of (0, import_fs16.readdirSync)(dir)) {
+  for (const entry of (0, import_fs17.readdirSync)(dir)) {
     const full = (0, import_path12.join)(dir, entry);
     try {
-      if ((0, import_fs16.statSync)(full).isDirectory()) {
+      if ((0, import_fs17.statSync)(full).isDirectory()) {
         const found = findFile(full, name);
         if (found) return found;
       } else if (entry === name) {
@@ -23961,12 +24325,13 @@ async function importGptConversations(db, conversations) {
         let prevHash = null;
         for (const m of msgs) {
           const msgId = v4_default();
-          const hash2 = computeContentHash(sessionId, m.role, m.content, m.ts, prevHash, "message");
+          const stored = canonicalContent(m.content);
+          const hash2 = computeContentHash(sessionId, m.role, stored, m.ts, prevHash, "message");
           await tx.insert(messages).values({
             id: msgId,
             session_id: sessionId,
             role: m.role,
-            content: m.content,
+            content: stored,
             created_at: m.ts,
             prev_hash: prevHash,
             content_hash: hash2,
@@ -23982,7 +24347,7 @@ async function importGptConversations(db, conversations) {
                   session_id: sessionId,
                   message_id: msgId,
                   type: s.type,
-                  masked_value: maskValue(s.value),
+                  masked_value: maskValue2(s.value),
                   detected_at: now
                 }))
               );
@@ -24009,7 +24374,7 @@ async function importConversations(filePath) {
   const ext = (0, import_path12.extname)(filePath).toLowerCase();
   if (ext === ".zip") {
     tempDir = (0, import_path12.join)((0, import_os11.tmpdir)(), `chron-import-${Date.now()}`);
-    (0, import_fs16.mkdirSync)(tempDir, { recursive: true });
+    (0, import_fs17.mkdirSync)(tempDir, { recursive: true });
     try {
       (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "conversations.json", "-d", tempDir], { stdio: "pipe" });
     } catch {
@@ -24018,7 +24383,7 @@ async function importConversations(filePath) {
       } catch {
         process.stderr.write(`Failed to extract ${filePath}. Make sure 'unzip' is installed.
 `);
-        (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
+        (0, import_fs17.rmSync)(tempDir, { recursive: true, force: true });
         process.exit(1);
       }
     }
@@ -24026,12 +24391,12 @@ async function importConversations(filePath) {
     if (!found) {
       process.stderr.write(`conversations.json not found inside the ZIP.
 `);
-      (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
+      (0, import_fs17.rmSync)(tempDir, { recursive: true, force: true });
       process.exit(1);
     }
-    raw = (0, import_fs16.readFileSync)(found, "utf8");
+    raw = (0, import_fs17.readFileSync)(found, "utf8");
   } else if (ext === ".json") {
-    raw = (0, import_fs16.readFileSync)(filePath, "utf8");
+    raw = (0, import_fs17.readFileSync)(filePath, "utf8");
   } else {
     process.stderr.write(`Unsupported file type: ${ext}. Pass a .zip export or a conversations.json file.
 `);
@@ -24044,7 +24409,7 @@ async function importConversations(filePath) {
   } catch {
     process.stderr.write(`Failed to parse conversations JSON.
 `);
-    if (tempDir) (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
+    if (tempDir) (0, import_fs17.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   process.stdout.write(`
@@ -24058,7 +24423,7 @@ ${BOLD10}chron import chatgpt${RESET10}  ${DIM9}${filePath}${RESET10}
     process.stderr.write(`  ${YELLOW8}!${RESET10} Failed to import "${e.title}": ${e.error}
 `);
   }
-  if (tempDir) (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
+  if (tempDir) (0, import_fs17.rmSync)(tempDir, { recursive: true, force: true });
   process.stdout.write("\n");
   process.stdout.write(`${BOLD10}Done.${RESET10}  `);
   process.stdout.write(`${GREEN7}${result.imported} imported${RESET10}`);
@@ -24124,12 +24489,13 @@ async function importClaudeAiConversations(db, conversations) {
         let prevHash = null;
         for (const m of msgs) {
           const msgId = v4_default();
-          const hash2 = computeContentHash(sessionId, m.role, m.content, m.ts, prevHash, "message");
+          const stored = canonicalContent(m.content);
+          const hash2 = computeContentHash(sessionId, m.role, stored, m.ts, prevHash, "message");
           await tx.insert(messages).values({
             id: msgId,
             session_id: sessionId,
             role: m.role,
-            content: m.content,
+            content: stored,
             created_at: m.ts,
             prev_hash: prevHash,
             content_hash: hash2,
@@ -24145,7 +24511,7 @@ async function importClaudeAiConversations(db, conversations) {
                   session_id: sessionId,
                   message_id: msgId,
                   type: s.type,
-                  masked_value: maskValue(s.value),
+                  masked_value: maskValue2(s.value),
                   detected_at: now
                 }))
               );
@@ -24172,7 +24538,7 @@ async function importClaudeAi(filePath) {
   const ext = (0, import_path12.extname)(filePath).toLowerCase();
   if (ext === ".zip") {
     tempDir = (0, import_path12.join)((0, import_os11.tmpdir)(), `chron-import-${Date.now()}`);
-    (0, import_fs16.mkdirSync)(tempDir, { recursive: true });
+    (0, import_fs17.mkdirSync)(tempDir, { recursive: true });
     try {
       (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "conversations.json", "-d", tempDir], { stdio: "pipe" });
     } catch {
@@ -24181,7 +24547,7 @@ async function importClaudeAi(filePath) {
       } catch {
         process.stderr.write(`Failed to extract ${filePath}. Make sure 'unzip' is installed.
 `);
-        if (tempDir) (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
+        if (tempDir) (0, import_fs17.rmSync)(tempDir, { recursive: true, force: true });
         process.exit(1);
       }
     }
@@ -24189,12 +24555,12 @@ async function importClaudeAi(filePath) {
     if (!found) {
       process.stderr.write(`conversations.json not found inside the ZIP.
 `);
-      if (tempDir) (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
+      if (tempDir) (0, import_fs17.rmSync)(tempDir, { recursive: true, force: true });
       process.exit(1);
     }
-    raw = (0, import_fs16.readFileSync)(found, "utf8");
+    raw = (0, import_fs17.readFileSync)(found, "utf8");
   } else if (ext === ".json") {
-    raw = (0, import_fs16.readFileSync)(filePath, "utf8");
+    raw = (0, import_fs17.readFileSync)(filePath, "utf8");
   } else {
     process.stderr.write(`Unsupported file type: ${ext}. Pass the claude-ai-export-*.zip or conversations.json.
 `);
@@ -24207,7 +24573,7 @@ async function importClaudeAi(filePath) {
   } catch {
     process.stderr.write(`Failed to parse conversations JSON.
 `);
-    if (tempDir) (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
+    if (tempDir) (0, import_fs17.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   process.stdout.write(`
@@ -24223,7 +24589,7 @@ ${BOLD10}chron import claude${RESET10}  ${DIM9}${filePath}${RESET10}
     process.stderr.write(`  ${YELLOW8}!${RESET10} Failed to import "${e.title}": ${e.error}
 `);
   }
-  if (tempDir) (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
+  if (tempDir) (0, import_fs17.rmSync)(tempDir, { recursive: true, force: true });
   process.stdout.write("\n");
   process.stdout.write(`${BOLD10}Done.${RESET10}  `);
   process.stdout.write(`${GREEN7}${result.imported} imported${RESET10}`);
@@ -24248,7 +24614,7 @@ async function runImport(args2) {
       process.exit(1);
     }
     const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
-    if (!(0, import_fs16.existsSync)(resolved)) {
+    if (!(0, import_fs17.existsSync)(resolved)) {
       process.stderr.write(`File not found: ${resolved}
 `);
       process.exit(1);
@@ -24264,7 +24630,7 @@ async function runImport(args2) {
       process.exit(1);
     }
     const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
-    if (!(0, import_fs16.existsSync)(resolved)) {
+    if (!(0, import_fs17.existsSync)(resolved)) {
       process.stderr.write(`File not found: ${resolved}
 `);
       process.exit(1);
@@ -24274,14 +24640,16 @@ async function runImport(args2) {
   }
   if (subcommand === "claude-code") {
     const dryRun = args2.includes("--dry-run");
-    if (!dryRun) {
+    const confirm = args2.includes("--confirm");
+    if (dryRun === confirm) {
       process.stderr.write(
-        "Usage: chron import claude-code --dry-run\n\n  Only --dry-run is implemented. It reads local Claude Code transcripts\n  and reports what an import would ingest, and what it would leave out.\n  It writes nothing to the database.\n\n  The write path is deliberately not built yet: the preview is meant to\n  be read by a human before any of it becomes evidence.\n"
+        "Usage: chron import claude-code --dry-run\n       chron import claude-code --confirm [--include-tool-output]\n\n  --dry-run              Read local transcripts and show what would be imported. Writes nothing.\n  --confirm              Import top-level Claude Code transcripts as partial evidence.\n  --include-tool-output  Include raw tool output (off by default).\n\nRun --dry-run first. The import is idempotent and refuses to rewrite changed historical events.\n"
       );
       process.exit(1);
     }
-    const { runClaudeCodeDryRun: runClaudeCodeDryRun2 } = await Promise.resolve().then(() => (init_import_claude_code(), import_claude_code_exports));
-    await runClaudeCodeDryRun2(args2);
+    const { runClaudeCodeDryRun: runClaudeCodeDryRun2, runClaudeCodeImport: runClaudeCodeImport2 } = await Promise.resolve().then(() => (init_import_claude_code(), import_claude_code_exports));
+    if (dryRun) await runClaudeCodeDryRun2(args2);
+    else await runClaudeCodeImport2(args2);
     return;
   }
   if (subcommand === "cursor" || subcommand === "codex") {
@@ -24301,11 +24669,11 @@ Available importers: chatgpt, claude
   );
   process.exit(1);
 }
-var import_fs16, import_path12, import_os11, import_child_process4, RESET10, BOLD10, DIM9, GREEN7, YELLOW8, CYAN8;
+var import_fs17, import_path12, import_os11, import_child_process4, RESET10, BOLD10, DIM9, GREEN7, YELLOW8, CYAN8;
 var init_import = __esm({
   "src/cli/import.ts"() {
     "use strict";
-    import_fs16 = require("fs");
+    import_fs17 = require("fs");
     import_path12 = require("path");
     import_os11 = require("os");
     import_child_process4 = require("child_process");
@@ -24314,6 +24682,7 @@ var init_import = __esm({
     init_db2();
     init_schema();
     init_hash();
+    init_content();
     init_detect();
     init_signing();
     RESET10 = "\x1B[0m";
@@ -24327,7 +24696,7 @@ var init_import = __esm({
 
 // src/review/workflow.ts
 function findingId(ruleId, sessionId) {
-  return (0, import_crypto10.createHash)("sha256").update(`${ruleId}:${sessionId}`).digest("hex");
+  return (0, import_crypto11.createHash)("sha256").update(`${ruleId}:${sessionId}`).digest("hex");
 }
 async function hydrateFindingStatuses(db, findings) {
   if (findings.length === 0) return findings;
@@ -24399,11 +24768,11 @@ async function loadFindingStates(client, ids) {
     reviewed_at: row.reviewed_at == null ? null : String(row.reviewed_at)
   }));
 }
-var import_crypto10;
+var import_crypto11;
 var init_workflow = __esm({
   "src/review/workflow.ts"() {
     "use strict";
-    import_crypto10 = require("crypto");
+    import_crypto11 = require("crypto");
   }
 });
 
@@ -24986,7 +25355,7 @@ async function runReview2(args2) {
       findings,
       coverageMapHtml
     });
-    (0, import_fs17.writeFileSync)(outputArg, html, "utf8");
+    (0, import_fs18.writeFileSync)(outputArg, html, "utf8");
     process.stdout.write(`Review report written to ${outputArg}
 `);
   }
@@ -25018,11 +25387,11 @@ async function runReviewAction(action, args2) {
     process.exit(1);
   }
 }
-var import_fs17, import_os12, RESET11, BOLD11, DIM10, RED6, YELLOW9, CYAN9, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
+var import_fs18, import_os12, RESET11, BOLD11, DIM10, RED6, YELLOW9, CYAN9, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
 var init_review = __esm({
   "src/cli/review.ts"() {
     "use strict";
-    import_fs17 = require("fs");
+    import_fs18 = require("fs");
     import_os12 = require("os");
     init_db2();
     init_report();
@@ -25599,7 +25968,7 @@ async function runSessionDetail(prefix, outputArg) {
     process.exit(1);
   }
   const session = matches[0];
-  const msgs = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(asc(messages.created_at), asc(sql`rowid`));
+  const msgs = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(...messageOrderAsc());
   const secretRows = await db.select().from(secrets_detected).where(eq(secrets_detected.session_id, session.id));
   const secretsByMsg = /* @__PURE__ */ new Map();
   for (const s of secretRows) {
@@ -25620,7 +25989,7 @@ async function runSessionDetail(prefix, outputArg) {
   const html = buildDetailHtml(session, msgs, secretsByMsg, findings, risk, tamper, generatedAt);
   const defaultOut = `chron-session-${session.id.slice(0, 8)}.html`;
   const outFile = outputArg !== "chron-dashboard.html" ? outputArg : defaultOut;
-  (0, import_fs18.writeFileSync)(outFile, html, "utf8");
+  (0, import_fs19.writeFileSync)(outFile, html, "utf8");
   const openCount = findings.filter((f) => f.status === "open").length;
   process.stdout.write(
     `
@@ -25634,11 +26003,11 @@ async function runSessionDetail(prefix, outputArg) {
 `
   );
 }
-var import_fs18, RULE_META3, FW_LABELS3, DETAIL_CSS;
+var import_fs19, RULE_META3, FW_LABELS3, DETAIL_CSS;
 var init_session_detail = __esm({
   "src/cli/session-detail.ts"() {
     "use strict";
-    import_fs18 = require("fs");
+    import_fs19 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_roles();
@@ -25647,6 +26016,7 @@ var init_session_detail = __esm({
     init_rules();
     init_control_map();
     init_hash();
+    init_message_order();
     init_signing();
     RULE_META3 = new Map(
       Object.values(FRAMEWORKS).flat().map((r) => [r.id, { severity: r.severity, framework: r.framework, finding: r.finding, description: r.description, suggested_evidence: r.suggested_evidence, controls: r.controls }])
@@ -26117,7 +26487,7 @@ async function runDashboard(args2) {
     minute: "2-digit"
   });
   const html = buildDashboardHtml(rows, findings, requirements, sessionIds.length, since, sinceArg, generatedAt, now);
-  (0, import_fs19.writeFileSync)(outputArg, html, "utf8");
+  (0, import_fs20.writeFileSync)(outputArg, html, "utf8");
   const criticalCount = rows.filter((r) => r.risk.band === "critical").length;
   const highCount = rows.filter((r) => r.risk.band === "high").length;
   process.stdout.write(
@@ -26131,11 +26501,11 @@ async function runDashboard(args2) {
 `
   );
 }
-var import_fs19, RULE_META4, FW_LABELS4, DASHBOARD_CSS, REASON_LABEL;
+var import_fs20, RULE_META4, FW_LABELS4, DASHBOARD_CSS, REASON_LABEL;
 var init_dashboard = __esm({
   "src/cli/dashboard.ts"() {
     "use strict";
-    import_fs19 = require("fs");
+    import_fs20 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -26326,7 +26696,7 @@ function getSplunkConfig() {
   if (now < _splunkCacheExpiry) return _splunkCache;
   _splunkCacheExpiry = now + 1e4;
   try {
-    const cfg = JSON.parse((0, import_fs20.readFileSync)((0, import_path13.join)((0, import_os13.homedir)(), ".chron", "config.json"), "utf8"));
+    const cfg = JSON.parse((0, import_fs21.readFileSync)((0, import_path13.join)((0, import_os13.homedir)(), ".chron", "config.json"), "utf8"));
     const s = cfg?.splunk;
     _splunkCache = s?.url && s?.token ? { url: s.url, token: s.token, insecure: s.insecure ?? false } : null;
   } catch {
@@ -26349,7 +26719,7 @@ function getSentinelConfig() {
   if (now < _sentinelCacheExpiry) return _sentinelCache;
   _sentinelCacheExpiry = now + 1e4;
   try {
-    const cfg = JSON.parse((0, import_fs20.readFileSync)((0, import_path13.join)((0, import_os13.homedir)(), ".chron", "config.json"), "utf8"));
+    const cfg = JSON.parse((0, import_fs21.readFileSync)((0, import_path13.join)((0, import_os13.homedir)(), ".chron", "config.json"), "utf8"));
     const s = cfg?.sentinel;
     _sentinelCache = s?.dce && s?.dcrId && s?.stream && s?.tenantId && s?.clientId && s?.clientSecret ? { dce: s.dce, dcrId: s.dcrId, stream: s.stream, tenantId: s.tenantId, clientId: s.clientId, clientSecret: s.clientSecret } : null;
   } catch {
@@ -26383,7 +26753,7 @@ async function getAzureToken(tenantId, clientId, clientSecret) {
 }
 function getMachineId() {
   if (!_machineId) {
-    _machineId = "sha256:" + (0, import_crypto11.createHash)("sha256").update((0, import_os13.hostname)()).digest("hex").slice(0, 16);
+    _machineId = "sha256:" + (0, import_crypto12.createHash)("sha256").update((0, import_os13.hostname)()).digest("hex").slice(0, 16);
   }
   return _machineId;
 }
@@ -26653,13 +27023,13 @@ function emitRiskEvent(payload) {
     );
   }
 }
-var import_fs20, import_path13, import_crypto11, import_os13, import_package3, _splunkCache, _splunkCacheExpiry, _sentinelCache, _sentinelCacheExpiry, _azureTokenCache, _machineId;
+var import_fs21, import_path13, import_crypto12, import_os13, import_package3, _splunkCache, _splunkCacheExpiry, _sentinelCache, _sentinelCacheExpiry, _azureTokenCache, _machineId;
 var init_relay = __esm({
   "src/utils/relay.ts"() {
     "use strict";
-    import_fs20 = require("fs");
+    import_fs21 = require("fs");
     import_path13 = require("path");
-    import_crypto11 = require("crypto");
+    import_crypto12 = require("crypto");
     import_os13 = require("os");
     import_package3 = __toESM(require_package());
     if (process.env.CHRON_SPLUNK_INSECURE === "1") {
@@ -26847,7 +27217,7 @@ __export(evidence_exports, {
   runEvidence: () => runEvidence
 });
 function hash(input) {
-  return (0, import_crypto12.createHash)("sha256").update(input).digest("hex");
+  return (0, import_crypto13.createHash)("sha256").update(input).digest("hex");
 }
 function argValue(args2, name) {
   const prefix = `--${name}=`;
@@ -26914,8 +27284,8 @@ async function createEvidenceLink(db, evidenceId, targetType, targetId, now, not
 }
 async function importEvidenceDocument(db, params) {
   const filePath = (0, import_path14.resolve)(params.file);
-  const buf = (0, import_fs21.readFileSync)(filePath);
-  const stat = (0, import_fs21.statSync)(filePath);
+  const buf = (0, import_fs22.readFileSync)(filePath);
+  const stat = (0, import_fs22.statSync)(filePath);
   const sha256 = hash(buf);
   const now = params.now ?? (/* @__PURE__ */ new Date()).toISOString();
   const title = (0, import_path14.basename)(filePath);
@@ -27064,13 +27434,13 @@ async function runEvidence(args2) {
   }
   throw new Error(`Unknown evidence command: ${subcommand}`);
 }
-var import_crypto12, import_path14, import_fs21, FW_LABELS5;
+var import_crypto13, import_path14, import_fs22, FW_LABELS5;
 var init_evidence2 = __esm({
   "src/cli/evidence.ts"() {
     "use strict";
-    import_crypto12 = require("crypto");
+    import_crypto13 = require("crypto");
     import_path14 = require("path");
-    import_fs21 = require("fs");
+    import_fs22 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -27271,9 +27641,9 @@ async function runSetup() {
   const GLOBAL_ONLY = ["Claude Code", "Cursor (global)", "Gemini CLI", "Codex (global)"];
   const fixable = configs.filter((c) => {
     if (c.name === "Codex (project)" || c.name === "Cursor (project)") return false;
-    if ((0, import_fs22.existsSync)(c.path)) return true;
+    if ((0, import_fs23.existsSync)(c.path)) return true;
     if (GLOBAL_ONLY.includes(c.name)) return true;
-    if ((0, import_fs22.existsSync)((0, import_path15.dirname)(c.path))) return true;
+    if ((0, import_fs23.existsSync)((0, import_path15.dirname)(c.path))) return true;
     return false;
   });
   const added = [];
@@ -27299,13 +27669,13 @@ async function runSetup() {
 `);
   }
 }
-var import_os14, import_path15, import_fs22;
+var import_os14, import_path15, import_fs23;
 var init_setup = __esm({
   "src/cli/setup.ts"() {
     "use strict";
     import_os14 = require("os");
     import_path15 = require("path");
-    import_fs22 = require("fs");
+    import_fs23 = require("fs");
     init_mcp_config();
     init_connect();
   }
@@ -27315,6 +27685,7 @@ var init_setup = __esm({
 var coverage_exports = {};
 __export(coverage_exports, {
   computeCoverage: () => computeCoverage,
+  computeFieldCardinality: () => computeFieldCardinality,
   runCoverage: () => runCoverage
 });
 function checkConfigured(def, home, cwd) {
@@ -27322,9 +27693,9 @@ function checkConfigured(def, home, cwd) {
   const configs = userMcpClientConfigs(home, cwd, (0, import_os15.platform)(), process.env.APPDATA);
   return def.configNames.some((name) => {
     const c = configs.find((mc) => mc.name === name);
-    if (!c || !(0, import_fs23.existsSync)(c.path)) return false;
+    if (!c || !(0, import_fs24.existsSync)(c.path)) return false;
     try {
-      const content = (0, import_fs23.readFileSync)(c.path, "utf8");
+      const content = (0, import_fs24.readFileSync)(c.path, "utf8");
       return c.type === "codex-toml" ? hasChronCodexToml(content) : hasChronJsonMcp(content) === true;
     } catch {
       return false;
@@ -27345,7 +27716,92 @@ function relativeTime(iso) {
 function fmtDate7(iso) {
   return iso.slice(0, 16).replace("T", " ");
 }
-async function computeCoverage(since) {
+function chunk(items, size) {
+  const batches = [];
+  for (let start = 0; start < items.length; start += size) {
+    batches.push(items.slice(start, start + size));
+  }
+  return batches;
+}
+function computeFieldCardinality(field, values) {
+  const counts = /* @__PURE__ */ new Map();
+  for (const value of values) {
+    if (value === null || value === void 0) continue;
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+  const entries = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const [dominantValue, dominantCount] = entries[0] ?? [null, 0];
+  const observed = entries.reduce((sum, [, count]) => sum + count, 0);
+  const share = observed === 0 ? 0 : dominantCount / observed;
+  return {
+    field,
+    observed_values: observed,
+    distinct_values: entries.length,
+    dominant_value: dominantValue,
+    dominant_count: dominantCount,
+    dominant_share: share,
+    concentration_candidate: observed >= MIN_CARDINALITY_SAMPLE && share >= CONCENTRATION_THRESHOLD
+  };
+}
+async function computeEvidenceUse(db, sessionIds) {
+  const empty = {
+    sessions: {
+      total: 0,
+      referenced_by_findings: 0,
+      referenced_by_review_requirements: 0,
+      referenced_by_any_chron_workflow: 0,
+      reviewed: 0
+    },
+    messages: { total: 0, referenced_by_secret_detection: 0 },
+    fields: [],
+    scope: "Chron can report references recorded in its local review workflow. It cannot infer whether an external system or person used this evidence."
+  };
+  if (sessionIds.length === 0) return empty;
+  const messageRows = [];
+  const findingRows = [];
+  const requirementRows = [];
+  const secretRows = [];
+  for (const sessionBatch of chunk(sessionIds, SQLITE_BINDING_BATCH_SIZE)) {
+    const messageScope = inArray(messages.session_id, sessionBatch);
+    const [batchMessages, batchFindings, batchRequirements, batchSecrets] = await Promise.all([
+      db.select({ id: messages.id, role: messages.role, event_type: messages.event_type }).from(messages).where(messageScope),
+      db.select({ session_id: review_findings.session_id, status: review_findings.status }).from(review_findings).where(inArray(review_findings.session_id, sessionBatch)),
+      db.select({ session_id: review_requirements.session_id, status: review_requirements.status, reason: review_requirements.reason }).from(review_requirements).where(inArray(review_requirements.session_id, sessionBatch)),
+      db.select({ message_id: secrets_detected.message_id }).from(secrets_detected).innerJoin(messages, eq(secrets_detected.message_id, messages.id)).where(messageScope)
+    ]);
+    messageRows.push(...batchMessages);
+    findingRows.push(...batchFindings);
+    requirementRows.push(...batchRequirements);
+    secretRows.push(...batchSecrets);
+  }
+  const sessionsWithFindings = new Set(findingRows.map((row) => row.session_id));
+  const sessionsWithRequirements = new Set(requirementRows.map((row) => row.session_id));
+  const reviewedSessions = new Set(requirementRows.filter((row) => row.status === "reviewed").map((row) => row.session_id));
+  const referencedSessions = /* @__PURE__ */ new Set([...sessionsWithFindings, ...sessionsWithRequirements]);
+  const referencedMessages = new Set(secretRows.map((row) => row.message_id));
+  return {
+    sessions: {
+      total: sessionIds.length,
+      referenced_by_findings: sessionsWithFindings.size,
+      referenced_by_review_requirements: sessionsWithRequirements.size,
+      referenced_by_any_chron_workflow: referencedSessions.size,
+      reviewed: reviewedSessions.size
+    },
+    messages: {
+      total: messageRows.length,
+      referenced_by_secret_detection: referencedMessages.size
+    },
+    fields: [
+      computeFieldCardinality("messages.role", messageRows.map((row) => row.role)),
+      computeFieldCardinality("messages.event_type", messageRows.map((row) => row.event_type ?? "message")),
+      computeFieldCardinality("review_findings.status", findingRows.map((row) => row.status)),
+      computeFieldCardinality("review_requirements.status", requirementRows.map((row) => row.status)),
+      computeFieldCardinality("review_requirements.reason", requirementRows.map((row) => row.reason))
+    ],
+    scope: empty.scope
+  };
+}
+async function computeCoverage(since, opts = {}) {
   const db = await initDb();
   const home = (0, import_os15.homedir)();
   const cwd = process.cwd();
@@ -27370,6 +27826,11 @@ async function computeCoverage(since) {
   }).from(sessions);
   const globalRows = await globalQuery;
   const global = globalRows[0];
+  let evidenceUse;
+  if (opts.evidenceUse) {
+    const scopedSessions = since ? await db.select({ id: sessions.id }).from(sessions).where(gte(sessions.updated_at, since)) : await db.select({ id: sessions.id }).from(sessions);
+    evidenceUse = await computeEvidenceUse(db, scopedSessions.map((row) => row.id));
+  }
   const toolMap = /* @__PURE__ */ new Map();
   for (const r of rows) {
     if (r.ai_tool) toolMap.set(r.ai_tool, { count: Number(r.count), last: r.last });
@@ -27417,9 +27878,50 @@ async function computeCoverage(since) {
     boundary: { first: global?.first ?? null, latest: global?.last ?? null, total_sessions: Number(global?.total ?? 0) },
     partial,
     tools,
-    caveat: "Chron can only review sessions captured after logging was enabled. Earlier AI work is outside the evidence boundary unless imported.",
+    evidence_use: evidenceUse,
+    // The overlap sentence is part of the caveat rather than a separate field
+    // so it reaches --json consumers, who are the ones most likely to read the
+    // session count as a count of conversations.
+    caveat: [
+      "Chron can only review sessions captured after logging was enabled. Earlier AI work is outside the evidence boundary unless imported.",
+      ...partial.transcript_backfill > 0 ? [OVERLAP_DISCLOSURE] : []
+    ].join(" "),
     since
   };
+}
+function pct2(value) {
+  return `${Math.round(value * 100)}%`;
+}
+function printEvidenceUse(use) {
+  process.stdout.write(`
+${CYAN14}Evidence use (Chron-local)${RESET16}
+`);
+  process.stdout.write(`  Sessions referenced by findings:            ${use.sessions.referenced_by_findings} of ${use.sessions.total}
+`);
+  process.stdout.write(`  Sessions routed to review:                  ${use.sessions.referenced_by_review_requirements} of ${use.sessions.total}
+`);
+  process.stdout.write(`  Sessions with a completed human review:     ${use.sessions.reviewed} of ${use.sessions.total}
+`);
+  process.stdout.write(`  Messages referenced by secret detections:   ${use.messages.referenced_by_secret_detection} of ${use.messages.total}
+
+`);
+  const candidates = use.fields.filter((field) => field.concentration_candidate);
+  if (candidates.length > 0) {
+    process.stdout.write(`${YELLOW14}Fields to inspect${RESET16}
+`);
+    for (const field of candidates) {
+      process.stdout.write(
+        `  ${field.field}: ${field.dominant_value} in ${pct2(field.dominant_share)} of ${field.observed_values} values (${field.distinct_values} distinct)
+`
+      );
+    }
+    process.stdout.write(`  ${DIM15}High concentration is a review signal, not proof that a field is unused.${RESET16}
+
+`);
+  }
+  process.stdout.write(`${DIM15}${use.scope}${RESET16}
+
+`);
 }
 function printCoverage(r) {
   process.stdout.write(`${BOLD16}Chron Coverage${RESET16}
@@ -27433,15 +27935,15 @@ function printCoverage(r) {
   process.stdout.write(`${CYAN14}Evidence boundary${RESET16}
 `);
   if (r.boundary.first) {
-    process.stdout.write(`  First logged session:  ${fmtDate7(r.boundary.first)}
+    process.stdout.write(`  First logged session:    ${fmtDate7(r.boundary.first)}
 `);
-    process.stdout.write(`  Latest logged session: ${fmtDate7(r.boundary.latest)}
+    process.stdout.write(`  Latest logged session:   ${fmtDate7(r.boundary.latest)}
 `);
-    process.stdout.write(`  Total logged sessions: ${r.boundary.total_sessions}
+    process.stdout.write(`  Total evidence sessions: ${r.boundary.total_sessions}
 `);
     if (r.partial.total > 0) {
       const witnessed = r.boundary.total_sessions - r.partial.total;
-      process.stdout.write(`  ${YELLOW14}Partial evidence:${RESET16}      ${r.partial.total} of ${r.boundary.total_sessions} (${witnessed} witnessed in full)
+      process.stdout.write(`  ${YELLOW14}Partial evidence:${RESET16}        ${r.partial.total} of ${r.boundary.total_sessions} (${witnessed} witnessed in full)
 `);
       if (r.partial.live_attach > 0) {
         process.stdout.write(`    ${DIM15}${r.partial.live_attach} live attach \u2014 Chron began recording after the conversation had already started${RESET16}
@@ -27492,27 +27994,33 @@ function printCoverage(r) {
     }
   }
   process.stdout.write("\n");
+  const overlap = r.caveat.indexOf(OVERLAP_DISCLOSURE);
   process.stdout.write(`${DIM15}Coverage caveat
 `);
-  process.stdout.write(`  ${r.caveat}${RESET16}
+  process.stdout.write(`  ${(overlap >= 0 ? r.caveat.slice(0, overlap) : r.caveat).trimEnd()}
 `);
+  if (overlap >= 0) process.stdout.write(`  ${OVERLAP_DISCLOSURE}
+`);
+  process.stdout.write(RESET16);
 }
 async function runCoverage(args2) {
   const jsonMode = args2.includes("--json");
+  const evidenceUseMode = args2.includes("--evidence-use");
   const sinceArg = args2.find((a) => a.startsWith("--since="))?.split("=")[1];
   const since = sinceArg ? parseSince(sinceArg) : void 0;
-  const result = await computeCoverage(since);
+  const result = await computeCoverage(since, { evidenceUse: evidenceUseMode });
   if (jsonMode) {
     process.stdout.write(JSON.stringify(result, null, 2) + "\n");
     return;
   }
   printCoverage(result);
+  if (result.evidence_use) printEvidenceUse(result.evidence_use);
 }
-var import_fs23, import_os15, RESET16, BOLD16, DIM15, GREEN10, YELLOW14, CYAN14, RED11, KNOWN_TOOLS;
+var import_fs24, import_os15, RESET16, BOLD16, DIM15, GREEN10, YELLOW14, CYAN14, RED11, KNOWN_TOOLS, MIN_CARDINALITY_SAMPLE, CONCENTRATION_THRESHOLD, SQLITE_BINDING_BATCH_SIZE;
 var init_coverage = __esm({
   "src/cli/coverage.ts"() {
     "use strict";
-    import_fs23 = require("fs");
+    import_fs24 = require("fs");
     import_os15 = require("os");
     init_drizzle_orm();
     init_db2();
@@ -27535,6 +28043,9 @@ var init_coverage = __esm({
       { label: "Windsurf", ai_tool: "windsurf", aliases: ["windsurf"], configNames: ["Windsurf"], importOnly: false },
       { label: "ChatGPT", ai_tool: "chatgpt", aliases: ["chatgpt"], configNames: [], importOnly: true }
     ];
+    MIN_CARDINALITY_SAMPLE = 10;
+    CONCENTRATION_THRESHOLD = 0.9;
+    SQLITE_BINDING_BATCH_SIZE = 900;
   }
 });
 
@@ -27544,7 +28055,7 @@ __export(bootstrap_exports, {
   bootstrapProjectLogging: () => bootstrapProjectLogging
 });
 function isRealProject(cwd) {
-  return PROJECT_INDICATORS.some((indicator) => (0, import_fs24.existsSync)((0, import_path16.join)(cwd, indicator)));
+  return PROJECT_INDICATORS.some((indicator) => (0, import_fs25.existsSync)((0, import_path16.join)(cwd, indicator)));
 }
 function bootstrapProjectLogging(cwd = process.cwd()) {
   try {
@@ -27564,11 +28075,11 @@ function bootstrapProjectLogging(cwd = process.cwd()) {
   } catch {
   }
 }
-var import_fs24, import_os16, import_path16, PROJECT_INDICATORS;
+var import_fs25, import_os16, import_path16, PROJECT_INDICATORS;
 var init_bootstrap = __esm({
   "src/bootstrap.ts"() {
     "use strict";
-    import_fs24 = require("fs");
+    import_fs25 = require("fs");
     import_os16 = require("os");
     import_path16 = require("path");
     init_connect();
@@ -27651,7 +28162,7 @@ var init_semconv = __esm({
 
 // src/otel/spans.ts
 function deriveId(input, bytes2) {
-  const hex = (0, import_crypto13.createHash)("sha256").update(input).digest("hex").slice(0, bytes2 * 2);
+  const hex = (0, import_crypto14.createHash)("sha256").update(input).digest("hex").slice(0, bytes2 * 2);
   return /^0+$/.test(hex) ? hex.slice(0, -1) + "1" : hex;
 }
 function traceIdForSession(sessionId) {
@@ -27711,7 +28222,7 @@ function buildMessageSpan(message, session, previous, opts = {}) {
   attrs[CHRON.MESSAGE_CONTENT_LENGTH] = message.content.length;
   put(attrs, CHRON.MESSAGE_CONTENT_HASH, message.content_hash ?? void 0);
   put(attrs, CHRON.MESSAGE_PREV_HASH, message.prev_hash ?? void 0);
-  if (opts.includeContent) {
+  if (opts.includeContent && (message.role === "user" || message.role === "assistant")) {
     const key = message.role === "assistant" ? GEN_AI.OUTPUT_MESSAGES : GEN_AI.INPUT_MESSAGES;
     attrs[key] = message.content;
   }
@@ -27721,7 +28232,8 @@ function buildMessageSpan(message, session, previous, opts = {}) {
     attrs[CHRON.SECRET_TYPES] = [...new Set(secrets)].sort().join(",");
   }
   const end = toUnixNano(message.created_at);
-  const spansGeneration = message.role === "assistant" && previous?.role === "user";
+  const priorIsEarlier = previous !== void 0 && Date.parse(previous.created_at) <= Date.parse(message.created_at);
+  const spansGeneration = message.role === "assistant" && previous?.role === "user" && priorIsEarlier;
   const start = spansGeneration ? toUnixNano(previous.created_at) : end;
   return {
     traceId: traceIdForSession(message.session_id),
@@ -27734,19 +28246,16 @@ function buildMessageSpan(message, session, previous, opts = {}) {
   };
 }
 function buildSessionTrace(session, messages3, opts = {}) {
-  const ordered = [...messages3].sort(
-    (a, b) => Date.parse(a.created_at) - Date.parse(b.created_at)
-  );
   return [
-    buildSessionSpan(session, ordered.length, opts),
-    ...ordered.map((m, i) => buildMessageSpan(m, session, ordered[i - 1], opts))
+    buildSessionSpan(session, messages3.length, opts),
+    ...messages3.map((m, i) => buildMessageSpan(m, session, messages3[i - 1], opts))
   ];
 }
-var import_crypto13;
+var import_crypto14;
 var init_spans = __esm({
   "src/otel/spans.ts"() {
     "use strict";
-    import_crypto13 = require("crypto");
+    import_crypto14 = require("crypto");
     init_semconv();
   }
 });
@@ -28004,7 +28513,7 @@ async function collectSpans(sessionPrefix, since, includeContent) {
   else if (since) selected = allSessions.filter((s) => s.updated_at >= since);
   const spans = [];
   for (const s of selected) {
-    const rows = await db.select().from(messages).where(eq(messages.session_id, s.id)).orderBy(asc(messages.created_at), asc(sql`rowid`));
+    const rows = await db.select().from(messages).where(eq(messages.session_id, s.id)).orderBy(...messageOrderAsc());
     spans.push(...buildSessionTrace(s, rows, { includeContent }));
   }
   return { spans, sessionCount: selected.length };
@@ -28134,6 +28643,7 @@ var init_otel = __esm({
     init_drizzle_orm();
     init_db2();
     init_schema();
+    init_message_order();
     init_spans();
     init_otlp();
     init_exporter();
@@ -28146,29 +28656,6 @@ var init_otel = __esm({
     GREEN11 = "\x1B[32m";
     RED12 = "\x1B[31m";
     YELLOW15 = "\x1B[33m";
-  }
-});
-
-// src/utils/time.ts
-function localISOString() {
-  const d = /* @__PURE__ */ new Date();
-  const offsetMin = -d.getTimezoneOffset();
-  const sign = offsetMin >= 0 ? "+" : "-";
-  const absMin = Math.abs(offsetMin);
-  const hh = String(Math.floor(absMin / 60)).padStart(2, "0");
-  const mm = String(absMin % 60).padStart(2, "0");
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  const seconds = String(d.getSeconds()).padStart(2, "0");
-  const ms = String(d.getMilliseconds()).padStart(3, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}${sign}${hh}:${mm}`;
-}
-var init_time = __esm({
-  "src/utils/time.ts"() {
-    "use strict";
   }
 });
 
@@ -28844,6 +29331,7 @@ Options (prune):
 
 Options (coverage):
   --since=<range>   Limit to sessions since: 7d, 30d, or YYYY-MM-DD (default: all time)
+  --evidence-use    Show Chron-local evidence references and field concentration checks
   --json            Machine-readable JSON output
 
 Options (doctor):
@@ -28854,6 +29342,8 @@ Options (doctor):
 Options (import):
   chatgpt <file>     Import from ChatGPT export (.zip or conversations.json)
   claude  <file>     Import from claude.ai data export (.zip or conversations.json)
+  claude-code --dry-run  Preview local Claude Code transcripts (writes nothing)
+  claude-code --confirm  Import local Claude Code transcripts as partial evidence
 
 Options (review):
   --framework=<name>  Framework to review against: soc2, iso27001, euaiact, nist-ai-rmf
