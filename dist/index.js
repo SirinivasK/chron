@@ -22669,13 +22669,15 @@ var schema_exports = {};
 __export(schema_exports, {
   evidence_documents: () => evidence_documents,
   evidence_links: () => evidence_links,
+  export_receipt_events: () => export_receipt_events,
+  export_receipts: () => export_receipts,
   messages: () => messages,
   review_findings: () => review_findings,
   review_requirements: () => review_requirements,
   secrets_detected: () => secrets_detected,
   sessions: () => sessions
 });
-var sessions, messages, secrets_detected, review_findings, evidence_documents, review_requirements, evidence_links;
+var sessions, messages, secrets_detected, review_findings, evidence_documents, review_requirements, evidence_links, export_receipts, export_receipt_events;
 var init_schema = __esm({
   "src/db/schema.ts"() {
     "use strict";
@@ -22755,6 +22757,44 @@ var init_schema = __esm({
       note: text("note"),
       created_at: text("created_at").notNull()
     });
+    export_receipts = sqliteTable("export_receipts", {
+      id: text("id").primaryKey(),
+      created_at: text("created_at").notNull(),
+      /** Recognisable destination with userinfo and query stripped. Never the raw URL. */
+      destination_label: text("destination_label").notNull(),
+      /** SHA-256 of the sanitised label — never of anything credential-bearing. */
+      destination_digest: text("destination_digest").notNull(),
+      /** The selector as the operator typed it, e.g. --since=7d. */
+      scope_selector: text("scope_selector"),
+      /** JSON array of the session ids the selector resolved to at export time. */
+      scope_session_ids: text("scope_session_ids").notNull(),
+      session_count: integer2("session_count").notNull(),
+      span_count: integer2("span_count").notNull(),
+      /** Whether human-authored text was included, because that changes what left. */
+      included_content: integer2("included_content").notNull(),
+      /** Wire protocol, so a receipt says how the evidence travelled, not just where. */
+      transport: text("transport").notNull(),
+      chron_version: text("chron_version").notNull()
+    });
+    export_receipt_events = sqliteTable("export_receipt_events", {
+      id: text("id").primaryKey(),
+      receipt_id: text("receipt_id").notNull().references(() => export_receipts.id),
+      sequence: integer2("sequence").notNull(),
+      event_type: text("event_type", { enum: ["prepared", "batch_started", "batch_finished", "finalized"] }).notNull(),
+      /**
+       * What this event *is*, independent of where it landed in the sequence:
+       * `prepared`, `finalized`, `batch_started:3`. A caller that retries after an
+       * ambiguous failure collides here instead of appending the same logical
+       * event twice at the next free sequence, which the sequence constraint alone
+       * does not prevent.
+       */
+      logical_key: text("logical_key").notNull(),
+      created_at: text("created_at").notNull(),
+      /** Deterministic JSON, so the hash is reproducible from the stored row. */
+      canonical_payload: text("canonical_payload").notNull(),
+      prev_hash: text("prev_hash"),
+      event_hash: text("event_hash").notNull()
+    });
   }
 });
 
@@ -22774,6 +22814,23 @@ async function initDb(dbPath) {
   await client.execute("PRAGMA wal_checkpoint(PASSIVE)");
   await client.execute("PRAGMA busy_timeout = 5000");
   await client.execute("PRAGMA foreign_keys = ON");
+  const columnsOf = async (table) => {
+    const info = await client.execute(`PRAGMA table_info(${table})`);
+    return info.rows.map((r) => String(r.name));
+  };
+  const headerCols = await columnsOf("export_receipts");
+  const eventCols = await columnsOf("export_receipt_events");
+  const headerExists = headerCols.length > 0;
+  const eventsExists = eventCols.length > 0;
+  const SUPERSEDED_HEADER_COLUMNS = ["state", "completed_at", "spans_sent", "spans_rejected", "spans_failed", "spans_unknown"];
+  const headerOk = headerExists && headerCols.includes("transport") && !SUPERSEDED_HEADER_COLUMNS.some((c) => headerCols.includes(c));
+  const eventsOk = eventsExists && eventCols.includes("logical_key");
+  const incompatible = headerExists && !headerOk || eventsExists && !eventsOk || headerExists !== eventsExists;
+  if (incompatible) {
+    await client.execute("DROP TABLE IF EXISTS export_receipt_events");
+    await client.execute("DROP TABLE IF EXISTS export_receipt_batches");
+    await client.execute("DROP TABLE IF EXISTS export_receipts");
+  }
   for (const sql4 of CREATE_SQL) {
     await client.execute(sql4);
   }
@@ -23012,12 +23069,46 @@ var init_db2 = __esm({
     created_at TEXT NOT NULL,
     FOREIGN KEY (evidence_id) REFERENCES evidence_documents(id) ON DELETE CASCADE
   )`,
+      // Export receipts are additive tables, so no shadow rebuild is involved.
+      // The header is immutable; everything mutable lives in the event chain.
+      `CREATE TABLE IF NOT EXISTS export_receipts (
+    id TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    destination_label TEXT NOT NULL,
+    destination_digest TEXT NOT NULL,
+    scope_selector TEXT,
+    scope_session_ids TEXT NOT NULL,
+    session_count INTEGER NOT NULL,
+    span_count INTEGER NOT NULL,
+    included_content INTEGER NOT NULL,
+    transport TEXT NOT NULL,
+    chron_version TEXT NOT NULL
+  )`,
+      `CREATE TABLE IF NOT EXISTS export_receipt_events (
+    id TEXT PRIMARY KEY,
+    receipt_id TEXT NOT NULL,
+    sequence INTEGER NOT NULL,
+    event_type TEXT NOT NULL CHECK (event_type IN ('prepared', 'batch_started', 'batch_finished', 'finalized')),
+    logical_key TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    canonical_payload TEXT NOT NULL,
+    prev_hash TEXT,
+    event_hash TEXT NOT NULL,
+    FOREIGN KEY (receipt_id) REFERENCES export_receipts(id) ON DELETE CASCADE
+  )`,
+      // The constraint is the concurrency control: two writers racing to append the
+      // same sequence means one of them fails rather than forking the chain.
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_export_receipt_events_seq ON export_receipt_events(receipt_id, sequence)`,
+      // Sequence uniqueness stops a forked chain; logical uniqueness stops the same
+      // event being appended twice at different positions after an ambiguous retry.
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_export_receipt_events_logical ON export_receipt_events(receipt_id, logical_key)`,
       `CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_title_tool ON sessions(title, COALESCE(ai_tool, ''))`,
       `CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_session_id ON secrets_detected(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_message_id ON secrets_detected(message_id)`,
       `CREATE INDEX IF NOT EXISTS idx_review_findings_session_id ON review_findings(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_review_findings_status ON review_findings(status)`,
+      `CREATE INDEX IF NOT EXISTS idx_export_receipts_created_at ON export_receipts(created_at)`,
       `CREATE INDEX IF NOT EXISTS idx_review_requirements_session_id ON review_requirements(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_review_requirements_status ON review_requirements(status)`,
       `CREATE INDEX IF NOT EXISTS idx_review_requirements_required_by ON review_requirements(required_by)`,
@@ -38664,7 +38755,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.59",
+      version: "0.1.60",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -38739,6 +38830,27 @@ var require_package = __commonJS({
   }
 });
 
+// src/utils/config-path.ts
+function configPath() {
+  const override = process.env.CHRON_CONFIG_PATH;
+  return override && override.trim() ? override : (0, import_path2.join)((0, import_os2.homedir)(), ".chron", "config.json");
+}
+var import_os2, import_path2;
+var init_config_path = __esm({
+  "src/utils/config-path.ts"() {
+    "use strict";
+    import_os2 = require("os");
+    import_path2 = require("path");
+  }
+});
+
+// src/utils/error-codes.ts
+var init_error_codes = __esm({
+  "src/utils/error-codes.ts"() {
+    "use strict";
+  }
+});
+
 // src/utils/relay.ts
 function getSplunkConfig() {
   const envUrl = process.env.CHRON_SPLUNK_URL;
@@ -38750,7 +38862,7 @@ function getSplunkConfig() {
   if (now < _splunkCacheExpiry) return _splunkCache;
   _splunkCacheExpiry = now + 1e4;
   try {
-    const cfg = JSON.parse((0, import_fs2.readFileSync)((0, import_path2.join)((0, import_os2.homedir)(), ".chron", "config.json"), "utf8"));
+    const cfg = JSON.parse((0, import_fs2.readFileSync)(configPath(), "utf8"));
     const s = cfg?.splunk;
     _splunkCache = s?.url && s?.token ? { url: s.url, token: s.token, insecure: s.insecure ?? false } : null;
   } catch {
@@ -38773,7 +38885,7 @@ function getSentinelConfig() {
   if (now < _sentinelCacheExpiry) return _sentinelCache;
   _sentinelCacheExpiry = now + 1e4;
   try {
-    const cfg = JSON.parse((0, import_fs2.readFileSync)((0, import_path2.join)((0, import_os2.homedir)(), ".chron", "config.json"), "utf8"));
+    const cfg = JSON.parse((0, import_fs2.readFileSync)(configPath(), "utf8"));
     const s = cfg?.sentinel;
     _sentinelCache = s?.dce && s?.dcrId && s?.stream && s?.tenantId && s?.clientId && s?.clientSecret ? { dce: s.dce, dcrId: s.dcrId, stream: s.stream, tenantId: s.tenantId, clientId: s.clientId, clientSecret: s.clientSecret } : null;
   } catch {
@@ -38781,13 +38893,26 @@ function getSentinelConfig() {
   }
   return _sentinelCache;
 }
+function requestTimeoutMs() {
+  const configured = Number(process.env.CHRON_SIEM_TIMEOUT_MS ?? 1e4);
+  return Number.isFinite(configured) && configured > 0 ? configured : 1e4;
+}
+async function fetchWithTimeout(url, init) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), requestTimeoutMs());
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 async function getAzureToken(tenantId, clientId, clientSecret) {
   const now = Date.now();
   if (_azureTokenCache && _azureTokenCache.expiry > now + 6e4) {
     return _azureTokenCache.token;
   }
   try {
-    const res = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
+    const res = await fetchWithTimeout(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
@@ -38807,7 +38932,7 @@ async function getAzureToken(tenantId, clientId, clientSecret) {
 }
 function getMachineId() {
   if (!_machineId) {
-    _machineId = "sha256:" + (0, import_crypto3.createHash)("sha256").update((0, import_os2.hostname)()).digest("hex").slice(0, 16);
+    _machineId = "sha256:" + (0, import_crypto3.createHash)("sha256").update((0, import_os3.hostname)()).digest("hex").slice(0, 16);
   }
   return _machineId;
 }
@@ -38827,7 +38952,7 @@ function toSplunkEvent(payload) {
   }
   return {
     time: new Date(payload.timestamp).getTime() / 1e3,
-    host: (0, import_os2.hostname)(),
+    host: (0, import_os3.hostname)(),
     source: "chron-mcp",
     sourcetype: "chron:event",
     event
@@ -38856,7 +38981,7 @@ function toSentinelRecord(payload) {
     AiTool: payload.session.ai_tool ?? "",
     OS: process.platform,
     ChronVersion: import_package.version,
-    Computer: (0, import_os2.hostname)(),
+    Computer: (0, import_os3.hostname)(),
     Role: "",
     DetectionType: "",
     MaskedValue: ""
@@ -38910,7 +39035,7 @@ function emitToLogScale(payload) {
   const token = process.env.CHRON_LOGSCALE_TOKEN;
   if (!url || !token) return;
   const body = JSON.stringify([{
-    tags: { host: (0, import_os2.hostname)(), source: "chron-mcp" },
+    tags: { host: (0, import_os3.hostname)(), source: "chron-mcp" },
     events: [{ timestamp: payload.timestamp, attributes: toLogScaleAttributes(payload) }]
   }]);
   setImmediate(
@@ -38950,15 +39075,16 @@ function emitEvent(payload) {
   emitToSentinel(payload);
   emitToSplunk(payload);
 }
-var import_fs2, import_path2, import_crypto3, import_os2, import_package, _splunkCache, _splunkCacheExpiry, _sentinelCache, _sentinelCacheExpiry, _azureTokenCache, _machineId;
+var import_fs2, import_crypto3, import_os3, import_package, _splunkCache, _splunkCacheExpiry, _sentinelCache, _sentinelCacheExpiry, _azureTokenCache, _machineId;
 var init_relay = __esm({
   "src/utils/relay.ts"() {
     "use strict";
     import_fs2 = require("fs");
-    import_path2 = require("path");
     import_crypto3 = require("crypto");
-    import_os2 = require("os");
+    import_os3 = require("os");
     import_package = __toESM(require_package());
+    init_config_path();
+    init_error_codes();
     if (process.env.CHRON_SPLUNK_INSECURE === "1") {
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
     }
@@ -38974,7 +39100,7 @@ var init_relay = __esm({
 // src/utils/signing.ts
 function keysDir() {
   const override = process.env.CHRON_KEYS_DIR;
-  return override && override.trim() ? override : (0, import_path3.join)((0, import_os3.homedir)(), ".chron", "keys");
+  return override && override.trim() ? override : (0, import_path3.join)((0, import_os4.homedir)(), ".chron", "keys");
 }
 function privKeyPath(sessionId) {
   return (0, import_path3.join)(keysDir(), `${sessionId}.key`);
@@ -39006,14 +39132,14 @@ function verifySignature(publicKeyPem, signatureB64, sessionId, finalContentHash
     return false;
   }
 }
-var import_crypto4, import_fs3, import_path3, import_os3;
+var import_crypto4, import_fs3, import_path3, import_os4;
 var init_signing = __esm({
   "src/utils/signing.ts"() {
     "use strict";
     import_crypto4 = require("crypto");
     import_fs3 = require("fs");
     import_path3 = require("path");
-    import_os3 = require("os");
+    import_os4 = require("os");
   }
 });
 
@@ -39117,6 +39243,44 @@ var init_terminal = __esm({
   }
 });
 
+// src/utils/roles.ts
+function isSystemRole(role) {
+  return role === "system";
+}
+function isPlaceholderAiTool(value) {
+  if (value === null || value === void 0) return false;
+  const normalised = value.trim().toLowerCase();
+  if (normalised === "") return true;
+  if (/^<.*>$/.test(normalised)) return true;
+  return PLACEHOLDER_TOOL_VALUES.has(normalised);
+}
+var PLACEHOLDER_TOOL_VALUES;
+var init_roles = __esm({
+  "src/utils/roles.ts"() {
+    "use strict";
+    PLACEHOLDER_TOOL_VALUES = /* @__PURE__ */ new Set([
+      "<client-name>",
+      "client-name",
+      "<client>",
+      "client",
+      "<your-client>",
+      "<ai-tool>",
+      "ai-tool",
+      "<tool>",
+      "tool",
+      "unknown",
+      "none",
+      "null",
+      "undefined",
+      "n/a",
+      "na",
+      "todo",
+      "tbd",
+      "example"
+    ]);
+  }
+});
+
 // src/utils/evidence.ts
 function parseSessionMetadata(raw) {
   if (!raw) return {};
@@ -39202,8 +39366,20 @@ function attachNtpMetadata(db, sessionId) {
     }).catch(() => void 0);
   });
 }
+function rejectPlaceholderTool(aiTool) {
+  if (!isPlaceholderAiTool(aiTool)) return null;
+  return {
+    content: [{
+      type: "text",
+      text: `ai_tool="${aiTool}" is a placeholder, not a client identity. Pass the identifier of the client you are running in \u2014 for example claude, codex, cursor, gemini or windsurf \u2014 or omit ai_tool entirely.`
+    }],
+    isError: true
+  };
+}
 function startSession(db) {
   return async (args) => {
+    const rejection = rejectPlaceholderTool(args.ai_tool);
+    if (rejection) return rejection;
     const id = v4_default();
     const now = localISOString();
     try {
@@ -39273,6 +39449,8 @@ function resolveEvidenceMetadata(attach, metadata) {
 }
 function initSession(db) {
   return async (args) => {
+    const rejection = rejectPlaceholderTool(args.ai_tool);
+    if (rejection) return rejection;
     const id = v4_default();
     const now = localISOString();
     let session_id;
@@ -39445,6 +39623,7 @@ var init_sessions = __esm({
     init_signing();
     init_ntp();
     init_terminal();
+    init_roles();
     init_evidence();
   }
 });
@@ -40226,11 +40405,14 @@ async function buildSummary(sessionPrefix, existingDb) {
     const m = msgs[i];
     const prev = msgs[i - 1];
     const latency_ms = prev ? new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() : null;
-    if (m.role === "user") userTurns++;
-    else aiTurns++;
+    const isTurn = (m.event_type ?? "message") === "message" && !isSystemRole(m.role);
+    if (isTurn) {
+      if (m.role === "user") userTurns++;
+      else aiTurns++;
+    }
     const preview = m.content.replace(/\n/g, " ").slice(0, 120) + (m.content.length > 120 ? "\u2026" : "");
     timeline.push({ turn: i + 1, role: m.role, timestamp: m.created_at, latency_ms, preview });
-    if (m.role === "assistant") {
+    if (m.role === "assistant" && (m.event_type ?? "message") === "message") {
       const mutations = detectMutations(m.content);
       for (const label of mutations) {
         mutationsList.push({ turn: i + 1, role: "assistant", snippet: label, label: label.split(":")[0] });
@@ -40266,6 +40448,7 @@ var init_summary = __esm({
     init_db2();
     init_schema();
     init_message_order();
+    init_roles();
     MUTATION_PATTERNS = [
       { label: "file write", re: /\b(?:wrote?|created?|saved?|updated?) (?:file |the file )?["']?([^\s"']{1,80})/i },
       { label: "git", re: /\bgit (?:commit|push|merge|rebase|reset|checkout)\b/i },
@@ -40406,6 +40589,45 @@ var init_search = __esm({
   }
 });
 
+// src/instructions.ts
+function buildChronInstructions(aiTool) {
+  return `${CHRON_SKILL_SENTINEL}
+## Chron Audit Logging \u2014 Required Every Turn
+
+**Every response you output must be logged.** Before writing any reply:
+
+1. If this is the first turn, call \`init_session\` once:
+   \`init_session(title="<3-6 word task summary>", ai_tool="${aiTool}")\`
+   Save the returned \`session_id\` \u2014 you need it for every subsequent call.
+
+2. Log the user's message:
+   \`log_message(session_id, role="user", content=<exact user text>)\`
+
+3. Log your response **before** outputting it:
+   \`log_message(session_id, role="assistant", content=<exact response text>)\`
+
+4. Then output your response.
+
+Repeat steps 2-4 for every exchange. Do not skip turns.
+
+For compaction recovery (prior \`session_id\` lost), call \`init_session\` with \`resume_latest=true\` and title \`COMPACTED \u2014 lost session id\`.
+
+If Chron MCP is unavailable, state it once and continue normally.
+`;
+}
+var CHRON_SKILL_SENTINEL, CHRON_BLOCK_START, CHRON_BLOCK_END, MCP_LOGGING_INSTRUCTIONS;
+var init_instructions = __esm({
+  "src/instructions.ts"() {
+    "use strict";
+    CHRON_SKILL_SENTINEL = "<!-- chron-skill -->";
+    CHRON_BLOCK_START = "<!-- chron-skill-start -->";
+    CHRON_BLOCK_END = "<!-- chron-skill-end -->";
+    MCP_LOGGING_INSTRUCTIONS = buildChronInstructions(
+      "the identifier of this client, for example claude, codex, cursor, gemini or windsurf \u2014 never a placeholder"
+    );
+  }
+});
+
 // src/server.ts
 function registerTool(server, name, description, shape, handler) {
   server.tool(name, description, shape, handler);
@@ -40414,6 +40636,8 @@ function createServer(db) {
   const server = new McpServer({
     name: "chron-mcp",
     version: import_package2.version
+  }, {
+    instructions: MCP_LOGGING_INSTRUCTIONS
   });
   registerTool(
     server,
@@ -40595,11 +40819,49 @@ var init_server3 = __esm({
     init_summary2();
     init_search();
     import_package2 = __toESM(require_package());
+    init_instructions();
     roleEnum = external_exports.enum(["user", "assistant"]);
   }
 });
 
 // src/cli/mcp-config.ts
+function executableNames(platform) {
+  return platform === "win32" ? ["chron-mcp.cmd", "chron-mcp.exe", "chron-mcp"] : ["chron-mcp"];
+}
+function resolveChronMcpServer(pathValue = process.env.PATH ?? "", platform = process.platform) {
+  const override = process.env.CHRON_MCP_COMMAND?.trim();
+  if (override) return { command: override, args: [] };
+  for (const dir of pathValue.split(import_path4.delimiter).filter(Boolean)) {
+    for (const name of executableNames(platform)) {
+      const candidate = (0, import_path4.join)(dir, name);
+      if ((0, import_fs4.existsSync)(candidate)) return { command: candidate, args: [] };
+    }
+  }
+  let packageDir = __dirname;
+  while ((0, import_path4.dirname)(packageDir) !== packageDir) {
+    const packageJson = (0, import_path4.join)(packageDir, "package.json");
+    if ((0, import_fs4.existsSync)(packageJson)) {
+      try {
+        const pkg = JSON.parse((0, import_fs4.readFileSync)(packageJson, "utf8"));
+        if (pkg.name === "chron-mcp") {
+          return { command: (0, import_path4.join)(packageDir, "dist", "index.js"), args: [] };
+        }
+      } catch {
+      }
+    }
+    packageDir = (0, import_path4.dirname)(packageDir);
+  }
+  return { command: "chron-mcp", args: [] };
+}
+function tomlString(value) {
+  return JSON.stringify(value);
+}
+function codexMcpBlock(server) {
+  return `[mcp_servers.chron]
+command = ${tomlString(server.command)}
+args = [${server.args.map(tomlString).join(", ")}]
+`;
+}
 function userMcpClientConfigs(home, cwd, platform, appData) {
   const claudeDesktop = platform === "win32" ? (0, import_path4.join)(appData ?? (0, import_path4.join)(home, "AppData", "Roaming"), "Claude", "claude_desktop_config.json") : (0, import_path4.join)(home, "Library", "Application Support", "Claude", "claude_desktop_config.json");
   return [
@@ -40609,32 +40871,60 @@ function userMcpClientConfigs(home, cwd, platform, appData) {
     { name: "Cursor (project)", path: (0, import_path4.join)(cwd, ".cursor", "mcp.json"), type: "json", connectCommand: "chron connect cursor" },
     { name: "Gemini CLI", path: (0, import_path4.join)(home, ".gemini", "settings.json"), type: "json", connectCommand: "chron connect gemini" },
     { name: "Windsurf", path: (0, import_path4.join)(home, ".codeium", "windsurf", "mcp_config.json"), type: "json", connectCommand: "chron doctor --fix" },
-    { name: "Codex (global)", path: (0, import_path4.join)(home, ".codex", "config.toml"), type: "codex-toml", connectCommand: "chron connect codex" },
-    { name: "Codex (project)", path: (0, import_path4.join)(cwd, ".codex", "config.toml"), type: "codex-toml", connectCommand: "chron connect codex" }
+    { name: "Codex (global)", path: (0, import_path4.join)(home, ".codex", "config.toml"), type: "codex-toml", connectCommand: "chron connect codex" }
   ];
 }
-function upsertChronJsonMcp(content) {
+function findChronJsonServer(servers) {
+  const keys = Object.keys(servers);
+  const key = keys.find((k) => k === "chron" || k === "chron-mcp") ?? keys.find((k) => {
+    const server2 = servers[k] ?? {};
+    return String(server2.command ?? "").includes("chron") || Array.isArray(server2.args) && server2.args.some((arg) => String(arg).includes("chron-mcp"));
+  });
+  if (!key) return null;
+  const server = servers[key] ?? {};
+  return {
+    key,
+    command: String(server.command ?? ""),
+    args: Array.isArray(server.args) ? server.args.map(String) : []
+  };
+}
+function upsertChronJsonMcp(content, server = CHRON_MCP_SERVER) {
   const doc = content.trim() ? JSON.parse(content) : {};
   const servers = doc.mcpServers ?? {};
-  const existing = servers.chron;
-  const alreadyConfigured = existing && existing.command === CHRON_MCP_SERVER.command && JSON.stringify(existing.args ?? []) === JSON.stringify(CHRON_MCP_SERVER.args);
+  const found = findChronJsonServer(servers);
+  const targetKey = found?.key ?? "chron";
+  const existing = servers[targetKey];
+  const alreadyConfigured = existing && existing.command === server.command && JSON.stringify(existing.args ?? []) === JSON.stringify(server.args);
   if (alreadyConfigured) {
     return { content: JSON.stringify(doc, null, 2) + "\n", changed: false };
   }
-  servers.chron = { ...CHRON_MCP_SERVER };
+  servers[targetKey] = { ...existing ?? {}, ...server };
   doc.mcpServers = servers;
   return { content: JSON.stringify(doc, null, 2) + "\n", changed: true };
 }
 function hasChronCodexToml(content) {
   return /\[mcp_servers\.chron\]/.test(content);
 }
-function upsertChronCodexToml(content) {
+function upsertChronCodexToml(content, server = CHRON_MCP_SERVER) {
   if (hasChronCodexToml(content)) {
-    return { content, changed: false };
+    const sectionPattern = /(\[mcp_servers\.chron\][\s\S]*?)(?=\n\[|$)/;
+    const match = content.match(sectionPattern);
+    if (!match) return { content, changed: false };
+    let section = match[1];
+    const commandLine = `command = ${tomlString(server.command)}`;
+    const argsLine = `args = [${server.args.map(tomlString).join(", ")}]`;
+    section = /^command\s*=.*$/m.test(section) ? section.replace(/^command\s*=.*$/m, commandLine) : section.trimEnd() + `
+${commandLine}
+`;
+    section = /^args\s*=.*$/m.test(section) ? section.replace(/^args\s*=.*$/m, argsLine) : section.trimEnd() + `
+${argsLine}
+`;
+    const updated2 = content.replace(sectionPattern, section);
+    return { content: updated2, changed: updated2 !== content };
   }
   const prefix = content.trimEnd();
   const updated = (prefix ? `${prefix}
-` : "") + CODEX_MCP_BLOCK.trimStart();
+` : "") + codexMcpBlock(server);
   return { content: updated, changed: true };
 }
 function ensureChronJsonMcpConfig(path) {
@@ -40666,21 +40956,13 @@ function ensureChronCodexTomlConfig(path) {
 function ensureChronMcpConfig(config2) {
   return config2.type === "codex-toml" ? ensureChronCodexTomlConfig(config2.path) : ensureChronJsonMcpConfig(config2.path);
 }
-var import_fs4, import_path4, CHRON_MCP_SERVER, CODEX_MCP_BLOCK;
+var import_fs4, import_path4, CHRON_MCP_SERVER;
 var init_mcp_config = __esm({
   "src/cli/mcp-config.ts"() {
     "use strict";
     import_fs4 = require("fs");
     import_path4 = require("path");
-    CHRON_MCP_SERVER = {
-      command: "npx",
-      args: ["-y", "chron-mcp"]
-    };
-    CODEX_MCP_BLOCK = `
-[mcp_servers.chron]
-command = "npx"
-args = ["-y", "chron-mcp"]
-`;
+    CHRON_MCP_SERVER = resolveChronMcpServer();
   }
 });
 
@@ -40703,11 +40985,12 @@ function writeJson(filePath, data) {
 }
 function configureClaudeCode() {
   try {
-    (0, import_child_process.execSync)("claude mcp add chron -- npx -y chron-mcp", { stdio: "pipe" });
+    const server = resolveChronMcpServer();
+    (0, import_child_process.execFileSync)("claude", ["mcp", "add", "chron", "--", server.command, ...server.args], { stdio: "pipe" });
   } catch {
     const result = ensureChronMcpConfig({
       name: "Claude Code",
-      path: (0, import_path5.join)((0, import_os4.homedir)(), ".claude.json"),
+      path: (0, import_path5.join)((0, import_os5.homedir)(), ".claude.json"),
       type: "json",
       connectCommand: "chron doctor --fix"
     });
@@ -40718,12 +41001,12 @@ function configureClaudeCode() {
 }
 function installClaudeCodeHook() {
   const skillSrc = (0, import_path5.join)(__dirname, "..", "skills", "chron.skill.md");
-  const skillDst = (0, import_path5.join)((0, import_os4.homedir)(), ".chron", "chron.skill.md");
+  const skillDst = (0, import_path5.join)((0, import_os5.homedir)(), ".chron", "chron.skill.md");
   if ((0, import_fs5.existsSync)(skillSrc)) {
     (0, import_fs5.mkdirSync)((0, import_path5.dirname)(skillDst), { recursive: true });
     (0, import_fs5.copyFileSync)(skillSrc, skillDst);
   }
-  const settingsPath = (0, import_path5.join)((0, import_os4.homedir)(), ".claude", "settings.json");
+  const settingsPath = (0, import_path5.join)((0, import_os5.homedir)(), ".claude", "settings.json");
   const settings = readJson(settingsPath);
   if (!settings.hooks) settings.hooks = {};
   if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
@@ -40739,7 +41022,7 @@ function installClaudeCodeHook() {
 }
 async function runSetup() {
   const results = [];
-  const tools = userMcpClientConfigs((0, import_os4.homedir)(), process.cwd(), process.platform, process.env.APPDATA).filter((c) => c.name !== "Codex (project)");
+  const tools = userMcpClientConfigs((0, import_os5.homedir)(), process.cwd(), process.platform, process.env.APPDATA).filter((c) => c.name !== "Codex (project)");
   for (const tool of tools) {
     if (tool.name === "Claude Code") {
       results.push(configureClaudeCode());
@@ -40755,12 +41038,12 @@ async function runSetup() {
   }
   return results;
 }
-var import_fs5, import_os4, import_path5, import_child_process;
+var import_fs5, import_os5, import_path5, import_child_process;
 var init_setup = __esm({
   "src/setup.ts"() {
     "use strict";
     import_fs5 = require("fs");
-    import_os4 = require("os");
+    import_os5 = require("os");
     import_path5 = require("path");
     import_child_process = require("child_process");
     init_mcp_config();
@@ -40768,31 +41051,6 @@ var init_setup = __esm({
 });
 
 // src/cli/connect.ts
-function buildChronInstructions(aiTool) {
-  return `${CHRON_SKILL_SENTINEL}
-## Chron Audit Logging \u2014 Required Every Turn
-
-**Every response you output must be logged.** Before writing any reply:
-
-1. If this is the first turn, call \`init_session\` once:
-   \`init_session(title="<3-6 word task summary>", ai_tool="${aiTool}")\`
-   Save the returned \`session_id\` \u2014 you need it for every subsequent call.
-
-2. Log the user's message:
-   \`log_message(session_id, role="user", content=<exact user text>)\`
-
-3. Log your response **before** outputting it:
-   \`log_message(session_id, role="assistant", content=<exact response text>)\`
-
-4. Then output your response.
-
-Repeat steps 2-4 for every exchange. Do not skip turns.
-
-For compaction recovery (prior \`session_id\` lost), call \`init_session\` with \`resume_latest=true\` and title \`COMPACTED \u2014 lost session id\`.
-
-If Chron MCP is unavailable, state it once and continue normally.
-`;
-}
 function buildCursorRule(instructions) {
   return `---
 description: Chron AI audit logging for Cursor agent sessions
@@ -40843,16 +41101,15 @@ function ensureCursorProjectInstructions(cwd = process.cwd()) {
     return { status: "error", error: String(err.message) };
   }
 }
-var import_path6, import_fs6, CHRON_SKILL_SENTINEL, CHRON_BLOCK_START, CHRON_BLOCK_END;
+var import_path6, import_fs6;
 var init_connect = __esm({
   "src/cli/connect.ts"() {
     "use strict";
     import_path6 = require("path");
     import_fs6 = require("fs");
+    init_config_path();
     init_mcp_config();
-    CHRON_SKILL_SENTINEL = "<!-- chron-skill -->";
-    CHRON_BLOCK_START = "<!-- chron-skill-start -->";
-    CHRON_BLOCK_END = "<!-- chron-skill-end -->";
+    init_instructions();
   }
 });
 
@@ -40867,7 +41124,7 @@ function isRealProject(cwd) {
 function bootstrapProjectLogging(cwd = process.cwd()) {
   try {
     if (process.env.CHRON_DISABLE_PROJECT_BOOTSTRAP === "1") return;
-    if (cwd === (0, import_os5.homedir)()) return;
+    if (cwd === (0, import_os6.homedir)()) return;
     if (cwd.includes("node_modules")) return;
     if (cwd.includes(".npm")) return;
     if (!isRealProject(cwd)) return;
@@ -40882,12 +41139,12 @@ function bootstrapProjectLogging(cwd = process.cwd()) {
   } catch {
   }
 }
-var import_fs7, import_os5, import_path7, PROJECT_INDICATORS;
+var import_fs7, import_os6, import_path7, PROJECT_INDICATORS;
 var init_bootstrap = __esm({
   "src/bootstrap.ts"() {
     "use strict";
     import_fs7 = require("fs");
-    import_os5 = require("os");
+    import_os6 = require("os");
     import_path7 = require("path");
     init_connect();
     PROJECT_INDICATORS = [
@@ -69063,7 +69320,7 @@ var StdioServerTransport = class {
 };
 
 // src/index.ts
-var import_os6 = require("os");
+var import_os7 = require("os");
 var import_path8 = require("path");
 init_db2();
 init_server3();
@@ -69074,7 +69331,7 @@ if (process.argv[2] === "--version" || process.argv[2] === "-v") {
   process.exit(0);
 }
 async function main() {
-  const dbPath = process.env.CHRON_DB_PATH ?? (0, import_path8.join)((0, import_os6.homedir)(), ".chron", "chron.db");
+  const dbPath = process.env.CHRON_DB_PATH ?? (0, import_path8.join)((0, import_os7.homedir)(), ".chron", "chron.db");
   if (process.stdin.isTTY) {
     process.stdout.write(`chron-mcp ${import_package4.version}
 

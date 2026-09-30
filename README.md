@@ -191,13 +191,34 @@ Reviewed findings do not reappear as noise on the next run. New findings — fro
 
 **Important:** Chron covers the subset of controls evaluable from AI coding session evidence. A full framework assessment requires policy documentation, board records, and auditor judgement that session logs cannot replace. Each HTML report includes a framework-specific disclaimer on the cover page.
 
+### `chron otel receipts`
+
+Every export writes a receipt: where the evidence went, how much of it, and what came back.
+
+```bash
+chron otel receipts              # most recent 20
+chron otel receipts --limit=5
+chron otel receipts --json       # machine-readable
+```
+
+```
+2026-09-29 12:36  c53022ae  partly accepted       20 span(s)  https://collector.example.com/v1/traces
+      spans: 12 accepted, 8 unanswered
+```
+
+A receipt is an append-only, hash-chained record: the destination, scope and content posture are bound into the chain, and each batch records what was about to be sent before it was sent. A process killed mid-export therefore reads as `delivery unknown` rather than claiming nothing was sent.
+
+Receipts are verified on every read. One that does not verify shows the reason and **no delivery state** — a record that does not hold up is not evidence of anything — and the command exits non-zero so automation notices without parsing each row.
+
+**Wording matters here.** "Accepted" means the collector returned success for the payload. Whether it retained the data is something only that platform can show, and Chron does not claim it. Credentials never enter a receipt: userinfo, query parameters and unrecognised path segments are all stripped before the destination is recorded, and collector error bodies are reduced to a category rather than stored.
+
 ### `chron doctor`
 
 `chron doctor` validates the pieces that make Chron useful in real life:
 
 - Node.js version (v18+ required)
 - Local Chron version vs npm latest
-- `npx chron-mcp --version`
+- The exact MCP launcher written into client configs
 - DB directory and key directory write access
 - Claude Desktop, Claude Code, Cursor, Gemini CLI, Windsurf, and Codex MCP config presence
 - Whether Chron is configured in each MCP client
@@ -232,8 +253,8 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o
 {
   "mcpServers": {
     "chron": {
-      "command": "npx",
-      "args": ["-y", "chron-mcp"]
+      "command": "/absolute/path/to/chron-mcp",
+      "args": []
     }
   }
 }
@@ -242,7 +263,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o
 ### Claude Code
 
 ```bash
-claude mcp add chron -- npx -y chron-mcp
+claude mcp add chron -- /absolute/path/to/chron-mcp
 ```
 
 Then add the skill hook to `~/.claude/settings.json`:
@@ -273,14 +294,13 @@ chron connect cursor
 chron doctor --verify-logging cursor
 ```
 
-This writes both global and project workspace files:
+This writes the global MCP config and a project workspace rule:
 
 - `~/.cursor/mcp.json`
 - `.cursor/mcp.json`
-- `~/.cursor/rules/chron.mdc`
 - `.cursor/rules/chron.mdc`
 
-Cursor must be restarted after setup. Use Cursor Agent mode, then run the verify command above to confirm a real Chron session appears in the local database.
+Chron also advertises the logging contract through the MCP server's initialization instructions, so Cursor receives it outside project workspaces. Cursor must be restarted after setup. Use Cursor Agent mode, then run the verify command above to confirm a real Chron session appears in the local database.
 
 Manual MCP config:
 
@@ -288,8 +308,8 @@ Manual MCP config:
 {
   "mcpServers": {
     "chron": {
-      "command": "npx",
-      "args": ["-y", "chron-mcp"]
+      "command": "/absolute/path/to/chron-mcp",
+      "args": []
     }
   }
 }
@@ -309,8 +329,8 @@ Or edit `~/.gemini/settings.json`:
 {
   "mcpServers": {
     "chron": {
-      "command": "npx",
-      "args": ["-y", "chron-mcp"]
+      "command": "/absolute/path/to/chron-mcp",
+      "args": []
     }
   }
 }
@@ -324,8 +344,8 @@ Edit `~/.codeium/windsurf/mcp_config.json`:
 {
   "mcpServers": {
     "chron": {
-      "command": "npx",
-      "args": ["-y", "chron-mcp"]
+      "command": "/absolute/path/to/chron-mcp",
+      "args": []
     }
   }
 }
@@ -426,9 +446,16 @@ chron summary <session-id-prefix>
 chron report --since=30d
 chron report --format=soc2 --output=soc2-report.html
 chron export <session-id-prefix>
-chron export --signed --since=30d --output=bundle.chron.tar.gz
+chron export --signed --session=<id> --output=bundle.chron.tar.gz
 chron prune --older-than=90d --dry-run
 ```
+
+`--signed` covers one session, because a manifest carries one signature and the
+signing key belongs to that session. It fails rather than producing an unsigned
+bundle: a flag that names a guarantee and exits successfully without it would
+hand someone an artefact they had no reason to distrust. `chron verify --bundle`
+likewise exits non-zero on a bundle with no signature — matching files against
+their own manifest establishes internal consistency, not origin.
 
 The SOC 2 report and signed bundles are designed for audit review, legal hold, and incident reconstruction without sending conversation content to Chron infrastructure.
 
@@ -694,6 +721,9 @@ All six must be set for events to flow. Token refresh is automatic (1-hour Azure
 | Env var | Default | Description |
 |---|---|---|
 | `CHRON_DB_PATH` | `~/.chron/chron.db` | Path to SQLite database file |
+| `CHRON_KEYS_DIR` | `~/.chron/keys` | Where per-session Ed25519 signing keys are written |
+| `CHRON_CONFIG_PATH` | `~/.chron/config.json` | SIEM configuration file. Point it elsewhere to keep a test run, CI job or sandbox away from real credentials |
+| `CHRON_SIEM_TIMEOUT_MS` | `10000` | How long a single SIEM request may take before delivery is recorded as unknown |
 | `CHRON_TRANSPORT` | `stdio` | Set to `http` to enable HTTP+SSE mode |
 | `CHRON_API_KEY` | _(none)_ | Bearer token for HTTP mode |
 | `PORT` | `3001` | Port for HTTP mode |

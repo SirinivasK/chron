@@ -13,8 +13,8 @@ var __commonJS = (cb, mod) => function __require() {
   return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
 var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
+  for (var name2 in all)
+    __defProp(target, name2, { get: all[name2], enumerable: true });
 };
 var __copyProps = (to, from, except2, desc2) => {
   if (from && typeof from === "object" || typeof from === "function") {
@@ -38,7 +38,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.59",
+      version: "0.1.60",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -210,10 +210,10 @@ var init_column_builder = __esm({
     ColumnBuilder = class {
       static [entityKind] = "ColumnBuilder";
       config;
-      constructor(name, dataType, columnType) {
+      constructor(name2, dataType, columnType) {
         this.config = {
-          name,
-          keyAsName: name === "",
+          name: name2,
+          keyAsName: name2 === "",
           notNull: false,
           default: void 0,
           hasDefault: false,
@@ -303,9 +303,9 @@ var init_column_builder = __esm({
         return this;
       }
       /** @internal Sets the name of the column to the key within the table definition if a name was not given. */
-      setName(name) {
+      setName(name2) {
         if (this.config.name !== "") return;
-        this.config.name = name;
+        this.config.name = name2;
       }
     };
   }
@@ -335,8 +335,8 @@ var init_foreign_keys = __esm({
       _onDelete = "no action";
       constructor(config, actions) {
         this.reference = () => {
-          const { name, columns, foreignColumns } = config();
-          return { name, columns, foreignTable: foreignColumns[0].table, foreignColumns };
+          const { name: name2, columns, foreignColumns } = config();
+          return { name: name2, columns, foreignTable: foreignColumns[0].table, foreignColumns };
         };
         if (actions) {
           this._onUpdate = actions.onUpdate;
@@ -368,7 +368,7 @@ var init_foreign_keys = __esm({
       onUpdate;
       onDelete;
       getName() {
-        const { name, columns, foreignColumns } = this.reference();
+        const { name: name2, columns, foreignColumns } = this.reference();
         const columnNames = columns.map((column) => column.name);
         const foreignColumnNames = foreignColumns.map((column) => column.name);
         const chunks = [
@@ -377,7 +377,7 @@ var init_foreign_keys = __esm({
           foreignColumns[0].table[TableName],
           ...foreignColumnNames
         ];
-        return name ?? `${chunks.join("_")}_fk`;
+        return name2 ?? `${chunks.join("_")}_fk`;
       }
     };
   }
@@ -402,8 +402,8 @@ var init_unique_constraint = __esm({
     init_entity();
     init_table_utils();
     UniqueConstraintBuilder = class {
-      constructor(columns, name) {
-        this.name = name;
+      constructor(columns, name2) {
+        this.name = name2;
         this.columns = columns;
       }
       static [entityKind] = "PgUniqueConstraintBuilder";
@@ -424,18 +424,18 @@ var init_unique_constraint = __esm({
       static [entityKind] = "PgUniqueOnConstraintBuilder";
       /** @internal */
       name;
-      constructor(name) {
-        this.name = name;
+      constructor(name2) {
+        this.name = name2;
       }
       on(...columns) {
         return new UniqueConstraintBuilder(columns, this.name);
       }
     };
     UniqueConstraint = class {
-      constructor(table, columns, nullsNotDistinct, name) {
+      constructor(table, columns, nullsNotDistinct, name2) {
         this.table = table;
         this.columns = columns;
-        this.name = name ?? uniqueKeyName(this.table, this.columns.map((column) => column.name));
+        this.name = name2 ?? uniqueKeyName(this.table, this.columns.map((column) => column.name));
         this.nullsNotDistinct = nullsNotDistinct;
       }
       static [entityKind] = "PgUniqueConstraint";
@@ -550,9 +550,9 @@ var init_common = __esm({
         this.foreignKeyConfigs.push({ ref, actions });
         return this;
       }
-      unique(name, config) {
+      unique(name2, config) {
         this.config.isUnique = true;
-        this.config.uniqueName = name;
+        this.config.uniqueName = name2;
         this.config.uniqueType = config?.nulls;
         return this;
       }
@@ -668,8 +668,8 @@ var init_common = __esm({
     };
     IndexedColumn = class {
       static [entityKind] = "IndexedColumn";
-      constructor(name, keyAsName, type, indexConfig) {
-        this.name = name;
+      constructor(name2, keyAsName, type, indexConfig) {
+        this.name = name2;
         this.keyAsName = keyAsName;
         this.type = type;
         this.indexConfig = indexConfig;
@@ -681,8 +681,8 @@ var init_common = __esm({
     };
     PgArrayBuilder = class extends PgColumnBuilder {
       static [entityKind] = "PgArrayBuilder";
-      constructor(name, baseBuilder, size) {
-        super(name, "array", "PgArray");
+      constructor(name2, baseBuilder, size) {
+        super(name2, "array", "PgArray");
         this.config.baseBuilder = baseBuilder;
         this.config.size = size;
       }
@@ -736,8 +736,8 @@ var init_enum = __esm({
     init_common();
     PgEnumObjectColumnBuilder = class extends PgColumnBuilder {
       static [entityKind] = "PgEnumObjectColumnBuilder";
-      constructor(name, enumInstance) {
-        super(name, "string", "PgEnumObjectColumn");
+      constructor(name2, enumInstance) {
+        super(name2, "string", "PgEnumObjectColumn");
         this.config.enum = enumInstance;
       }
       /** @internal */
@@ -763,8 +763,8 @@ var init_enum = __esm({
     isPgEnumSym = Symbol.for("drizzle:isPgEnum");
     PgEnumColumnBuilder = class extends PgColumnBuilder {
       static [entityKind] = "PgEnumColumnBuilder";
-      constructor(name, enumInstance) {
-        super(name, "string", "PgEnumColumn");
+      constructor(name2, enumInstance) {
+        super(name2, "string", "PgEnumColumn");
         this.config.enum = enumInstance;
       }
       /** @internal */
@@ -832,7 +832,7 @@ var init_tracing = __esm({
     init_tracing_utils();
     init_version();
     tracer = {
-      startActiveSpan(name, fn) {
+      startActiveSpan(name2, fn) {
         if (!otel) {
           return fn();
         }
@@ -841,7 +841,7 @@ var init_tracing = __esm({
         }
         return iife(
           (otel2, rawTracer2) => rawTracer2.startActiveSpan(
-            name,
+            name2,
             (span) => {
               try {
                 return fn(span);
@@ -874,6 +874,9 @@ var init_view_common = __esm({
 });
 
 // node_modules/drizzle-orm/table.js
+function isTable(table) {
+  return typeof table === "object" && table !== null && IsDrizzleTable in table;
+}
 function getTableName(table) {
   return table[TableName];
 }
@@ -933,8 +936,8 @@ var init_table = __esm({
       [IsDrizzleTable] = true;
       /** @internal */
       [ExtraConfigBuilder] = void 0;
-      constructor(name, schema, baseName) {
-        this[TableName] = this[OriginalName] = name;
+      constructor(name2, schema, baseName) {
+        this[TableName] = this[OriginalName] = name2;
         this[Schema] = schema;
         this[BaseName] = baseName;
       }
@@ -960,8 +963,14 @@ function mergeQueries(queries) {
   }
   return result;
 }
+function name(value) {
+  return new Name(value);
+}
 function isDriverValueEncoder(value) {
   return typeof value === "object" && value !== null && "mapToDriverValue" in value && typeof value.mapToDriverValue === "function";
+}
+function param(value, encoder) {
+  return new Param(value, encoder);
 }
 function sql(strings, ...params) {
   const queryChunks = [];
@@ -972,6 +981,9 @@ function sql(strings, ...params) {
     queryChunks.push(param2, new StringChunk(strings[paramIndex + 1]));
   }
   return new SQL(queryChunks);
+}
+function placeholder(name2) {
+  return new Placeholder(name2);
 }
 function fillPlaceholders(params, values) {
   return params.map((p) => {
@@ -989,6 +1001,12 @@ function fillPlaceholders(params, values) {
     }
     return p;
   });
+}
+function isView(view) {
+  return typeof view === "object" && view !== null && IsDrizzleView in view;
+}
+function getViewName(view) {
+  return view[ViewBaseConfig].name;
 }
 var FakePrimitiveParam, StringChunk, SQL, Name, noopDecoder, noopEncoder, noopMapper, Param, Placeholder, IsDrizzleView, View;
 var init_sql = __esm({
@@ -1262,7 +1280,7 @@ var init_sql = __esm({
         return new SQL([new StringChunk(str)]);
       }
       sql22.raw = raw;
-      function join16(chunks, separator) {
+      function join15(chunks, separator) {
         const result = [];
         for (const [i, chunk2] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -1272,7 +1290,7 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql22.join = join16;
+      sql22.join = join15;
       function identifier(value) {
         return new Name(value);
       }
@@ -1351,6 +1369,9 @@ var init_sql = __esm({
 // node_modules/drizzle-orm/alias.js
 function aliasedTable(table, tableAlias) {
   return new Proxy(table, new TableAliasProxyHandler(tableAlias, false));
+}
+function aliasedRelation(relation, tableAlias) {
+  return new Proxy(relation, new RelationTableAliasProxyHandler(tableAlias));
 }
 function aliasedTableColumn(column, tableAlias) {
   return new Proxy(
@@ -1609,11 +1630,11 @@ function mapResultRow(columns, row, joinsNotNullableMap) {
   return result;
 }
 function orderSelectedFields(fields, pathPrefix) {
-  return Object.entries(fields).reduce((result, [name, field]) => {
-    if (typeof name !== "string") {
+  return Object.entries(fields).reduce((result, [name2, field]) => {
+    if (typeof name2 !== "string") {
       return result;
     }
-    const newPath = pathPrefix ? [...pathPrefix, name] : [name];
+    const newPath = pathPrefix ? [...pathPrefix, name2] : [name2];
     if (is(field, Column) || is(field, SQL) || is(field, SQL.Aliased) || is(field, Subquery)) {
       result.push({ path: newPath, field });
     } else if (is(field, Table)) {
@@ -1652,18 +1673,21 @@ function mapUpdateSet(table, values) {
 }
 function applyMixins(baseClass, extendedClasses) {
   for (const extendedClass of extendedClasses) {
-    for (const name of Object.getOwnPropertyNames(extendedClass.prototype)) {
-      if (name === "constructor") continue;
+    for (const name2 of Object.getOwnPropertyNames(extendedClass.prototype)) {
+      if (name2 === "constructor") continue;
       Object.defineProperty(
         baseClass.prototype,
-        name,
-        Object.getOwnPropertyDescriptor(extendedClass.prototype, name) || /* @__PURE__ */ Object.create(null)
+        name2,
+        Object.getOwnPropertyDescriptor(extendedClass.prototype, name2) || /* @__PURE__ */ Object.create(null)
       );
     }
   }
 }
 function getTableColumns(table) {
   return table[Table.Symbol.Columns];
+}
+function getViewSelectedFields(view) {
+  return view[ViewBaseConfig].selectedFields;
 }
 function getTableLikeName(table) {
   return is(table, Subquery) ? table._.alias : is(table, View) ? table[ViewBaseConfig].name : is(table, SQL) ? void 0 : table[Table.Symbol.IsAlias] ? table[Table.Symbol.Name] : table[Table.Symbol.BaseName];
@@ -1761,9 +1785,9 @@ var init_primary_keys = __esm({
       columns;
       /** @internal */
       name;
-      constructor(columns, name) {
+      constructor(columns, name2) {
         this.columns = columns;
-        this.name = name;
+        this.name = name2;
       }
       /** @internal */
       build(table) {
@@ -1771,10 +1795,10 @@ var init_primary_keys = __esm({
       }
     };
     PrimaryKey = class {
-      constructor(table, columns, name) {
+      constructor(table, columns, name2) {
         this.table = table;
         this.columns = columns;
-        this.name = name;
+        this.name = name2;
       }
       static [entityKind] = "PgPrimaryKey";
       columns;
@@ -1858,17 +1882,17 @@ function exists(subquery) {
 function notExists(subquery) {
   return sql`not exists ${subquery}`;
 }
-function between(column, min, max) {
-  return sql`${column} between ${bindIfParam(min, column)} and ${bindIfParam(
-    max,
+function between(column, min2, max2) {
+  return sql`${column} between ${bindIfParam(min2, column)} and ${bindIfParam(
+    max2,
     column
   )}`;
 }
-function notBetween(column, min, max) {
+function notBetween(column, min2, max2) {
   return sql`${column} not between ${bindIfParam(
-    min,
+    min2,
     column
-  )} and ${bindIfParam(max, column)}`;
+  )} and ${bindIfParam(max2, column)}`;
 }
 function like(column, value) {
   return sql`${column} like ${value}`;
@@ -1881,6 +1905,36 @@ function ilike(column, value) {
 }
 function notIlike(column, value) {
   return sql`${column} not ilike ${value}`;
+}
+function arrayContains(column, values) {
+  if (Array.isArray(values)) {
+    if (values.length === 0) {
+      throw new Error("arrayContains requires at least one value");
+    }
+    const array2 = sql`${bindIfParam(values, column)}`;
+    return sql`${column} @> ${array2}`;
+  }
+  return sql`${column} @> ${bindIfParam(values, column)}`;
+}
+function arrayContained(column, values) {
+  if (Array.isArray(values)) {
+    if (values.length === 0) {
+      throw new Error("arrayContained requires at least one value");
+    }
+    const array2 = sql`${bindIfParam(values, column)}`;
+    return sql`${column} <@ ${array2}`;
+  }
+  return sql`${column} <@ ${bindIfParam(values, column)}`;
+}
+function arrayOverlaps(column, values) {
+  if (Array.isArray(values)) {
+    if (values.length === 0) {
+      throw new Error("arrayOverlaps requires at least one value");
+    }
+    const array2 = sql`${bindIfParam(values, column)}`;
+    return sql`${column} && ${array2}`;
+  }
+  return sql`${column} && ${bindIfParam(values, column)}`;
 }
 var eq, ne, gt, gte, lt, lte;
 var init_conditions = __esm({
@@ -2027,6 +2081,17 @@ function extractTablesRelationalConfig(schema, configHelpers) {
     }
   }
   return { tables: tablesConfig, tableNamesMap };
+}
+function relations(table, relations2) {
+  return new Relations(
+    table,
+    (helpers) => Object.fromEntries(
+      Object.entries(relations2(helpers)).map(([key, value]) => [
+        key,
+        value.withFieldName(key)
+      ])
+    )
+  );
 }
 function createOne(sourceTable) {
   return function one(table, config) {
@@ -2204,14 +2269,81 @@ var init_relations = __esm({
 });
 
 // node_modules/drizzle-orm/sql/functions/aggregate.js
+function count(expression) {
+  return sql`count(${expression || sql.raw("*")})`.mapWith(Number);
+}
+function countDistinct(expression) {
+  return sql`count(distinct ${expression})`.mapWith(Number);
+}
+function avg(expression) {
+  return sql`avg(${expression})`.mapWith(String);
+}
+function avgDistinct(expression) {
+  return sql`avg(distinct ${expression})`.mapWith(String);
+}
+function sum(expression) {
+  return sql`sum(${expression})`.mapWith(String);
+}
+function sumDistinct(expression) {
+  return sql`sum(distinct ${expression})`.mapWith(String);
+}
+function max(expression) {
+  return sql`max(${expression})`.mapWith(is(expression, Column) ? expression : String);
+}
+function min(expression) {
+  return sql`min(${expression})`.mapWith(is(expression, Column) ? expression : String);
+}
 var init_aggregate = __esm({
   "node_modules/drizzle-orm/sql/functions/aggregate.js"() {
+    init_column();
+    init_entity();
+    init_sql();
   }
 });
 
 // node_modules/drizzle-orm/sql/functions/vector.js
+function toSql(value) {
+  return JSON.stringify(value);
+}
+function l2Distance(column, value) {
+  if (Array.isArray(value)) {
+    return sql`${column} <-> ${toSql(value)}`;
+  }
+  return sql`${column} <-> ${value}`;
+}
+function l1Distance(column, value) {
+  if (Array.isArray(value)) {
+    return sql`${column} <+> ${toSql(value)}`;
+  }
+  return sql`${column} <+> ${value}`;
+}
+function innerProduct(column, value) {
+  if (Array.isArray(value)) {
+    return sql`${column} <#> ${toSql(value)}`;
+  }
+  return sql`${column} <#> ${value}`;
+}
+function cosineDistance(column, value) {
+  if (Array.isArray(value)) {
+    return sql`${column} <=> ${toSql(value)}`;
+  }
+  return sql`${column} <=> ${value}`;
+}
+function hammingDistance(column, value) {
+  if (Array.isArray(value)) {
+    return sql`${column} <~> ${toSql(value)}`;
+  }
+  return sql`${column} <~> ${value}`;
+}
+function jaccardDistance(column, value) {
+  if (Array.isArray(value)) {
+    return sql`${column} <%> ${toSql(value)}`;
+  }
+  return sql`${column} <%> ${value}`;
+}
 var init_vector = __esm({
   "node_modules/drizzle-orm/sql/functions/vector.js"() {
+    init_sql();
   }
 });
 
@@ -2233,6 +2365,127 @@ var init_sql2 = __esm({
 });
 
 // node_modules/drizzle-orm/index.js
+var drizzle_orm_exports = {};
+__export(drizzle_orm_exports, {
+  BaseName: () => BaseName,
+  Column: () => Column,
+  ColumnAliasProxyHandler: () => ColumnAliasProxyHandler,
+  ColumnBuilder: () => ColumnBuilder,
+  Columns: () => Columns,
+  ConsoleLogWriter: () => ConsoleLogWriter,
+  DefaultLogger: () => DefaultLogger,
+  DrizzleError: () => DrizzleError,
+  DrizzleQueryError: () => DrizzleQueryError,
+  ExtraConfigBuilder: () => ExtraConfigBuilder,
+  ExtraConfigColumns: () => ExtraConfigColumns,
+  FakePrimitiveParam: () => FakePrimitiveParam,
+  IsAlias: () => IsAlias,
+  Many: () => Many,
+  Name: () => Name,
+  NoopLogger: () => NoopLogger,
+  One: () => One,
+  OriginalName: () => OriginalName,
+  Param: () => Param,
+  Placeholder: () => Placeholder,
+  QueryPromise: () => QueryPromise,
+  Relation: () => Relation,
+  RelationTableAliasProxyHandler: () => RelationTableAliasProxyHandler,
+  Relations: () => Relations,
+  SQL: () => SQL,
+  Schema: () => Schema,
+  StringChunk: () => StringChunk,
+  Subquery: () => Subquery,
+  Table: () => Table,
+  TableAliasProxyHandler: () => TableAliasProxyHandler,
+  TransactionRollbackError: () => TransactionRollbackError,
+  View: () => View,
+  ViewBaseConfig: () => ViewBaseConfig,
+  WithSubquery: () => WithSubquery,
+  aliasedRelation: () => aliasedRelation,
+  aliasedTable: () => aliasedTable,
+  aliasedTableColumn: () => aliasedTableColumn,
+  and: () => and,
+  applyMixins: () => applyMixins,
+  arrayContained: () => arrayContained,
+  arrayContains: () => arrayContains,
+  arrayOverlaps: () => arrayOverlaps,
+  asc: () => asc,
+  avg: () => avg,
+  avgDistinct: () => avgDistinct,
+  between: () => between,
+  bindIfParam: () => bindIfParam,
+  cosineDistance: () => cosineDistance,
+  count: () => count,
+  countDistinct: () => countDistinct,
+  createMany: () => createMany,
+  createOne: () => createOne,
+  createTableRelationsHelpers: () => createTableRelationsHelpers,
+  desc: () => desc,
+  entityKind: () => entityKind,
+  eq: () => eq,
+  exists: () => exists,
+  extractTablesRelationalConfig: () => extractTablesRelationalConfig,
+  fillPlaceholders: () => fillPlaceholders,
+  getColumnNameAndConfig: () => getColumnNameAndConfig,
+  getOperators: () => getOperators,
+  getOrderByOperators: () => getOrderByOperators,
+  getTableColumns: () => getTableColumns,
+  getTableLikeName: () => getTableLikeName,
+  getTableName: () => getTableName,
+  getTableUniqueName: () => getTableUniqueName,
+  getViewName: () => getViewName,
+  getViewSelectedFields: () => getViewSelectedFields,
+  gt: () => gt,
+  gte: () => gte,
+  hammingDistance: () => hammingDistance,
+  hasOwnEntityKind: () => hasOwnEntityKind,
+  haveSameKeys: () => haveSameKeys,
+  ilike: () => ilike,
+  inArray: () => inArray,
+  innerProduct: () => innerProduct,
+  is: () => is,
+  isConfig: () => isConfig,
+  isDriverValueEncoder: () => isDriverValueEncoder,
+  isNotNull: () => isNotNull,
+  isNull: () => isNull,
+  isSQLWrapper: () => isSQLWrapper,
+  isTable: () => isTable,
+  isView: () => isView,
+  jaccardDistance: () => jaccardDistance,
+  l1Distance: () => l1Distance,
+  l2Distance: () => l2Distance,
+  like: () => like,
+  lt: () => lt,
+  lte: () => lte,
+  mapColumnsInAliasedSQLToAlias: () => mapColumnsInAliasedSQLToAlias,
+  mapColumnsInSQLToAlias: () => mapColumnsInSQLToAlias,
+  mapRelationalRow: () => mapRelationalRow,
+  mapResultRow: () => mapResultRow,
+  mapUpdateSet: () => mapUpdateSet,
+  max: () => max,
+  min: () => min,
+  name: () => name,
+  ne: () => ne,
+  noopDecoder: () => noopDecoder,
+  noopEncoder: () => noopEncoder,
+  noopMapper: () => noopMapper,
+  normalizeRelation: () => normalizeRelation,
+  not: () => not,
+  notBetween: () => notBetween,
+  notExists: () => notExists,
+  notIlike: () => notIlike,
+  notInArray: () => notInArray,
+  notLike: () => notLike,
+  or: () => or,
+  orderSelectedFields: () => orderSelectedFields,
+  param: () => param,
+  placeholder: () => placeholder,
+  relations: () => relations,
+  sql: () => sql,
+  sum: () => sum,
+  sumDistinct: () => sumDistinct,
+  textDecoder: () => textDecoder
+});
 var init_drizzle_orm = __esm({
   "node_modules/drizzle-orm/index.js"() {
     init_alias();
@@ -2504,7 +2757,7 @@ var init_base64 = __esm({
       };
     };
     extendString = function() {
-      const _add = (name, body) => Object.defineProperty(String.prototype, name, _noEnum(body));
+      const _add = (name2, body) => Object.defineProperty(String.prototype, name2, _noEnum(body));
       _add("fromBase64", function() {
         return decode(this);
       });
@@ -2522,7 +2775,7 @@ var init_base64 = __esm({
       });
     };
     extendUint8Array = function() {
-      const _add = (name, body) => Object.defineProperty(Uint8Array.prototype, name, _noEnum(body));
+      const _add = (name2, body) => Object.defineProperty(Uint8Array.prototype, name2, _noEnum(body));
       _add("toBase64", function(urlsafe) {
         return fromUint8Array(this, urlsafe);
       });
@@ -2869,12 +3122,12 @@ var require_filesystem = __commonJS({
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
     var readFileSync14 = (path) => fs.readFileSync(path, "utf-8");
-    var readFile = (path) => new Promise((resolve2, reject) => {
+    var readFile = (path) => new Promise((resolve3, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
           reject(err);
         } else {
-          resolve2(data);
+          resolve3(data);
         }
       });
     });
@@ -2899,10 +3152,10 @@ var require_detect_libc = __commonJS({
     var commandOut = "";
     var safeCommand = () => {
       if (!commandOut) {
-        return new Promise((resolve2) => {
+        return new Promise((resolve3) => {
           childProcess.exec(command2, (err, out) => {
             commandOut = err ? " " : out;
-            resolve2(commandOut);
+            resolve3(commandOut);
           });
         });
       }
@@ -3312,39 +3565,39 @@ var require_libsql = __commonJS({
       serialize(options) {
         throw new Error("not implemented");
       }
-      function(name, options, fn) {
+      function(name2, options, fn) {
         if (options == null) options = {};
         if (typeof options === "function") {
           fn = options;
           options = {};
         }
-        if (typeof name !== "string")
+        if (typeof name2 !== "string")
           throw new TypeError("Expected first argument to be a string");
         if (typeof fn !== "function")
           throw new TypeError("Expected last argument to be a function");
         if (typeof options !== "object")
           throw new TypeError("Expected second argument to be an options object");
-        if (!name)
+        if (!name2)
           throw new TypeError(
             "User-defined function name cannot be an empty string"
           );
         throw new Error("not implemented");
       }
-      aggregate(name, options) {
-        if (typeof name !== "string")
+      aggregate(name2, options) {
+        if (typeof name2 !== "string")
           throw new TypeError("Expected first argument to be a string");
         if (typeof options !== "object" || options === null)
           throw new TypeError("Expected second argument to be an options object");
-        if (!name)
+        if (!name2)
           throw new TypeError(
             "User-defined function name cannot be an empty string"
           );
         throw new Error("not implemented");
       }
-      table(name, factory) {
-        if (typeof name !== "string")
+      table(name2, factory) {
+        if (typeof name2 !== "string")
           throw new TypeError("Expected first argument to be a string");
-        if (!name)
+        if (!name2)
           throw new TypeError(
             "Virtual table module name cannot be an empty string"
           );
@@ -3586,9 +3839,9 @@ function executeStmt(db, stmt, intMode) {
       args2 = stmt.args.map((value) => valueToSql(value, intMode));
     } else {
       args2 = {};
-      for (const name in stmt.args) {
-        const argName = name[0] === "@" || name[0] === "$" || name[0] === ":" ? name.substring(1) : name;
-        args2[argName] = valueToSql(stmt.args[name], intMode);
+      for (const name2 in stmt.args) {
+        const argName = name2[0] === "@" || name2[0] === "$" || name2[0] === ":" ? name2.substring(1) : name2;
+        args2[argName] = valueToSql(stmt.args[name2], intMode);
       }
     }
   }
@@ -6055,9 +6308,9 @@ var require_extension = __commonJS({
   "node_modules/ws/lib/extension.js"(exports2, module2) {
     "use strict";
     var { tokenChars } = require_validation();
-    function push(dest, name, elem) {
-      if (dest[name] === void 0) dest[name] = [elem];
-      else dest[name].push(elem);
+    function push(dest, name2, elem) {
+      if (dest[name2] === void 0) dest[name2] = [elem];
+      else dest[name2].push(elem);
     }
     function parse(header) {
       const offers = /* @__PURE__ */ Object.create(null);
@@ -6083,12 +6336,12 @@ var require_extension = __commonJS({
               throw new SyntaxError(`Unexpected character at index ${i}`);
             }
             if (end === -1) end = i;
-            const name = header.slice(start, end);
+            const name2 = header.slice(start, end);
             if (code === 44) {
-              push(offers, name, params);
+              push(offers, name2, params);
               params = /* @__PURE__ */ Object.create(null);
             } else {
-              extensionName = name;
+              extensionName = name2;
             }
             start = end = -1;
           } else {
@@ -6212,7 +6465,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash13 } = require("crypto");
+    var { randomBytes, createHash: createHash16 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -6880,7 +7133,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash13("sha1").update(key + GUID).digest("base64");
+        const digest = createHash16("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -7249,7 +7502,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash13 } = require("crypto");
+    var { createHash: createHash16 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -7556,7 +7809,7 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest = createHash13("sha1").update(key + GUID).digest("base64");
+        const digest = createHash16("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -7864,42 +8117,42 @@ var init_encode = __esm({
         this.#output.push("}");
         this.#isFirst = false;
       }
-      #key(name) {
+      #key(name2) {
         if (this.#isFirst) {
           this.#output.push('"');
           this.#isFirst = false;
         } else {
           this.#output.push(',"');
         }
-        this.#output.push(name);
+        this.#output.push(name2);
         this.#output.push('":');
       }
-      string(name, value) {
-        this.#key(name);
+      string(name2, value) {
+        this.#key(name2);
         this.#output.push(JSON.stringify(value));
       }
-      stringRaw(name, value) {
-        this.#key(name);
+      stringRaw(name2, value) {
+        this.#key(name2);
         this.#output.push('"');
         this.#output.push(value);
         this.#output.push('"');
       }
-      number(name, value) {
-        this.#key(name);
+      number(name2, value) {
+        this.#key(name2);
         this.#output.push("" + value);
       }
-      boolean(name, value) {
-        this.#key(name);
+      boolean(name2, value) {
+        this.#key(name2);
         this.#output.push(value ? "true" : "false");
       }
-      object(name, value, valueFun) {
-        this.#key(name);
+      object(name2, value, valueFun) {
+        this.#key(name2);
         this.begin();
         valueFun(this, value);
         this.end();
       }
-      arrayObjects(name, values, valueFun) {
-        this.#key(name);
+      arrayObjects(name2, values, valueFun) {
+        this.#key(name2);
         this.#output.push("[");
         for (let i = 0; i < values.length; ++i) {
           if (i !== 0) {
@@ -8001,8 +8254,8 @@ var init_decode2 = __esm({
           }
         }
       }
-      skip(count) {
-        this.#pos += count;
+      skip(count2) {
+        this.#pos += count2;
       }
       eof() {
         return this.#pos >= this.#array.byteLength;
@@ -8452,16 +8705,16 @@ function stmtToProto(sqlOwner, stmt, wantRows) {
   if (stmt instanceof Stmt) {
     inSql = stmt.sql;
     args2 = stmt._args;
-    for (const [name, value] of stmt._namedArgs.entries()) {
-      namedArgs.push({ name, value });
+    for (const [name2, value] of stmt._namedArgs.entries()) {
+      namedArgs.push({ name: name2, value });
     }
   } else if (Array.isArray(stmt)) {
     inSql = stmt[0];
     if (Array.isArray(stmt[1])) {
       args2 = stmt[1].map((arg) => valueToProto(arg));
     } else {
-      namedArgs = Object.entries(stmt[1]).map(([name, value]) => {
-        return { name, value: valueToProto(value) };
+      namedArgs = Object.entries(stmt[1]).map(([name2, value]) => {
+        return { name: name2, value: valueToProto(value) };
       });
     }
   } else {
@@ -8508,8 +8761,8 @@ var init_stmt = __esm({
         return this;
       }
       /** Binds a parameter by name. */
-      bindName(name, value) {
-        this._namedArgs.set(name, valueToProto(value));
+      bindName(name2, value) {
+        this._namedArgs.set(name2, valueToProto(value));
         return this;
       }
       /** Clears all bindings. */
@@ -9499,9 +9752,9 @@ function StmtResult(obj) {
   return { cols, rows, affectedRowCount, lastInsertRowid };
 }
 function Col(obj) {
-  const name = stringOpt(obj["name"]);
+  const name2 = stringOpt(obj["name"]);
   const decltype = stringOpt(obj["decltype"]);
-  return { name, decltype };
+  return { name: name2, decltype };
 }
 function BatchResult(obj) {
   const stepResults = /* @__PURE__ */ new Map();
@@ -9551,13 +9804,13 @@ function DescribeResult(obj) {
   return { params, cols, isExplain, isReadonly };
 }
 function DescribeParam(obj) {
-  const name = stringOpt(obj["name"]);
-  return { name };
+  const name2 = stringOpt(obj["name"]);
+  return { name: name2 };
 }
 function DescribeCol(obj) {
-  const name = string(obj["name"]);
+  const name2 = string(obj["name"]);
   const decltype = stringOpt(obj["decltype"]);
-  return { name, decltype };
+  return { name: name2, decltype };
 }
 function Value3(obj) {
   const type = string(obj["type"]);
@@ -11692,12 +11945,12 @@ var init_sql_cache = __esm({
 // node_modules/promise-limit/index.js
 var require_promise_limit = __commonJS({
   "node_modules/promise-limit/index.js"(exports2, module2) {
-    function limiter(count) {
+    function limiter(count2) {
       var outstanding = 0;
       var jobs = [];
       function remove() {
         outstanding--;
-        if (outstanding < count) {
+        if (outstanding < count2) {
           dequeue();
         }
       }
@@ -11709,8 +11962,8 @@ var require_promise_limit = __commonJS({
         }
       }
       function queue(fn) {
-        return new Promise(function(resolve2, reject) {
-          jobs.push({ fn, resolve: resolve2, reject });
+        return new Promise(function(resolve3, reject) {
+          jobs.push({ fn, resolve: resolve3, reject });
           semaphore.queue = jobs.length;
         });
       }
@@ -11730,7 +11983,7 @@ var require_promise_limit = __commonJS({
         }
       }
       var semaphore = function(fn) {
-        if (outstanding >= count) {
+        if (outstanding >= count2) {
           return queue(fn);
         } else {
           return run(fn);
@@ -11758,9 +12011,9 @@ var require_promise_limit = __commonJS({
       fn.map = map;
       return fn;
     }
-    module2.exports = function(count) {
-      if (count) {
-        return addExtras(limiter(count));
+    module2.exports = function(count2) {
+      if (count2) {
+        return addExtras(limiter(count2));
       } else {
         return addExtras(function(fn) {
           return fn();
@@ -12406,8 +12659,8 @@ var init_foreign_keys2 = __esm({
       _onDelete;
       constructor(config, actions) {
         this.reference = () => {
-          const { name, columns, foreignColumns } = config();
-          return { name, columns, foreignTable: foreignColumns[0].table, foreignColumns };
+          const { name: name2, columns, foreignColumns } = config();
+          return { name: name2, columns, foreignTable: foreignColumns[0].table, foreignColumns };
         };
         if (actions) {
           this._onUpdate = actions.onUpdate;
@@ -12439,7 +12692,7 @@ var init_foreign_keys2 = __esm({
       onUpdate;
       onDelete;
       getName() {
-        const { name, columns, foreignColumns } = this.reference();
+        const { name: name2, columns, foreignColumns } = this.reference();
         const columnNames = columns.map((column) => column.name);
         const foreignColumnNames = foreignColumns.map((column) => column.name);
         const chunks = [
@@ -12448,7 +12701,7 @@ var init_foreign_keys2 = __esm({
           foreignColumns[0].table[TableName],
           ...foreignColumnNames
         ];
-        return name ?? `${chunks.join("_")}_fk`;
+        return name2 ?? `${chunks.join("_")}_fk`;
       }
     };
   }
@@ -12464,8 +12717,8 @@ var init_unique_constraint2 = __esm({
     init_entity();
     init_table_utils();
     UniqueConstraintBuilder2 = class {
-      constructor(columns, name) {
-        this.name = name;
+      constructor(columns, name2) {
+        this.name = name2;
         this.columns = columns;
       }
       static [entityKind] = "SQLiteUniqueConstraintBuilder";
@@ -12480,18 +12733,18 @@ var init_unique_constraint2 = __esm({
       static [entityKind] = "SQLiteUniqueOnConstraintBuilder";
       /** @internal */
       name;
-      constructor(name) {
-        this.name = name;
+      constructor(name2) {
+        this.name = name2;
       }
       on(...columns) {
         return new UniqueConstraintBuilder2(columns, this.name);
       }
     };
     UniqueConstraint2 = class {
-      constructor(table, columns, name) {
+      constructor(table, columns, name2) {
         this.table = table;
         this.columns = columns;
-        this.name = name ?? uniqueKeyName2(this.table, this.columns.map((column) => column.name));
+        this.name = name2 ?? uniqueKeyName2(this.table, this.columns.map((column) => column.name));
       }
       static [entityKind] = "SQLiteUniqueConstraint";
       columns;
@@ -12519,9 +12772,9 @@ var init_common2 = __esm({
         this.foreignKeyConfigs.push({ ref, actions });
         return this;
       }
-      unique(name) {
+      unique(name2) {
         this.config.isUnique = true;
-        this.config.uniqueName = name;
+        this.config.uniqueName = name2;
         return this;
       }
       generatedAlwaysAs(as, config) {
@@ -12566,14 +12819,14 @@ var init_common2 = __esm({
 
 // node_modules/drizzle-orm/sqlite-core/columns/blob.js
 function blob(a, b) {
-  const { name, config } = getColumnNameAndConfig(a, b);
+  const { name: name2, config } = getColumnNameAndConfig(a, b);
   if (config?.mode === "json") {
-    return new SQLiteBlobJsonBuilder(name);
+    return new SQLiteBlobJsonBuilder(name2);
   }
   if (config?.mode === "bigint") {
-    return new SQLiteBigIntBuilder(name);
+    return new SQLiteBigIntBuilder(name2);
   }
-  return new SQLiteBlobBufferBuilder(name);
+  return new SQLiteBlobBufferBuilder(name2);
 }
 var SQLiteBigIntBuilder, SQLiteBigInt, SQLiteBlobJsonBuilder, SQLiteBlobJson, SQLiteBlobBufferBuilder, SQLiteBlobBuffer;
 var init_blob = __esm({
@@ -12583,8 +12836,8 @@ var init_blob = __esm({
     init_common2();
     SQLiteBigIntBuilder = class extends SQLiteColumnBuilder {
       static [entityKind] = "SQLiteBigIntBuilder";
-      constructor(name) {
-        super(name, "bigint", "SQLiteBigInt");
+      constructor(name2) {
+        super(name2, "bigint", "SQLiteBigInt");
       }
       /** @internal */
       build(table) {
@@ -12609,8 +12862,8 @@ var init_blob = __esm({
     };
     SQLiteBlobJsonBuilder = class extends SQLiteColumnBuilder {
       static [entityKind] = "SQLiteBlobJsonBuilder";
-      constructor(name) {
-        super(name, "json", "SQLiteBlobJson");
+      constructor(name2) {
+        super(name2, "json", "SQLiteBlobJson");
       }
       /** @internal */
       build(table) {
@@ -12638,8 +12891,8 @@ var init_blob = __esm({
     };
     SQLiteBlobBufferBuilder = class extends SQLiteColumnBuilder {
       static [entityKind] = "SQLiteBlobBufferBuilder";
-      constructor(name) {
-        super(name, "buffer", "SQLiteBlobBuffer");
+      constructor(name2) {
+        super(name2, "buffer", "SQLiteBlobBuffer");
       }
       /** @internal */
       build(table) {
@@ -12664,9 +12917,9 @@ var init_blob = __esm({
 // node_modules/drizzle-orm/sqlite-core/columns/custom.js
 function customType(customTypeParams) {
   return (a, b) => {
-    const { name, config } = getColumnNameAndConfig(a, b);
+    const { name: name2, config } = getColumnNameAndConfig(a, b);
     return new SQLiteCustomColumnBuilder(
-      name,
+      name2,
       config,
       customTypeParams
     );
@@ -12680,8 +12933,8 @@ var init_custom = __esm({
     init_common2();
     SQLiteCustomColumnBuilder = class extends SQLiteColumnBuilder {
       static [entityKind] = "SQLiteCustomColumnBuilder";
-      constructor(name, fieldConfig, customTypeParams) {
-        super(name, "custom", "SQLiteCustomColumn");
+      constructor(name2, fieldConfig, customTypeParams) {
+        super(name2, "custom", "SQLiteCustomColumn");
         this.config.fieldConfig = fieldConfig;
         this.config.customTypeParams = customTypeParams;
       }
@@ -12719,14 +12972,14 @@ var init_custom = __esm({
 
 // node_modules/drizzle-orm/sqlite-core/columns/integer.js
 function integer(a, b) {
-  const { name, config } = getColumnNameAndConfig(a, b);
+  const { name: name2, config } = getColumnNameAndConfig(a, b);
   if (config?.mode === "timestamp" || config?.mode === "timestamp_ms") {
-    return new SQLiteTimestampBuilder(name, config.mode);
+    return new SQLiteTimestampBuilder(name2, config.mode);
   }
   if (config?.mode === "boolean") {
-    return new SQLiteBooleanBuilder(name, config.mode);
+    return new SQLiteBooleanBuilder(name2, config.mode);
   }
-  return new SQLiteIntegerBuilder(name);
+  return new SQLiteIntegerBuilder(name2);
 }
 var SQLiteBaseIntegerBuilder, SQLiteBaseInteger, SQLiteIntegerBuilder, SQLiteInteger, SQLiteTimestampBuilder, SQLiteTimestamp, SQLiteBooleanBuilder, SQLiteBoolean;
 var init_integer = __esm({
@@ -12737,8 +12990,8 @@ var init_integer = __esm({
     init_common2();
     SQLiteBaseIntegerBuilder = class extends SQLiteColumnBuilder {
       static [entityKind] = "SQLiteBaseIntegerBuilder";
-      constructor(name, dataType, columnType) {
-        super(name, dataType, columnType);
+      constructor(name2, dataType, columnType) {
+        super(name2, dataType, columnType);
         this.config.autoIncrement = false;
       }
       primaryKey(config) {
@@ -12758,8 +13011,8 @@ var init_integer = __esm({
     };
     SQLiteIntegerBuilder = class extends SQLiteBaseIntegerBuilder {
       static [entityKind] = "SQLiteIntegerBuilder";
-      constructor(name) {
-        super(name, "number", "SQLiteInteger");
+      constructor(name2) {
+        super(name2, "number", "SQLiteInteger");
       }
       build(table) {
         return new SQLiteInteger(
@@ -12773,8 +13026,8 @@ var init_integer = __esm({
     };
     SQLiteTimestampBuilder = class extends SQLiteBaseIntegerBuilder {
       static [entityKind] = "SQLiteTimestampBuilder";
-      constructor(name, mode) {
-        super(name, "date", "SQLiteTimestamp");
+      constructor(name2, mode) {
+        super(name2, "date", "SQLiteTimestamp");
         this.config.mode = mode;
       }
       /**
@@ -12811,8 +13064,8 @@ var init_integer = __esm({
     };
     SQLiteBooleanBuilder = class extends SQLiteBaseIntegerBuilder {
       static [entityKind] = "SQLiteBooleanBuilder";
-      constructor(name, mode) {
-        super(name, "boolean", "SQLiteBoolean");
+      constructor(name2, mode) {
+        super(name2, "boolean", "SQLiteBoolean");
         this.config.mode = mode;
       }
       build(table) {
@@ -12837,9 +13090,9 @@ var init_integer = __esm({
 
 // node_modules/drizzle-orm/sqlite-core/columns/numeric.js
 function numeric(a, b) {
-  const { name, config } = getColumnNameAndConfig(a, b);
+  const { name: name2, config } = getColumnNameAndConfig(a, b);
   const mode = config?.mode;
-  return mode === "number" ? new SQLiteNumericNumberBuilder(name) : mode === "bigint" ? new SQLiteNumericBigIntBuilder(name) : new SQLiteNumericBuilder(name);
+  return mode === "number" ? new SQLiteNumericNumberBuilder(name2) : mode === "bigint" ? new SQLiteNumericBigIntBuilder(name2) : new SQLiteNumericBuilder(name2);
 }
 var SQLiteNumericBuilder, SQLiteNumeric, SQLiteNumericNumberBuilder, SQLiteNumericNumber, SQLiteNumericBigIntBuilder, SQLiteNumericBigInt;
 var init_numeric = __esm({
@@ -12849,8 +13102,8 @@ var init_numeric = __esm({
     init_common2();
     SQLiteNumericBuilder = class extends SQLiteColumnBuilder {
       static [entityKind] = "SQLiteNumericBuilder";
-      constructor(name) {
-        super(name, "string", "SQLiteNumeric");
+      constructor(name2) {
+        super(name2, "string", "SQLiteNumeric");
       }
       /** @internal */
       build(table) {
@@ -12872,8 +13125,8 @@ var init_numeric = __esm({
     };
     SQLiteNumericNumberBuilder = class extends SQLiteColumnBuilder {
       static [entityKind] = "SQLiteNumericNumberBuilder";
-      constructor(name) {
-        super(name, "number", "SQLiteNumericNumber");
+      constructor(name2) {
+        super(name2, "number", "SQLiteNumericNumber");
       }
       /** @internal */
       build(table) {
@@ -12896,8 +13149,8 @@ var init_numeric = __esm({
     };
     SQLiteNumericBigIntBuilder = class extends SQLiteColumnBuilder {
       static [entityKind] = "SQLiteNumericBigIntBuilder";
-      constructor(name) {
-        super(name, "bigint", "SQLiteNumericBigInt");
+      constructor(name2) {
+        super(name2, "bigint", "SQLiteNumericBigInt");
       }
       /** @internal */
       build(table) {
@@ -12919,8 +13172,8 @@ var init_numeric = __esm({
 });
 
 // node_modules/drizzle-orm/sqlite-core/columns/real.js
-function real(name) {
-  return new SQLiteRealBuilder(name ?? "");
+function real(name2) {
+  return new SQLiteRealBuilder(name2 ?? "");
 }
 var SQLiteRealBuilder, SQLiteReal;
 var init_real = __esm({
@@ -12929,8 +13182,8 @@ var init_real = __esm({
     init_common2();
     SQLiteRealBuilder = class extends SQLiteColumnBuilder {
       static [entityKind] = "SQLiteRealBuilder";
-      constructor(name) {
-        super(name, "number", "SQLiteReal");
+      constructor(name2) {
+        super(name2, "number", "SQLiteReal");
       }
       /** @internal */
       build(table) {
@@ -12948,11 +13201,11 @@ var init_real = __esm({
 
 // node_modules/drizzle-orm/sqlite-core/columns/text.js
 function text(a, b = {}) {
-  const { name, config } = getColumnNameAndConfig(a, b);
+  const { name: name2, config } = getColumnNameAndConfig(a, b);
   if (config.mode === "json") {
-    return new SQLiteTextJsonBuilder(name);
+    return new SQLiteTextJsonBuilder(name2);
   }
-  return new SQLiteTextBuilder(name, config);
+  return new SQLiteTextBuilder(name2, config);
 }
 var SQLiteTextBuilder, SQLiteText, SQLiteTextJsonBuilder, SQLiteTextJson;
 var init_text = __esm({
@@ -12962,8 +13215,8 @@ var init_text = __esm({
     init_common2();
     SQLiteTextBuilder = class extends SQLiteColumnBuilder {
       static [entityKind] = "SQLiteTextBuilder";
-      constructor(name, config) {
-        super(name, "string", "SQLiteText");
+      constructor(name2, config) {
+        super(name2, "string", "SQLiteText");
         this.config.enumValues = config.enum;
         this.config.length = config.length;
       }
@@ -12988,8 +13241,8 @@ var init_text = __esm({
     };
     SQLiteTextJsonBuilder = class extends SQLiteColumnBuilder {
       static [entityKind] = "SQLiteTextJsonBuilder";
-      constructor(name) {
-        super(name, "json", "SQLiteTextJson");
+      constructor(name2) {
+        super(name2, "json", "SQLiteTextJson");
       }
       /** @internal */
       build(table) {
@@ -13037,16 +13290,16 @@ var init_all = __esm({
 });
 
 // node_modules/drizzle-orm/sqlite-core/table.js
-function sqliteTableBase(name, columns, extraConfig, schema, baseName = name) {
-  const rawTable = new SQLiteTable(name, schema, baseName);
+function sqliteTableBase(name2, columns, extraConfig, schema, baseName = name2) {
+  const rawTable = new SQLiteTable(name2, schema, baseName);
   const parsedColumns = typeof columns === "function" ? columns(getSQLiteColumnBuilders()) : columns;
   const builtColumns = Object.fromEntries(
-    Object.entries(parsedColumns).map(([name2, colBuilderBase]) => {
+    Object.entries(parsedColumns).map(([name22, colBuilderBase]) => {
       const colBuilder = colBuilderBase;
-      colBuilder.setName(name2);
+      colBuilder.setName(name22);
       const column = colBuilder.build(rawTable);
       rawTable[InlineForeignKeys2].push(...colBuilder.buildForeignKeys(column, rawTable));
-      return [name2, column];
+      return [name22, column];
     })
   );
   const table = Object.assign(rawTable, builtColumns);
@@ -13077,8 +13330,8 @@ var init_table3 = __esm({
       /** @internal */
       [Table.Symbol.ExtraConfigBuilder] = void 0;
     };
-    sqliteTable = (name, columns, extraConfig) => {
-      return sqliteTableBase(name, columns, extraConfig);
+    sqliteTable = (name2, columns, extraConfig) => {
+      return sqliteTableBase(name2, columns, extraConfig);
     };
   }
 });
@@ -13089,8 +13342,8 @@ var init_checks = __esm({
   "node_modules/drizzle-orm/sqlite-core/checks.js"() {
     init_entity();
     CheckBuilder = class {
-      constructor(name, value) {
-        this.name = name;
+      constructor(name2, value) {
+        this.name = name2;
         this.value = value;
       }
       static [entityKind] = "SQLiteCheckBuilder";
@@ -13118,8 +13371,8 @@ var init_indexes = __esm({
   "node_modules/drizzle-orm/sqlite-core/indexes.js"() {
     init_entity();
     IndexBuilderOn = class {
-      constructor(name, unique) {
-        this.name = name;
+      constructor(name2, unique) {
+        this.name = name2;
         this.unique = unique;
       }
       static [entityKind] = "SQLiteIndexBuilderOn";
@@ -13131,9 +13384,9 @@ var init_indexes = __esm({
       static [entityKind] = "SQLiteIndexBuilder";
       /** @internal */
       config;
-      constructor(name, columns, unique) {
+      constructor(name2, columns, unique) {
         this.config = {
-          name,
+          name: name2,
           columns,
           unique,
           where: void 0
@@ -13173,9 +13426,9 @@ var init_primary_keys2 = __esm({
       columns;
       /** @internal */
       name;
-      constructor(columns, name) {
+      constructor(columns, name2) {
         this.columns = columns;
-        this.name = name;
+        this.name = name2;
       }
       /** @internal */
       build(table) {
@@ -13183,10 +13436,10 @@ var init_primary_keys2 = __esm({
       }
     };
     PrimaryKey2 = class {
-      constructor(table, columns, name) {
+      constructor(table, columns, name2) {
         this.table = table;
         this.columns = columns;
-        this.name = name;
+        this.name = name2;
       }
       static [entityKind] = "SQLitePrimaryKey";
       columns;
@@ -13457,8 +13710,8 @@ var init_dialect = __esm({
       constructor(config) {
         this.casing = new CasingCache(config?.casing);
       }
-      escapeName(name) {
-        return `"${name.replace(/"/g, '""')}"`;
+      escapeName(name2) {
+        return `"${name2.replace(/"/g, '""')}"`;
       }
       escapeParam(_num) {
         return "?";
@@ -14270,7 +14523,7 @@ var init_select2 = __esm({
           const baseTableName = this.tableName;
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table)) this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join16) => join16.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join15) => join15.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -15156,7 +15409,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join16) => join16.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join15) => join15.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -16111,8 +16364,8 @@ var init_view = __esm({
     init_table3();
     init_view_base();
     ViewBuilderCore = class {
-      constructor(name) {
-        this.name = name;
+      constructor(name2) {
+        this.name = name2;
       }
       static [entityKind] = "SQLiteViewBuilderCore";
       config = {};
@@ -16147,9 +16400,9 @@ var init_view = __esm({
     ManualViewBuilder = class extends ViewBuilderCore {
       static [entityKind] = "SQLiteManualViewBuilder";
       columns;
-      constructor(name, columns) {
-        super(name);
-        this.columns = getTableColumns(sqliteTable(name, columns));
+      constructor(name2, columns) {
+        super(name2);
+        this.columns = getTableColumns(sqliteTable(name2, columns));
       }
       existing() {
         return new Proxy(
@@ -16541,13 +16794,15 @@ var schema_exports = {};
 __export(schema_exports, {
   evidence_documents: () => evidence_documents,
   evidence_links: () => evidence_links,
+  export_receipt_events: () => export_receipt_events,
+  export_receipts: () => export_receipts,
   messages: () => messages,
   review_findings: () => review_findings,
   review_requirements: () => review_requirements,
   secrets_detected: () => secrets_detected,
   sessions: () => sessions
 });
-var sessions, messages, secrets_detected, review_findings, evidence_documents, review_requirements, evidence_links;
+var sessions, messages, secrets_detected, review_findings, evidence_documents, review_requirements, evidence_links, export_receipts, export_receipt_events;
 var init_schema = __esm({
   "src/db/schema.ts"() {
     "use strict";
@@ -16627,10 +16882,54 @@ var init_schema = __esm({
       note: text("note"),
       created_at: text("created_at").notNull()
     });
+    export_receipts = sqliteTable("export_receipts", {
+      id: text("id").primaryKey(),
+      created_at: text("created_at").notNull(),
+      /** Recognisable destination with userinfo and query stripped. Never the raw URL. */
+      destination_label: text("destination_label").notNull(),
+      /** SHA-256 of the sanitised label — never of anything credential-bearing. */
+      destination_digest: text("destination_digest").notNull(),
+      /** The selector as the operator typed it, e.g. --since=7d. */
+      scope_selector: text("scope_selector"),
+      /** JSON array of the session ids the selector resolved to at export time. */
+      scope_session_ids: text("scope_session_ids").notNull(),
+      session_count: integer("session_count").notNull(),
+      span_count: integer("span_count").notNull(),
+      /** Whether human-authored text was included, because that changes what left. */
+      included_content: integer("included_content").notNull(),
+      /** Wire protocol, so a receipt says how the evidence travelled, not just where. */
+      transport: text("transport").notNull(),
+      chron_version: text("chron_version").notNull()
+    });
+    export_receipt_events = sqliteTable("export_receipt_events", {
+      id: text("id").primaryKey(),
+      receipt_id: text("receipt_id").notNull().references(() => export_receipts.id),
+      sequence: integer("sequence").notNull(),
+      event_type: text("event_type", { enum: ["prepared", "batch_started", "batch_finished", "finalized"] }).notNull(),
+      /**
+       * What this event *is*, independent of where it landed in the sequence:
+       * `prepared`, `finalized`, `batch_started:3`. A caller that retries after an
+       * ambiguous failure collides here instead of appending the same logical
+       * event twice at the next free sequence, which the sequence constraint alone
+       * does not prevent.
+       */
+      logical_key: text("logical_key").notNull(),
+      created_at: text("created_at").notNull(),
+      /** Deterministic JSON, so the hash is reproducible from the stored row. */
+      canonical_payload: text("canonical_payload").notNull(),
+      prev_hash: text("prev_hash"),
+      event_hash: text("event_hash").notNull()
+    });
   }
 });
 
 // src/db/index.ts
+var db_exports = {};
+__export(db_exports, {
+  CREATE_SQL: () => CREATE_SQL,
+  getDbPathForRead: () => getDbPathForRead,
+  initDb: () => initDb
+});
 function getDbPathForRead() {
   return getDbPath();
 }
@@ -16649,6 +16948,23 @@ async function initDb(dbPath3) {
   await client.execute("PRAGMA wal_checkpoint(PASSIVE)");
   await client.execute("PRAGMA busy_timeout = 5000");
   await client.execute("PRAGMA foreign_keys = ON");
+  const columnsOf = async (table) => {
+    const info2 = await client.execute(`PRAGMA table_info(${table})`);
+    return info2.rows.map((r) => String(r.name));
+  };
+  const headerCols = await columnsOf("export_receipts");
+  const eventCols = await columnsOf("export_receipt_events");
+  const headerExists = headerCols.length > 0;
+  const eventsExists = eventCols.length > 0;
+  const SUPERSEDED_HEADER_COLUMNS = ["state", "completed_at", "spans_sent", "spans_rejected", "spans_failed", "spans_unknown"];
+  const headerOk = headerExists && headerCols.includes("transport") && !SUPERSEDED_HEADER_COLUMNS.some((c) => headerCols.includes(c));
+  const eventsOk = eventsExists && eventCols.includes("logical_key");
+  const incompatible = headerExists && !headerOk || eventsExists && !eventsOk || headerExists !== eventsExists;
+  if (incompatible) {
+    await client.execute("DROP TABLE IF EXISTS export_receipt_events");
+    await client.execute("DROP TABLE IF EXISTS export_receipt_batches");
+    await client.execute("DROP TABLE IF EXISTS export_receipts");
+  }
   for (const sql9 of CREATE_SQL) {
     await client.execute(sql9);
   }
@@ -16666,7 +16982,7 @@ async function initDb(dbPath3) {
     // other.
     ["source_sequence", "INTEGER"]
   ];
-  const missingMessageColumns = MESSAGE_COLUMNS.filter(([name]) => !msgCols.includes(name));
+  const missingMessageColumns = MESSAGE_COLUMNS.filter(([name2]) => !msgCols.includes(name2));
   const messagesTableInfo = await client.execute(
     "SELECT sql FROM sqlite_master WHERE type='table' AND name='messages'"
   );
@@ -16677,8 +16993,8 @@ async function initDb(dbPath3) {
     await client.execute("PRAGMA foreign_keys = OFF");
     await client.execute("BEGIN");
     try {
-      for (const [name, type] of missingMessageColumns) {
-        await client.execute(`ALTER TABLE messages ADD COLUMN ${name} ${type}`);
+      for (const [name2, type] of missingMessageColumns) {
+        await client.execute(`ALTER TABLE messages ADD COLUMN ${name2} ${type}`);
       }
       if (needsRoleRebuild) {
         await client.execute("DROP TABLE IF EXISTS messages_migration");
@@ -16887,12 +17203,46 @@ var init_db2 = __esm({
     created_at TEXT NOT NULL,
     FOREIGN KEY (evidence_id) REFERENCES evidence_documents(id) ON DELETE CASCADE
   )`,
+      // Export receipts are additive tables, so no shadow rebuild is involved.
+      // The header is immutable; everything mutable lives in the event chain.
+      `CREATE TABLE IF NOT EXISTS export_receipts (
+    id TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    destination_label TEXT NOT NULL,
+    destination_digest TEXT NOT NULL,
+    scope_selector TEXT,
+    scope_session_ids TEXT NOT NULL,
+    session_count INTEGER NOT NULL,
+    span_count INTEGER NOT NULL,
+    included_content INTEGER NOT NULL,
+    transport TEXT NOT NULL,
+    chron_version TEXT NOT NULL
+  )`,
+      `CREATE TABLE IF NOT EXISTS export_receipt_events (
+    id TEXT PRIMARY KEY,
+    receipt_id TEXT NOT NULL,
+    sequence INTEGER NOT NULL,
+    event_type TEXT NOT NULL CHECK (event_type IN ('prepared', 'batch_started', 'batch_finished', 'finalized')),
+    logical_key TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    canonical_payload TEXT NOT NULL,
+    prev_hash TEXT,
+    event_hash TEXT NOT NULL,
+    FOREIGN KEY (receipt_id) REFERENCES export_receipts(id) ON DELETE CASCADE
+  )`,
+      // The constraint is the concurrency control: two writers racing to append the
+      // same sequence means one of them fails rather than forking the chain.
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_export_receipt_events_seq ON export_receipt_events(receipt_id, sequence)`,
+      // Sequence uniqueness stops a forked chain; logical uniqueness stops the same
+      // event being appended twice at different positions after an ambiguous retry.
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_export_receipt_events_logical ON export_receipt_events(receipt_id, logical_key)`,
       `CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_title_tool ON sessions(title, COALESCE(ai_tool, ''))`,
       `CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_session_id ON secrets_detected(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_secrets_detected_message_id ON secrets_detected(message_id)`,
       `CREATE INDEX IF NOT EXISTS idx_review_findings_session_id ON review_findings(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_review_findings_status ON review_findings(status)`,
+      `CREATE INDEX IF NOT EXISTS idx_export_receipts_created_at ON export_receipts(created_at)`,
       `CREATE INDEX IF NOT EXISTS idx_review_requirements_session_id ON review_requirements(session_id)`,
       `CREATE INDEX IF NOT EXISTS idx_review_requirements_status ON review_requirements(status)`,
       `CREATE INDEX IF NOT EXISTS idx_review_requirements_required_by ON review_requirements(required_by)`,
@@ -16924,9 +17274,37 @@ function roleLabel(role, providerLabel = "assistant") {
   if (isSystemRole(role)) return "system boundary";
   return role === "user" ? "you" : providerLabel;
 }
+function isPlaceholderAiTool(value) {
+  if (value === null || value === void 0) return false;
+  const normalised = value.trim().toLowerCase();
+  if (normalised === "") return true;
+  if (/^<.*>$/.test(normalised)) return true;
+  return PLACEHOLDER_TOOL_VALUES.has(normalised);
+}
+var PLACEHOLDER_TOOL_VALUES;
 var init_roles = __esm({
   "src/utils/roles.ts"() {
     "use strict";
+    PLACEHOLDER_TOOL_VALUES = /* @__PURE__ */ new Set([
+      "<client-name>",
+      "client-name",
+      "<client>",
+      "client",
+      "<your-client>",
+      "<ai-tool>",
+      "ai-tool",
+      "<tool>",
+      "tool",
+      "unknown",
+      "none",
+      "null",
+      "undefined",
+      "n/a",
+      "na",
+      "todo",
+      "tbd",
+      "example"
+    ]);
   }
 });
 
@@ -17648,12 +18026,12 @@ async function printList(limit, refFilter) {
   for (const row of rows) {
     const date = fmtDate(row.updated_at);
     const prefix = row.id.slice(0, 8);
-    const count = String(row.message_count).padStart(3);
+    const count2 = String(row.message_count).padStart(3);
     const ref = row.external_ref ? `  ${DIM}[${row.external_ref}]${RESET}` : "";
     const risk = scores.get(row.id);
     const scoreTag = risk && risk.score > 0 ? `  ${BAND_COLOR[risk.band]}${BOLD}[${risk.score}]${RESET}` : "";
     process.stdout.write(
-      `  ${DIM}${date}${RESET}  ${CYAN}${prefix}${RESET}  ${BOLD}${count} msgs${RESET}  ${row.title}${ref}${scoreTag}
+      `  ${DIM}${date}${RESET}  ${CYAN}${prefix}${RESET}  ${BOLD}${count2} msgs${RESET}  ${row.title}${ref}${scoreTag}
 `
     );
   }
@@ -18172,9 +18550,9 @@ li { margin-bottom: 4px; }
 });
 
 // src/review/patterns.ts
-function band(count, medThreshold, highThreshold) {
-  if (count >= highThreshold) return "high";
-  if (count >= medThreshold) return "medium";
+function band(count2, medThreshold, highThreshold) {
+  if (count2 >= highThreshold) return "high";
+  if (count2 >= medThreshold) return "medium";
   return "low";
 }
 function matchesSignal(content, patterns) {
@@ -20140,7 +20518,8 @@ async function buildReport(db, cutoffDate2) {
     const provider = s.ai_tool?.replace("chron-chat/", "") ?? "unknown";
     providerCounts[provider] = (providerCounts[provider] ?? 0) + 1;
   }
-  const msgs = await db.select({ role: messages.role }).from(messages).where(inArray(messages.session_id, sessionIds));
+  const msgs = await db.select({ role: messages.role, event_type: messages.event_type }).from(messages).where(inArray(messages.session_id, sessionIds));
+  const conversation = msgs.filter((m) => (m.event_type ?? "message") === "message");
   const secs = await db.select({ type: secrets_detected.type }).from(secrets_detected).where(inArray(secrets_detected.session_id, sessionIds));
   const byTypeMap = {};
   for (const s of secs) {
@@ -20152,8 +20531,8 @@ async function buildReport(db, cutoffDate2) {
     dateTo,
     sessionCount: filtered.length,
     providerCounts,
-    userMessages: msgs.filter((m) => m.role === "user").length,
-    aiMessages: msgs.filter((m) => m.role === "assistant").length,
+    userMessages: conversation.filter((m) => m.role === "user").length,
+    aiMessages: conversation.filter((m) => m.role === "assistant").length,
     secretsTotal: secs.length,
     byType
   };
@@ -20179,8 +20558,8 @@ ${BOLD2}Chron Report${RESET2}  ${dateFrom} \u2192 ${dateTo}
   if (byType.length > 0) {
     const maxLen = Math.max(...byType.map(([t]) => t.length));
     process.stdout.write("\nBy type:\n");
-    for (const [type, count] of byType) {
-      process.stdout.write(`  ${type.padEnd(maxLen)}  ${String(count).padStart(4)}
+    for (const [type, count2] of byType) {
+      process.stdout.write(`  ${type.padEnd(maxLen)}  ${String(count2).padStart(4)}
 `);
     }
   }
@@ -20345,8 +20724,9 @@ async function runExportBundle(args2) {
     process.exit(1);
   }
   const sessionIds = filtered.map((s) => s.id);
-  const tempDir = (0, import_path3.join)((0, import_os4.tmpdir)(), `chron-bundle-${Date.now()}`);
-  (0, import_fs5.mkdirSync)(tempDir, { recursive: true });
+  const tempDir = (0, import_fs5.mkdtempSync)((0, import_path3.resolve)((0, import_os4.tmpdir)(), "chron-bundle-"));
+  const absOutput = (0, import_path3.resolve)(outputPath);
+  const tempOutput = `${absOutput}.tmp-${process.pid}-${(0, import_crypto4.randomUUID)()}`;
   const pubkeysDir = (0, import_path3.join)(tempDir, "pubkeys");
   (0, import_fs5.mkdirSync)(pubkeysDir);
   try {
@@ -20357,14 +20737,14 @@ async function runExportBundle(args2) {
       const msgs = await db.select().from(messages).where(eq(messages.session_id, sid)).orderBy(...messageOrderAsc());
       for (const m of msgs) msgsStream.write(JSON.stringify(m) + "\n");
     }
-    await new Promise((resolve2) => msgsStream.end(resolve2));
+    await new Promise((resolve3) => msgsStream.end(resolve3));
     const secretsPath = (0, import_path3.join)(tempDir, "secrets.jsonl");
     const secretsStream = (0, import_fs5.createWriteStream)(secretsPath);
     for (const sid of sessionIds) {
       const secs = await db.select().from(secrets_detected).where(eq(secrets_detected.session_id, sid));
       for (const s of secs) secretsStream.write(JSON.stringify(s) + "\n");
     }
-    await new Promise((resolve2) => secretsStream.end(resolve2));
+    await new Promise((resolve3) => secretsStream.end(resolve3));
     for (const s of filtered) {
       if (s.public_key) {
         (0, import_fs5.writeFileSync)((0, import_path3.join)(pubkeysDir, `${s.id}.pub`), s.public_key);
@@ -20390,37 +20770,63 @@ async function runExportBundle(args2) {
     };
     const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2));
     (0, import_fs5.writeFileSync)((0, import_path3.join)(tempDir, "manifest.json"), manifestBytes);
-    let signed = false;
-    if (filtered.length === 1) {
-      const s = filtered[0];
-      if (s.public_key && (0, import_fs5.existsSync)(privKeyPath(s.id))) {
-        try {
-          const sig = signBuffer(s.id, manifestBytes);
-          (0, import_fs5.writeFileSync)((0, import_path3.join)(tempDir, "manifest.sig"), JSON.stringify({
-            chron_sig: "v1",
-            session_id: s.id,
-            algorithm: "Ed25519-SHA256",
-            signature: sig
-          }, null, 2));
-          signed = true;
-        } catch {
-        }
-      }
+    if (filtered.length !== 1) {
+      throw new BundleError(
+        `--signed covers a single session, and this selection has ${filtered.length}.
+  Narrow it with --session=<id>, or drop --signed for an unsigned bundle.
+  Multi-session signing needs a bundle key that Chron does not yet have.`
+      );
     }
-    const absOutput = outputPath.startsWith("/") ? outputPath : (0, import_path3.join)(process.cwd(), outputPath);
-    (0, import_child_process.execSync)(`tar -czf "${absOutput}" -C "${tempDir}" .`);
+    const only = filtered[0];
+    if (!only.public_key) {
+      throw new BundleError(
+        `Session ${only.id.slice(0, 8)} has no public key, so it pre-dates signing support.
+  Export it without --signed, or sign a session created by a newer version.`
+      );
+    }
+    if (!(0, import_fs5.existsSync)(privKeyPath(only.id))) {
+      throw new BundleError(
+        `The private key for session ${only.id.slice(0, 8)} is not on this machine.
+  Keys live in ${privKeyPath(only.id).replace(/\/[^/]+$/, "")} and are never copied by Chron,
+  so a session signed elsewhere cannot be signed here. Export without --signed.`
+      );
+    }
+    try {
+      const sig = signBuffer(only.id, manifestBytes);
+      (0, import_fs5.writeFileSync)((0, import_path3.join)(tempDir, "manifest.sig"), JSON.stringify({
+        chron_sig: "v1",
+        session_id: only.id,
+        algorithm: "Ed25519-SHA256",
+        signature: sig
+      }, null, 2));
+    } catch (e) {
+      throw new BundleError(`Signing failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+    (0, import_child_process.execFileSync)("tar", ["-czf", tempOutput, "-C", tempDir, "."]);
+    (0, import_fs5.renameSync)(tempOutput, absOutput);
     const sessionWord = filtered.length === 1 ? "session" : "sessions";
     process.stdout.write(`Bundle: ${absOutput}
 `);
-    process.stdout.write(`  ${filtered.length} ${sessionWord} | signed: ${signed ? "yes (Ed25519)" : "no"}
+    process.stdout.write(`  ${filtered.length} ${sessionWord} | signed: yes (Ed25519)
 `);
     process.stdout.write(`  Verify: chron verify --bundle="${absOutput}"
 `);
+  } catch (e) {
+    if (e instanceof BundleError) {
+      process.stderr.write(`
+${RED2}\u2717 Bundle not created.${RESET3} ${e.message}
+
+`);
+      process.exitCode = 1;
+      return;
+    }
+    throw e;
   } finally {
+    (0, import_fs5.rmSync)(tempOutput, { force: true });
     (0, import_fs5.rmSync)(tempDir, { recursive: true, force: true });
   }
 }
-var import_fs5, import_path3, import_os4, import_crypto4, import_child_process, import_package;
+var import_fs5, import_path3, import_os4, import_crypto4, import_child_process, import_package, RED2, RESET3, BundleError;
 var init_export_bundle = __esm({
   "src/cli/export-bundle.ts"() {
     "use strict";
@@ -20435,12 +20841,17 @@ var init_export_bundle = __esm({
     init_message_order();
     init_signing();
     import_package = __toESM(require_package());
+    RED2 = "\x1B[31m";
+    RESET3 = "\x1B[0m";
+    BundleError = class extends Error {
+    };
   }
 });
 
 // src/cli/export.ts
 var export_exports = {};
 __export(export_exports, {
+  renderMarkdownExport: () => renderMarkdownExport,
   runExport: () => runExport
 });
 function fmtTimestamp2(iso) {
@@ -20448,6 +20859,56 @@ function fmtTimestamp2(iso) {
   if (!m) return iso;
   const tz = !m[3] || m[3] === "Z" ? "+00:00" : m[3];
   return `${m[1]} ${m[2]} ${tz}`;
+}
+function renderMarkdownExport(session, events) {
+  const provider = session.ai_tool?.replace("chron-chat/", "") ?? "ai";
+  const date = session.created_at.slice(0, 10);
+  const conversationCount = events.filter((e) => (e.event_type ?? "message") === "message").length;
+  const auditEventCount = events.length - conversationCount;
+  let output = `# ${session.title}
+
+`;
+  output += `*${date} | ${provider} | ${conversationCount} message${conversationCount === 1 ? "" : "s"}`;
+  if (auditEventCount > 0) {
+    output += ` | ${auditEventCount} audit event${auditEventCount === 1 ? "" : "s"}`;
+  }
+  output += "*\n";
+  for (const event of events) {
+    const ts = fmtTimestamp2(event.created_at);
+    const eventType = event.event_type ?? "message";
+    if (eventType !== "message") {
+      let detail = "";
+      try {
+        const payload = JSON.parse(event.content);
+        if (eventType === "tool_call") detail = payload.tool_name ?? "";
+        if (eventType === "tool_result") detail = payload.tool_call_id ? `id:${payload.tool_call_id.slice(0, 8)}` : "";
+        if (eventType === "code_change") detail = [payload.operation, payload.file_path].filter(Boolean).join(" ");
+      } catch {
+      }
+      output += `
+---
+
+**[${ts}] ${eventType}${detail ? ` \u2014 ${detail}` : ""}**
+
+${event.content}
+`;
+    } else if (isSystemRole(event.role)) {
+      output += `
+---
+
+> **[${ts}] ${roleLabel(event.role)}** \u2014 ${event.content}
+`;
+    } else {
+      output += `
+---
+
+**[${ts}] ${roleLabel(event.role, provider)}**
+
+${event.content}
+`;
+    }
+  }
+  return output + "\n";
 }
 async function runExport(args2) {
   if (args2.includes("--signed")) {
@@ -20458,7 +20919,7 @@ async function runExport(args2) {
   const prefix = args2.find((a) => !a.startsWith("--"));
   if (!prefix) {
     process.stderr.write(
-      "Usage: chron export <session-id-prefix>\n       chron export --signed [--session=<id>] [--since=<range>] [--output=<file>]\n"
+      "Usage: chron export <session-id-prefix>\n       chron export --signed --session=<id> [--output=<file>]\n"
     );
     process.exit(1);
   }
@@ -20482,32 +20943,7 @@ async function runExport(args2) {
   }
   const session = matches[0];
   const msgs = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(...messageOrderAsc());
-  const provider = session.ai_tool?.replace("chron-chat/", "") ?? "ai";
-  const date = session.created_at.slice(0, 10);
-  process.stdout.write(`# ${session.title}
-
-`);
-  process.stdout.write(`*${date} | ${provider} | ${msgs.length} message${msgs.length === 1 ? "" : "s"}*
-`);
-  for (const msg of msgs) {
-    const ts = fmtTimestamp2(msg.created_at);
-    if (isSystemRole(msg.role)) {
-      process.stdout.write(`
----
-
-> **[${ts}] ${roleLabel(msg.role)}** \u2014 ${msg.content}
-`);
-    } else {
-      process.stdout.write(`
----
-
-**[${ts}] ${roleLabel(msg.role, provider)}**
-
-${msg.content}
-`);
-    }
-  }
-  process.stdout.write("\n");
+  process.stdout.write(renderMarkdownExport(session, msgs));
 }
 var init_export = __esm({
   "src/cli/export.ts"() {
@@ -20530,23 +20966,23 @@ function dbPath() {
 }
 async function runSettings(_args) {
   process.stdout.write(`
-${BOLD3}Chron Settings${RESET3}
+${BOLD3}Chron Settings${RESET4}
 
 `);
-  process.stdout.write(`  ${DIM2}db${RESET3}  ${CYAN2}${dbPath()}${RESET3}
+  process.stdout.write(`  ${DIM2}db${RESET4}  ${CYAN2}${dbPath()}${RESET4}
 `);
   process.stdout.write(`
-  ${DIM2}Override with CHRON_DB_PATH env var.${RESET3}
+  ${DIM2}Override with CHRON_DB_PATH env var.${RESET4}
 
 `);
 }
-var import_os5, import_path4, RESET3, BOLD3, DIM2, CYAN2;
+var import_os5, import_path4, RESET4, BOLD3, DIM2, CYAN2;
 var init_settings = __esm({
   "src/cli/settings.ts"() {
     "use strict";
     import_os5 = require("os");
     import_path4 = require("path");
-    RESET3 = "\x1B[0m";
+    RESET4 = "\x1B[0m";
     BOLD3 = "\x1B[1m";
     DIM2 = "\x1B[2m";
     CYAN2 = "\x1B[36m";
@@ -20590,12 +21026,12 @@ async function runSecrets(args2) {
     }
     const maxType = Math.max(...rows.map((r) => r.type.length));
     process.stdout.write(`
-${BOLD4}${session.title}${RESET4}
+${BOLD4}${session.title}${RESET5}
 
 `);
     for (const row of rows) {
       process.stdout.write(
-        `  ${DIM3}${fmtDate3(row.detected_at)}${RESET4}  ${YELLOW2}${row.type.padEnd(maxType)}${RESET4}  ${row.masked_value}
+        `  ${DIM3}${fmtDate3(row.detected_at)}${RESET5}  ${YELLOW2}${row.type.padEnd(maxType)}${RESET5}  ${row.masked_value}
 `
       );
     }
@@ -20616,21 +21052,21 @@ ${BOLD4}${session.title}${RESET4}
     process.stdout.write("\n");
     for (const row of rows) {
       process.stdout.write(
-        `  ${DIM3}${fmtDate3(row.detected_at)}${RESET4}  ${CYAN3}${row.session_id.slice(0, 8)}${RESET4}  ${YELLOW2}${row.type.padEnd(maxType)}${RESET4}  ${row.masked_value.padEnd(20)}  ${DIM3}${row.title}${RESET4}
+        `  ${DIM3}${fmtDate3(row.detected_at)}${RESET5}  ${CYAN3}${row.session_id.slice(0, 8)}${RESET5}  ${YELLOW2}${row.type.padEnd(maxType)}${RESET5}  ${row.masked_value.padEnd(20)}  ${DIM3}${row.title}${RESET5}
 `
       );
     }
     process.stdout.write("\n");
   }
 }
-var RESET4, BOLD4, DIM3, CYAN3, YELLOW2;
+var RESET5, BOLD4, DIM3, CYAN3, YELLOW2;
 var init_secrets = __esm({
   "src/cli/secrets.ts"() {
     "use strict";
     init_drizzle_orm();
     init_db2();
     init_schema();
-    RESET4 = "\x1B[0m";
+    RESET5 = "\x1B[0m";
     BOLD4 = "\x1B[1m";
     DIM3 = "\x1B[2m";
     CYAN3 = "\x1B[36m";
@@ -20638,61 +21074,137 @@ var init_secrets = __esm({
   }
 });
 
+// src/utils/config-path.ts
+function configPath() {
+  const override = process.env.CHRON_CONFIG_PATH;
+  return override && override.trim() ? override : (0, import_path5.join)((0, import_os6.homedir)(), ".chron", "config.json");
+}
+var import_os6, import_path5;
+var init_config_path = __esm({
+  "src/utils/config-path.ts"() {
+    "use strict";
+    import_os6 = require("os");
+    import_path5 = require("path");
+  }
+});
+
 // src/cli/mcp-config.ts
+function executableNames(platform4) {
+  return platform4 === "win32" ? ["chron-mcp.cmd", "chron-mcp.exe", "chron-mcp"] : ["chron-mcp"];
+}
+function resolveChronMcpServer(pathValue = process.env.PATH ?? "", platform4 = process.platform) {
+  const override = process.env.CHRON_MCP_COMMAND?.trim();
+  if (override) return { command: override, args: [] };
+  for (const dir of pathValue.split(import_path6.delimiter).filter(Boolean)) {
+    for (const name2 of executableNames(platform4)) {
+      const candidate = (0, import_path6.join)(dir, name2);
+      if ((0, import_fs6.existsSync)(candidate)) return { command: candidate, args: [] };
+    }
+  }
+  let packageDir = __dirname;
+  while ((0, import_path6.dirname)(packageDir) !== packageDir) {
+    const packageJson = (0, import_path6.join)(packageDir, "package.json");
+    if ((0, import_fs6.existsSync)(packageJson)) {
+      try {
+        const pkg = JSON.parse((0, import_fs6.readFileSync)(packageJson, "utf8"));
+        if (pkg.name === "chron-mcp") {
+          return { command: (0, import_path6.join)(packageDir, "dist", "index.js"), args: [] };
+        }
+      } catch {
+      }
+    }
+    packageDir = (0, import_path6.dirname)(packageDir);
+  }
+  return { command: "chron-mcp", args: [] };
+}
+function tomlString(value) {
+  return JSON.stringify(value);
+}
+function codexMcpBlock(server) {
+  return `[mcp_servers.chron]
+command = ${tomlString(server.command)}
+args = [${server.args.map(tomlString).join(", ")}]
+`;
+}
 function userMcpClientConfigs(home, cwd, platform4, appData) {
-  const claudeDesktop = platform4 === "win32" ? (0, import_path5.join)(appData ?? (0, import_path5.join)(home, "AppData", "Roaming"), "Claude", "claude_desktop_config.json") : (0, import_path5.join)(home, "Library", "Application Support", "Claude", "claude_desktop_config.json");
+  const claudeDesktop = platform4 === "win32" ? (0, import_path6.join)(appData ?? (0, import_path6.join)(home, "AppData", "Roaming"), "Claude", "claude_desktop_config.json") : (0, import_path6.join)(home, "Library", "Application Support", "Claude", "claude_desktop_config.json");
   return [
     { name: "Claude Desktop", path: claudeDesktop, type: "json", connectCommand: "chron doctor --fix" },
-    { name: "Claude Code", path: (0, import_path5.join)(home, ".claude.json"), type: "json", connectCommand: "chron doctor --fix" },
-    { name: "Cursor (global)", path: (0, import_path5.join)(home, ".cursor", "mcp.json"), type: "json", connectCommand: "chron connect cursor" },
-    { name: "Cursor (project)", path: (0, import_path5.join)(cwd, ".cursor", "mcp.json"), type: "json", connectCommand: "chron connect cursor" },
-    { name: "Gemini CLI", path: (0, import_path5.join)(home, ".gemini", "settings.json"), type: "json", connectCommand: "chron connect gemini" },
-    { name: "Windsurf", path: (0, import_path5.join)(home, ".codeium", "windsurf", "mcp_config.json"), type: "json", connectCommand: "chron doctor --fix" },
-    { name: "Codex (global)", path: (0, import_path5.join)(home, ".codex", "config.toml"), type: "codex-toml", connectCommand: "chron connect codex" },
-    { name: "Codex (project)", path: (0, import_path5.join)(cwd, ".codex", "config.toml"), type: "codex-toml", connectCommand: "chron connect codex" }
+    { name: "Claude Code", path: (0, import_path6.join)(home, ".claude.json"), type: "json", connectCommand: "chron doctor --fix" },
+    { name: "Cursor (global)", path: (0, import_path6.join)(home, ".cursor", "mcp.json"), type: "json", connectCommand: "chron connect cursor" },
+    { name: "Cursor (project)", path: (0, import_path6.join)(cwd, ".cursor", "mcp.json"), type: "json", connectCommand: "chron connect cursor" },
+    { name: "Gemini CLI", path: (0, import_path6.join)(home, ".gemini", "settings.json"), type: "json", connectCommand: "chron connect gemini" },
+    { name: "Windsurf", path: (0, import_path6.join)(home, ".codeium", "windsurf", "mcp_config.json"), type: "json", connectCommand: "chron doctor --fix" },
+    { name: "Codex (global)", path: (0, import_path6.join)(home, ".codex", "config.toml"), type: "codex-toml", connectCommand: "chron connect codex" }
   ];
 }
 function hasChronJsonMcp(content) {
   try {
     const raw = JSON.parse(content);
     const servers = raw.mcpServers ?? {};
-    return Object.keys(servers).some((k) => {
-      const server = servers[k] ?? {};
-      return k === "chron" || k === "chron-mcp" || String(server.command ?? "").includes("chron") || Array.isArray(server.args) && server.args.some((arg) => String(arg).includes("chron-mcp"));
-    });
+    return findChronJsonServer(servers) !== null;
   } catch {
     return null;
   }
 }
-function upsertChronJsonMcp(content) {
+function findChronJsonServer(servers) {
+  const keys = Object.keys(servers);
+  const key = keys.find((k) => k === "chron" || k === "chron-mcp") ?? keys.find((k) => {
+    const server2 = servers[k] ?? {};
+    return String(server2.command ?? "").includes("chron") || Array.isArray(server2.args) && server2.args.some((arg) => String(arg).includes("chron-mcp"));
+  });
+  if (!key) return null;
+  const server = servers[key] ?? {};
+  return {
+    key,
+    command: String(server.command ?? ""),
+    args: Array.isArray(server.args) ? server.args.map(String) : []
+  };
+}
+function upsertChronJsonMcp(content, server = CHRON_MCP_SERVER) {
   const doc = content.trim() ? JSON.parse(content) : {};
   const servers = doc.mcpServers ?? {};
-  const existing = servers.chron;
-  const alreadyConfigured = existing && existing.command === CHRON_MCP_SERVER.command && JSON.stringify(existing.args ?? []) === JSON.stringify(CHRON_MCP_SERVER.args);
+  const found = findChronJsonServer(servers);
+  const targetKey = found?.key ?? "chron";
+  const existing = servers[targetKey];
+  const alreadyConfigured = existing && existing.command === server.command && JSON.stringify(existing.args ?? []) === JSON.stringify(server.args);
   if (alreadyConfigured) {
     return { content: JSON.stringify(doc, null, 2) + "\n", changed: false };
   }
-  servers.chron = { ...CHRON_MCP_SERVER };
+  servers[targetKey] = { ...existing ?? {}, ...server };
   doc.mcpServers = servers;
   return { content: JSON.stringify(doc, null, 2) + "\n", changed: true };
 }
 function hasChronCodexToml(content) {
   return /\[mcp_servers\.chron\]/.test(content);
 }
-function upsertChronCodexToml(content) {
+function upsertChronCodexToml(content, server = CHRON_MCP_SERVER) {
   if (hasChronCodexToml(content)) {
-    return { content, changed: false };
+    const sectionPattern = /(\[mcp_servers\.chron\][\s\S]*?)(?=\n\[|$)/;
+    const match = content.match(sectionPattern);
+    if (!match) return { content, changed: false };
+    let section2 = match[1];
+    const commandLine = `command = ${tomlString(server.command)}`;
+    const argsLine = `args = [${server.args.map(tomlString).join(", ")}]`;
+    section2 = /^command\s*=.*$/m.test(section2) ? section2.replace(/^command\s*=.*$/m, commandLine) : section2.trimEnd() + `
+${commandLine}
+`;
+    section2 = /^args\s*=.*$/m.test(section2) ? section2.replace(/^args\s*=.*$/m, argsLine) : section2.trimEnd() + `
+${argsLine}
+`;
+    const updated2 = content.replace(sectionPattern, section2);
+    return { content: updated2, changed: updated2 !== content };
   }
   const prefix = content.trimEnd();
   const updated = (prefix ? `${prefix}
-` : "") + CODEX_MCP_BLOCK.trimStart();
+` : "") + codexMcpBlock(server);
   return { content: updated, changed: true };
 }
 function ensureChronJsonMcpConfig(path) {
   try {
     const existing = (0, import_fs6.existsSync)(path) ? (0, import_fs6.readFileSync)(path, "utf8") : "{}";
     const updated = upsertChronJsonMcp(existing);
-    (0, import_fs6.mkdirSync)((0, import_path5.dirname)(path), { recursive: true });
+    (0, import_fs6.mkdirSync)((0, import_path6.dirname)(path), { recursive: true });
     if (updated.changed || !(0, import_fs6.existsSync)(path)) {
       (0, import_fs6.writeFileSync)(path, updated.content, "utf8");
     }
@@ -20705,7 +21217,7 @@ function ensureChronCodexTomlConfig(path) {
   try {
     const existing = (0, import_fs6.existsSync)(path) ? (0, import_fs6.readFileSync)(path, "utf8") : "";
     const updated = upsertChronCodexToml(existing);
-    (0, import_fs6.mkdirSync)((0, import_path5.dirname)(path), { recursive: true });
+    (0, import_fs6.mkdirSync)((0, import_path6.dirname)(path), { recursive: true });
     if (updated.changed || !(0, import_fs6.existsSync)(path)) {
       (0, import_fs6.writeFileSync)(path, updated.content, "utf8");
     }
@@ -20717,39 +21229,67 @@ function ensureChronCodexTomlConfig(path) {
 function ensureChronMcpConfig(config) {
   return config.type === "codex-toml" ? ensureChronCodexTomlConfig(config.path) : ensureChronJsonMcpConfig(config.path);
 }
-var import_fs6, import_path5, CHRON_MCP_SERVER, CODEX_MCP_BLOCK;
+function commandExists(command2, pathValue = process.env.PATH ?? "") {
+  if (!command2) return false;
+  if (command2.includes("/") || command2.includes("\\")) return (0, import_fs6.existsSync)(command2);
+  const candidates = process.platform === "win32" ? [command2, `${command2}.cmd`, `${command2}.exe`, `${command2}.bat`] : [command2];
+  return pathValue.split(import_path6.delimiter).filter(Boolean).some((dir) => candidates.some((name2) => (0, import_fs6.existsSync)((0, import_path6.join)(dir, name2))));
+}
+function sameCommand(a, b) {
+  return a.command === b.command && JSON.stringify(a.args ?? []) === JSON.stringify(b.args ?? []);
+}
+function storedFromJson(content) {
+  let raw;
+  try {
+    raw = JSON.parse(content);
+  } catch {
+    return void 0;
+  }
+  const servers = raw.mcpServers ?? {};
+  const found = findChronJsonServer(servers);
+  return found ? { command: found.command, args: found.args } : null;
+}
+function storedFromToml(content) {
+  const section2 = content.match(/\[mcp_servers\.chron\][\s\S]*?(?=\n\[|$)/)?.[0];
+  if (!section2) return null;
+  const command2 = section2.match(/^command\s*=\s*"((?:[^"\\]|\\.)*)"/m)?.[1] ?? "";
+  const argsRaw = section2.match(/^args\s*=\s*\[([^\]]*)\]/m)?.[1] ?? "";
+  const args2 = argsRaw.split(",").map((a) => a.trim().replace(/^"|"$/g, "")).filter(Boolean);
+  return { command: command2.replace(/\\(.)/g, "$1"), args: args2 };
+}
+function inspectChronLauncher(content, type, expected = CHRON_MCP_SERVER) {
+  const stored = type === "codex-toml" ? storedFromToml(content) : storedFromJson(content);
+  if (stored === void 0) return { status: "unreadable", expected, storedExists: false, reason: "config could not be parsed" };
+  if (stored === null) return { status: "absent", expected, storedExists: false, reason: "no chron entry" };
+  const storedExists = commandExists(stored.command);
+  if (!sameCommand(stored, expected)) {
+    return {
+      status: "stale",
+      stored,
+      expected,
+      storedExists,
+      reason: storedExists ? `launches ${stored.command} rather than the installed ${expected.command}` : `launches ${stored.command}, which does not exist`
+    };
+  }
+  return {
+    status: storedExists ? "matches" : "stale",
+    stored,
+    expected,
+    storedExists,
+    reason: storedExists ? void 0 : `${stored.command} is configured but not present on this machine`
+  };
+}
+var import_fs6, import_path6, CHRON_MCP_SERVER;
 var init_mcp_config = __esm({
   "src/cli/mcp-config.ts"() {
     "use strict";
     import_fs6 = require("fs");
-    import_path5 = require("path");
-    CHRON_MCP_SERVER = {
-      command: "npx",
-      args: ["-y", "chron-mcp"]
-    };
-    CODEX_MCP_BLOCK = `
-[mcp_servers.chron]
-command = "npx"
-args = ["-y", "chron-mcp"]
-`;
+    import_path6 = require("path");
+    CHRON_MCP_SERVER = resolveChronMcpServer();
   }
 });
 
-// src/cli/connect.ts
-var connect_exports = {};
-__export(connect_exports, {
-  CHRON_INSTRUCTION_BLOCK_START: () => CHRON_INSTRUCTION_BLOCK_START,
-  CHRON_INSTRUCTION_SENTINEL: () => CHRON_INSTRUCTION_SENTINEL,
-  ensureClaudeCodeInstructions: () => ensureClaudeCodeInstructions,
-  ensureCodexGlobalAgentsMd: () => ensureCodexGlobalAgentsMd,
-  ensureCodexInstructions: () => ensureCodexInstructions,
-  ensureCodexProjectInstructions: () => ensureCodexProjectInstructions,
-  ensureCodexShellWrapper: () => ensureCodexShellWrapper,
-  ensureCursorInstructions: () => ensureCursorInstructions,
-  ensureCursorProjectInstructions: () => ensureCursorProjectInstructions,
-  ensureGeminiInstructions: () => ensureGeminiInstructions,
-  runConnect: () => runConnect
-});
+// src/instructions.ts
 function buildChronInstructions(aiTool) {
   return `${CHRON_SKILL_SENTINEL}
 ## Chron Audit Logging \u2014 Required Every Turn
@@ -20775,6 +21315,33 @@ For compaction recovery (prior \`session_id\` lost), call \`init_session\` with 
 If Chron MCP is unavailable, state it once and continue normally.
 `;
 }
+var CHRON_SKILL_SENTINEL, CHRON_BLOCK_START, CHRON_BLOCK_END, MCP_LOGGING_INSTRUCTIONS;
+var init_instructions = __esm({
+  "src/instructions.ts"() {
+    "use strict";
+    CHRON_SKILL_SENTINEL = "<!-- chron-skill -->";
+    CHRON_BLOCK_START = "<!-- chron-skill-start -->";
+    CHRON_BLOCK_END = "<!-- chron-skill-end -->";
+    MCP_LOGGING_INSTRUCTIONS = buildChronInstructions(
+      "the identifier of this client, for example claude, codex, cursor, gemini or windsurf \u2014 never a placeholder"
+    );
+  }
+});
+
+// src/cli/connect.ts
+var connect_exports = {};
+__export(connect_exports, {
+  CHRON_INSTRUCTION_BLOCK_START: () => CHRON_INSTRUCTION_BLOCK_START,
+  CHRON_INSTRUCTION_SENTINEL: () => CHRON_INSTRUCTION_SENTINEL,
+  ensureClaudeCodeInstructions: () => ensureClaudeCodeInstructions,
+  ensureCodexGlobalAgentsMd: () => ensureCodexGlobalAgentsMd,
+  ensureCodexInstructions: () => ensureCodexInstructions,
+  ensureCodexProjectInstructions: () => ensureCodexProjectInstructions,
+  ensureCodexShellWrapper: () => ensureCodexShellWrapper,
+  ensureCursorProjectInstructions: () => ensureCursorProjectInstructions,
+  ensureGeminiInstructions: () => ensureGeminiInstructions,
+  runConnect: () => runConnect
+});
 function buildCursorRule(instructions) {
   return `---
 description: Chron AI audit logging for Cursor agent sessions
@@ -20788,7 +21355,7 @@ function writeInstructionFile(filePath, content) {
 ${content}
 ${CHRON_BLOCK_END}`;
   try {
-    (0, import_fs7.mkdirSync)((0, import_path6.dirname)(filePath), { recursive: true });
+    (0, import_fs7.mkdirSync)((0, import_path7.dirname)(filePath), { recursive: true });
     if ((0, import_fs7.existsSync)(filePath)) {
       const existing = (0, import_fs7.readFileSync)(filePath, "utf8");
       const startIdx = existing.indexOf(CHRON_BLOCK_START);
@@ -20811,48 +21378,38 @@ ${CHRON_BLOCK_END}`;
 }
 function ensureClaudeCodeInstructions() {
   return writeInstructionFile(
-    (0, import_path6.join)((0, import_os6.homedir)(), "CLAUDE.md"),
+    (0, import_path7.join)((0, import_os7.homedir)(), "CLAUDE.md"),
     buildChronInstructions("claude")
   );
 }
 function ensureCodexInstructions() {
   return writeInstructionFile(
-    (0, import_path6.join)((0, import_os6.homedir)(), ".codex", "instructions.md"),
+    (0, import_path7.join)((0, import_os7.homedir)(), ".codex", "instructions.md"),
     buildChronInstructions("codex")
   );
 }
 function ensureCodexGlobalAgentsMd() {
   return writeInstructionFile(
-    (0, import_path6.join)((0, import_os6.homedir)(), "AGENTS.md"),
+    (0, import_path7.join)((0, import_os7.homedir)(), "AGENTS.md"),
     buildChronInstructions("codex")
   );
 }
 function ensureCodexProjectInstructions(cwd = process.cwd()) {
   return writeInstructionFile(
-    (0, import_path6.join)(cwd, "AGENTS.md"),
+    (0, import_path7.join)(cwd, "AGENTS.md"),
     buildChronInstructions("codex")
   );
 }
 function ensureGeminiInstructions() {
   return writeInstructionFile(
-    (0, import_path6.join)((0, import_os6.homedir)(), ".gemini", "GEMINI.md"),
+    (0, import_path7.join)((0, import_os7.homedir)(), ".gemini", "GEMINI.md"),
     buildChronInstructions("gemini")
   );
 }
-function ensureCursorInstructions() {
-  const filePath = (0, import_path6.join)((0, import_os6.homedir)(), ".cursor", "rules", "chron.mdc");
-  try {
-    (0, import_fs7.mkdirSync)((0, import_path6.dirname)(filePath), { recursive: true });
-    (0, import_fs7.writeFileSync)(filePath, buildCursorRule(buildChronInstructions("cursor")), "utf8");
-    return { status: "added" };
-  } catch (err) {
-    return { status: "error", error: String(err.message) };
-  }
-}
 function ensureCursorProjectInstructions(cwd = process.cwd()) {
-  const filePath = (0, import_path6.join)(cwd, ".cursor", "rules", "chron.mdc");
+  const filePath = (0, import_path7.join)(cwd, ".cursor", "rules", "chron.mdc");
   try {
-    (0, import_fs7.mkdirSync)((0, import_path6.dirname)(filePath), { recursive: true });
+    (0, import_fs7.mkdirSync)((0, import_path7.dirname)(filePath), { recursive: true });
     (0, import_fs7.writeFileSync)(filePath, buildCursorRule(buildChronInstructions("cursor")), "utf8");
     return { status: "added" };
   } catch (err) {
@@ -20870,7 +21427,7 @@ ${SHELL_WRAPPER_END}`;
 }
 function writeShellWrapper(rcFile) {
   try {
-    (0, import_fs7.mkdirSync)((0, import_path6.dirname)(rcFile), { recursive: true });
+    (0, import_fs7.mkdirSync)((0, import_path7.dirname)(rcFile), { recursive: true });
     const wrapper = buildCodexShellWrapper();
     if ((0, import_fs7.existsSync)(rcFile)) {
       const existing = (0, import_fs7.readFileSync)(rcFile, "utf8");
@@ -20894,31 +21451,31 @@ function writeShellWrapper(rcFile) {
   }
 }
 function ensureCodexShellWrapper() {
-  const home = (0, import_os6.homedir)();
-  const zshResult = writeShellWrapper((0, import_path6.join)(home, ".zshrc"));
-  const bashResult = writeShellWrapper((0, import_path6.join)(home, ".bashrc"));
+  const home = (0, import_os7.homedir)();
+  const zshResult = writeShellWrapper((0, import_path7.join)(home, ".zshrc"));
+  const bashResult = writeShellWrapper((0, import_path7.join)(home, ".bashrc"));
   return { zsh: zshResult.status, bash: bashResult.status };
 }
 function prompt(rl, question) {
-  return new Promise((resolve2) => rl.question(question, resolve2));
+  return new Promise((resolve3) => rl.question(question, resolve3));
 }
-function configPath() {
-  return (0, import_path6.join)((0, import_os6.homedir)(), ".chron", "config.json");
+function configPath2() {
+  return configPath();
 }
 function loadConfig() {
   try {
-    return JSON.parse((0, import_fs7.readFileSync)(configPath(), "utf8"));
+    return JSON.parse((0, import_fs7.readFileSync)(configPath2(), "utf8"));
   } catch {
     return {};
   }
 }
 function saveConfig(data) {
-  const dir = (0, import_path6.join)((0, import_os6.homedir)(), ".chron");
+  const dir = (0, import_path7.join)((0, import_os7.homedir)(), ".chron");
   (0, import_fs7.mkdirSync)(dir, { recursive: true });
-  (0, import_fs7.writeFileSync)(configPath(), JSON.stringify(data, null, 2), "utf8");
+  (0, import_fs7.writeFileSync)(configPath2(), JSON.stringify(data, null, 2), "utf8");
 }
 function patchClaudeJson(vars) {
-  const path = (0, import_path6.join)((0, import_os6.homedir)(), ".claude.json");
+  const path = (0, import_path7.join)((0, import_os7.homedir)(), ".claude.json");
   if (!(0, import_fs7.existsSync)(path)) return false;
   try {
     const raw = (0, import_fs7.readFileSync)(path, "utf8");
@@ -20937,32 +21494,32 @@ function patchClaudeJson(vars) {
 }
 async function connectCrowdStrike() {
   process.stdout.write(`
-${BOLD5}Connect Chron \u2192 CrowdStrike LogScale${RESET5}
+${BOLD5}Connect Chron \u2192 CrowdStrike LogScale${RESET6}
 
 `);
   process.stdout.write(`${DIM4}Events will be sent directly to your LogScale repository.
 `);
-  process.stdout.write(`No message content is transmitted \u2014 metadata only.${RESET5}
+  process.stdout.write(`No message content is transmitted \u2014 metadata only.${RESET6}
 
 `);
   const rl = (0, import_readline.createInterface)({ input: process.stdin, output: process.stdout });
   let url;
   let token;
   try {
-    url = (await prompt(rl, `  LogScale ingest URL  ${DIM4}(e.g. https://cloud.us.humio.com/api/v1/ingest/humio-structured)${RESET5}
-  ${CYAN4}>${RESET5} `)).trim();
+    url = (await prompt(rl, `  LogScale ingest URL  ${DIM4}(e.g. https://cloud.us.humio.com/api/v1/ingest/humio-structured)${RESET6}
+  ${CYAN4}>${RESET6} `)).trim();
     if (!url.startsWith("https://")) {
       process.stdout.write(`
-${RED2}URL must start with https://${RESET5}
+${RED3}URL must start with https://${RESET6}
 `);
       process.exit(1);
     }
     token = (await prompt(rl, `
   LogScale ingest token
-  ${CYAN4}>${RESET5} `)).trim();
+  ${CYAN4}>${RESET6} `)).trim();
     if (!token) {
       process.stdout.write(`
-${RED2}Token cannot be empty${RESET5}
+${RED3}Token cannot be empty${RESET6}
 `);
       process.exit(1);
     }
@@ -20970,7 +21527,7 @@ ${RED2}Token cannot be empty${RESET5}
     rl.close();
   }
   process.stdout.write(`
-${DIM4}Sending test event...${RESET5} `);
+${DIM4}Sending test event...${RESET6} `);
   const testPayload = JSON.stringify([{
     tags: { host: require("os").hostname(), source: "chron-mcp" },
     events: [{
@@ -20997,39 +21554,39 @@ ${DIM4}Sending test event...${RESET5} `);
     statusCode = res.status;
     ok3 = res.ok;
   } catch (e) {
-    process.stdout.write(`${RED2}failed${RESET5}
+    process.stdout.write(`${RED3}failed${RESET6}
 `);
-    process.stderr.write(`  ${RED2}Error: ${e.message}${RESET5}
+    process.stderr.write(`  ${RED3}Error: ${e.message}${RESET6}
 
 `);
     process.exit(1);
   }
   if (!ok3) {
-    process.stdout.write(`${RED2}failed (HTTP ${statusCode})${RESET5}
+    process.stdout.write(`${RED3}failed (HTTP ${statusCode})${RESET6}
 `);
-    process.stderr.write(`  ${RED2}Check your URL and token, then try again.${RESET5}
+    process.stderr.write(`  ${RED3}Check your URL and token, then try again.${RESET6}
 
 `);
     process.exit(1);
   }
-  process.stdout.write(`${GREEN2}OK${RESET5}
+  process.stdout.write(`${GREEN2}OK${RESET6}
 
 `);
   const config = loadConfig();
   config.logscale = { url, connected_at: (/* @__PURE__ */ new Date()).toISOString() };
   saveConfig(config);
-  process.stdout.write(`${GREEN2}${BOLD5}Connected!${RESET5} Test event appeared in LogScale.
+  process.stdout.write(`${GREEN2}${BOLD5}Connected!${RESET6} Test event appeared in LogScale.
 
 `);
-  process.stdout.write(`${BOLD5}Add these env vars to your MCP client config:${RESET5}
+  process.stdout.write(`${BOLD5}Add these env vars to your MCP client config:${RESET6}
 
 `);
-  process.stdout.write(`  ${CYAN4}CHRON_LOGSCALE_URL${RESET5}   ${url}
+  process.stdout.write(`  ${CYAN4}CHRON_LOGSCALE_URL${RESET6}   ${url}
 `);
-  process.stdout.write(`  ${CYAN4}CHRON_LOGSCALE_TOKEN${RESET5} ${DIM4}<your-token>${RESET5}
+  process.stdout.write(`  ${CYAN4}CHRON_LOGSCALE_TOKEN${RESET6} ${DIM4}<your-token>${RESET6}
 
 `);
-  process.stdout.write(`${DIM4}For Claude Code \u2014 add to the "env" block of the chron entry in ~/.claude.json:${RESET5}
+  process.stdout.write(`${DIM4}For Claude Code \u2014 add to the "env" block of the chron entry in ~/.claude.json:${RESET6}
 
 `);
   process.stdout.write(`  ${DIM4}"env": {
@@ -21038,10 +21595,10 @@ ${DIM4}Sending test event...${RESET5} `);
 `);
   process.stdout.write(`    "CHRON_LOGSCALE_TOKEN": "<your-token>"
 `);
-  process.stdout.write(`  }${RESET5}
+  process.stdout.write(`  }${RESET6}
 
 `);
-  process.stdout.write(`${DIM4}Connection saved to ~/.chron/config.json${RESET5}
+  process.stdout.write(`${DIM4}Connection saved to ~/.chron/config.json${RESET6}
 
 `);
 }
@@ -21050,44 +21607,44 @@ function isLocalhost(url) {
 }
 async function connectSplunk() {
   process.stdout.write(`
-${BOLD5}Connect Chron \u2192 Splunk${RESET5}
+${BOLD5}Connect Chron \u2192 Splunk${RESET6}
 
 `);
   process.stdout.write(`${DIM4}Chron will send session telemetry to your Splunk instance via HTTP Event
 `);
-  process.stdout.write(`Collector (HEC). Message content is never transmitted.${RESET5}
+  process.stdout.write(`Collector (HEC). Message content is never transmitted.${RESET6}
 
 `);
   process.stdout.write(`${DIM4}Works with Splunk Enterprise, Splunk Cloud, and local Docker instances.
 `);
-  process.stdout.write(`See dashboards/splunk/README.md for setup steps.${RESET5}
+  process.stdout.write(`See dashboards/splunk/README.md for setup steps.${RESET6}
 
 `);
   process.stdout.write(`${DIM4}Note: Splunk 9.x Docker uses HTTPS on port 8088 with a self-signed cert.
 `);
-  process.stdout.write(`Use https://localhost:8088 \u2014 certificate verification is skipped for localhost.${RESET5}
+  process.stdout.write(`Use https://localhost:8088 \u2014 certificate verification is skipped for localhost.${RESET6}
 
 `);
   const rl = (0, import_readline.createInterface)({ input: process.stdin, output: process.stdout });
   let url, token;
   try {
-    url = (await prompt(rl, `  Splunk HEC base URL  ${DIM4}(e.g. https://localhost:8088 or https://your.splunkcloud.com:8088)${RESET5}
-  ${CYAN4}>${RESET5} `)).trim();
+    url = (await prompt(rl, `  Splunk HEC base URL  ${DIM4}(e.g. https://localhost:8088 or https://your.splunkcloud.com:8088)${RESET6}
+  ${CYAN4}>${RESET6} `)).trim();
     token = (await prompt(rl, `
   HEC token
-  ${CYAN4}>${RESET5} `)).trim();
+  ${CYAN4}>${RESET6} `)).trim();
   } finally {
     rl.close();
   }
   if (!url.startsWith("http")) {
     process.stdout.write(`
-${RED2}URL must start with http:// or https://${RESET5}
+${RED3}URL must start with http:// or https://${RESET6}
 `);
     process.exit(1);
   }
   if (!token) {
     process.stdout.write(`
-${RED2}HEC token cannot be empty${RESET5}
+${RED3}HEC token cannot be empty${RESET6}
 `);
     process.exit(1);
   }
@@ -21095,7 +21652,7 @@ ${RED2}HEC token cannot be empty${RESET5}
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
   }
   process.stdout.write(`
-${DIM4}Sending test event...${RESET5} `);
+${DIM4}Sending test event...${RESET6} `);
   const hecUrl = `${url.replace(/\/$/, "")}/services/collector/event`;
   const testPayload = JSON.stringify({
     time: Date.now() / 1e3,
@@ -21120,20 +21677,20 @@ ${DIM4}Sending test event...${RESET5} `);
     });
     if (!res.ok) {
       const err = await res.text();
-      process.stdout.write(`${RED2}failed (HTTP ${res.status})${RESET5}
+      process.stdout.write(`${RED3}failed (HTTP ${res.status})${RESET6}
 `);
-      process.stderr.write(`  ${RED2}${err}${RESET5}
+      process.stderr.write(`  ${RED3}${err}${RESET6}
 
 `);
       process.exit(1);
     }
-    process.stdout.write(`${GREEN2}OK${RESET5}
+    process.stdout.write(`${GREEN2}OK${RESET6}
 
 `);
   } catch (e) {
-    process.stdout.write(`${RED2}failed${RESET5}
+    process.stdout.write(`${RED3}failed${RESET6}
 `);
-    process.stderr.write(`  ${RED2}Error: ${e.message}${RESET5}
+    process.stderr.write(`  ${RED3}Error: ${e.message}${RESET6}
 
 `);
     process.exit(1);
@@ -21144,72 +21701,72 @@ ${DIM4}Sending test event...${RESET5} `);
   const splunkVars = { CHRON_SPLUNK_URL: url, CHRON_SPLUNK_TOKEN: token };
   if (isLocalhost(url)) splunkVars.CHRON_SPLUNK_INSECURE = "1";
   patchClaudeJson(splunkVars);
-  process.stdout.write(`${GREEN2}${BOLD5}Connected!${RESET5} Splunk is receiving chron events.
+  process.stdout.write(`${GREEN2}${BOLD5}Connected!${RESET6} Splunk is receiving chron events.
 
 `);
-  process.stdout.write(`${DIM4}Config saved to ~/.chron/config.json \u2014 events will flow immediately in all running sessions.${RESET5}
+  process.stdout.write(`${DIM4}Config saved to ~/.chron/config.json \u2014 events will flow immediately in all running sessions.${RESET6}
 
 `);
 }
 async function connectSentinel() {
   process.stdout.write(`
-${BOLD5}Connect Chron \u2192 Microsoft Sentinel${RESET5}
+${BOLD5}Connect Chron \u2192 Microsoft Sentinel${RESET6}
 
 `);
   process.stdout.write(`${DIM4}Chron will send session telemetry to your Sentinel workspace via the
 `);
-  process.stdout.write(`Azure Monitor Logs Ingestion API. Message content is never transmitted.${RESET5}
+  process.stdout.write(`Azure Monitor Logs Ingestion API. Message content is never transmitted.${RESET6}
 
 `);
   process.stdout.write(`${DIM4}Prerequisites: Azure App Registration, Data Collection Endpoint (DCE),
 `);
   process.stdout.write(`and a Data Collection Rule (DCR) pointing to a ChronEvents_CL custom table.
 `);
-  process.stdout.write(`See dashboards/sentinel/README.md for full setup steps.${RESET5}
+  process.stdout.write(`See dashboards/sentinel/README.md for full setup steps.${RESET6}
 
 `);
   const rl = (0, import_readline.createInterface)({ input: process.stdin, output: process.stdout });
   let tenantId, clientId, clientSecret, dce, dcrId, stream;
   try {
-    tenantId = (await prompt(rl, `  Azure Tenant ID  ${DIM4}(xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)${RESET5}
-  ${CYAN4}>${RESET5} `)).trim();
+    tenantId = (await prompt(rl, `  Azure Tenant ID  ${DIM4}(xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)${RESET6}
+  ${CYAN4}>${RESET6} `)).trim();
     clientId = (await prompt(rl, `
   App Registration Client ID
-  ${CYAN4}>${RESET5} `)).trim();
+  ${CYAN4}>${RESET6} `)).trim();
     clientSecret = (await prompt(rl, `
   Client Secret
-  ${CYAN4}>${RESET5} `)).trim();
+  ${CYAN4}>${RESET6} `)).trim();
     dce = (await prompt(rl, `
-  Data Collection Endpoint URL  ${DIM4}(https://...)${RESET5}
-  ${CYAN4}>${RESET5} `)).trim();
+  Data Collection Endpoint URL  ${DIM4}(https://...)${RESET6}
+  ${CYAN4}>${RESET6} `)).trim();
     dcrId = (await prompt(rl, `
-  DCR Immutable ID  ${DIM4}(dcr-xxxx)${RESET5}
-  ${CYAN4}>${RESET5} `)).trim();
+  DCR Immutable ID  ${DIM4}(dcr-xxxx)${RESET6}
+  ${CYAN4}>${RESET6} `)).trim();
     stream = (await prompt(rl, `
-  Stream name  ${DIM4}(press Enter for Custom-ChronEvents_CL)${RESET5}
-  ${CYAN4}>${RESET5} `)).trim() || "Custom-ChronEvents_CL";
+  Stream name  ${DIM4}(press Enter for Custom-ChronEvents_CL)${RESET6}
+  ${CYAN4}>${RESET6} `)).trim() || "Custom-ChronEvents_CL";
   } finally {
     rl.close();
   }
   if (!tenantId || !clientId || !clientSecret) {
     process.stdout.write(`
-${RED2}Tenant ID, Client ID, and Client Secret are all required.${RESET5}
+${RED3}Tenant ID, Client ID, and Client Secret are all required.${RESET6}
 `);
     process.exit(1);
   }
   if (!dce.startsWith("https://")) {
     process.stdout.write(`
-${RED2}DCE URL must start with https://${RESET5}
+${RED3}DCE URL must start with https://${RESET6}
 `);
     process.exit(1);
   }
   if (dcrId && !dcrId.startsWith("dcr-")) {
     process.stdout.write(`
-${YELLOW3}Warning: DCR Immutable ID usually starts with "dcr-"${RESET5}
+${YELLOW3}Warning: DCR Immutable ID usually starts with "dcr-"${RESET6}
 `);
   }
   process.stdout.write(`
-${DIM4}Authenticating with Azure AD...${RESET5} `);
+${DIM4}Authenticating with Azure AD...${RESET6} `);
   let accessToken;
   try {
     const tokenRes = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
@@ -21224,26 +21781,26 @@ ${DIM4}Authenticating with Azure AD...${RESET5} `);
     });
     if (!tokenRes.ok) {
       const err = await tokenRes.text();
-      process.stdout.write(`${RED2}failed (HTTP ${tokenRes.status})${RESET5}
+      process.stdout.write(`${RED3}failed (HTTP ${tokenRes.status})${RESET6}
 `);
-      process.stderr.write(`  ${RED2}${err}${RESET5}
+      process.stderr.write(`  ${RED3}${err}${RESET6}
 
 `);
       process.exit(1);
     }
     const tokenData = await tokenRes.json();
     accessToken = tokenData.access_token;
-    process.stdout.write(`${GREEN2}OK${RESET5}
+    process.stdout.write(`${GREEN2}OK${RESET6}
 `);
   } catch (e) {
-    process.stdout.write(`${RED2}failed${RESET5}
+    process.stdout.write(`${RED3}failed${RESET6}
 `);
-    process.stderr.write(`  ${RED2}Error: ${e.message}${RESET5}
+    process.stderr.write(`  ${RED3}Error: ${e.message}${RESET6}
 
 `);
     process.exit(1);
   }
-  process.stdout.write(`${DIM4}Sending test event...${RESET5} `);
+  process.stdout.write(`${DIM4}Sending test event...${RESET6} `);
   const ingestUrl = `${dce}/dataCollectionRules/${dcrId}/streams/${stream}?api-version=2023-01-01`;
   const testRecord = {
     TimeGenerated: (/* @__PURE__ */ new Date()).toISOString(),
@@ -21268,20 +21825,20 @@ ${DIM4}Authenticating with Azure AD...${RESET5} `);
     });
     if (!res.ok) {
       const err = await res.text();
-      process.stdout.write(`${RED2}failed (HTTP ${res.status})${RESET5}
+      process.stdout.write(`${RED3}failed (HTTP ${res.status})${RESET6}
 `);
-      process.stderr.write(`  ${RED2}${err}${RESET5}
+      process.stderr.write(`  ${RED3}${err}${RESET6}
 
 `);
       process.exit(1);
     }
-    process.stdout.write(`${GREEN2}OK${RESET5}
+    process.stdout.write(`${GREEN2}OK${RESET6}
 
 `);
   } catch (e) {
-    process.stdout.write(`${RED2}failed${RESET5}
+    process.stdout.write(`${RED3}failed${RESET6}
 `);
-    process.stderr.write(`  ${RED2}Error: ${e.message}${RESET5}
+    process.stderr.write(`  ${RED3}Error: ${e.message}${RESET6}
 
 `);
     process.exit(1);
@@ -21297,269 +21854,202 @@ ${DIM4}Authenticating with Azure AD...${RESET5} `);
     CHRON_SENTINEL_DCR_ID: dcrId,
     CHRON_SENTINEL_STREAM: stream
   });
-  process.stdout.write(`${GREEN2}${BOLD5}Connected!${RESET5} Test event sent to Sentinel workspace.
+  process.stdout.write(`${GREEN2}${BOLD5}Connected!${RESET6} Test event sent to Sentinel workspace.
 
 `);
-  process.stdout.write(`${DIM4}Config saved to ~/.chron/config.json \u2014 events will flow immediately in all running sessions.${RESET5}
+  process.stdout.write(`${DIM4}Config saved to ~/.chron/config.json \u2014 events will flow immediately in all running sessions.${RESET6}
 
 `);
 }
 function codexGlobalConfigPath() {
-  return (0, import_path6.join)((0, import_os6.homedir)(), ".codex", "config.toml");
-}
-function isChronInCodexConfig(content) {
-  return hasChronCodexToml(content);
-}
-function appendChronToToml(content) {
-  return upsertChronCodexToml(content).content;
+  return (0, import_path7.join)((0, import_os7.homedir)(), ".codex", "config.toml");
 }
 async function connectCodex() {
   process.stdout.write(`
-${BOLD5}Connect Chron \u2192 Codex${RESET5}
+${BOLD5}Connect Chron \u2192 Codex${RESET6}
 
 `);
   const globalPath = codexGlobalConfigPath();
-  const projectPath = (0, import_path6.join)(process.cwd(), ".codex", "config.toml");
-  const hasGlobal = (0, import_fs7.existsSync)(globalPath);
-  const hasProject = (0, import_fs7.existsSync)(projectPath);
-  let targetPath;
-  let isProject = false;
-  if (hasGlobal && hasProject) {
-    process.stdout.write(`${DIM4}Found both global and project Codex configs.${RESET5}
-`);
-    process.stdout.write(`${DIM4}  Global:  ${globalPath}${RESET5}
-`);
-    process.stdout.write(`${DIM4}  Project: ${projectPath}${RESET5}
+  if (!(0, import_fs7.existsSync)(globalPath)) {
+    process.stdout.write(`${YELLOW3}!${RESET6} Codex config not found. Creating ${globalPath}
 
 `);
-    const rl = (0, import_readline.createInterface)({ input: process.stdin, output: process.stdout });
-    const choice = await new Promise(
-      (resolve2) => rl.question(`  Add Chron to (g)lobal or (p)roject config? [g/p]: `, resolve2)
-    );
-    rl.close();
-    isProject = choice.trim().toLowerCase() === "p";
-    targetPath = isProject ? projectPath : globalPath;
-  } else if (hasProject) {
-    targetPath = projectPath;
-    isProject = true;
-  } else if (hasGlobal) {
-    targetPath = globalPath;
-  } else {
-    process.stdout.write(`${YELLOW3}!${RESET5} Codex config not found. Creating ${globalPath}
-
-`);
-    const result = ensureChronCodexTomlConfig(globalPath);
-    if (result.status === "error") {
-      process.stdout.write(`${RED2}\u2717${RESET5} Could not write ${globalPath}: ${result.error}
-`);
-      process.exit(1);
-    }
-    process.stdout.write(`${GREEN2}\u2713${RESET5} Created ${globalPath} with Chron MCP config.
-`);
-    const ir2 = ensureCodexInstructions();
-    if (ir2.status === "added") {
-      process.stdout.write(`${GREEN2}\u2713${RESET5} Chron logging instructions written to ~/.codex/instructions.md
-`);
-    } else if (ir2.status === "error") {
-      process.stdout.write(`${YELLOW3}!${RESET5} Could not write logging instructions: ${ir2.error}
-`);
-    }
-    const pr2 = ensureCodexProjectInstructions();
-    if (pr2.status === "added") {
-      process.stdout.write(`${GREEN2}\u2713${RESET5} Chron logging instructions written to ./AGENTS.md
-`);
-    } else if (pr2.status === "error") {
-      process.stdout.write(`${YELLOW3}!${RESET5} Could not write ./AGENTS.md: ${pr2.error}
-`);
-    }
-    const gr2 = ensureCodexGlobalAgentsMd();
-    if (gr2.status === "added") {
-      process.stdout.write(`${GREEN2}\u2713${RESET5} Chron logging instructions written to ~/AGENTS.md (global fallback for Codex desktop)
-`);
-    }
-    const wr2 = ensureCodexShellWrapper();
-    if (wr2.zsh === "added" || wr2.bash === "added") {
-      process.stdout.write(`${GREEN2}\u2713${RESET5} Shell wrapper added \u2014 codex will auto-bootstrap AGENTS.md on every launch
-`);
-    }
-    process.stdout.write("\n");
-    _printCodexNextSteps();
-    return;
   }
-  const existing = (0, import_fs7.readFileSync)(targetPath, "utf8");
-  if (isChronInCodexConfig(existing)) {
-    process.stdout.write(`${GREEN2}\u2713${RESET5} Chron MCP already configured in ${targetPath}
+  const configResult = ensureChronCodexTomlConfig(globalPath);
+  if (configResult.status === "error") {
+    process.stdout.write(`${RED3}\u2717${RESET6} Could not configure ${globalPath}: ${configResult.error}
+`);
+    process.exit(1);
+  } else if (configResult.status === "already") {
+    process.stdout.write(`${GREEN2}\u2713${RESET6} Chron MCP already configured in ${globalPath}
 `);
   } else {
-    const updated = appendChronToToml(existing);
-    (0, import_fs7.writeFileSync)(targetPath, updated, "utf8");
-    process.stdout.write(`${GREEN2}\u2713${RESET5} Added Chron MCP to ${targetPath}
+    process.stdout.write(`${GREEN2}\u2713${RESET6} Configured Chron MCP in ${globalPath}
 `);
   }
   const ir = ensureCodexInstructions();
   if (ir.status === "added") {
-    process.stdout.write(`${GREEN2}\u2713${RESET5} Chron logging instructions written to ~/.codex/instructions.md
+    process.stdout.write(`${GREEN2}\u2713${RESET6} Chron logging instructions written to ~/.codex/instructions.md
 `);
   } else if (ir.status === "already") {
-    process.stdout.write(`${GREEN2}\u2713${RESET5} Chron logging instructions already present
+    process.stdout.write(`${GREEN2}\u2713${RESET6} Chron logging instructions already present
 `);
   } else {
-    process.stdout.write(`${YELLOW3}!${RESET5} Could not write logging instructions: ${ir.error}
+    process.stdout.write(`${YELLOW3}!${RESET6} Could not write logging instructions: ${ir.error}
 `);
   }
   const pr = ensureCodexProjectInstructions();
   if (pr.status === "added") {
-    process.stdout.write(`${GREEN2}\u2713${RESET5} Chron logging instructions written to ./AGENTS.md
+    process.stdout.write(`${GREEN2}\u2713${RESET6} Chron logging instructions written to ./AGENTS.md
 `);
   } else if (pr.status === "already") {
-    process.stdout.write(`${GREEN2}\u2713${RESET5} Chron logging instructions already present in ./AGENTS.md
+    process.stdout.write(`${GREEN2}\u2713${RESET6} Chron logging instructions already present in ./AGENTS.md
 `);
   } else {
-    process.stdout.write(`${YELLOW3}!${RESET5} Could not write ./AGENTS.md: ${pr.error}
+    process.stdout.write(`${YELLOW3}!${RESET6} Could not write ./AGENTS.md: ${pr.error}
 `);
   }
   const gr = ensureCodexGlobalAgentsMd();
   if (gr.status === "added") {
-    process.stdout.write(`${GREEN2}\u2713${RESET5} Chron logging instructions written to ~/AGENTS.md (global fallback for Codex desktop)
+    process.stdout.write(`${GREEN2}\u2713${RESET6} Chron logging instructions written to ~/AGENTS.md (global fallback for Codex desktop)
 `);
   } else if (gr.status === "already") {
-    process.stdout.write(`${GREEN2}\u2713${RESET5} ~/AGENTS.md already has Chron instructions
+    process.stdout.write(`${GREEN2}\u2713${RESET6} ~/AGENTS.md already has Chron instructions
 `);
   }
   const wr = ensureCodexShellWrapper();
   if (wr.zsh === "added" || wr.bash === "added") {
-    process.stdout.write(`${GREEN2}\u2713${RESET5} Shell wrapper added \u2014 codex will auto-bootstrap AGENTS.md on every launch
+    process.stdout.write(`${GREEN2}\u2713${RESET6} Shell wrapper added \u2014 codex will auto-bootstrap AGENTS.md on every launch
 `);
   }
   process.stdout.write("\n");
   _printCodexNextSteps();
 }
 function _printCodexNextSteps() {
-  process.stdout.write(`${BOLD5}Next steps:${RESET5}
+  process.stdout.write(`${BOLD5}Next steps:${RESET6}
 
 `);
-  process.stdout.write(`  Restart Codex, then run ${CYAN4}chron doctor --verify-logging codex${RESET5}
+  process.stdout.write(`  Restart Codex, then run ${CYAN4}chron doctor --verify-logging codex${RESET6}
 
 `);
   process.stdout.write(`${DIM4}Logging instructions written to ~/.codex/instructions.md and ./AGENTS.md.
 `);
-  process.stdout.write(`Full setup check: chron doctor${RESET5}
+  process.stdout.write(`Full setup check: chron doctor${RESET6}
 
 `);
 }
-function connectJsonClient(name, path, promptLine, ensureInstructions, verifyTool) {
+function connectJsonClient(name2, path, promptLine, ensureInstructions, verifyTool) {
   process.stdout.write(`
-${BOLD5}Connect Chron \u2192 ${name}${RESET5}
+${BOLD5}Connect Chron \u2192 ${name2}${RESET6}
 
 `);
   const result = ensureChronJsonMcpConfig(path);
   if (result.status === "error") {
-    process.stdout.write(`${RED2}\u2717${RESET5} Could not write ${path}: ${result.error}
+    process.stdout.write(`${RED3}\u2717${RESET6} Could not write ${path}: ${result.error}
 `);
     process.exit(1);
   }
   if (result.status === "already") {
-    process.stdout.write(`${GREEN2}\u2713${RESET5} Chron MCP already configured in ${path}
+    process.stdout.write(`${GREEN2}\u2713${RESET6} Chron MCP already configured in ${path}
 `);
   } else {
-    process.stdout.write(`${GREEN2}\u2713${RESET5} Added Chron MCP to ${path}
+    process.stdout.write(`${GREEN2}\u2713${RESET6} Added Chron MCP to ${path}
 `);
   }
   if (ensureInstructions) {
     const ir = ensureInstructions();
     if (ir.status === "added") {
-      process.stdout.write(`${GREEN2}\u2713${RESET5} Chron logging instructions written
+      process.stdout.write(`${GREEN2}\u2713${RESET6} Chron logging instructions written
 `);
     } else if (ir.status === "already") {
-      process.stdout.write(`${GREEN2}\u2713${RESET5} Chron logging instructions already present
+      process.stdout.write(`${GREEN2}\u2713${RESET6} Chron logging instructions already present
 `);
     } else {
-      process.stdout.write(`${YELLOW3}!${RESET5} Could not write logging instructions: ${ir.error}
+      process.stdout.write(`${YELLOW3}!${RESET6} Could not write logging instructions: ${ir.error}
 `);
     }
   }
   process.stdout.write(`
-${BOLD5}Next steps:${RESET5}
+${BOLD5}Next steps:${RESET6}
 
 `);
-  process.stdout.write(`  1. Restart ${name} to load the new MCP server.
+  process.stdout.write(`  1. Restart ${name2} to load the new MCP server.
 `);
   if (ensureInstructions && verifyTool) {
     process.stdout.write(`  2. Verify Chron logging end-to-end:
 `);
-    process.stdout.write(`     ${CYAN4}chron doctor --verify-logging ${verifyTool}${RESET5}
+    process.stdout.write(`     ${CYAN4}chron doctor --verify-logging ${verifyTool}${RESET6}
 `);
-    process.stdout.write(`     ${DIM4}(generates a test token, guides you through a real session, confirms DB)${RESET5}
+    process.stdout.write(`     ${DIM4}(generates a test token, guides you through a real session, confirms DB)${RESET6}
 `);
   } else {
     process.stdout.write(`  2. Start a new chat and ask:
 `);
-    process.stdout.write(`     ${DIM4}"${promptLine}"${RESET5}
+    process.stdout.write(`     ${DIM4}"${promptLine}"${RESET6}
 `);
   }
-  process.stdout.write(`  3. Full setup check: ${CYAN4}chron doctor${RESET5}
+  process.stdout.write(`  3. Full setup check: ${CYAN4}chron doctor${RESET6}
 
 `);
 }
 function connectCursor() {
   process.stdout.write(`
-${BOLD5}Connect Chron \u2192 Cursor${RESET5}
+${BOLD5}Connect Chron \u2192 Cursor${RESET6}
 
 `);
   const targets = [
-    { label: "Cursor global MCP", path: (0, import_path6.join)((0, import_os6.homedir)(), ".cursor", "mcp.json") },
-    { label: "Cursor project MCP", path: (0, import_path6.join)(process.cwd(), ".cursor", "mcp.json") }
+    { label: "Cursor global MCP", path: (0, import_path7.join)((0, import_os7.homedir)(), ".cursor", "mcp.json") },
+    { label: "Cursor project MCP", path: (0, import_path7.join)(process.cwd(), ".cursor", "mcp.json") }
   ];
   for (const target of targets) {
     const result = ensureChronJsonMcpConfig(target.path);
     if (result.status === "error") {
-      process.stdout.write(`${RED2}\u2717${RESET5} Could not write ${target.path}: ${result.error}
+      process.stdout.write(`${RED3}\u2717${RESET6} Could not write ${target.path}: ${result.error}
 `);
       process.exit(1);
     }
     if (result.status === "already") {
-      process.stdout.write(`${GREEN2}\u2713${RESET5} ${target.label} already configured at ${target.path}
+      process.stdout.write(`${GREEN2}\u2713${RESET6} ${target.label} already configured at ${target.path}
 `);
     } else {
-      process.stdout.write(`${GREEN2}\u2713${RESET5} Added Chron to ${target.label} at ${target.path}
+      process.stdout.write(`${GREEN2}\u2713${RESET6} Added Chron to ${target.label} at ${target.path}
 `);
     }
   }
   const instructionTargets = [
-    { label: "Cursor global rule", result: ensureCursorInstructions(), file: (0, import_path6.join)((0, import_os6.homedir)(), ".cursor", "rules", "chron.mdc") },
-    { label: "Cursor project rule", result: ensureCursorProjectInstructions(), file: (0, import_path6.join)(process.cwd(), ".cursor", "rules", "chron.mdc") }
+    { label: "Cursor project rule", result: ensureCursorProjectInstructions(), file: (0, import_path7.join)(process.cwd(), ".cursor", "rules", "chron.mdc") }
   ];
   for (const target of instructionTargets) {
     if (target.result.status === "error") {
-      process.stdout.write(`${YELLOW3}!${RESET5} Could not write ${target.label}: ${target.result.error}
+      process.stdout.write(`${YELLOW3}!${RESET6} Could not write ${target.label}: ${target.result.error}
 `);
     } else {
-      process.stdout.write(`${GREEN2}\u2713${RESET5} ${target.label} written to ${target.file}
+      process.stdout.write(`${GREEN2}\u2713${RESET6} ${target.label} written to ${target.file}
 `);
     }
   }
   process.stdout.write(`
-${BOLD5}Next steps:${RESET5}
+${BOLD5}Next steps:${RESET6}
 
 `);
   process.stdout.write(`  1. Restart Cursor / Cursor Agent so it reloads MCP and rules.
 `);
-  process.stdout.write(`  2. Use Cursor Agent mode in this project workspace.
+  process.stdout.write(`  2. Use Cursor Agent mode. Chron also sends its logging contract through MCP.
 `);
   process.stdout.write(`  3. Verify Chron logging end-to-end:
 `);
-  process.stdout.write(`     ${CYAN4}chron doctor --verify-logging cursor${RESET5}
+  process.stdout.write(`     ${CYAN4}chron doctor --verify-logging cursor${RESET6}
 `);
-  process.stdout.write(`     ${DIM4}(generates a token, watches the DB, and proves Cursor created a Chron session)${RESET5}
+  process.stdout.write(`     ${DIM4}(generates a token, watches the DB, and proves Cursor created a Chron session)${RESET6}
 `);
-  process.stdout.write(`  4. Full setup check: ${CYAN4}chron doctor${RESET5}
+  process.stdout.write(`  4. Full setup check: ${CYAN4}chron doctor${RESET6}
 
 `);
 }
 function connectGemini() {
   connectJsonClient(
     "Gemini CLI",
-    (0, import_path6.join)((0, import_os6.homedir)(), ".gemini", "settings.json"),
+    (0, import_path7.join)((0, import_os7.homedir)(), ".gemini", "settings.json"),
     "Use Chron to start an audit session for this work.",
     ensureGeminiInstructions,
     "gemini"
@@ -21587,14 +22077,14 @@ async function runConnect(args2) {
       connectGemini();
       break;
     default: {
-      const name = subcommand ? `Unknown integration: ${subcommand}
+      const name2 = subcommand ? `Unknown integration: ${subcommand}
 
 ` : "";
       process.stdout.write(
-        `${name}Usage: chron connect <integration>
+        `${name2}Usage: chron connect <integration>
 
 Integrations:
-  codex          Add Chron MCP to Codex config (global or project)
+  codex          Add Chron MCP to the global Codex config
   cursor         Add Chron MCP to Cursor config
   gemini         Add Chron MCP to Gemini CLI config
   crowdstrike    Connect to CrowdStrike LogScale (direct ingest)
@@ -21606,25 +22096,24 @@ Integrations:
     }
   }
 }
-var import_readline, import_os6, import_path6, import_fs7, RESET5, BOLD5, DIM4, CYAN4, GREEN2, RED2, YELLOW3, CHRON_SKILL_SENTINEL, CHRON_BLOCK_START, CHRON_BLOCK_END, SHELL_WRAPPER_START, SHELL_WRAPPER_END, CHRON_INSTRUCTION_SENTINEL, CHRON_INSTRUCTION_BLOCK_START;
+var import_readline, import_os7, import_path7, import_fs7, RESET6, BOLD5, DIM4, CYAN4, GREEN2, RED3, YELLOW3, SHELL_WRAPPER_START, SHELL_WRAPPER_END, CHRON_INSTRUCTION_SENTINEL, CHRON_INSTRUCTION_BLOCK_START;
 var init_connect = __esm({
   "src/cli/connect.ts"() {
     "use strict";
     import_readline = require("readline");
-    import_os6 = require("os");
-    import_path6 = require("path");
+    import_os7 = require("os");
+    import_path7 = require("path");
     import_fs7 = require("fs");
+    init_config_path();
     init_mcp_config();
-    RESET5 = "\x1B[0m";
+    init_instructions();
+    RESET6 = "\x1B[0m";
     BOLD5 = "\x1B[1m";
     DIM4 = "\x1B[2m";
     CYAN4 = "\x1B[36m";
     GREEN2 = "\x1B[32m";
-    RED2 = "\x1B[31m";
+    RED3 = "\x1B[31m";
     YELLOW3 = "\x1B[33m";
-    CHRON_SKILL_SENTINEL = "<!-- chron-skill -->";
-    CHRON_BLOCK_START = "<!-- chron-skill-start -->";
-    CHRON_BLOCK_END = "<!-- chron-skill-end -->";
     SHELL_WRAPPER_START = "# chron-codex-wrapper-start";
     SHELL_WRAPPER_END = "# chron-codex-wrapper-end";
     CHRON_INSTRUCTION_SENTINEL = CHRON_SKILL_SENTINEL;
@@ -21668,11 +22157,14 @@ async function buildSummary(sessionPrefix, existingDb) {
     const m = msgs[i];
     const prev = msgs[i - 1];
     const latency_ms = prev ? new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() : null;
-    if (m.role === "user") userTurns++;
-    else aiTurns++;
+    const isTurn = (m.event_type ?? "message") === "message" && !isSystemRole(m.role);
+    if (isTurn) {
+      if (m.role === "user") userTurns++;
+      else aiTurns++;
+    }
     const preview = m.content.replace(/\n/g, " ").slice(0, 120) + (m.content.length > 120 ? "\u2026" : "");
     timeline.push({ turn: i + 1, role: m.role, timestamp: m.created_at, latency_ms, preview });
-    if (m.role === "assistant") {
+    if (m.role === "assistant" && (m.event_type ?? "message") === "message") {
       const mutations = detectMutations(m.content);
       for (const label of mutations) {
         mutationsList.push({ turn: i + 1, role: "assistant", snippet: label, label: label.split(":")[0] });
@@ -21703,49 +22195,49 @@ async function buildSummary(sessionPrefix, existingDb) {
 function printSummary(data) {
   const { session, stats, secrets, mutations, prod_writes, timeline } = data;
   process.stdout.write(`
-${BOLD6}Session Summary${RESET6}
+${BOLD6}Session Summary${RESET7}
 `);
-  process.stdout.write(`${DIM5}${session.title}${RESET6}
+  process.stdout.write(`${DIM5}${session.title}${RESET7}
 `);
-  process.stdout.write(`${DIM5}ID: ${session.id.slice(0, 8)} | Tool: ${session.ai_tool ?? "unknown"} | Started: ${formatTs(session.started)}${RESET6}
+  process.stdout.write(`${DIM5}ID: ${session.id.slice(0, 8)} | Tool: ${session.ai_tool ?? "unknown"} | Started: ${formatTs(session.started)}${RESET7}
 
 `);
-  process.stdout.write(`${BOLD6}Stats${RESET6}
+  process.stdout.write(`${BOLD6}Stats${RESET7}
 `);
   process.stdout.write(`  Messages    ${stats.total_messages} (you: ${stats.user_turns}, ai: ${stats.ai_turns})
 `);
   process.stdout.write(`  Duration    ${stats.duration_minutes}m
 
 `);
-  process.stdout.write(`${BOLD6}Secrets touched${RESET6}  ${secrets.length === 0 ? `${GREEN3}none${RESET6}` : `${RED3}${secrets.length} detection(s)${RESET6}`}
+  process.stdout.write(`${BOLD6}Secrets touched${RESET7}  ${secrets.length === 0 ? `${GREEN3}none${RESET7}` : `${RED4}${secrets.length} detection(s)${RESET7}`}
 `);
   for (const s of secrets) {
-    process.stdout.write(`  ${RED3}[${s.type}]${RESET6} ${DIM5}${s.masked_value}${RESET6}
+    process.stdout.write(`  ${RED4}[${s.type}]${RESET7} ${DIM5}${s.masked_value}${RESET7}
 `);
   }
   if (secrets.length) process.stdout.write("\n");
-  process.stdout.write(`${BOLD6}Mutations detected${RESET6}  ${mutations.length === 0 ? `${DIM5}none${RESET6}` : `${mutations.length}`}
+  process.stdout.write(`${BOLD6}Mutations detected${RESET7}  ${mutations.length === 0 ? `${DIM5}none${RESET7}` : `${mutations.length}`}
 `);
   for (const m of mutations) {
-    process.stdout.write(`  ${CYAN5}[turn ${m.turn}]${RESET6} ${m.snippet}
+    process.stdout.write(`  ${CYAN5}[turn ${m.turn}]${RESET7} ${m.snippet}
 `);
   }
   if (mutations.length) process.stdout.write("\n");
   if (prod_writes.length > 0) {
-    process.stdout.write(`${BOLD6}${YELLOW4}\u26A0 Possible prod references${RESET6}  ${prod_writes.length}
+    process.stdout.write(`${BOLD6}${YELLOW4}\u26A0 Possible prod references${RESET7}  ${prod_writes.length}
 `);
     for (const p of prod_writes) {
-      process.stdout.write(`  ${YELLOW4}[turn ${p.turn}]${RESET6} ${DIM5}${p.snippet}\u2026${RESET6}
+      process.stdout.write(`  ${YELLOW4}[turn ${p.turn}]${RESET7} ${DIM5}${p.snippet}\u2026${RESET7}
 `);
     }
     process.stdout.write("\n");
   }
-  process.stdout.write(`${BOLD6}Timeline${RESET6}
+  process.stdout.write(`${BOLD6}Timeline${RESET7}
 `);
   for (const t of timeline) {
-    const role = t.role === "user" ? `${BOLD6}you${RESET6}` : `${CYAN5}ai ${RESET6}`;
-    const lat = t.latency_ms !== null ? ` ${DIM5}+${formatLatency(t.latency_ms)}${RESET6}` : "";
-    process.stdout.write(`  ${DIM5}[${t.turn.toString().padStart(3)}]${RESET6} ${role}${lat}  ${DIM5}${t.preview}${RESET6}
+    const role = t.role === "user" ? `${BOLD6}you${RESET7}` : `${CYAN5}ai ${RESET7}`;
+    const lat = t.latency_ms !== null ? ` ${DIM5}+${formatLatency(t.latency_ms)}${RESET7}` : "";
+    process.stdout.write(`  ${DIM5}[${t.turn.toString().padStart(3)}]${RESET7} ${role}${lat}  ${DIM5}${t.preview}${RESET7}
 `);
   }
   process.stdout.write("\n");
@@ -21769,7 +22261,7 @@ async function runSummary(args2) {
     printSummary(data);
   }
 }
-var RESET6, BOLD6, DIM5, CYAN5, GREEN3, YELLOW4, RED3, MUTATION_PATTERNS, PROD_PATTERNS;
+var RESET7, BOLD6, DIM5, CYAN5, GREEN3, YELLOW4, RED4, MUTATION_PATTERNS, PROD_PATTERNS;
 var init_summary = __esm({
   "src/cli/summary.ts"() {
     "use strict";
@@ -21777,13 +22269,14 @@ var init_summary = __esm({
     init_db2();
     init_schema();
     init_message_order();
-    RESET6 = "\x1B[0m";
+    init_roles();
+    RESET7 = "\x1B[0m";
     BOLD6 = "\x1B[1m";
     DIM5 = "\x1B[2m";
     CYAN5 = "\x1B[36m";
     GREEN3 = "\x1B[32m";
     YELLOW4 = "\x1B[33m";
-    RED3 = "\x1B[31m";
+    RED4 = "\x1B[31m";
     MUTATION_PATTERNS = [
       { label: "file write", re: /\b(?:wrote?|created?|saved?|updated?) (?:file |the file )?["']?([^\s"']{1,80})/i },
       { label: "git", re: /\bgit (?:commit|push|merge|rebase|reset|checkout)\b/i },
@@ -21803,10 +22296,10 @@ __export(prune_exports, {
   runPrune: () => runPrune
 });
 function configRetentionDays() {
-  const configPath2 = (0, import_path7.join)((0, import_os7.homedir)(), ".chron", "config.json");
-  if (!(0, import_fs8.existsSync)(configPath2)) return null;
+  const path = configPath();
+  if (!(0, import_fs8.existsSync)(path)) return null;
   try {
-    const cfg = JSON.parse((0, import_fs8.readFileSync)(configPath2, "utf8"));
+    const cfg = JSON.parse((0, import_fs8.readFileSync)(path, "utf8"));
     const v = Number(cfg.retention_days);
     return isNaN(v) ? null : v;
   } catch {
@@ -21884,16 +22377,15 @@ Sessions to prune (last active before ${cutoff}):
   process.stdout.write(`Pruned ${stale.length} session(s) and ${totalMsgs} message(s).
 `);
 }
-var import_fs8, import_path7, import_os7;
+var import_fs8;
 var init_prune = __esm({
   "src/cli/prune.ts"() {
     "use strict";
     init_drizzle_orm();
     import_fs8 = require("fs");
-    import_path7 = require("path");
-    import_os7 = require("os");
     init_db2();
     init_schema();
+    init_config_path();
   }
 });
 
@@ -22078,26 +22570,25 @@ __export(verify_exports, {
   runVerify: () => runVerify
 });
 function ok(msg) {
-  process.stdout.write(`  ${GREEN4}\u2713${RESET7} ${msg}
+  process.stdout.write(`  ${GREEN4}\u2713${RESET8} ${msg}
 `);
 }
 function fail(msg) {
-  process.stdout.write(`  ${RED4}\u2717${RESET7} ${msg}
+  process.stdout.write(`  ${RED5}\u2717${RESET8} ${msg}
 `);
 }
 function warn(msg) {
-  process.stdout.write(`  ${YELLOW5}!${RESET7} ${msg}
+  process.stdout.write(`  ${YELLOW5}!${RESET8} ${msg}
 `);
 }
 async function runVerifyBundle(bundlePath) {
   process.stdout.write(`
-${BOLD7}Verifying bundle${RESET7} ${bundlePath}
+${BOLD7}Verifying bundle${RESET8} ${bundlePath}
 
 `);
-  const tempDir = (0, import_path9.join)((0, import_os8.tmpdir)(), `chron-verify-${Date.now()}`);
-  (0, import_fs11.mkdirSync)(tempDir, { recursive: true });
+  const tempDir = (0, import_fs11.mkdtempSync)((0, import_path9.join)((0, import_os8.tmpdir)(), "chron-verify-"));
   try {
-    (0, import_child_process2.execSync)(`tar -xzf "${bundlePath}" -C "${tempDir}"`, { stdio: "pipe" });
+    (0, import_child_process2.execFileSync)("tar", ["-xzf", bundlePath, "-C", tempDir], { stdio: "pipe" });
   } catch {
     process.stderr.write(`Failed to extract bundle: ${bundlePath}
 `);
@@ -22109,10 +22600,10 @@ ${BOLD7}Verifying bundle${RESET7} ${bundlePath}
     const manifestPath = (0, import_path9.join)(tempDir, "manifest.json");
     const manifestBytes = (0, import_fs11.readFileSync)(manifestPath);
     const manifest = JSON.parse(manifestBytes.toString());
-    process.stdout.write(`${BOLD7}Manifest${RESET7} (${manifest.sessions.length} session(s), generated ${manifest.generated_at})
+    process.stdout.write(`${BOLD7}Manifest${RESET8} (${manifest.sessions.length} session(s), generated ${manifest.generated_at})
 `);
     process.stdout.write(`
-${BOLD7}File integrity${RESET7}
+${BOLD7}File integrity${RESET8}
 `);
     for (const [rel, expectedHash] of Object.entries(manifest.files)) {
       const filePath = (0, import_path9.join)(tempDir, rel);
@@ -22131,16 +22622,30 @@ ${BOLD7}File integrity${RESET7}
       }
     }
     process.stdout.write(`
-${BOLD7}Signature${RESET7}
+${BOLD7}Signature${RESET8}
 `);
     const sigPath = (0, import_path9.join)(tempDir, "manifest.sig");
     let sigFile = null;
-    try {
-      sigFile = JSON.parse((0, import_fs11.readFileSync)(sigPath).toString());
-    } catch {
-      warn("No manifest.sig \u2014 bundle was not signed");
+    if (!(0, import_fs11.existsSync)(sigPath)) {
+      fail("No manifest.sig \u2014 this bundle is unsigned and its origin cannot be established");
+      allOk = false;
+    } else {
+      try {
+        const parsed = JSON.parse((0, import_fs11.readFileSync)(sigPath, "utf8"));
+        if (typeof parsed !== "object" || parsed === null || parsed.chron_sig !== "v1" || typeof parsed.session_id !== "string" || parsed.algorithm !== "Ed25519-SHA256" || typeof parsed.signature !== "string" || !parsed.signature) {
+          throw new Error("invalid signature envelope");
+        }
+        sigFile = parsed;
+      } catch {
+        fail("manifest.sig is malformed \u2014 bundle origin cannot be established");
+        allOk = false;
+      }
     }
-    if (sigFile?.session_id && sigFile?.signature) {
+    if (sigFile) {
+      if (manifest.sessions.length !== 1 || manifest.sessions[0] !== sigFile.session_id) {
+        fail("manifest.sig does not identify the exported session");
+        allOk = false;
+      }
       const pubKeyPath2 = (0, import_path9.join)(tempDir, "pubkeys", `${sigFile.session_id}.pub`);
       try {
         const pubKey = (0, import_fs11.readFileSync)(pubKeyPath2, "utf8");
@@ -22184,12 +22689,12 @@ async function runVerify(args2) {
     process.exit(1);
   }
   process.stdout.write(`
-${BOLD7}Verifying session ${session.id.slice(0, 8)}${RESET7} \u2014 ${session.title}
+${BOLD7}Verifying session ${session.id.slice(0, 8)}${RESET8} \u2014 ${session.title}
 
 `);
   const rows = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(...messageOrderAsc());
   const sessionMeta = parseSessionMetadata(session.metadata);
-  process.stdout.write(`${BOLD7}Hash chain${RESET7} (${rows.length} messages)
+  process.stdout.write(`${BOLD7}Hash chain${RESET8} (${rows.length} messages)
 `);
   const chained = rows.filter((r) => r.content_hash !== null);
   let chainOk = true;
@@ -22218,12 +22723,12 @@ ${BOLD7}Verifying session ${session.id.slice(0, 8)}${RESET7} \u2014 ${session.ti
   const boundary = describeEvidenceBoundary(sessionMeta);
   if (boundary) {
     process.stdout.write(`
-${BOLD7}Evidence boundary${RESET7}
+${BOLD7}Evidence boundary${RESET8}
 `);
     warn(boundary);
   }
   process.stdout.write(`
-${BOLD7}Clock attestation${RESET7}
+${BOLD7}Clock attestation${RESET8}
 `);
   if (session.metadata) {
     try {
@@ -22244,7 +22749,7 @@ ${BOLD7}Clock attestation${RESET7}
     warn("No clock attestation \u2014 session created before NTP support (v0.1.24)");
   }
   process.stdout.write(`
-${BOLD7}Signature${RESET7}
+${BOLD7}Signature${RESET8}
 `);
   if (!session.public_key) {
     warn("No public key \u2014 session was created before signing support (v0.1.19)");
@@ -22263,7 +22768,7 @@ ${BOLD7}Signature${RESET7}
     );
     if (sigValid) {
       ok("Ed25519 signature valid");
-      process.stdout.write(`  ${DIM6}public key: ${session.public_key.split("\n")[1]?.slice(0, 40)}\u2026${RESET7}
+      process.stdout.write(`  ${DIM6}public key: ${session.public_key.split("\n")[1]?.slice(0, 40)}\u2026${RESET8}
 `);
     } else {
       fail("Ed25519 signature INVALID \u2014 session data may have been altered after signing");
@@ -22273,7 +22778,7 @@ ${BOLD7}Signature${RESET7}
   const allOk = chainOk && (session.signature ? true : true);
   process.exit(allOk ? 0 : 1);
 }
-var import_fs11, import_crypto6, import_path9, import_os8, import_child_process2, RESET7, BOLD7, GREEN4, RED4, DIM6, YELLOW5;
+var import_fs11, import_crypto6, import_path9, import_os8, import_child_process2, RESET8, BOLD7, GREEN4, RED5, DIM6, YELLOW5;
 var init_verify = __esm({
   "src/cli/verify.ts"() {
     "use strict";
@@ -22289,12 +22794,403 @@ var init_verify = __esm({
     init_message_order();
     init_evidence();
     init_signing();
-    RESET7 = "\x1B[0m";
+    RESET8 = "\x1B[0m";
     BOLD7 = "\x1B[1m";
     GREEN4 = "\x1B[32m";
-    RED4 = "\x1B[31m";
+    RED5 = "\x1B[31m";
     DIM6 = "\x1B[2m";
     YELLOW5 = "\x1B[33m";
+  }
+});
+
+// src/cli/coverage.ts
+var coverage_exports = {};
+__export(coverage_exports, {
+  computeCoverage: () => computeCoverage,
+  computeFieldCardinality: () => computeFieldCardinality,
+  flagSilentTools: () => flagSilentTools,
+  relativeTime: () => relativeTime,
+  runCoverage: () => runCoverage
+});
+function checkConfigured(def, home, cwd) {
+  if (def.importOnly) return false;
+  const configs = userMcpClientConfigs(home, cwd, (0, import_os9.platform)(), process.env.APPDATA);
+  return def.configNames.some((name2) => {
+    const c = configs.find((mc) => mc.name === name2);
+    if (!c || !(0, import_fs12.existsSync)(c.path)) return false;
+    try {
+      const content = (0, import_fs12.readFileSync)(c.path, "utf8");
+      return c.type === "codex-toml" ? hasChronCodexToml(content) : hasChronJsonMcp(content) === true;
+    } catch {
+      return false;
+    }
+  });
+}
+function relativeTime(iso) {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 6e4);
+  if (mins < 2) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return "yesterday";
+  return `${days} days ago`;
+}
+function fmtDate4(iso) {
+  return iso.slice(0, 16).replace("T", " ");
+}
+function chunk(items, size) {
+  const batches = [];
+  for (let start = 0; start < items.length; start += size) {
+    batches.push(items.slice(start, start + size));
+  }
+  return batches;
+}
+function computeFieldCardinality(field, values) {
+  const counts = /* @__PURE__ */ new Map();
+  for (const value of values) {
+    if (value === null || value === void 0) continue;
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+  const entries = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const [dominantValue, dominantCount] = entries[0] ?? [null, 0];
+  const observed = entries.reduce((sum2, [, count2]) => sum2 + count2, 0);
+  const share = observed === 0 ? 0 : dominantCount / observed;
+  return {
+    field,
+    observed_values: observed,
+    distinct_values: entries.length,
+    dominant_value: dominantValue,
+    dominant_count: dominantCount,
+    dominant_share: share,
+    concentration_candidate: observed >= MIN_CARDINALITY_SAMPLE && share >= CONCENTRATION_THRESHOLD
+  };
+}
+async function computeEvidenceUse(db, sessionIds) {
+  const empty = {
+    sessions: {
+      total: 0,
+      referenced_by_findings: 0,
+      referenced_by_review_requirements: 0,
+      referenced_by_any_chron_workflow: 0,
+      reviewed: 0
+    },
+    messages: { total: 0, referenced_by_secret_detection: 0 },
+    fields: [],
+    scope: "Chron can report references recorded in its local review workflow. It cannot infer whether an external system or person used this evidence."
+  };
+  if (sessionIds.length === 0) return empty;
+  const messageRows = [];
+  const findingRows = [];
+  const requirementRows = [];
+  const secretRows = [];
+  for (const sessionBatch of chunk(sessionIds, SQLITE_BINDING_BATCH_SIZE)) {
+    const messageScope = inArray(messages.session_id, sessionBatch);
+    const [batchMessages, batchFindings, batchRequirements, batchSecrets] = await Promise.all([
+      db.select({ id: messages.id, role: messages.role, event_type: messages.event_type }).from(messages).where(messageScope),
+      db.select({ session_id: review_findings.session_id, status: review_findings.status }).from(review_findings).where(inArray(review_findings.session_id, sessionBatch)),
+      db.select({ session_id: review_requirements.session_id, status: review_requirements.status, reason: review_requirements.reason }).from(review_requirements).where(inArray(review_requirements.session_id, sessionBatch)),
+      db.select({ message_id: secrets_detected.message_id }).from(secrets_detected).innerJoin(messages, eq(secrets_detected.message_id, messages.id)).where(messageScope)
+    ]);
+    messageRows.push(...batchMessages);
+    findingRows.push(...batchFindings);
+    requirementRows.push(...batchRequirements);
+    secretRows.push(...batchSecrets);
+  }
+  const sessionsWithFindings = new Set(findingRows.map((row) => row.session_id));
+  const sessionsWithRequirements = new Set(requirementRows.map((row) => row.session_id));
+  const reviewedSessions = new Set(requirementRows.filter((row) => row.status === "reviewed").map((row) => row.session_id));
+  const referencedSessions = /* @__PURE__ */ new Set([...sessionsWithFindings, ...sessionsWithRequirements]);
+  const referencedMessages = new Set(secretRows.map((row) => row.message_id));
+  return {
+    sessions: {
+      total: sessionIds.length,
+      referenced_by_findings: sessionsWithFindings.size,
+      referenced_by_review_requirements: sessionsWithRequirements.size,
+      referenced_by_any_chron_workflow: referencedSessions.size,
+      reviewed: reviewedSessions.size
+    },
+    messages: {
+      total: messageRows.length,
+      referenced_by_secret_detection: referencedMessages.size
+    },
+    fields: [
+      computeFieldCardinality("messages.role", messageRows.map((row) => row.role)),
+      computeFieldCardinality("messages.event_type", messageRows.map((row) => row.event_type ?? "message")),
+      computeFieldCardinality("review_findings.status", findingRows.map((row) => row.status)),
+      computeFieldCardinality("review_requirements.status", requirementRows.map((row) => row.status)),
+      computeFieldCardinality("review_requirements.reason", requirementRows.map((row) => row.reason))
+    ],
+    scope: empty.scope
+  };
+}
+async function computeCoverage(since, opts = {}) {
+  const db = await initDb();
+  const home = (0, import_os9.homedir)();
+  const cwd = process.cwd();
+  const baseQuery = since ? db.select({
+    ai_tool: sessions.ai_tool,
+    count: sql`count(*)`,
+    last: sql`max(${sessions.updated_at})`
+  }).from(sessions).where(gte(sessions.updated_at, since)).groupBy(sessions.ai_tool) : db.select({
+    ai_tool: sessions.ai_tool,
+    count: sql`count(*)`,
+    last: sql`max(${sessions.updated_at})`
+  }).from(sessions).groupBy(sessions.ai_tool);
+  const rows = await baseQuery;
+  const globalQuery = since ? db.select({
+    first: sql`min(${sessions.created_at})`,
+    last: sql`max(${sessions.updated_at})`,
+    total: sql`count(*)`
+  }).from(sessions).where(gte(sessions.updated_at, since)) : db.select({
+    first: sql`min(${sessions.created_at})`,
+    last: sql`max(${sessions.updated_at})`,
+    total: sql`count(*)`
+  }).from(sessions);
+  const globalRows = await globalQuery;
+  const global = globalRows[0];
+  let evidenceUse;
+  if (opts.evidenceUse) {
+    const scopedSessions = since ? await db.select({ id: sessions.id }).from(sessions).where(gte(sessions.updated_at, since)) : await db.select({ id: sessions.id }).from(sessions);
+    evidenceUse = await computeEvidenceUse(db, scopedSessions.map((row) => row.id));
+  }
+  const SILENT_AFTER_DAYS = 7;
+  const toolMap = /* @__PURE__ */ new Map();
+  for (const r of rows) {
+    if (r.ai_tool) toolMap.set(r.ai_tool, { count: Number(r.count), last: r.last });
+  }
+  const tools = [];
+  const seenTools = /* @__PURE__ */ new Set();
+  for (const def of KNOWN_TOOLS) {
+    const stats = def.aliases.map((alias) => toolMap.get(alias)).filter((stat2) => Boolean(stat2));
+    const stat = stats.length > 0 ? {
+      count: stats.reduce((sum2, item) => sum2 + item.count, 0),
+      last: stats.map((item) => item.last).sort().at(-1)
+    } : void 0;
+    const configured = checkConfigured(def, home, cwd);
+    const hasSessions = (stat?.count ?? 0) > 0;
+    if (!configured && !hasSessions) continue;
+    if (seenTools.has(def.ai_tool)) continue;
+    seenTools.add(def.ai_tool);
+    for (const alias of def.aliases) seenTools.add(alias);
+    tools.push({
+      tool: def.label,
+      ai_tool: def.ai_tool,
+      configured,
+      silent_since_others_logged: false,
+      import_only: def.importOnly,
+      sessions: stat?.count ?? 0,
+      last_seen: stat?.last ?? null
+    });
+  }
+  for (const [ai_tool, stat] of toolMap) {
+    if (!seenTools.has(ai_tool)) {
+      tools.push({ tool: ai_tool, ai_tool, configured: false, import_only: true, sessions: stat.count, last_seen: stat.last, silent_since_others_logged: false });
+    }
+  }
+  const metaRows = since ? await db.select({ metadata: sessions.metadata }).from(sessions).where(gte(sessions.updated_at, since)) : await db.select({ metadata: sessions.metadata }).from(sessions);
+  const partial = { live_attach: 0, imported: 0, transcript_backfill: 0, total: 0 };
+  for (const row of metaRows) {
+    const meta = parseSessionMetadata(row.metadata);
+    const src = evidenceSourceOf(meta);
+    if (src === EVIDENCE_SOURCE.WITNESSED) continue;
+    partial.total++;
+    if (src === EVIDENCE_SOURCE.LIVE_ATTACH) partial.live_attach++;
+    else if (src === EVIDENCE_SOURCE.IMPORTED) partial.imported++;
+    else if (src === EVIDENCE_SOURCE.TRANSCRIPT_BACKFILL) partial.transcript_backfill++;
+  }
+  return {
+    boundary: { first: global?.first ?? null, latest: global?.last ?? null, total_sessions: Number(global?.total ?? 0) },
+    partial,
+    tools: flagSilentTools(tools, global?.last ?? null, SILENT_AFTER_DAYS),
+    evidence_use: evidenceUse,
+    // The overlap sentence is part of the caveat rather than a separate field
+    // so it reaches --json consumers, who are the ones most likely to read the
+    // session count as a count of conversations.
+    caveat: [
+      "Chron can only review sessions captured after logging was enabled. Earlier AI work is outside the evidence boundary unless imported.",
+      ...partial.transcript_backfill > 0 ? [OVERLAP_DISCLOSURE] : []
+    ].join(" "),
+    since
+  };
+}
+function flagSilentTools(tools, latestOverall, days) {
+  if (!latestOverall) return tools;
+  const cutoff = Date.parse(latestOverall) - days * 864e5;
+  return tools.map((t) => ({
+    ...t,
+    silent_since_others_logged: t.configured && !t.import_only && t.last_seen !== null && Date.parse(t.last_seen) < cutoff
+  }));
+}
+function pct2(value) {
+  return `${Math.round(value * 100)}%`;
+}
+function printEvidenceUse(use) {
+  process.stdout.write(`
+${CYAN6}Evidence use (Chron-local)${RESET9}
+`);
+  process.stdout.write(`  Sessions referenced by findings:            ${use.sessions.referenced_by_findings} of ${use.sessions.total}
+`);
+  process.stdout.write(`  Sessions routed to review:                  ${use.sessions.referenced_by_review_requirements} of ${use.sessions.total}
+`);
+  process.stdout.write(`  Sessions with a completed human review:     ${use.sessions.reviewed} of ${use.sessions.total}
+`);
+  process.stdout.write(`  Messages referenced by secret detections:   ${use.messages.referenced_by_secret_detection} of ${use.messages.total}
+
+`);
+  const candidates = use.fields.filter((field) => field.concentration_candidate);
+  if (candidates.length > 0) {
+    process.stdout.write(`${YELLOW6}Fields to inspect${RESET9}
+`);
+    for (const field of candidates) {
+      process.stdout.write(
+        `  ${field.field}: ${field.dominant_value} in ${pct2(field.dominant_share)} of ${field.observed_values} values (${field.distinct_values} distinct)
+`
+      );
+    }
+    process.stdout.write(`  ${DIM7}High concentration is a review signal, not proof that a field is unused.${RESET9}
+
+`);
+  }
+  process.stdout.write(`${DIM7}${use.scope}${RESET9}
+
+`);
+}
+function printCoverage(r) {
+  process.stdout.write(`${BOLD8}Chron Coverage${RESET9}
+
+`);
+  if (r.since) {
+    process.stdout.write(`${DIM7}Filtered to sessions updated since ${r.since}${RESET9}
+
+`);
+  }
+  process.stdout.write(`${CYAN6}Evidence boundary${RESET9}
+`);
+  if (r.boundary.first) {
+    process.stdout.write(`  First logged session:    ${fmtDate4(r.boundary.first)}
+`);
+    process.stdout.write(`  Latest logged session:   ${fmtDate4(r.boundary.latest)}
+`);
+    process.stdout.write(`  Total evidence sessions: ${r.boundary.total_sessions}
+`);
+    if (r.partial.total > 0) {
+      const witnessed = r.boundary.total_sessions - r.partial.total;
+      process.stdout.write(`  ${YELLOW6}Partial evidence:${RESET9}        ${r.partial.total} of ${r.boundary.total_sessions} (${witnessed} witnessed in full)
+`);
+      if (r.partial.live_attach > 0) {
+        process.stdout.write(`    ${DIM7}${r.partial.live_attach} live attach \u2014 Chron began recording after the conversation had already started${RESET9}
+`);
+      }
+      if (r.partial.imported > 0) {
+        process.stdout.write(`    ${DIM7}${r.partial.imported} imported \u2014 from a vendor export, no tool calls or environment state${RESET9}
+`);
+      }
+      if (r.partial.transcript_backfill > 0) {
+        process.stdout.write(`    ${DIM7}${r.partial.transcript_backfill} transcript backfill \u2014 ingested from a client log, not directly observed${RESET9}
+`);
+      }
+    }
+  } else {
+    process.stdout.write(`  ${YELLOW6}No sessions logged yet${RESET9}
+`);
+    process.stdout.write(`  Run ${CYAN6}chron doctor --fix${RESET9} to configure AI tool logging.
+`);
+  }
+  process.stdout.write("\n");
+  process.stdout.write(`${CYAN6}Tool coverage${RESET9}
+`);
+  if (r.tools.length === 0) {
+    process.stdout.write(`  ${DIM7}No AI tools configured or sessions logged yet${RESET9}
+`);
+  } else {
+    const labelW = Math.max(...r.tools.map((t) => t.tool.length), 10);
+    for (const t of r.tools) {
+      const label = t.tool.padEnd(labelW);
+      let configCol;
+      if (t.import_only) {
+        configCol = `${DIM7}import only   ${RESET9}`;
+      } else if (t.configured) {
+        configCol = `${DIM7}configured    ${RESET9}`;
+      } else {
+        configCol = `${RED6}not configured${RESET9}`;
+      }
+      let sessionCol;
+      if (t.sessions === 0) {
+        sessionCol = `${YELLOW6}never observed${RESET9}`;
+      } else if (t.silent_since_others_logged) {
+        sessionCol = `${YELLOW6}last session ${relativeTime(t.last_seen)}${RESET9}  ${YELLOW6}\u2014 silent since, while other tools logged${RESET9}`;
+      } else {
+        sessionCol = `${GREEN5}last session ${relativeTime(t.last_seen)}${RESET9}`;
+      }
+      process.stdout.write(`  ${label}  ${configCol}  ${sessionCol}
+`);
+    }
+  }
+  const silent = r.tools.filter((t) => t.silent_since_others_logged);
+  if (silent.length > 0) {
+    process.stdout.write(`
+  ${YELLOW6}${silent.length} configured tool(s) stopped logging while others continued.${RESET9}
+`);
+    process.stdout.write(`  ${DIM7}Being configured does not mean a client is calling Chron \u2014 check with
+`);
+    process.stdout.write(`  'chron doctor --verify-logging <tool>'.${RESET9}
+`);
+  }
+  process.stdout.write("\n");
+  const overlap = r.caveat.indexOf(OVERLAP_DISCLOSURE);
+  process.stdout.write(`${DIM7}Coverage caveat
+`);
+  process.stdout.write(`  ${(overlap >= 0 ? r.caveat.slice(0, overlap) : r.caveat).trimEnd()}
+`);
+  if (overlap >= 0) process.stdout.write(`  ${OVERLAP_DISCLOSURE}
+`);
+  process.stdout.write(RESET9);
+}
+async function runCoverage(args2) {
+  const jsonMode = args2.includes("--json");
+  const evidenceUseMode = args2.includes("--evidence-use");
+  const sinceArg = args2.find((a) => a.startsWith("--since="))?.split("=")[1];
+  const since = sinceArg ? parseSince(sinceArg) : void 0;
+  const result = await computeCoverage(since, { evidenceUse: evidenceUseMode });
+  if (jsonMode) {
+    process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+    return;
+  }
+  printCoverage(result);
+  if (result.evidence_use) printEvidenceUse(result.evidence_use);
+}
+var import_fs12, import_os9, RESET9, BOLD8, DIM7, GREEN5, YELLOW6, CYAN6, RED6, KNOWN_TOOLS, MIN_CARDINALITY_SAMPLE, CONCENTRATION_THRESHOLD, SQLITE_BINDING_BATCH_SIZE;
+var init_coverage = __esm({
+  "src/cli/coverage.ts"() {
+    "use strict";
+    import_fs12 = require("fs");
+    import_os9 = require("os");
+    init_drizzle_orm();
+    init_db2();
+    init_schema();
+    init_evidence();
+    init_mcp_config();
+    init_report();
+    RESET9 = "\x1B[0m";
+    BOLD8 = "\x1B[1m";
+    DIM7 = "\x1B[2m";
+    GREEN5 = "\x1B[32m";
+    YELLOW6 = "\x1B[33m";
+    CYAN6 = "\x1B[36m";
+    RED6 = "\x1B[31m";
+    KNOWN_TOOLS = [
+      { label: "Claude Code", ai_tool: "claude", aliases: ["claude", "Claude Code", "claude-code", "chron-chat/claude", "chron-chat/claude-cli"], configNames: ["Claude Code", "Claude Desktop"], importOnly: false },
+      { label: "Cursor", ai_tool: "cursor", aliases: ["cursor"], configNames: ["Cursor (global)", "Cursor (project)"], importOnly: false },
+      { label: "Codex", ai_tool: "codex", aliases: ["codex"], configNames: ["Codex (global)", "Codex (project)"], importOnly: false },
+      { label: "Gemini CLI", ai_tool: "gemini", aliases: ["gemini"], configNames: ["Gemini CLI"], importOnly: false },
+      { label: "Windsurf", ai_tool: "windsurf", aliases: ["windsurf"], configNames: ["Windsurf"], importOnly: false },
+      { label: "ChatGPT", ai_tool: "chatgpt", aliases: ["chatgpt"], configNames: [], importOnly: true }
+    ];
+    MIN_CARDINALITY_SAMPLE = 10;
+    CONCENTRATION_THRESHOLD = 0.9;
+    SQLITE_BINDING_BATCH_SIZE = 900;
   }
 });
 
@@ -22307,29 +23203,29 @@ __export(doctor_exports, {
   runDoctor: () => runDoctor
 });
 function ok2(label, detail = "") {
-  process.stdout.write(`  ${GREEN5}\u2713${RESET8} ${label}${detail ? `  ${DIM7}${detail}${RESET8}` : ""}
+  process.stdout.write(`  ${GREEN6}\u2713${RESET10} ${label}${detail ? `  ${DIM8}${detail}${RESET10}` : ""}
 `);
 }
 function fail2(label, detail = "") {
-  process.stdout.write(`  ${RED5}\u2717${RESET8} ${label}${detail ? `  ${DIM7}${detail}${RESET8}` : ""}
+  process.stdout.write(`  ${RED7}\u2717${RESET10} ${label}${detail ? `  ${DIM8}${detail}${RESET10}` : ""}
 `);
 }
 function warn2(label, detail = "") {
-  process.stdout.write(`  ${YELLOW6}!${RESET8} ${label}${detail ? `  ${DIM7}${detail}${RESET8}` : ""}
+  process.stdout.write(`  ${YELLOW7}!${RESET10} ${label}${detail ? `  ${DIM8}${detail}${RESET10}` : ""}
 `);
 }
 function info(label, detail = "") {
-  process.stdout.write(`  ${CYAN6}\xB7${RESET8} ${label}${detail ? `  ${DIM7}${detail}${RESET8}` : ""}
+  process.stdout.write(`  ${CYAN7}\xB7${RESET10} ${label}${detail ? `  ${DIM8}${detail}${RESET10}` : ""}
 `);
 }
 function section(title) {
   process.stdout.write(`
-${BOLD8}${title}${RESET8}
+${BOLD9}${title}${RESET10}
 `);
 }
 function canWrite(dir) {
   try {
-    (0, import_fs12.accessSync)(dir, import_fs12.constants.W_OK);
+    (0, import_fs13.accessSync)(dir, import_fs13.constants.W_OK);
     return true;
   } catch {
     return false;
@@ -22338,22 +23234,22 @@ function canWrite(dir) {
 function testWriteFile(path) {
   const probe = path + ".chron-probe";
   try {
-    (0, import_fs12.writeFileSync)(probe, "ok");
-    (0, import_fs12.unlinkSync)(probe);
+    (0, import_fs13.writeFileSync)(probe, "ok");
+    (0, import_fs13.unlinkSync)(probe);
     return true;
   } catch {
     return false;
   }
 }
 function dbPath2() {
-  return process.env.CHRON_DB_PATH ?? (0, import_path10.join)((0, import_os9.homedir)(), ".chron", "chron.db");
+  return process.env.CHRON_DB_PATH ?? (0, import_path10.join)((0, import_os10.homedir)(), ".chron", "chron.db");
 }
 function keysDir2() {
-  return (0, import_path10.join)((0, import_os9.homedir)(), ".chron", "keys");
+  return (0, import_path10.join)((0, import_os10.homedir)(), ".chron", "keys");
 }
 function loadConfig2() {
   try {
-    return JSON.parse((0, import_fs12.readFileSync)((0, import_path10.join)((0, import_os9.homedir)(), ".chron", "config.json"), "utf8"));
+    return JSON.parse((0, import_fs13.readFileSync)(configPath(), "utf8"));
   } catch {
     return {};
   }
@@ -22397,39 +23293,39 @@ function claudeChronConflictFixes(scopes) {
   return fixes.size > 0 ? [...fixes] : ["claude mcp remove chron -s local"];
 }
 function mcpConfigs() {
-  const home = (0, import_os9.homedir)();
-  const plat = (0, import_os9.platform)();
+  const home = (0, import_os10.homedir)();
+  const plat = (0, import_os10.platform)();
   const candidates = userMcpClientConfigs(home, process.cwd(), plat, process.env.APPDATA);
   return candidates.map((c) => {
     const instrPath = INSTRUCTION_PATHS[c.name];
     let instructionConfigured;
     if (instrPath) {
       try {
-        const content = (0, import_fs12.existsSync)(instrPath) ? (0, import_fs12.readFileSync)(instrPath, "utf8") : "";
+        const content = (0, import_fs13.existsSync)(instrPath) ? (0, import_fs13.readFileSync)(instrPath, "utf8") : "";
         instructionConfigured = content.includes(CHRON_INSTRUCTION_SENTINEL) || content.includes(CHRON_INSTRUCTION_BLOCK_START);
       } catch {
         instructionConfigured = false;
       }
     }
-    if (!(0, import_fs12.existsSync)(c.path)) {
+    if (!(0, import_fs13.existsSync)(c.path)) {
       return { name: c.name, path: c.path, exists: false, chronConfigured: null, connectCommand: c.connectCommand, instructionPath: instrPath, instructionConfigured };
     }
     try {
-      const content = (0, import_fs12.readFileSync)(c.path, "utf8");
+      const content = (0, import_fs13.readFileSync)(c.path, "utf8");
       const configured = c.type === "codex-toml" ? hasChronCodexToml(content) : hasChronJsonMcp(content);
-      return { name: c.name, path: c.path, exists: true, chronConfigured: configured, connectCommand: c.connectCommand, instructionPath: instrPath, instructionConfigured };
+      const launcher = inspectChronLauncher(content, c.type);
+      return { name: c.name, path: c.path, exists: true, chronConfigured: configured, launcher, connectCommand: c.connectCommand, instructionPath: instrPath, instructionConfigured };
     } catch {
       return { name: c.name, path: c.path, exists: true, chronConfigured: null, connectCommand: c.connectCommand, note: "Could not read or parse config", instructionPath: instrPath, instructionConfigured };
     }
   });
 }
 function fixableMcpConfigs() {
-  const configs = userMcpClientConfigs((0, import_os9.homedir)(), process.cwd(), (0, import_os9.platform)(), process.env.APPDATA);
+  const configs = userMcpClientConfigs((0, import_os10.homedir)(), process.cwd(), (0, import_os10.platform)(), process.env.APPDATA);
   return configs.filter((c) => {
-    if (c.name === "Codex (project)") return (0, import_fs12.existsSync)(c.path);
-    if ((0, import_fs12.existsSync)(c.path)) return true;
+    if ((0, import_fs13.existsSync)(c.path)) return true;
     if (["Claude Code", "Cursor (global)", "Cursor (project)", "Gemini CLI", "Codex (global)"].includes(c.name)) return true;
-    if ((0, import_fs12.existsSync)((0, import_path10.dirname)(c.path))) return true;
+    if ((0, import_fs13.existsSync)((0, import_path10.dirname)(c.path))) return true;
     return false;
   });
 }
@@ -22453,9 +23349,12 @@ function compareVersions(a, b) {
   }
   return 0;
 }
-function npxWorks() {
+function mcpLauncherWorks() {
   try {
-    (0, import_child_process3.execSync)("npx chron-mcp --version 2>/dev/null", { timeout: 8e3 });
+    (0, import_child_process3.execFileSync)(CHRON_MCP_SERVER.command, [...CHRON_MCP_SERVER.args, "--version"], {
+      stdio: "ignore",
+      timeout: 8e3
+    });
     return true;
   } catch {
     return false;
@@ -22493,7 +23392,7 @@ async function pollForSession(dbFile, token, timeoutMs) {
     }
     tick++;
     const dots = ".".repeat(tick % 3 + 1).padEnd(3, " ");
-    process.stdout.write(`\r  ${DIM7}Waiting${dots}${RESET8}`);
+    process.stdout.write(`\r  ${DIM8}Waiting${dots}${RESET10}`);
     await new Promise((r) => setTimeout(r, 3e3));
   }
   process.stdout.write("\r" + " ".repeat(20) + "\r");
@@ -22505,84 +23404,84 @@ async function runVerifyLogging(toolArg) {
   const token = `chron-verify-${Math.random().toString(36).slice(2, 10)}`;
   const displayTool = toolArg || "any AI client";
   process.stdout.write(`
-${BOLD8}Verify Chron Logging${RESET8}  ${DIM7}${displayTool}${RESET8}
+${BOLD9}Verify Chron Logging${RESET10}  ${DIM8}${displayTool}${RESET10}
 `);
-  process.stdout.write(`${DIM7}Tests that the Chron MCP server is reachable and can create sessions.${RESET8}
+  process.stdout.write(`${DIM8}Tests that the Chron MCP server is reachable and can create sessions.${RESET10}
 
 `);
-  process.stdout.write(`Verification token: ${CYAN6}${token}${RESET8}
+  process.stdout.write(`Verification token: ${CYAN7}${token}${RESET10}
 
 `);
-  process.stdout.write(`${BOLD8}Instructions:${RESET8}
+  process.stdout.write(`${BOLD9}Instructions:${RESET10}
 
 `);
   if (toolArg === "cursor") {
-    process.stdout.write(`  1. Open Cursor in ${BOLD8}Agent mode${RESET8}  ${DIM7}(MCP only works in Agent mode \u2014 not regular chat)${RESET8}
+    process.stdout.write(`  1. Open Cursor in ${BOLD9}Agent mode${RESET10}  ${DIM8}(MCP only works in Agent mode \u2014 not regular chat)${RESET10}
 `);
-    process.stdout.write(`  2. Open the project where you ran ${CYAN6}chron connect cursor${RESET8}
+    process.stdout.write(`  2. Open the project where you ran ${CYAN7}chron connect cursor${RESET10}
 `);
     process.stdout.write(`  3. In the agent chat, say:
 `);
-    process.stdout.write(`     ${DIM7}"Call the Chron init_session MCP tool with title: ${token} and ai_tool: cursor"${RESET8}
+    process.stdout.write(`     ${DIM8}"Call the Chron init_session MCP tool with title: ${token} and ai_tool: cursor"${RESET10}
 `);
     process.stdout.write(`
-  ${DIM7}Cursor Agent CLI equivalent, after login:${RESET8}
+  ${DIM8}Cursor Agent CLI equivalent, after login:${RESET10}
 `);
-    process.stdout.write(`     ${DIM7}cursor-agent -p --trust --approve-mcps "Call the Chron init_session MCP tool with title: ${token} and ai_tool: cursor"${RESET8}
+    process.stdout.write(`     ${DIM8}cursor-agent -p --trust --approve-mcps "Call the Chron init_session MCP tool with title: ${token} and ai_tool: cursor"${RESET10}
 `);
   } else if (toolArg === "codex") {
     process.stdout.write(`  1. Start a Codex session
 `);
     process.stdout.write(`  2. Ask Codex:
 `);
-    process.stdout.write(`     ${DIM7}"Call the Chron init_session MCP tool with title: ${token} and ai_tool: codex"${RESET8}
+    process.stdout.write(`     ${DIM8}"Call the Chron init_session MCP tool with title: ${token} and ai_tool: codex"${RESET10}
 `);
   } else if (toolArg === "gemini") {
     process.stdout.write(`  1. Start a Gemini CLI session
 `);
     process.stdout.write(`  2. Ask Gemini:
 `);
-    process.stdout.write(`     ${DIM7}"Call the Chron init_session MCP tool with title: ${token} and ai_tool: gemini"${RESET8}
+    process.stdout.write(`     ${DIM8}"Call the Chron init_session MCP tool with title: ${token} and ai_tool: gemini"${RESET10}
 `);
   } else {
     process.stdout.write(`  1. Open your AI client
 `);
     process.stdout.write(`  2. Say:
 `);
-    process.stdout.write(`     ${DIM7}"Call the Chron init_session MCP tool with title: ${token}"${RESET8}
+    process.stdout.write(`     ${DIM8}"Call the Chron init_session MCP tool with title: ${token}"${RESET10}
 `);
   }
   process.stdout.write(`
-${DIM7}Once you've done this, Chron will detect the new session below.${RESET8}
+${DIM8}Once you've done this, Chron will detect the new session below.${RESET10}
 `);
-  if (!(0, import_fs12.existsSync)(db)) {
+  if (!(0, import_fs13.existsSync)(db)) {
     process.stdout.write(`
-${RED5}\u2717${RESET8} Chron database not found at ${db}
+${RED7}\u2717${RESET10} Chron database not found at ${db}
 `);
-    process.stdout.write(`  ${DIM7}It is created on first use. Run chron doctor to check setup.${RESET8}
+    process.stdout.write(`  ${DIM8}It is created on first use. Run chron doctor to check setup.${RESET10}
 `);
     process.exit(1);
   }
   process.stdout.write(`
-${DIM7}Watching Chron DB (up to 2 minutes)... Ctrl-C to cancel${RESET8}
+${DIM8}Watching Chron DB (up to 2 minutes)... Ctrl-C to cancel${RESET10}
 
 `);
   const found = await pollForSession(db, token, 12e4);
   if (found) {
     process.stdout.write(`
-${GREEN5}${BOLD8}\u2713 Verified!${RESET8} Chron logging confirmed for ${displayTool}.
+${GREEN6}${BOLD9}\u2713 Verified!${RESET10} Chron logging confirmed for ${displayTool}.
 `);
     process.stdout.write(`  Session "${token}" appeared in the database.
 `);
-    process.stdout.write(`  Run ${CYAN6}chron history${RESET8} to see it.
+    process.stdout.write(`  Run ${CYAN7}chron history${RESET10} to see it.
 
 `);
   } else {
     process.stdout.write(`
-${RED5}\u2717${RESET8} No session appeared within 2 minutes.
+${RED7}\u2717${RESET10} No session appeared within 2 minutes.
 
 `);
-    process.stdout.write(`${BOLD8}Troubleshooting:${RESET8}
+    process.stdout.write(`${BOLD9}Troubleshooting:${RESET10}
 `);
     if (toolArg === "cursor") {
       process.stdout.write(`  \u2022 Cursor must be in Agent mode \u2014 MCP is not available in regular chat
@@ -22602,9 +23501,9 @@ ${RED5}\u2717${RESET8} No session appeared within 2 minutes.
       process.stdout.write(`  \u2022 Check ~/.gemini/settings.json has the chron MCP entry
 `);
     }
-    process.stdout.write(`  \u2022 Restart the AI client after running: ${CYAN6}chron doctor --fix${RESET8}
+    process.stdout.write(`  \u2022 Restart the AI client after running: ${CYAN7}chron doctor --fix${RESET10}
 `);
-    process.stdout.write(`  \u2022 Run: ${CYAN6}chron doctor${RESET8} to check full setup
+    process.stdout.write(`  \u2022 Run: ${CYAN7}chron doctor${RESET10} to check full setup
 
 `);
     process.exit(1);
@@ -22623,7 +23522,7 @@ async function runDoctor(args2) {
   const port = parseInt(process.env.PORT ?? "3001", 10);
   const results = [];
   if (!jsonMode) process.stdout.write(`
-${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}${fixMode ? `  ${CYAN6}--fix${RESET8}` : ""}
+${BOLD9}chron doctor${RESET10}  ${DIM8}v${import_package2.version}${RESET10}${fixMode ? `  ${CYAN7}--fix${RESET10}` : ""}
 `);
   if (!jsonMode) section("Runtime");
   const nodeVer = process.version.replace("v", "");
@@ -22650,21 +23549,22 @@ ${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}${fixM
     results.push({ pass: "warn", label: `chron-mcp ${import_package2.version}`, detail: "Could not reach npm to check for updates" });
     if (!jsonMode) warn2(`chron-mcp ${import_package2.version}`, "could not check npm for updates");
   }
-  const npxOk = npxWorks();
-  results.push({ pass: npxOk, label: "npx chron-mcp --version", fix: npxOk ? void 0 : "Run: npm install -g chron-mcp" });
-  if (!jsonMode) (npxOk ? ok2 : fail2)("npx chron-mcp --version", npxOk ? "works" : "failed \u2014 run: npm install -g chron-mcp");
+  const launcherOk = mcpLauncherWorks();
+  const launcherLabel = `${CHRON_MCP_SERVER.command} --version`;
+  results.push({ pass: launcherOk, label: launcherLabel, fix: launcherOk ? void 0 : "Run: npm install -g chron-mcp" });
+  if (!jsonMode) (launcherOk ? ok2 : fail2)(launcherLabel, launcherOk ? "works" : "failed \u2014 run: npm install -g chron-mcp");
   if (!jsonMode) section("Storage");
   const db = dbPath2();
   const dbDir = (0, import_path10.join)(db, "..");
-  const dbDirExists = (0, import_fs12.existsSync)(dbDir);
+  const dbDirExists = (0, import_fs13.existsSync)(dbDir);
   if (!dbDirExists) {
     try {
-      (0, import_fs12.mkdirSync)(dbDir, { recursive: true });
+      (0, import_fs13.mkdirSync)(dbDir, { recursive: true });
     } catch {
     }
   }
   const dbWritable = testWriteFile(dbDir);
-  const dbExists = (0, import_fs12.existsSync)(db);
+  const dbExists = (0, import_fs13.existsSync)(db);
   results.push({
     pass: dbWritable,
     label: `DB directory: ${dbDir}`,
@@ -22674,10 +23574,10 @@ ${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}${fixM
   if (!jsonMode) (dbWritable ? ok2 : fail2)(`DB: ${db}`, dbExists ? "found" : "not yet created \u2014 will init on first use");
   if (!dbWritable && !jsonMode) info("fix", `mkdir -p "${dbDir}" && chmod 700 "${dbDir}"`);
   const keys = keysDir2();
-  const keysExist = (0, import_fs12.existsSync)(keys);
+  const keysExist = (0, import_fs13.existsSync)(keys);
   if (!keysExist) {
     try {
-      (0, import_fs12.mkdirSync)(keys, { recursive: true });
+      (0, import_fs13.mkdirSync)(keys, { recursive: true });
     } catch {
     }
   }
@@ -22708,7 +23608,6 @@ ${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}${fixM
       { name: "Codex (~/AGENTS.md)", write: ensureCodexGlobalAgentsMd, file: "~/AGENTS.md" },
       { name: "Codex (AGENTS.md)", write: ensureCodexProjectInstructions, file: "./AGENTS.md" },
       { name: "Gemini CLI", write: ensureGeminiInstructions, file: "~/.gemini/GEMINI.md" },
-      { name: "Cursor global", write: ensureCursorInstructions, file: "~/.cursor/rules/chron.mdc" },
       { name: "Cursor project", write: ensureCursorProjectInstructions, file: ".cursor/rules/chron.mdc" }
     ];
     for (const t of instructionTargets) {
@@ -22721,13 +23620,31 @@ ${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}${fixM
     }
     if (!jsonMode) {
       process.stdout.write(`
-  ${DIM7}Restart your AI client, then verify end-to-end logging:${RESET8}
+  ${DIM8}Restart your AI client, then verify end-to-end logging:${RESET10}
 `);
-      process.stdout.write(`  ${CYAN6}chron doctor --verify-logging [cursor|codex|gemini]${RESET8}
+      process.stdout.write(`  ${CYAN7}chron doctor --verify-logging [cursor|codex|gemini]${RESET10}
 `);
     }
   }
   const tools = mcpConfigs();
+  const lastByTool = /* @__PURE__ */ new Map();
+  try {
+    const { initDb: initDb2 } = await Promise.resolve().then(() => (init_db2(), db_exports));
+    const { sessions: sessions2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+    const { sql: sql9 } = await Promise.resolve().then(() => (init_drizzle_orm(), drizzle_orm_exports));
+    const db2 = await initDb2();
+    const rows = await db2.select({
+      ai_tool: sessions2.ai_tool,
+      last: sql9`max(${sessions2.updated_at})`
+    }).from(sessions2).groupBy(sessions2.ai_tool);
+    for (const r of rows) if (r.ai_tool) lastByTool.set(r.ai_tool, r.last);
+  } catch {
+  }
+  for (const t of tools) {
+    const aiTool = AI_TOOL_FOR_CLIENT[t.name];
+    t.captureFamily = aiTool ? CAPTURE_FAMILY_LABEL[aiTool] ?? aiTool : void 0;
+    t.lastRecordedForToolFamily = aiTool ? lastByTool.get(aiTool) ?? null : null;
+  }
   const foundTools = tools.filter((t) => t.exists);
   if (foundTools.length === 0) {
     results.push({ pass: "warn", label: "No MCP tool config files found", fix: "Run: chron doctor --fix" });
@@ -22742,24 +23659,54 @@ ${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}${fixM
     if (t.chronConfigured === null) {
       results.push({ pass: "warn", label: `${t.name}: config parse error`, detail: t.note });
       if (!jsonMode) warn2(`${t.name}`, t.note ?? "config parse error");
+    } else if (t.launcher && t.launcher.status === "stale") {
+      results.push({
+        pass: false,
+        label: `${t.name}: stale launcher \u2014 ${t.launcher.reason}`,
+        fix: "chron doctor --fix"
+      });
+      if (!jsonMode) {
+        fail2(`${t.name}`, `configured, but ${t.launcher.reason}`);
+        info("  expected", `${t.launcher.expected.command} ${t.launcher.expected.args.join(" ")}`.trim());
+        info("  remedy", "chron doctor --fix");
+      }
+    } else if (t.launcher && t.launcher.status !== "matches") {
+      results.push({
+        pass: "warn",
+        label: `${t.name}: launcher ${t.launcher.status}`,
+        detail: t.launcher.reason,
+        fix: t.connectCommand
+      });
+      if (!jsonMode) warn2(`${t.name}`, `${t.launcher.reason ?? t.launcher.status} \u2014 run: ${t.connectCommand}`);
     } else if (t.chronConfigured) {
+      const captureDetail = t.lastRecordedForToolFamily ? `${t.captureFamily ?? t.name} last captured ${t.lastRecordedForToolFamily}; exact client or config scope is not recorded` : `${t.captureFamily ?? t.name} has no recorded session`;
+      if (!jsonMode) {
+        if (/^Cursor/.test(t.name)) {
+          info(`  ${t.name} loaded`, "not determinable from disk \u2014 Cursor requires approval before an MCP server loads, and tools can be disabled after");
+        }
+        info(`  ${t.captureFamily ?? t.name} captured`, t.lastRecordedForToolFamily ? `last recorded session ${relativeTime(t.lastRecordedForToolFamily)} \u2014 exact client or config scope is not recorded` : "no session from this tool family has ever been recorded");
+      }
       const hasInstrCheck = t.instructionPath !== void 0;
       const instrOk = t.instructionConfigured === true;
       if (hasInstrCheck && !instrOk) {
-        results.push({ pass: "warn", label: `${t.name}: MCP configured but logging instructions missing`, fix: "chron doctor --fix" });
+        results.push({ pass: "warn", label: `${t.name}: MCP configured but logging instructions missing`, detail: captureDetail, fix: "chron doctor --fix" });
         if (!jsonMode) {
           ok2(`${t.name}`, "MCP configured");
           warn2(`${t.name} logging instructions`, "missing \u2014 run: chron doctor --fix");
         }
       } else if (hasInstrCheck) {
         const toolSlug = VERIFY_SLUG[t.name] ?? t.name.toLowerCase().replace(/\s+\(.*\)$/, "").replace(/\s+/g, "-");
-        results.push({ pass: true, label: `${t.name}: MCP configured, instructions written` });
+        results.push({
+          pass: true,
+          label: `${t.name}: MCP configured, instructions written`,
+          detail: captureDetail
+        });
         if (!jsonMode) {
           ok2(`${t.name}`, `MCP configured, instructions written`);
           info(`${t.name}`, `verify end-to-end: chron doctor --verify-logging ${toolSlug}`);
         }
       } else {
-        results.push({ pass: true, label: `${t.name}: chron configured` });
+        results.push({ pass: true, label: `${t.name}: chron configured`, detail: captureDetail });
         if (!jsonMode) ok2(`${t.name}`, "chron configured");
       }
     } else {
@@ -22772,8 +23719,8 @@ ${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}${fixM
     }
   }
   try {
-    const claudePath = (0, import_path10.join)((0, import_os9.homedir)(), ".claude.json");
-    const scopes = (0, import_fs12.existsSync)(claudePath) ? findClaudeChronScopes((0, import_fs12.readFileSync)(claudePath, "utf8"), process.cwd()) : [];
+    const claudePath = (0, import_path10.join)((0, import_os10.homedir)(), ".claude.json");
+    const scopes = (0, import_fs13.existsSync)(claudePath) ? findClaudeChronScopes((0, import_fs13.readFileSync)(claudePath, "utf8"), process.cwd()) : [];
     const endpointCount = new Set(scopes.map((s) => s.endpoint)).size;
     if (scopes.length > 1 && endpointCount > 1) {
       const fixCmds = claudeChronConflictFixes(scopes);
@@ -22784,13 +23731,13 @@ ${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}${fixM
         for (const scope of scopes) {
           const remove = scope.scope === "local" || scope.scope === "project";
           const projectDetail = scope.project ? ` (${scope.project})` : "";
-          process.stdout.write(`     ${scope.scope} scope${projectDetail}: ${DIM7}${scope.endpoint}${RESET8}${remove ? `  ${RED5}\u2190 remove this${RESET8}` : ""}
+          process.stdout.write(`     ${scope.scope} scope${projectDetail}: ${DIM8}${scope.endpoint}${RESET10}${remove ? `  ${RED7}\u2190 remove this${RESET10}` : ""}
 `);
         }
         process.stdout.write(`     Fix:
 `);
         for (const fixCmd of fixCmds) {
-          process.stdout.write(`       ${CYAN6}${fixCmd}${RESET8}
+          process.stdout.write(`       ${CYAN7}${fixCmd}${RESET10}
 `);
         }
       }
@@ -22837,7 +23784,7 @@ ${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}${fixM
     }
   }
   if (!anySiem && !jsonMode) {
-    process.stdout.write(`  ${DIM7}No SIEM configured. Events will only be stored locally.${RESET8}
+    process.stdout.write(`  ${DIM8}No SIEM configured. Events will only be stored locally.${RESET10}
 `);
   }
   const failures = results.filter((r) => r.pass === false);
@@ -22845,31 +23792,31 @@ ${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}${fixM
   if (!jsonMode) {
     process.stdout.write("\n");
     if (failures.length === 0 && warnings.length === 0) {
-      process.stdout.write(`${GREEN5}${BOLD8}All checks passed.${RESET8} Chron is correctly set up.
+      process.stdout.write(`${GREEN6}${BOLD9}All checks passed.${RESET10} Chron is correctly set up.
 
 `);
-      process.stdout.write(`${DIM7}Team AI governance: CLAIIM adds runtime ALLOW/DENY gates on top of Chron proof \u2014 ${CLAIIM_PREVIEW_URL}${RESET8}
+      process.stdout.write(`${DIM8}Team AI governance: CLAIIM adds runtime ALLOW/DENY gates on top of Chron proof \u2014 ${CLAIIM_PREVIEW_URL}${RESET10}
 
 `);
     } else {
       if (failures.length > 0) {
-        process.stdout.write(`${RED5}${BOLD8}${failures.length} issue(s) need attention:${RESET8}
+        process.stdout.write(`${RED7}${BOLD9}${failures.length} issue(s) need attention:${RESET10}
 `);
         for (const f of failures) {
-          process.stdout.write(`  ${RED5}\u2717${RESET8} ${f.label}
+          process.stdout.write(`  ${RED7}\u2717${RESET10} ${f.label}
 `);
-          if (f.fix) process.stdout.write(`    ${DIM7}\u2192 ${f.fix}${RESET8}
+          if (f.fix) process.stdout.write(`    ${DIM8}\u2192 ${f.fix}${RESET10}
 `);
         }
         process.stdout.write("\n");
       }
       if (warnings.length > 0) {
-        process.stdout.write(`${YELLOW6}${BOLD8}${warnings.length} warning(s):${RESET8}
+        process.stdout.write(`${YELLOW7}${BOLD9}${warnings.length} warning(s):${RESET10}
 `);
         for (const w of warnings) {
-          process.stdout.write(`  ${YELLOW6}!${RESET8} ${w.label}
+          process.stdout.write(`  ${YELLOW7}!${RESET10} ${w.label}
 `);
-          if (w.fix) process.stdout.write(`    ${DIM7}\u2192 ${w.fix}${RESET8}
+          if (w.fix) process.stdout.write(`    ${DIM8}\u2192 ${w.fix}${RESET10}
 `);
         }
         process.stdout.write("\n");
@@ -22896,33 +23843,50 @@ ${BOLD8}chron doctor${RESET8}  ${DIM7}v${import_package2.version}${RESET8}${fixM
   }
   process.exit(failures.length > 0 ? 1 : 0);
 }
-var import_os9, import_path10, import_fs12, import_child_process3, import_package2, RESET8, BOLD8, DIM7, GREEN5, RED5, YELLOW6, CYAN6, CLAIIM_PREVIEW_URL, INSTRUCTION_PATHS, VERIFY_SLUG;
+var import_os10, import_path10, import_fs13, import_child_process3, import_package2, RESET10, BOLD9, DIM8, GREEN6, RED7, YELLOW7, CYAN7, CLAIIM_PREVIEW_URL, INSTRUCTION_PATHS, AI_TOOL_FOR_CLIENT, CAPTURE_FAMILY_LABEL, VERIFY_SLUG;
 var init_doctor = __esm({
   "src/cli/doctor.ts"() {
     "use strict";
-    import_os9 = require("os");
+    import_os10 = require("os");
     import_path10 = require("path");
-    import_fs12 = require("fs");
+    import_fs13 = require("fs");
     import_child_process3 = require("child_process");
     import_package2 = __toESM(require_package());
     init_mcp_config();
+    init_coverage();
     init_connect();
-    RESET8 = "\x1B[0m";
-    BOLD8 = "\x1B[1m";
-    DIM7 = "\x1B[2m";
-    GREEN5 = "\x1B[32m";
-    RED5 = "\x1B[31m";
-    YELLOW6 = "\x1B[33m";
-    CYAN6 = "\x1B[36m";
+    init_config_path();
+    RESET10 = "\x1B[0m";
+    BOLD9 = "\x1B[1m";
+    DIM8 = "\x1B[2m";
+    GREEN6 = "\x1B[32m";
+    RED7 = "\x1B[31m";
+    YELLOW7 = "\x1B[33m";
+    CYAN7 = "\x1B[36m";
     CLAIIM_PREVIEW_URL = "https://claiim.io/preview";
     INSTRUCTION_PATHS = {
-      "Claude Code": (0, import_path10.join)((0, import_os9.homedir)(), "CLAUDE.md"),
-      "Codex (global)": (0, import_path10.join)((0, import_os9.homedir)(), ".codex", "instructions.md"),
-      "Codex (~/AGENTS.md)": (0, import_path10.join)((0, import_os9.homedir)(), "AGENTS.md"),
+      "Claude Code": (0, import_path10.join)((0, import_os10.homedir)(), "CLAUDE.md"),
+      "Codex (global)": (0, import_path10.join)((0, import_os10.homedir)(), ".codex", "instructions.md"),
+      "Codex (~/AGENTS.md)": (0, import_path10.join)((0, import_os10.homedir)(), "AGENTS.md"),
       "Codex (project AGENTS.md)": (0, import_path10.join)(process.cwd(), "AGENTS.md"),
-      "Gemini CLI": (0, import_path10.join)((0, import_os9.homedir)(), ".gemini", "GEMINI.md"),
-      "Cursor (global)": (0, import_path10.join)((0, import_os9.homedir)(), ".cursor", "rules", "chron.mdc"),
+      "Gemini CLI": (0, import_path10.join)((0, import_os10.homedir)(), ".gemini", "GEMINI.md"),
       "Cursor (project)": (0, import_path10.join)(process.cwd(), ".cursor", "rules", "chron.mdc")
+    };
+    AI_TOOL_FOR_CLIENT = {
+      "Claude Code": "claude",
+      "Claude Desktop": "claude",
+      "Codex (global)": "codex",
+      "Cursor (global)": "cursor",
+      "Cursor (project)": "cursor",
+      "Gemini CLI": "gemini",
+      "Windsurf": "windsurf"
+    };
+    CAPTURE_FAMILY_LABEL = {
+      claude: "Claude family",
+      codex: "Codex",
+      cursor: "Cursor",
+      gemini: "Gemini",
+      windsurf: "Windsurf"
     };
     VERIFY_SLUG = {
       "Codex (global)": "codex",
@@ -23029,7 +23993,7 @@ var init_content = __esm({
 // src/utils/detect.ts
 function luhnCheck(value) {
   const digits = value.replace(/\D/g, "");
-  let sum = 0;
+  let sum2 = 0;
   let alt = false;
   for (let i = digits.length - 1; i >= 0; i--) {
     let n = parseInt(digits[i], 10);
@@ -23037,10 +24001,10 @@ function luhnCheck(value) {
       n *= 2;
       if (n > 9) n -= 9;
     }
-    sum += n;
+    sum2 += n;
     alt = !alt;
   }
-  return sum % 10 === 0;
+  return sum2 % 10 === 0;
 }
 function ibanCheck(value) {
   const normalized = value.replace(/\s/g, "").toUpperCase();
@@ -23309,7 +24273,7 @@ var init_detect = __esm({
 
 // src/db/readonly.ts
 function openReadOnly(path) {
-  if (!path.startsWith(":") && !(0, import_fs13.existsSync)(path)) return null;
+  if (!path.startsWith(":") && !(0, import_fs14.existsSync)(path)) return null;
   const client = createClient({ url: path.startsWith(":") ? path : `file:${path}` });
   return {
     db: drizzle(client, { schema: schema_exports }),
@@ -23324,14 +24288,14 @@ function openReadOnly(path) {
 async function enforceReadOnly(handle) {
   await handle.db.run(sql.raw("PRAGMA query_only = ON"));
 }
-var import_fs13;
+var import_fs14;
 var init_readonly = __esm({
   "src/db/readonly.ts"() {
     "use strict";
     init_node2();
     init_drizzle_orm();
     init_libsql();
-    import_fs13 = require("fs");
+    import_fs14 = require("fs");
     init_schema();
   }
 });
@@ -23573,7 +24537,7 @@ var init_claude_code = __esm({
 // src/import/discover.ts
 function transcriptRoot() {
   const override = process.env.CHRON_CLAUDE_PROJECTS_DIR;
-  return override && override.trim() ? override : (0, import_path11.join)((0, import_os10.homedir)(), ".claude", "projects");
+  return override && override.trim() ? override : (0, import_path11.join)((0, import_os11.homedir)(), ".claude", "projects");
 }
 function sessionIdOf(file) {
   if (!file.endsWith(".jsonl")) return null;
@@ -23581,11 +24545,11 @@ function sessionIdOf(file) {
   return id.length > 0 ? id : null;
 }
 function discoverTranscripts(root = transcriptRoot()) {
-  if (!(0, import_fs14.existsSync)(root)) return [];
+  if (!(0, import_fs15.existsSync)(root)) return [];
   const found = [];
   let projects;
   try {
-    projects = (0, import_fs14.readdirSync)(root);
+    projects = (0, import_fs15.readdirSync)(root);
   } catch {
     return [];
   }
@@ -23593,14 +24557,14 @@ function discoverTranscripts(root = transcriptRoot()) {
     const projectDir = (0, import_path11.join)(root, project);
     let stat;
     try {
-      stat = (0, import_fs14.statSync)(projectDir);
+      stat = (0, import_fs15.statSync)(projectDir);
     } catch {
       continue;
     }
     if (!stat.isDirectory()) continue;
     let entries;
     try {
-      entries = (0, import_fs14.readdirSync)(projectDir);
+      entries = (0, import_fs15.readdirSync)(projectDir);
     } catch {
       continue;
     }
@@ -23609,7 +24573,7 @@ function discoverTranscripts(root = transcriptRoot()) {
       if (!sessionId) continue;
       const path = (0, import_path11.join)(projectDir, entry);
       try {
-        const s = (0, import_fs14.statSync)(path);
+        const s = (0, import_fs15.statSync)(path);
         if (!s.isFile()) continue;
         found.push({
           path,
@@ -23625,13 +24589,13 @@ function discoverTranscripts(root = transcriptRoot()) {
   return found.sort((a, b) => b.modified_at.localeCompare(a.modified_at));
 }
 function countNestedTranscripts(root = transcriptRoot()) {
-  if (!(0, import_fs14.existsSync)(root)) return 0;
-  let count = 0;
+  if (!(0, import_fs15.existsSync)(root)) return 0;
+  let count2 = 0;
   const walk = (dir, depth) => {
     if (depth > 6) return;
     let entries;
     try {
-      entries = (0, import_fs14.readdirSync)(dir);
+      entries = (0, import_fs15.readdirSync)(dir);
     } catch {
       return;
     }
@@ -23639,50 +24603,50 @@ function countNestedTranscripts(root = transcriptRoot()) {
       const full = (0, import_path11.join)(dir, entry);
       let s;
       try {
-        s = (0, import_fs14.statSync)(full);
+        s = (0, import_fs15.statSync)(full);
       } catch {
         continue;
       }
       if (s.isDirectory()) walk(full, depth + 1);
-      else if (entry.endsWith(".jsonl")) count++;
+      else if (entry.endsWith(".jsonl")) count2++;
     }
   };
   for (const project of (() => {
     try {
-      return (0, import_fs14.readdirSync)(root);
+      return (0, import_fs15.readdirSync)(root);
     } catch {
       return [];
     }
   })()) {
     const projectDir = (0, import_path11.join)(root, project);
     try {
-      if (!(0, import_fs14.statSync)(projectDir).isDirectory()) continue;
+      if (!(0, import_fs15.statSync)(projectDir).isDirectory()) continue;
     } catch {
       continue;
     }
     for (const entry of (() => {
       try {
-        return (0, import_fs14.readdirSync)(projectDir);
+        return (0, import_fs15.readdirSync)(projectDir);
       } catch {
         return [];
       }
     })()) {
       const full = (0, import_path11.join)(projectDir, entry);
       try {
-        if ((0, import_fs14.statSync)(full).isDirectory()) walk(full, 1);
+        if ((0, import_fs15.statSync)(full).isDirectory()) walk(full, 1);
       } catch {
       }
     }
   }
-  return count;
+  return count2;
 }
-var import_fs14, import_path11, import_os10;
+var import_fs15, import_path11, import_os11;
 var init_discover = __esm({
   "src/import/discover.ts"() {
     "use strict";
-    import_fs14 = require("fs");
+    import_fs15 = require("fs");
     import_path11 = require("path");
-    import_os10 = require("os");
+    import_os11 = require("os");
   }
 });
 
@@ -23714,7 +24678,7 @@ async function buildPreview(db, opts = {}) {
     };
     let raw;
     try {
-      raw = (0, import_fs15.readFileSync)(f.path, "utf8");
+      raw = (0, import_fs16.readFileSync)(f.path, "utf8");
     } catch (e) {
       unreadable++;
       transcripts.push({
@@ -23783,11 +24747,11 @@ function totalExclusions(result) {
   }
   return t;
 }
-var import_fs15;
+var import_fs16;
 var init_claude_code_preview = __esm({
   "src/import/claude-code-preview.ts"() {
     "use strict";
-    import_fs15 = require("fs");
+    import_fs16 = require("fs");
     init_drizzle_orm();
     init_schema();
     init_claude_code();
@@ -23874,7 +24838,7 @@ function prepareEvents(chronSessionId, transcriptSessionId, events) {
 async function importTranscript(db, file, includeToolOutput) {
   let raw;
   try {
-    raw = (0, import_fs16.readFileSync)(file.path, "utf8");
+    raw = (0, import_fs17.readFileSync)(file.path, "utf8");
   } catch (error) {
     return { session_id: file.session_id, imported_events: 0, skipped_events: 0, secrets_detected: 0, status: "error", error: error instanceof Error ? error.message : String(error) };
   }
@@ -24017,12 +24981,12 @@ async function importClaudeCodeTranscripts(db, opts = {}) {
   }
   return result;
 }
-var import_crypto10, import_fs16, INSERT_BATCH_SIZE;
+var import_crypto10, import_fs17, INSERT_BATCH_SIZE;
 var init_claude_code_import = __esm({
   "src/import/claude-code-import.ts"() {
     "use strict";
     import_crypto10 = require("crypto");
-    import_fs16 = require("fs");
+    import_fs17 = require("fs");
     init_drizzle_orm();
     init_esm();
     init_schema();
@@ -24054,80 +25018,80 @@ function renderPreview(r, root) {
   const out = [];
   const ex = totalExclusions(r);
   out.push(`
-${BOLD9}chron import claude-code${RESET9} ${DIM8}(dry run \u2014 nothing will be written)${RESET9}
+${BOLD10}chron import claude-code${RESET11} ${DIM9}(dry run \u2014 nothing will be written)${RESET11}
 `);
-  out.push(`  source: ${DIM8}${root}${RESET9}
+  out.push(`  source: ${DIM9}${root}${RESET11}
 
 `);
   if (r.transcripts.length === 0) {
-    out.push(`  ${YELLOW7}No Claude Code transcripts found.${RESET9}
+    out.push(`  ${YELLOW8}No Claude Code transcripts found.${RESET11}
 `);
     out.push(`
-${DIM8}Nothing was written. To import after reviewing this preview, run 'chron import claude-code --confirm'.${RESET9}
+${DIM9}Nothing was written. To import after reviewing this preview, run 'chron import claude-code --confirm'.${RESET11}
 
 `);
     return out.join("");
   }
-  out.push(`${CYAN7}Transcripts${RESET9}
+  out.push(`${CYAN8}Transcripts${RESET11}
 `);
   for (const t of r.transcripts) {
-    const mark = t.error ? `${YELLOW7}!${RESET9}` : t.already_imported ? `${DIM8}\xB7${RESET9}` : `${GREEN6}+${RESET9}`;
-    const status = t.error ? `${YELLOW7}unreadable${RESET9}` : t.already_imported ? `${DIM8}already imported${RESET9}` : `${GREEN6}new${RESET9}`;
+    const mark = t.error ? `${YELLOW8}!${RESET11}` : t.already_imported ? `${DIM9}\xB7${RESET11}` : `${GREEN7}+${RESET11}`;
+    const status = t.error ? `${YELLOW8}unreadable${RESET11}` : t.already_imported ? `${DIM9}already imported${RESET11}` : `${GREEN7}new${RESET11}`;
     out.push(`  ${mark} ${t.session_id.slice(0, 8)}  ${String(t.events).padStart(6)} events  ${bytes(t.size_bytes).padStart(8)}  ${t.modified_at.slice(0, 10)}  ${status}
 `);
-    if (t.error) out.push(`      ${YELLOW7}${t.error}${RESET9}
+    if (t.error) out.push(`      ${YELLOW8}${t.error}${RESET11}
 `);
   }
   out.push(`
-${CYAN7}Would ingest${RESET9}
+${CYAN8}Would ingest${RESET11}
 `);
   out.push(`  ${r.totals.candidates} new session(s), ${r.totals.events} event(s)
 `);
   if (r.totals.already_imported > 0) {
-    out.push(`  ${DIM8}${r.totals.already_imported} already imported, would be skipped${RESET9}
+    out.push(`  ${DIM9}${r.totals.already_imported} already imported, would be skipped${RESET11}
 `);
   }
   if (r.totals.unreadable > 0) {
-    out.push(`  ${YELLOW7}${r.totals.unreadable} unreadable, would be skipped${RESET9}
+    out.push(`  ${YELLOW8}${r.totals.unreadable} unreadable, would be skipped${RESET11}
 `);
   }
   out.push(`
-${CYAN7}Would NOT ingest${RESET9}
+${CYAN8}Would NOT ingest${RESET11}
 `);
-  out.push(`  ${ex.thinking.blocks} thinking block(s), ${bytes(ex.thinking.bytes)}   ${DIM8}model reasoning, never shown to you${RESET9}
+  out.push(`  ${ex.thinking.blocks} thinking block(s), ${bytes(ex.thinking.bytes)}   ${DIM9}model reasoning, never shown to you${RESET11}
 `);
-  out.push(`  ${ex.hook_attachments.lines} hook record(s), ${bytes(ex.hook_attachments.bytes)}   ${DIM8}raw stdout/stderr${RESET9}
+  out.push(`  ${ex.hook_attachments.lines} hook record(s), ${bytes(ex.hook_attachments.bytes)}   ${DIM9}raw stdout/stderr${RESET11}
 `);
-  out.push(`  ${ex.meta_lines} system-injected line(s)   ${DIM8}not authored by you${RESET9}
+  out.push(`  ${ex.meta_lines} system-injected line(s)   ${DIM9}not authored by you${RESET11}
 `);
-  out.push(`  ${ex.compaction_summaries.count} compaction summar(ies), ${bytes(ex.compaction_summaries.bytes)}   ${DIM8}kept as boundary events only${RESET9}
+  out.push(`  ${ex.compaction_summaries.count} compaction summar(ies), ${bytes(ex.compaction_summaries.bytes)}   ${DIM9}kept as boundary events only${RESET11}
 `);
-  out.push(`  ${bytes(ex.tool_output_truncated.original_bytes - ex.tool_output_truncated.kept_bytes)} of tool output across ${ex.tool_output_truncated.results} result(s)   ${DIM8}redacted and excerpted${RESET9}
+  out.push(`  ${bytes(ex.tool_output_truncated.original_bytes - ex.tool_output_truncated.kept_bytes)} of tool output across ${ex.tool_output_truncated.results} result(s)   ${DIM9}redacted and excerpted${RESET11}
 `);
   if (r.nested_excluded > 0) {
-    out.push(`  ${r.nested_excluded} nested subagent/workflow transcript(s)   ${DIM8}not in default scope${RESET9}
+    out.push(`  ${r.nested_excluded} nested subagent/workflow transcript(s)   ${DIM9}not in default scope${RESET11}
 `);
   }
   const secrets = r.transcripts.reduce((n, t) => n + t.secrets_found, 0);
   const outOfOrder = r.transcripts.reduce((n, t) => n + t.out_of_order_timestamps, 0);
   if (secrets > 0 || outOfOrder > 0) {
     out.push(`
-${CYAN7}Notes${RESET9}
+${CYAN8}Notes${RESET11}
 `);
     if (secrets > 0) {
-      out.push(`  ${secrets} secret detection(s) across these transcripts   ${DIM8}redacted before excerpting${RESET9}
+      out.push(`  ${secrets} secret detection(s) across these transcripts   ${DIM9}redacted before excerpting${RESET11}
 `);
     }
     if (outOfOrder > 0) {
-      out.push(`  ${outOfOrder} line(s) whose timestamp precedes an earlier line   ${DIM8}source order preserved separately${RESET9}
+      out.push(`  ${outOfOrder} line(s) whose timestamp precedes an earlier line   ${DIM9}source order preserved separately${RESET11}
 `);
     }
   }
   out.push(`
-${DIM8}${OVERLAP_DISCLOSURE}${RESET9}
+${DIM9}${OVERLAP_DISCLOSURE}${RESET11}
 `);
   out.push(`
-${DIM8}Nothing was written. To import after reviewing this preview, run 'chron import claude-code --confirm'.${RESET9}
+${DIM9}Nothing was written. To import after reviewing this preview, run 'chron import claude-code --confirm'.${RESET11}
 
 `);
   return out.join("");
@@ -24150,36 +25114,36 @@ async function runClaudeCodeDryRun(args2) {
 function renderImportResult(result, root) {
   const out = [];
   out.push(`
-${BOLD9}chron import claude-code${RESET9}
+${BOLD10}chron import claude-code${RESET11}
 `);
-  out.push(`  source: ${DIM8}${root}${RESET9}
+  out.push(`  source: ${DIM9}${root}${RESET11}
 
 `);
-  out.push(`${GREEN6}Imported${RESET9}
+  out.push(`${GREEN7}Imported${RESET11}
 `);
   out.push(`  ${result.imported_sessions} session(s), ${result.imported_events} event(s)
 `);
-  if (result.already_current > 0) out.push(`  ${DIM8}${result.already_current} transcript(s) already current (${result.skipped_events} event(s) unchanged)${RESET9}
+  if (result.already_current > 0) out.push(`  ${DIM9}${result.already_current} transcript(s) already current (${result.skipped_events} event(s) unchanged)${RESET11}
 `);
-  if (result.skipped_empty > 0) out.push(`  ${DIM8}${result.skipped_empty} transcript(s) had no ingestible events${RESET9}
+  if (result.skipped_empty > 0) out.push(`  ${DIM9}${result.skipped_empty} transcript(s) had no ingestible events${RESET11}
 `);
-  if (result.secrets_detected > 0) out.push(`  ${YELLOW7}${result.secrets_detected} secret detection(s) recorded with masked values${RESET9}
+  if (result.secrets_detected > 0) out.push(`  ${YELLOW8}${result.secrets_detected} secret detection(s) recorded with masked values${RESET11}
 `);
   if (result.errors > 0) {
     out.push(`
-${YELLOW7}Not imported${RESET9}
+${YELLOW8}Not imported${RESET11}
 `);
     for (const item of result.items.filter((item2) => item2.status === "error")) {
-      out.push(`  ${YELLOW7}!${RESET9} ${item.session_id.slice(0, 8)}  ${item.error}
+      out.push(`  ${YELLOW8}!${RESET11} ${item.session_id.slice(0, 8)}  ${item.error}
 `);
     }
   }
   out.push(`
-${DIM8}Imported sessions are partial evidence: Chron ingested a Claude Code client transcript and did not witness the original events.${RESET9}
+${DIM9}Imported sessions are partial evidence: Chron ingested a Claude Code client transcript and did not witness the original events.${RESET11}
 `);
-  out.push(`${DIM8}${OVERLAP_DISCLOSURE}${RESET9}
+  out.push(`${DIM9}${OVERLAP_DISCLOSURE}${RESET11}
 `);
-  out.push(`${DIM8}Run 'chron coverage --evidence-use' to see their local evidence boundary and review references.${RESET9}
+  out.push(`${DIM9}Run 'chron coverage --evidence-use' to see their local evidence boundary and review references.${RESET11}
 
 `);
   return out.join("");
@@ -24199,7 +25163,7 @@ async function runClaudeCodeImport(args2) {
   const result = await importClaudeCodeTranscripts(db, { root, includeToolOutput });
   process.stdout.write(renderImportResult(result, root));
 }
-var RESET9, BOLD9, DIM8, GREEN6, YELLOW7, CYAN7;
+var RESET11, BOLD10, DIM9, GREEN7, YELLOW8, CYAN8;
 var init_import_claude_code = __esm({
   "src/cli/import-claude-code.ts"() {
     "use strict";
@@ -24210,12 +25174,12 @@ var init_import_claude_code = __esm({
     init_claude_code_import();
     init_discover();
     init_evidence();
-    RESET9 = "\x1B[0m";
-    BOLD9 = "\x1B[1m";
-    DIM8 = "\x1B[2m";
-    GREEN6 = "\x1B[32m";
-    YELLOW7 = "\x1B[33m";
-    CYAN7 = "\x1B[36m";
+    RESET11 = "\x1B[0m";
+    BOLD10 = "\x1B[1m";
+    DIM9 = "\x1B[2m";
+    GREEN7 = "\x1B[32m";
+    YELLOW8 = "\x1B[33m";
+    CYAN8 = "\x1B[36m";
   }
 });
 
@@ -24264,14 +25228,14 @@ function messagesFromConversation(conv) {
   }
   return result;
 }
-function findFile(dir, name) {
-  for (const entry of (0, import_fs17.readdirSync)(dir)) {
+function findFile(dir, name2) {
+  for (const entry of (0, import_fs18.readdirSync)(dir)) {
     const full = (0, import_path12.join)(dir, entry);
     try {
-      if ((0, import_fs17.statSync)(full).isDirectory()) {
-        const found = findFile(full, name);
+      if ((0, import_fs18.statSync)(full).isDirectory()) {
+        const found = findFile(full, name2);
         if (found) return found;
-      } else if (entry === name) {
+      } else if (entry === name2) {
         return full;
       }
     } catch {
@@ -24320,7 +25284,12 @@ async function importGptConversations(db, conversations) {
           updated_at: unixToIso(conv.update_time),
           external_ref: externalRef,
           parent_session_id: null,
-          public_key: publicKey
+          public_key: publicKey,
+          // Without this the session reads as directly witnessed: `chron verify`
+          // describes it as a complete record and `coverage` leaves it out of
+          // the partial-evidence count. A vendor export has no tool calls and
+          // no environment state, and the record has to say so.
+          metadata: JSON.stringify({ source: "imported", import_format: "chatgpt", partial: true })
         });
         let prevHash = null;
         for (const m of msgs) {
@@ -24373,8 +25342,8 @@ async function importConversations(filePath) {
   let tempDir = null;
   const ext = (0, import_path12.extname)(filePath).toLowerCase();
   if (ext === ".zip") {
-    tempDir = (0, import_path12.join)((0, import_os11.tmpdir)(), `chron-import-${Date.now()}`);
-    (0, import_fs17.mkdirSync)(tempDir, { recursive: true });
+    tempDir = (0, import_path12.join)((0, import_os12.tmpdir)(), `chron-import-${Date.now()}`);
+    (0, import_fs18.mkdirSync)(tempDir, { recursive: true });
     try {
       (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "conversations.json", "-d", tempDir], { stdio: "pipe" });
     } catch {
@@ -24383,7 +25352,7 @@ async function importConversations(filePath) {
       } catch {
         process.stderr.write(`Failed to extract ${filePath}. Make sure 'unzip' is installed.
 `);
-        (0, import_fs17.rmSync)(tempDir, { recursive: true, force: true });
+        (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
         process.exit(1);
       }
     }
@@ -24391,12 +25360,12 @@ async function importConversations(filePath) {
     if (!found) {
       process.stderr.write(`conversations.json not found inside the ZIP.
 `);
-      (0, import_fs17.rmSync)(tempDir, { recursive: true, force: true });
+      (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
       process.exit(1);
     }
-    raw = (0, import_fs17.readFileSync)(found, "utf8");
+    raw = (0, import_fs18.readFileSync)(found, "utf8");
   } else if (ext === ".json") {
-    raw = (0, import_fs17.readFileSync)(filePath, "utf8");
+    raw = (0, import_fs18.readFileSync)(filePath, "utf8");
   } else {
     process.stderr.write(`Unsupported file type: ${ext}. Pass a .zip export or a conversations.json file.
 `);
@@ -24409,30 +25378,30 @@ async function importConversations(filePath) {
   } catch {
     process.stderr.write(`Failed to parse conversations JSON.
 `);
-    if (tempDir) (0, import_fs17.rmSync)(tempDir, { recursive: true, force: true });
+    if (tempDir) (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   process.stdout.write(`
-${BOLD10}chron import chatgpt${RESET10}  ${DIM9}${filePath}${RESET10}
+${BOLD11}chron import chatgpt${RESET12}  ${DIM10}${filePath}${RESET12}
 `);
-  process.stdout.write(`${DIM9}${conversations.length} conversation(s) found${RESET10}
+  process.stdout.write(`${DIM10}${conversations.length} conversation(s) found${RESET12}
 
 `);
   const result = await importGptConversations(db, conversations);
   for (const e of result.errors) {
-    process.stderr.write(`  ${YELLOW8}!${RESET10} Failed to import "${e.title}": ${e.error}
+    process.stderr.write(`  ${YELLOW9}!${RESET12} Failed to import "${e.title}": ${e.error}
 `);
   }
-  if (tempDir) (0, import_fs17.rmSync)(tempDir, { recursive: true, force: true });
+  if (tempDir) (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
   process.stdout.write("\n");
-  process.stdout.write(`${BOLD10}Done.${RESET10}  `);
-  process.stdout.write(`${GREEN7}${result.imported} imported${RESET10}`);
-  if (result.skipped > 0) process.stdout.write(`  ${DIM9}${result.skipped} skipped (already in DB)${RESET10}`);
-  process.stdout.write(`  ${CYAN8}${result.totalMessages} messages total${RESET10}`);
-  if (result.totalSecrets > 0) process.stdout.write(`  ${YELLOW8}${result.totalSecrets} secret(s) detected${RESET10}`);
-  if (result.errors.length > 0) process.stdout.write(`  ${YELLOW8}${result.errors.length} error(s)${RESET10}`);
+  process.stdout.write(`${BOLD11}Done.${RESET12}  `);
+  process.stdout.write(`${GREEN8}${result.imported} imported${RESET12}`);
+  if (result.skipped > 0) process.stdout.write(`  ${DIM10}${result.skipped} skipped (already in DB)${RESET12}`);
+  process.stdout.write(`  ${CYAN9}${result.totalMessages} messages total${RESET12}`);
+  if (result.totalSecrets > 0) process.stdout.write(`  ${YELLOW9}${result.totalSecrets} secret(s) detected${RESET12}`);
+  if (result.errors.length > 0) process.stdout.write(`  ${YELLOW9}${result.errors.length} error(s)${RESET12}`);
   process.stdout.write("\n\n");
-  process.stdout.write(`${DIM9}Run 'chron history' to browse imported sessions.${RESET10}
+  process.stdout.write(`${DIM10}Run 'chron history' to browse imported sessions.${RESET12}
 
 `);
 }
@@ -24537,8 +25506,8 @@ async function importClaudeAi(filePath) {
   let tempDir = null;
   const ext = (0, import_path12.extname)(filePath).toLowerCase();
   if (ext === ".zip") {
-    tempDir = (0, import_path12.join)((0, import_os11.tmpdir)(), `chron-import-${Date.now()}`);
-    (0, import_fs17.mkdirSync)(tempDir, { recursive: true });
+    tempDir = (0, import_path12.join)((0, import_os12.tmpdir)(), `chron-import-${Date.now()}`);
+    (0, import_fs18.mkdirSync)(tempDir, { recursive: true });
     try {
       (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "conversations.json", "-d", tempDir], { stdio: "pipe" });
     } catch {
@@ -24547,7 +25516,7 @@ async function importClaudeAi(filePath) {
       } catch {
         process.stderr.write(`Failed to extract ${filePath}. Make sure 'unzip' is installed.
 `);
-        if (tempDir) (0, import_fs17.rmSync)(tempDir, { recursive: true, force: true });
+        if (tempDir) (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
         process.exit(1);
       }
     }
@@ -24555,12 +25524,12 @@ async function importClaudeAi(filePath) {
     if (!found) {
       process.stderr.write(`conversations.json not found inside the ZIP.
 `);
-      if (tempDir) (0, import_fs17.rmSync)(tempDir, { recursive: true, force: true });
+      if (tempDir) (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
       process.exit(1);
     }
-    raw = (0, import_fs17.readFileSync)(found, "utf8");
+    raw = (0, import_fs18.readFileSync)(found, "utf8");
   } else if (ext === ".json") {
-    raw = (0, import_fs17.readFileSync)(filePath, "utf8");
+    raw = (0, import_fs18.readFileSync)(filePath, "utf8");
   } else {
     process.stderr.write(`Unsupported file type: ${ext}. Pass the claude-ai-export-*.zip or conversations.json.
 `);
@@ -24573,34 +25542,34 @@ async function importClaudeAi(filePath) {
   } catch {
     process.stderr.write(`Failed to parse conversations JSON.
 `);
-    if (tempDir) (0, import_fs17.rmSync)(tempDir, { recursive: true, force: true });
+    if (tempDir) (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   process.stdout.write(`
-${BOLD10}chron import claude${RESET10}  ${DIM9}${filePath}${RESET10}
+${BOLD11}chron import claude${RESET12}  ${DIM10}${filePath}${RESET12}
 `);
-  process.stdout.write(`${DIM9}${conversations.length} conversation(s) found${RESET10}
+  process.stdout.write(`${DIM10}${conversations.length} conversation(s) found${RESET12}
 `);
-  process.stdout.write(`${YELLOW8}Imported sessions are marked as partial evidence \u2014 tool calls and environment state are not captured in claude.ai exports.${RESET10}
+  process.stdout.write(`${YELLOW9}Imported sessions are marked as partial evidence \u2014 tool calls and environment state are not captured in claude.ai exports.${RESET12}
 
 `);
   const result = await importClaudeAiConversations(db, conversations);
   for (const e of result.errors) {
-    process.stderr.write(`  ${YELLOW8}!${RESET10} Failed to import "${e.title}": ${e.error}
+    process.stderr.write(`  ${YELLOW9}!${RESET12} Failed to import "${e.title}": ${e.error}
 `);
   }
-  if (tempDir) (0, import_fs17.rmSync)(tempDir, { recursive: true, force: true });
+  if (tempDir) (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
   process.stdout.write("\n");
-  process.stdout.write(`${BOLD10}Done.${RESET10}  `);
-  process.stdout.write(`${GREEN7}${result.imported} imported${RESET10}`);
-  if (result.skipped > 0) process.stdout.write(`  ${DIM9}${result.skipped} skipped (already in DB)${RESET10}`);
-  process.stdout.write(`  ${CYAN8}${result.totalMessages} messages total${RESET10}`);
-  if (result.totalSecrets > 0) process.stdout.write(`  ${YELLOW8}${result.totalSecrets} secret(s) detected${RESET10}`);
-  if (result.errors.length > 0) process.stdout.write(`  ${YELLOW8}${result.errors.length} error(s)${RESET10}`);
+  process.stdout.write(`${BOLD11}Done.${RESET12}  `);
+  process.stdout.write(`${GREEN8}${result.imported} imported${RESET12}`);
+  if (result.skipped > 0) process.stdout.write(`  ${DIM10}${result.skipped} skipped (already in DB)${RESET12}`);
+  process.stdout.write(`  ${CYAN9}${result.totalMessages} messages total${RESET12}`);
+  if (result.totalSecrets > 0) process.stdout.write(`  ${YELLOW9}${result.totalSecrets} secret(s) detected${RESET12}`);
+  if (result.errors.length > 0) process.stdout.write(`  ${YELLOW9}${result.errors.length} error(s)${RESET12}`);
   process.stdout.write("\n\n");
-  process.stdout.write(`${DIM9}Run 'chron history' to browse imported sessions.${RESET10}
+  process.stdout.write(`${DIM10}Run 'chron history' to browse imported sessions.${RESET12}
 `);
-  process.stdout.write(`${DIM9}Run 'chron coverage' to see your full evidence boundary.${RESET10}
+  process.stdout.write(`${DIM10}Run 'chron coverage' to see your full evidence boundary.${RESET12}
 
 `);
 }
@@ -24614,7 +25583,7 @@ async function runImport(args2) {
       process.exit(1);
     }
     const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
-    if (!(0, import_fs17.existsSync)(resolved)) {
+    if (!(0, import_fs18.existsSync)(resolved)) {
       process.stderr.write(`File not found: ${resolved}
 `);
       process.exit(1);
@@ -24630,7 +25599,7 @@ async function runImport(args2) {
       process.exit(1);
     }
     const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
-    if (!(0, import_fs17.existsSync)(resolved)) {
+    if (!(0, import_fs18.existsSync)(resolved)) {
       process.stderr.write(`File not found: ${resolved}
 `);
       process.exit(1);
@@ -24669,13 +25638,13 @@ Available importers: chatgpt, claude
   );
   process.exit(1);
 }
-var import_fs17, import_path12, import_os11, import_child_process4, RESET10, BOLD10, DIM9, GREEN7, YELLOW8, CYAN8;
+var import_fs18, import_path12, import_os12, import_child_process4, RESET12, BOLD11, DIM10, GREEN8, YELLOW9, CYAN9;
 var init_import = __esm({
   "src/cli/import.ts"() {
     "use strict";
-    import_fs17 = require("fs");
+    import_fs18 = require("fs");
     import_path12 = require("path");
-    import_os11 = require("os");
+    import_os12 = require("os");
     import_child_process4 = require("child_process");
     init_drizzle_orm();
     init_esm();
@@ -24685,12 +25654,12 @@ var init_import = __esm({
     init_content();
     init_detect();
     init_signing();
-    RESET10 = "\x1B[0m";
-    BOLD10 = "\x1B[1m";
-    DIM9 = "\x1B[2m";
-    GREEN7 = "\x1B[32m";
-    YELLOW8 = "\x1B[33m";
-    CYAN8 = "\x1B[36m";
+    RESET12 = "\x1B[0m";
+    BOLD11 = "\x1B[1m";
+    DIM10 = "\x1B[2m";
+    GREEN8 = "\x1B[32m";
+    YELLOW9 = "\x1B[33m";
+    CYAN9 = "\x1B[36m";
   }
 });
 
@@ -24970,56 +25939,56 @@ function printFindings(findings, framework, sessionCount, showAll) {
   const controlsHit = new Set(findings.flatMap((f) => f.controls));
   process.stdout.write(
     `
-${BOLD11}Chron Review${RESET11}  ${CYAN9}${framework.toUpperCase()}${RESET11}  ${DIM10}${sessionCount} session(s) reviewed${showAll ? " \xB7 all statuses" : " \xB7 open findings"}${RESET11}
+${BOLD12}Chron Review${RESET13}  ${CYAN10}${framework.toUpperCase()}${RESET13}  ${DIM11}${sessionCount} session(s) reviewed${showAll ? " \xB7 all statuses" : " \xB7 open findings"}${RESET13}
 
 `
   );
   if (findings.length === 0) {
     process.stdout.write(
-      showAll ? `${DIM10}No findings. No sessions matched any control review criteria.${RESET11}
+      showAll ? `${DIM11}No findings. No sessions matched any control review criteria.${RESET13}
 
-` : `${DIM10}No open findings. Use --all to include accepted, dismissed, and resolved findings.${RESET11}
+` : `${DIM11}No open findings. Use --all to include accepted, dismissed, and resolved findings.${RESET13}
 
 `
     );
     return;
   }
   process.stdout.write(
-    `${BOLD11}${findings.length}${RESET11} finding${findings.length === 1 ? "" : "s"}  across  ${BOLD11}${controlsHit.size}${RESET11} control${controlsHit.size === 1 ? "" : "s"}
+    `${BOLD12}${findings.length}${RESET13} finding${findings.length === 1 ? "" : "s"}  across  ${BOLD12}${controlsHit.size}${RESET13} control${controlsHit.size === 1 ? "" : "s"}
 
 `
   );
   process.stdout.write(
-    `${DIM10}This report identifies AI-session evidence that may require control-owner review.
-It is not a certification of compliance or evidence of any violation.${RESET11}
+    `${DIM11}This report identifies AI-session evidence that may require control-owner review.
+It is not a certification of compliance or evidence of any violation.${RESET13}
 
 `
   );
   for (const f of findings) {
-    const sevColor = SEV_COLOR[f.severity] ?? DIM10;
-    const statusColor = STATUS_COLOR[f.status] ?? DIM10;
+    const sevColor = SEV_COLOR[f.severity] ?? DIM11;
+    const statusColor = STATUS_COLOR[f.status] ?? DIM11;
     const controls = f.controls.join(", ");
     const sev = f.severity.toUpperCase().padEnd(8);
     const status = f.status.toUpperCase().padEnd(9);
     process.stdout.write(
-      `  ${sevColor}${BOLD11}${sev}${RESET11}  ${statusColor}${status}${RESET11}  ${MAGENTA2}${controls.padEnd(16)}${RESET11}  ${CYAN9}${f.session_prefix}${RESET11}  ${f.session_title}
+      `  ${sevColor}${BOLD12}${sev}${RESET13}  ${statusColor}${status}${RESET13}  ${MAGENTA2}${controls.padEnd(16)}${RESET13}  ${CYAN10}${f.session_prefix}${RESET13}  ${f.session_title}
 `
     );
-    process.stdout.write(`    ${DIM10}id: ${f.id.slice(0, 16)}${RESET11}
+    process.stdout.write(`    ${DIM11}id: ${f.id.slice(0, 16)}${RESET13}
 `);
     process.stdout.write(`    ${f.finding}
 `);
     for (const item of f.evidence_items.slice(0, 5)) {
-      process.stdout.write(`    ${DIM10}\u2022 ${item}${RESET11}
+      process.stdout.write(`    ${DIM11}\u2022 ${item}${RESET13}
 `);
     }
     if (f.evidence_items.length > 5) {
-      process.stdout.write(`    ${DIM10}  \u2026 ${f.evidence_items.length - 5} more event(s)${RESET11}
+      process.stdout.write(`    ${DIM11}  \u2026 ${f.evidence_items.length - 5} more event(s)${RESET13}
 `);
     }
-    process.stdout.write(`    ${DIM10}Suggested: ${f.suggested_evidence[0]}${RESET11}
+    process.stdout.write(`    ${DIM11}Suggested: ${f.suggested_evidence[0]}${RESET13}
 `);
-    if (f.note) process.stdout.write(`    ${DIM10}Note: ${f.note}${RESET11}
+    if (f.note) process.stdout.write(`    ${DIM11}Note: ${f.note}${RESET13}
 `);
     process.stdout.write("\n");
   }
@@ -25037,16 +26006,16 @@ function renderFullMapCli(framework, map, info2) {
   const counts = { covered: 0, needs_evidence: 0, manual_review: 0, out_of_scope: 0 };
   for (const e of map) counts[e.coverage] = (counts[e.coverage] ?? 0) + 1;
   process.stdout.write(`
-${BOLD11}Control Map \u2014 ${info2.title}${RESET11}
+${BOLD12}Control Map \u2014 ${info2.title}${RESET13}
 
 `);
-  process.stdout.write(`  ${CYAN9}Covered by session evidence:${RESET11}  ${BOLD11}${counts["covered"] ?? 0}${RESET11}
+  process.stdout.write(`  ${CYAN10}Covered by session evidence:${RESET13}  ${BOLD12}${counts["covered"] ?? 0}${RESET13}
 `);
-  process.stdout.write(`  ${YELLOW9}Needs additional evidence:${RESET11}   ${BOLD11}${counts["needs_evidence"] ?? 0}${RESET11}
+  process.stdout.write(`  ${YELLOW10}Needs additional evidence:${RESET13}   ${BOLD12}${counts["needs_evidence"] ?? 0}${RESET13}
 `);
-  process.stdout.write(`  ${DIM10}Manual review required:${RESET11}      ${BOLD11}${counts["manual_review"] ?? 0}${RESET11}
+  process.stdout.write(`  ${DIM11}Manual review required:${RESET13}      ${BOLD12}${counts["manual_review"] ?? 0}${RESET13}
 `);
-  process.stdout.write(`  ${DIM10}Out of scope:${RESET11}                ${BOLD11}${counts["out_of_scope"] ?? 0}${RESET11}
+  process.stdout.write(`  ${DIM11}Out of scope:${RESET13}                ${BOLD12}${counts["out_of_scope"] ?? 0}${RESET13}
 
 `);
   const groups = { covered: [], needs_evidence: [], manual_review: [], out_of_scope: [] };
@@ -25054,23 +26023,23 @@ ${BOLD11}Control Map \u2014 ${info2.title}${RESET11}
   for (const cov of COV_ORDER) {
     const entries = groups[cov];
     if (!entries || entries.length === 0) continue;
-    process.stdout.write(`${BOLD11}${COV_LABELS[cov]}:${RESET11}
+    process.stdout.write(`${BOLD12}${COV_LABELS[cov]}:${RESET13}
 `);
     for (const e of entries) {
       const id = e.id.padEnd(22);
       const title = e.title.length > 50 ? e.title.slice(0, 47) + "\u2026" : e.title.padEnd(50);
       let suffix = "";
-      if (cov === "covered") suffix = `${DIM10}rule: ${e.rule_id}${RESET11}`;
-      if (cov === "needs_evidence") suffix = `${DIM10}source: ${e.required_source}${RESET11}`;
-      if (cov === "manual_review") suffix = `${DIM10}human judgement required${RESET11}`;
-      process.stdout.write(`  ${CYAN9}${id}${RESET11}  ${title}  ${suffix}
+      if (cov === "covered") suffix = `${DIM11}rule: ${e.rule_id}${RESET13}`;
+      if (cov === "needs_evidence") suffix = `${DIM11}source: ${e.required_source}${RESET13}`;
+      if (cov === "manual_review") suffix = `${DIM11}human judgement required${RESET13}`;
+      process.stdout.write(`  ${CYAN10}${id}${RESET13}  ${title}  ${suffix}
 `);
     }
     process.stdout.write("\n");
   }
   process.stdout.write(
-    `${DIM10}Covered does not mean compliant. It means Chron has a deterministic session-evidence rule for this control.
-A full framework assessment requires policy documents, auditor judgement, and evidence beyond session logs.${RESET11}
+    `${DIM11}Covered does not mean compliant. It means Chron has a deterministic session-evidence rule for this control.
+A full framework assessment requires policy documents, auditor judgement, and evidence beyond session logs.${RESET13}
 
 `
   );
@@ -25349,13 +26318,13 @@ async function runReview2(args2) {
     }
     const html = buildReviewHtml({
       framework: frameworkArg,
-      host: (0, import_os12.hostname)(),
+      host: (0, import_os13.hostname)(),
       generatedAt,
       sessionCount,
       findings,
       coverageMapHtml
     });
-    (0, import_fs18.writeFileSync)(outputArg, html, "utf8");
+    (0, import_fs19.writeFileSync)(outputArg, html, "utf8");
     process.stdout.write(`Review report written to ${outputArg}
 `);
   }
@@ -25387,36 +26356,36 @@ async function runReviewAction(action, args2) {
     process.exit(1);
   }
 }
-var import_fs18, import_os12, RESET11, BOLD11, DIM10, RED6, YELLOW9, CYAN9, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
+var import_fs19, import_os13, RESET13, BOLD12, DIM11, RED8, YELLOW10, CYAN10, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
 var init_review = __esm({
   "src/cli/review.ts"() {
     "use strict";
-    import_fs18 = require("fs");
-    import_os12 = require("os");
+    import_fs19 = require("fs");
+    import_os13 = require("os");
     init_db2();
     init_report();
     init_rules();
     init_control_map();
     init_engine();
     init_workflow();
-    RESET11 = "\x1B[0m";
-    BOLD11 = "\x1B[1m";
-    DIM10 = "\x1B[2m";
-    RED6 = "\x1B[31m";
-    YELLOW9 = "\x1B[33m";
-    CYAN9 = "\x1B[36m";
+    RESET13 = "\x1B[0m";
+    BOLD12 = "\x1B[1m";
+    DIM11 = "\x1B[2m";
+    RED8 = "\x1B[31m";
+    YELLOW10 = "\x1B[33m";
+    CYAN10 = "\x1B[36m";
     MAGENTA2 = "\x1B[35m";
     SEV_COLOR = {
-      critical: RED6,
-      high: YELLOW9,
-      medium: CYAN9,
-      low: DIM10
+      critical: RED8,
+      high: YELLOW10,
+      medium: CYAN10,
+      low: DIM11
     };
     STATUS_COLOR = {
-      open: YELLOW9,
-      accepted: CYAN9,
-      dismissed: DIM10,
-      resolved: CYAN9
+      open: YELLOW10,
+      accepted: CYAN10,
+      dismissed: DIM11,
+      resolved: CYAN10
     };
     REPORT_CSS = `
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -25551,7 +26520,7 @@ var risk_exports = {};
 __export(risk_exports, {
   runRisk: () => runRisk
 });
-function fmtDate4(iso) {
+function fmtDate5(iso) {
   return iso.slice(0, 16).replace("T", " ");
 }
 async function runRisk(args2) {
@@ -25583,11 +26552,11 @@ async function runRisk(args2) {
   const scored = rows.map((r) => ({ ...r, risk: scores.get(r.id) })).filter((r) => showAll || r.risk.score > 0).sort((a, b) => b.risk.score - a.risk.score);
   const label = since ? `since ${sinceArg}` : "all time";
   process.stdout.write(`
-${BOLD12}Sessions requiring attention${RESET12}  ${DIM11}(${label})${RESET12}
+${BOLD13}Sessions requiring attention${RESET14}  ${DIM12}(${label})${RESET14}
 
 `);
   if (scored.length === 0) {
-    process.stdout.write(`${DIM11}No sessions with attention signals detected.${RESET12}
+    process.stdout.write(`${DIM12}No sessions with attention signals detected.${RESET14}
 
 `);
     return;
@@ -25598,14 +26567,14 @@ ${BOLD12}Sessions requiring attention${RESET12}  ${DIM11}(${label})${RESET12}
     const dots = BAND_DOTS[risk.band];
     const score = String(risk.score).padStart(3);
     const prefix = row.id.slice(0, 8);
-    const date = fmtDate4(row.updated_at);
+    const date = fmtDate5(row.updated_at);
     const tool = row.ai_tool ?? "unknown";
     process.stdout.write(
-      `  ${color}${BOLD12}${score}${RESET12}  ${color}${dots}${RESET12}  ${CYAN10}${prefix}${RESET12}  ${DIM11}${tool.padEnd(12)}${RESET12}  ${DIM11}${date}${RESET12}  ${row.title}
+      `  ${color}${BOLD13}${score}${RESET14}  ${color}${dots}${RESET14}  ${CYAN11}${prefix}${RESET14}  ${DIM12}${tool.padEnd(12)}${RESET14}  ${DIM12}${date}${RESET14}  ${row.title}
 `
     );
     for (const reason of risk.reasons.slice(0, 3)) {
-      process.stdout.write(`      ${DIM11}\u21B3 ${reason}${RESET12}
+      process.stdout.write(`      ${DIM12}\u21B3 ${reason}${RESET14}
 `);
     }
     process.stdout.write("\n");
@@ -25614,15 +26583,15 @@ ${BOLD12}Sessions requiring attention${RESET12}  ${DIM11}(${label})${RESET12}
   const critical = scored.filter((r) => r.risk.band === "critical").length;
   const high = scored.filter((r) => r.risk.band === "high").length;
   const summary = [];
-  if (critical > 0) summary.push(`${RED7}${BOLD12}${critical} critical${RESET12}`);
-  if (high > 0) summary.push(`${YELLOW10}${high} high${RESET12}`);
+  if (critical > 0) summary.push(`${RED9}${BOLD13}${critical} critical${RESET14}`);
+  if (high > 0) summary.push(`${YELLOW11}${high} high${RESET14}`);
   const rest = total - critical - high;
-  if (rest > 0) summary.push(`${DIM11}${rest} review${RESET12}`);
-  process.stdout.write(`  ${BOLD12}${total}${RESET12} session${total === 1 ? "" : "s"} flagged`);
+  if (rest > 0) summary.push(`${DIM12}${rest} review${RESET14}`);
+  process.stdout.write(`  ${BOLD13}${total}${RESET14} session${total === 1 ? "" : "s"} flagged`);
   if (summary.length > 0) process.stdout.write(`  \xB7  ${summary.join("  ")}`);
   process.stdout.write("\n\n");
 }
-var RESET12, BOLD12, DIM11, RED7, YELLOW10, CYAN10, BAND_COLOR2, BAND_DOTS;
+var RESET14, BOLD13, DIM12, RED9, YELLOW11, CYAN11, BAND_COLOR2, BAND_DOTS;
 var init_risk2 = __esm({
   "src/cli/risk.ts"() {
     "use strict";
@@ -25631,17 +26600,17 @@ var init_risk2 = __esm({
     init_schema();
     init_report();
     init_risk();
-    RESET12 = "\x1B[0m";
-    BOLD12 = "\x1B[1m";
-    DIM11 = "\x1B[2m";
-    RED7 = "\x1B[31m";
-    YELLOW10 = "\x1B[33m";
-    CYAN10 = "\x1B[36m";
+    RESET14 = "\x1B[0m";
+    BOLD13 = "\x1B[1m";
+    DIM12 = "\x1B[2m";
+    RED9 = "\x1B[31m";
+    YELLOW11 = "\x1B[33m";
+    CYAN11 = "\x1B[36m";
     BAND_COLOR2 = {
-      critical: RED7,
-      high: YELLOW10,
-      review: YELLOW10,
-      normal: DIM11
+      critical: RED9,
+      high: YELLOW11,
+      review: YELLOW11,
+      normal: DIM12
     };
     BAND_DOTS = {
       critical: "\u25CF\u25CF\u25CF\u25CF",
@@ -25666,7 +26635,7 @@ function fmtTs(iso) {
   const tz = !m[3] || m[3] === "Z" ? "+00:00" : m[3];
   return `${m[1]} ${m[2]} ${tz}`;
 }
-function fmtDate5(iso) {
+function fmtDate6(iso) {
   return iso.slice(0, 10);
 }
 function scoreBadgeHtml(score, band2) {
@@ -25857,7 +26826,7 @@ function buildFindingCard(f) {
     ${controlsHtml}
     ${suggestedHtml}
     ${noteHtml}
-    <div class="mono dim" style="font-size:10px;margin-top:6px">id: ${esc4(f.id.slice(0, 16))} \xB7 opened ${esc4(fmtDate5(f.created_at))}${f.updated_at !== f.created_at ? ` \xB7 updated ${esc4(fmtDate5(f.updated_at))}` : ""}</div>
+    <div class="mono dim" style="font-size:10px;margin-top:6px">id: ${esc4(f.id.slice(0, 16))} \xB7 opened ${esc4(fmtDate6(f.created_at))}${f.updated_at !== f.created_at ? ` \xB7 updated ${esc4(fmtDate6(f.updated_at))}` : ""}</div>
     ${actionHtml}
   </div>`;
 }
@@ -25989,7 +26958,7 @@ async function runSessionDetail(prefix, outputArg) {
   const html = buildDetailHtml(session, msgs, secretsByMsg, findings, risk, tamper, generatedAt);
   const defaultOut = `chron-session-${session.id.slice(0, 8)}.html`;
   const outFile = outputArg !== "chron-dashboard.html" ? outputArg : defaultOut;
-  (0, import_fs19.writeFileSync)(outFile, html, "utf8");
+  (0, import_fs20.writeFileSync)(outFile, html, "utf8");
   const openCount = findings.filter((f) => f.status === "open").length;
   process.stdout.write(
     `
@@ -26003,11 +26972,11 @@ async function runSessionDetail(prefix, outputArg) {
 `
   );
 }
-var import_fs19, RULE_META3, FW_LABELS3, DETAIL_CSS;
+var import_fs20, RULE_META3, FW_LABELS3, DETAIL_CSS;
 var init_session_detail = __esm({
   "src/cli/session-detail.ts"() {
     "use strict";
-    import_fs19 = require("fs");
+    import_fs20 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_roles();
@@ -26140,7 +27109,7 @@ __export(dashboard_exports, {
 function esc5(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
-function fmtDate6(iso) {
+function fmtDate7(iso) {
   return iso.slice(0, 10);
 }
 function scoreBadge(score, band2) {
@@ -26191,7 +27160,7 @@ function buildSessionsTable(rows) {
       <td>${scoreBadge(r.risk.score, r.risk.band)}</td>
       <td><span class="mono">${esc5(prefix)}</span></td>
       <td class="dim">${esc5(tool)}</td>
-      <td class="dim">${fmtDate6(r.updated_at)}</td>
+      <td class="dim">${fmtDate7(r.updated_at)}</td>
       <td>${esc5(r.title)}</td>
       <td>${reason}${extra}</td>
     </tr>`;
@@ -26487,7 +27456,7 @@ async function runDashboard(args2) {
     minute: "2-digit"
   });
   const html = buildDashboardHtml(rows, findings, requirements, sessionIds.length, since, sinceArg, generatedAt, now);
-  (0, import_fs20.writeFileSync)(outputArg, html, "utf8");
+  (0, import_fs21.writeFileSync)(outputArg, html, "utf8");
   const criticalCount = rows.filter((r) => r.risk.band === "critical").length;
   const highCount = rows.filter((r) => r.risk.band === "high").length;
   process.stdout.write(
@@ -26501,11 +27470,11 @@ async function runDashboard(args2) {
 `
   );
 }
-var import_fs20, RULE_META4, FW_LABELS4, DASHBOARD_CSS, REASON_LABEL;
+var import_fs21, RULE_META4, FW_LABELS4, DASHBOARD_CSS, REASON_LABEL;
 var init_dashboard = __esm({
   "src/cli/dashboard.ts"() {
     "use strict";
-    import_fs20 = require("fs");
+    import_fs21 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -26623,11 +27592,11 @@ async function runPatterns(args2) {
   }
   const rangeLabel = sinceArg ? `last ${sinceArg}` : "all time";
   process.stdout.write(`
-${BOLD13}Chron Patterns${RESET13}  ${DIM12}${rangeLabel} \xB7 ${sessionCount} session${sessionCount === 1 ? "" : "s"}${RESET13}
+${BOLD14}Chron Patterns${RESET15}  ${DIM13}${rangeLabel} \xB7 ${sessionCount} session${sessionCount === 1 ? "" : "s"}${RESET15}
 
 `);
   if (patterns.length === 0) {
-    process.stdout.write(`${DIM12}No patterns detected \u2014 no repeated signals across sessions.${RESET13}
+    process.stdout.write(`${DIM13}No patterns detected \u2014 no repeated signals across sessions.${RESET15}
 
 `);
     return;
@@ -26636,18 +27605,18 @@ ${BOLD13}Chron Patterns${RESET13}  ${DIM12}${rangeLabel} \xB7 ${sessionCount} se
     const color = SEV_COLOR2[p.severity];
     const dots = SEV_DOTS[p.severity];
     const sev = p.severity.toUpperCase().padEnd(6);
-    process.stdout.write(`${color}${dots}${RESET13} ${color}${BOLD13}${sev}${RESET13}  ${BOLD13}${p.title}${RESET13}
+    process.stdout.write(`${color}${dots}${RESET15} ${color}${BOLD14}${sev}${RESET15}  ${BOLD14}${p.title}${RESET15}
 `);
-    process.stdout.write(`       ${DIM12}${p.detail}${RESET13}
+    process.stdout.write(`       ${DIM13}${p.detail}${RESET15}
 `);
     if (p.evidence.length > 0) {
       for (const line of p.evidence) {
-        process.stdout.write(`       ${DIM12}\xB7 ${line}${RESET13}
+        process.stdout.write(`       ${DIM13}\xB7 ${line}${RESET15}
 `);
       }
     }
-    const prefixes = p.session_ids.slice(0, 5).map((id) => `${CYAN11}${id.slice(0, 8)}${RESET13}`);
-    const more = p.session_ids.length > 5 ? ` ${DIM12}+${p.session_ids.length - 5} more${RESET13}` : "";
+    const prefixes = p.session_ids.slice(0, 5).map((id) => `${CYAN12}${id.slice(0, 8)}${RESET15}`);
+    const more = p.session_ids.length > 5 ? ` ${DIM13}+${p.session_ids.length - 5} more${RESET15}` : "";
     process.stdout.write(`       Sessions: ${prefixes.join("  ")}${more}
 
 `);
@@ -26656,32 +27625,62 @@ ${BOLD13}Chron Patterns${RESET13}  ${DIM12}${rangeLabel} \xB7 ${sessionCount} se
   const medium = patterns.filter((p) => p.severity === "medium").length;
   const low = patterns.filter((p) => p.severity === "low").length;
   process.stdout.write(
-    `${DIM12}${patterns.length} pattern${patterns.length === 1 ? "" : "s"} detected${RESET13}` + (high ? `  ${RED8}${high} high${RESET13}` : "") + (medium ? `  ${YELLOW11}${medium} medium${RESET13}` : "") + (low ? `  ${DIM12}${low} low${RESET13}` : "") + "\n\n"
+    `${DIM13}${patterns.length} pattern${patterns.length === 1 ? "" : "s"} detected${RESET15}` + (high ? `  ${RED10}${high} high${RESET15}` : "") + (medium ? `  ${YELLOW12}${medium} medium${RESET15}` : "") + (low ? `  ${DIM13}${low} low${RESET15}` : "") + "\n\n"
   );
 }
-var RESET13, BOLD13, DIM12, RED8, YELLOW11, CYAN11, SEV_COLOR2, SEV_DOTS;
+var RESET15, BOLD14, DIM13, RED10, YELLOW12, CYAN12, SEV_COLOR2, SEV_DOTS;
 var init_patterns2 = __esm({
   "src/cli/patterns.ts"() {
     "use strict";
     init_db2();
     init_report();
     init_patterns();
-    RESET13 = "\x1B[0m";
-    BOLD13 = "\x1B[1m";
-    DIM12 = "\x1B[2m";
-    RED8 = "\x1B[31m";
-    YELLOW11 = "\x1B[33m";
-    CYAN11 = "\x1B[36m";
+    RESET15 = "\x1B[0m";
+    BOLD14 = "\x1B[1m";
+    DIM13 = "\x1B[2m";
+    RED10 = "\x1B[31m";
+    YELLOW12 = "\x1B[33m";
+    CYAN12 = "\x1B[36m";
     SEV_COLOR2 = {
-      high: RED8,
-      medium: YELLOW11,
-      low: DIM12
+      high: RED10,
+      medium: YELLOW12,
+      low: DIM13
     };
     SEV_DOTS = {
       high: "\u25CF\u25CF\u25CF\u25CF",
       medium: "\u25CF\u25CF\u25CF\u25CB",
       low: "\u25CF\u25CF\u25CB\u25CB"
     };
+  }
+});
+
+// src/utils/error-codes.ts
+function errorCodes(err) {
+  const codes = [];
+  const names = [];
+  const seen = /* @__PURE__ */ new Set();
+  const walk = (value, depth) => {
+    if (!value || depth > 6 || seen.has(value)) return;
+    seen.add(value);
+    const e = value;
+    if (typeof e.code === "string") codes.push(e.code);
+    if (typeof e.name === "string") names.push(e.name);
+    if (Array.isArray(e.errors)) for (const inner of e.errors) walk(inner, depth + 1);
+    walk(e.cause, depth + 1);
+  };
+  walk(err, 0);
+  return [...codes, ...names];
+}
+var ESTABLISHED_NON_DELIVERY;
+var init_error_codes = __esm({
+  "src/utils/error-codes.ts"() {
+    "use strict";
+    ESTABLISHED_NON_DELIVERY = /* @__PURE__ */ new Set([
+      "ECONNREFUSED",
+      "ENOTFOUND",
+      "EAI_AGAIN",
+      "ERR_INVALID_URL"
+    ]);
   }
 });
 
@@ -26696,7 +27695,7 @@ function getSplunkConfig() {
   if (now < _splunkCacheExpiry) return _splunkCache;
   _splunkCacheExpiry = now + 1e4;
   try {
-    const cfg = JSON.parse((0, import_fs21.readFileSync)((0, import_path13.join)((0, import_os13.homedir)(), ".chron", "config.json"), "utf8"));
+    const cfg = JSON.parse((0, import_fs22.readFileSync)(configPath(), "utf8"));
     const s = cfg?.splunk;
     _splunkCache = s?.url && s?.token ? { url: s.url, token: s.token, insecure: s.insecure ?? false } : null;
   } catch {
@@ -26719,7 +27718,7 @@ function getSentinelConfig() {
   if (now < _sentinelCacheExpiry) return _sentinelCache;
   _sentinelCacheExpiry = now + 1e4;
   try {
-    const cfg = JSON.parse((0, import_fs21.readFileSync)((0, import_path13.join)((0, import_os13.homedir)(), ".chron", "config.json"), "utf8"));
+    const cfg = JSON.parse((0, import_fs22.readFileSync)(configPath(), "utf8"));
     const s = cfg?.sentinel;
     _sentinelCache = s?.dce && s?.dcrId && s?.stream && s?.tenantId && s?.clientId && s?.clientSecret ? { dce: s.dce, dcrId: s.dcrId, stream: s.stream, tenantId: s.tenantId, clientId: s.clientId, clientSecret: s.clientSecret } : null;
   } catch {
@@ -26727,13 +27726,26 @@ function getSentinelConfig() {
   }
   return _sentinelCache;
 }
+function requestTimeoutMs() {
+  const configured = Number(process.env.CHRON_SIEM_TIMEOUT_MS ?? 1e4);
+  return Number.isFinite(configured) && configured > 0 ? configured : 1e4;
+}
+async function fetchWithTimeout(url, init) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), requestTimeoutMs());
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 async function getAzureToken(tenantId, clientId, clientSecret) {
   const now = Date.now();
   if (_azureTokenCache && _azureTokenCache.expiry > now + 6e4) {
     return _azureTokenCache.token;
   }
   try {
-    const res = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
+    const res = await fetchWithTimeout(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
@@ -26753,7 +27765,7 @@ async function getAzureToken(tenantId, clientId, clientSecret) {
 }
 function getMachineId() {
   if (!_machineId) {
-    _machineId = "sha256:" + (0, import_crypto12.createHash)("sha256").update((0, import_os13.hostname)()).digest("hex").slice(0, 16);
+    _machineId = "sha256:" + (0, import_crypto12.createHash)("sha256").update((0, import_os14.hostname)()).digest("hex").slice(0, 16);
   }
   return _machineId;
 }
@@ -26773,7 +27785,7 @@ function toSplunkEvent(payload) {
   }
   return {
     time: new Date(payload.timestamp).getTime() / 1e3,
-    host: (0, import_os13.hostname)(),
+    host: (0, import_os14.hostname)(),
     source: "chron-mcp",
     sourcetype: "chron:event",
     event
@@ -26802,7 +27814,7 @@ function toSentinelRecord(payload) {
     AiTool: payload.session.ai_tool ?? "",
     OS: process.platform,
     ChronVersion: import_package3.version,
-    Computer: (0, import_os13.hostname)(),
+    Computer: (0, import_os14.hostname)(),
     Role: "",
     DetectionType: "",
     MaskedValue: ""
@@ -26856,7 +27868,7 @@ function emitToLogScale(payload) {
   const token = process.env.CHRON_LOGSCALE_TOKEN;
   if (!url || !token) return;
   const body = JSON.stringify([{
-    tags: { host: (0, import_os13.hostname)(), source: "chron-mcp" },
+    tags: { host: (0, import_os14.hostname)(), source: "chron-mcp" },
     events: [{ timestamp: payload.timestamp, attributes: toLogScaleAttributes(payload) }]
   }]);
   setImmediate(
@@ -26919,7 +27931,7 @@ function toSplunkRiskEvent(payload) {
     base.signals_code_changes = payload.signals.code_changes;
     base.signals_findings = payload.signals.findings;
   }
-  return { time: new Date(payload.timestamp).getTime() / 1e3, host: (0, import_os13.hostname)(), source: "chron", sourcetype: "chron:risk", event: base };
+  return { time: new Date(payload.timestamp).getTime() / 1e3, host: (0, import_os14.hostname)(), source: "chron", sourcetype: "chron:risk", event: base };
 }
 function toSentinelRiskRecord(payload) {
   const base = {
@@ -26927,7 +27939,7 @@ function toSentinelRiskRecord(payload) {
     EventType: payload.event_type,
     OS: process.platform,
     ChronVersion: import_package3.version,
-    Computer: (0, import_os13.hostname)()
+    Computer: (0, import_os14.hostname)()
   };
   if (payload.event_type === "pattern_detected") {
     base.PatternId = payload.pattern_id;
@@ -26967,71 +27979,87 @@ function toLogScaleRiskAttributes(payload) {
   }
   return base;
 }
-function emitRiskEvent(payload) {
+async function emitRiskEvent(payload) {
+  const deliveries = [];
+  const post = async (target, url, headers, body) => {
+    try {
+      const res = await fetchWithTimeout(url, { method: "POST", headers, body });
+      if (res.status >= 200 && res.status < 300) return { target, status: "accepted", httpStatus: res.status };
+      return { target, status: "rejected", httpStatus: res.status };
+    } catch (e) {
+      const codes = errorCodes(e);
+      const proven = codes.some((c) => ESTABLISHED_NON_DELIVERY.has(c));
+      return {
+        target,
+        status: proven ? "failed" : "unknown",
+        reason: codes[0] ?? e.message
+      };
+    }
+  };
   const relayUrl = process.env.CHRON_RELAY_URL;
   const relayToken = process.env.CHRON_RELAY_TOKEN;
   if (relayUrl && relayToken) {
     const event = { schema_version: "1.0", chron_version: import_package3.version, machine_id: getMachineId(), os: process.platform, ...payload };
-    setImmediate(
-      () => fetch(relayUrl, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${relayToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify(event)
-      }).catch(() => void 0)
-    );
+    deliveries.push(post(
+      "relay",
+      relayUrl,
+      { "Authorization": `Bearer ${relayToken}`, "Content-Type": "application/json" },
+      JSON.stringify(event)
+    ));
   }
   const lsUrl = process.env.CHRON_LOGSCALE_URL;
   const lsToken = process.env.CHRON_LOGSCALE_TOKEN;
   if (lsUrl && lsToken) {
-    const body = JSON.stringify([{
-      tags: { host: (0, import_os13.hostname)(), source: "chron" },
-      events: [{ timestamp: payload.timestamp, attributes: toLogScaleRiskAttributes(payload) }]
-    }]);
-    setImmediate(
-      () => fetch(lsUrl, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${lsToken}`, "Content-Type": "application/json" },
-        body
-      }).catch(() => void 0)
-    );
+    deliveries.push(post(
+      "logscale",
+      lsUrl,
+      { "Authorization": `Bearer ${lsToken}`, "Content-Type": "application/json" },
+      JSON.stringify([{
+        tags: { host: (0, import_os14.hostname)(), source: "chron" },
+        events: [{ timestamp: payload.timestamp, attributes: toLogScaleRiskAttributes(payload) }]
+      }])
+    ));
   }
   const sentinelCfg = getSentinelConfig();
   if (sentinelCfg) {
-    setImmediate(async () => {
+    deliveries.push((async () => {
+      let token = null;
       try {
-        const token = await getAzureToken(sentinelCfg.tenantId, sentinelCfg.clientId, sentinelCfg.clientSecret);
-        if (!token) return;
-        const url = `${sentinelCfg.dce}/dataCollectionRules/${sentinelCfg.dcrId}/streams/${sentinelCfg.stream}?api-version=2023-01-01`;
-        await fetch(url, {
-          method: "POST",
-          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify([toSentinelRiskRecord(payload)])
-        });
-      } catch {
+        token = await getAzureToken(sentinelCfg.tenantId, sentinelCfg.clientId, sentinelCfg.clientSecret);
+      } catch (e) {
+        return { target: "sentinel", status: "failed", reason: `authentication failed: ${e.message}` };
       }
-    });
+      if (!token) return { target: "sentinel", status: "failed", reason: "could not obtain an Azure token" };
+      const url = `${sentinelCfg.dce}/dataCollectionRules/${sentinelCfg.dcrId}/streams/${sentinelCfg.stream}?api-version=2023-01-01`;
+      return post(
+        "sentinel",
+        url,
+        { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+        JSON.stringify([toSentinelRiskRecord(payload)])
+      );
+    })());
   }
   const splunkCfg = getSplunkConfig();
   if (splunkCfg) {
-    const url = `${splunkCfg.url.replace(/\/$/, "")}/services/collector/event`;
-    setImmediate(
-      () => fetch(url, {
-        method: "POST",
-        headers: { "Authorization": `Splunk ${splunkCfg.token}`, "Content-Type": "application/json" },
-        body: JSON.stringify(toSplunkRiskEvent(payload))
-      }).catch(() => void 0)
-    );
+    deliveries.push(post(
+      "splunk",
+      `${splunkCfg.url.replace(/\/$/, "")}/services/collector/event`,
+      { "Authorization": `Splunk ${splunkCfg.token}`, "Content-Type": "application/json" },
+      JSON.stringify(toSplunkRiskEvent(payload))
+    ));
   }
+  return Promise.all(deliveries);
 }
-var import_fs21, import_path13, import_crypto12, import_os13, import_package3, _splunkCache, _splunkCacheExpiry, _sentinelCache, _sentinelCacheExpiry, _azureTokenCache, _machineId;
+var import_fs22, import_crypto12, import_os14, import_package3, _splunkCache, _splunkCacheExpiry, _sentinelCache, _sentinelCacheExpiry, _azureTokenCache, _machineId;
 var init_relay = __esm({
   "src/utils/relay.ts"() {
     "use strict";
-    import_fs21 = require("fs");
-    import_path13 = require("path");
+    import_fs22 = require("fs");
     import_crypto12 = require("crypto");
-    import_os13 = require("os");
+    import_os14 = require("os");
     import_package3 = __toESM(require_package());
+    init_config_path();
+    init_error_codes();
     if (process.env.CHRON_SPLUNK_INSECURE === "1") {
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
     }
@@ -27104,81 +28132,148 @@ async function runEvents(args2) {
   if (jsonMode) {
     process.stdout.write(JSON.stringify(events, null, 2) + "\n");
     if (emitMode) {
-      for (const ev of events) emitRiskEvent(ev);
-      await new Promise((r) => setTimeout(r, 800));
+      if (events.length === 0) {
+        process.stderr.write("  No risk events to emit \u2014 nothing was sent.\n");
+        return;
+      }
+      const report = await deliver(events);
+      process.stderr.write(renderDelivery(report, true));
+      if (!report.ok) process.exit(1);
     }
     return;
   }
   const rangeLabel = sinceArg ? `last ${sinceArg}` : "all time";
   process.stdout.write(`
-${BOLD14}Chron Events${RESET14}  ${DIM13}${rangeLabel} \xB7 ${sessionCount} session${sessionCount === 1 ? "" : "s"}${RESET14}
+${BOLD15}Chron Events${RESET16}  ${DIM14}${rangeLabel} \xB7 ${sessionCount} session${sessionCount === 1 ? "" : "s"}${RESET16}
 
 `);
   if (events.length === 0) {
-    process.stdout.write(`${DIM13}No risk events \u2014 no patterns detected and no sessions with attention score > 0.${RESET14}
-
+    process.stdout.write(`${DIM14}No risk events \u2014 no patterns detected and no sessions with attention score > 0.${RESET16}
 `);
+    if (emitMode) process.stdout.write(`${DIM14}Nothing to emit \u2014 no delivery was attempted.${RESET16}
+`);
+    process.stdout.write("\n");
     return;
   }
   const patterns = events.filter((e) => e.event_type === "pattern_detected");
   const highAttn = events.filter((e) => e.event_type === "high_attention_session");
   const allScored = events.filter((e) => e.event_type === "attention_score_computed");
   if (patterns.length > 0) {
-    process.stdout.write(`${BOLD14}Pattern events${RESET14}  ${DIM13}${patterns.length} detected${RESET14}
+    process.stdout.write(`${BOLD15}Pattern events${RESET16}  ${DIM14}${patterns.length} detected${RESET16}
 
 `);
     for (const ev of patterns) {
       if (ev.event_type !== "pattern_detected") continue;
-      const color = SEV_COLOR3[ev.severity] ?? DIM13;
-      process.stdout.write(`  ${color}${BOLD14}${ev.severity.toUpperCase()}${RESET14}  ${BOLD14}${ev.title}${RESET14}
+      const color = SEV_COLOR3[ev.severity] ?? DIM14;
+      process.stdout.write(`  ${color}${BOLD15}${ev.severity.toUpperCase()}${RESET16}  ${BOLD15}${ev.title}${RESET16}
 `);
-      process.stdout.write(`  ${DIM13}id: ${ev.pattern_id}${RESET14}
+      process.stdout.write(`  ${DIM14}id: ${ev.pattern_id}${RESET16}
 `);
-      process.stdout.write(`  ${DIM13}${ev.detail}${RESET14}
+      process.stdout.write(`  ${DIM14}${ev.detail}${RESET16}
 `);
-      const prefixes = ev.session_ids.slice(0, 5).map((id) => `${CYAN12}${id.slice(0, 8)}${RESET14}`);
-      const more = ev.session_ids.length > 5 ? ` ${DIM13}+${ev.session_ids.length - 5} more${RESET14}` : "";
+      const prefixes = ev.session_ids.slice(0, 5).map((id) => `${CYAN13}${id.slice(0, 8)}${RESET16}`);
+      const more = ev.session_ids.length > 5 ? ` ${DIM14}+${ev.session_ids.length - 5} more${RESET16}` : "";
       process.stdout.write(`  sessions: ${prefixes.join("  ")}${more}
 
 `);
     }
   }
   if (highAttn.length > 0) {
-    process.stdout.write(`${BOLD14}High-attention sessions${RESET14}  ${DIM13}${highAttn.length} flagged${RESET14}
+    process.stdout.write(`${BOLD15}High-attention sessions${RESET16}  ${DIM14}${highAttn.length} flagged${RESET16}
 
 `);
     for (const ev of highAttn) {
       if (ev.event_type !== "high_attention_session") continue;
-      const color = BAND_COLOR3[ev.band] ?? DIM13;
-      process.stdout.write(`  ${color}${BOLD14}${ev.band.toUpperCase()}${RESET14}  score ${BOLD14}${ev.score}${RESET14}  ${CYAN12}${ev.session_id.slice(0, 8)}${RESET14}
+      const color = BAND_COLOR3[ev.band] ?? DIM14;
+      process.stdout.write(`  ${color}${BOLD15}${ev.band.toUpperCase()}${RESET16}  score ${BOLD15}${ev.score}${RESET16}  ${CYAN13}${ev.session_id.slice(0, 8)}${RESET16}
 `);
       if (ev.reasons.length > 0) {
-        process.stdout.write(`  ${DIM13}${ev.reasons[0]}${ev.reasons.length > 1 ? ` +${ev.reasons.length - 1} more` : ""}${RESET14}
+        process.stdout.write(`  ${DIM14}${ev.reasons[0]}${ev.reasons.length > 1 ? ` +${ev.reasons.length - 1} more` : ""}${RESET16}
 `);
       }
       process.stdout.write("\n");
     }
   }
   if (allScored.length > 0 && allScored.length !== highAttn.length) {
-    process.stdout.write(`${DIM13}+ ${allScored.length} attention_score_computed event${allScored.length === 1 ? "" : "s"} (sessions with score > 0)${RESET14}
+    process.stdout.write(`${DIM14}+ ${allScored.length} attention_score_computed event${allScored.length === 1 ? "" : "s"} (sessions with score > 0)${RESET16}
 
 `);
   }
   const total = events.length;
-  process.stdout.write(`${DIM13}${total} event${total === 1 ? "" : "s"} total${RESET14}`);
+  process.stdout.write(`${DIM14}${total} event${total === 1 ? "" : "s"} total${RESET16}`);
   if (emitMode) {
-    for (const ev of events) emitRiskEvent(ev);
-    await new Promise((r) => setTimeout(r, 800));
-    process.stdout.write(`  ${GREEN8}${BOLD14}\u2713 emitted${RESET14}
-
-`);
+    process.stdout.write("\n\n");
+    const report = await deliver(events);
+    process.stdout.write(renderDelivery(report, false));
+    if (!report.ok) process.exit(1);
   } else {
-    process.stdout.write(`  ${DIM13}(use --emit to send to configured SIEM targets)${RESET14}
+    process.stdout.write(`  ${DIM14}(use --emit to send to configured SIEM targets)${RESET16}
 
 `);
   }
 }
-var RESET14, BOLD14, DIM13, RED9, YELLOW12, CYAN12, GREEN8, BAND_COLOR3, SEV_COLOR3;
+async function deliver(events) {
+  const detail = /* @__PURE__ */ new Map();
+  for (const ev of events) {
+    for (const d of await emitRiskEvent(ev)) {
+      const list = detail.get(d.target) ?? [];
+      list.push(d);
+      detail.set(d.target, list);
+    }
+  }
+  const all = [...detail.values()].flat();
+  const count2 = (status) => all.filter((d) => d.status === status).length;
+  const report = {
+    ok: false,
+    targets: detail.size,
+    accepted: count2("accepted"),
+    rejected: count2("rejected"),
+    failed: count2("failed"),
+    unknown: count2("unknown"),
+    detail
+  };
+  report.ok = report.targets > 0 && report.accepted === all.length && all.length > 0;
+  return report;
+}
+function renderDelivery(r, toStderr) {
+  const out = [];
+  if (r.targets === 0) {
+    out.push(`  ${YELLOW13}!${RESET16} No SIEM target is configured, so nothing was sent.
+`);
+    out.push(`  ${DIM14}Configure one with 'chron connect <splunk|sentinel|crowdstrike>' and try again.${RESET16}
+
+`);
+    return out.join("");
+  }
+  if (r.ok) {
+    out.push(`  ${GREEN9}${BOLD15}\u2713${RESET16} ${r.accepted} event delivery(ies) accepted by ${r.targets} target(s)
+`);
+    out.push(`  ${DIM14}Accepted means the target returned success. Whether it retained the data
+`);
+    out.push(`  is something only that platform can show.${RESET16}
+
+`);
+    return out.join("");
+  }
+  out.push(`  ${GREEN9}accepted${RESET16} ${r.accepted}   ${RED11}rejected${RESET16} ${r.rejected}   ${RED11}failed${RESET16} ${r.failed}   ${YELLOW13}unknown${RESET16} ${r.unknown}
+`);
+  for (const [target, results] of r.detail) {
+    for (const d of results.filter((x) => x.status !== "accepted")) {
+      const code = d.httpStatus ? `HTTP ${d.httpStatus}` : d.reason ?? "no response";
+      out.push(`  ${d.status === "unknown" ? YELLOW13 + "?" : RED11 + "\u2717"}${RESET16} ${target}: ${d.status} \u2014 ${code}
+`);
+    }
+  }
+  if (r.unknown > 0) {
+    out.push(`  ${YELLOW13}Some deliveries are unknown${RESET16} \u2014 the request was sent but no trustworthy
+`);
+    out.push(`  ${DIM14}response came back, so they may or may not have arrived.${RESET16}
+`);
+  }
+  out.push("\n");
+  return out.join("");
+}
+var RESET16, BOLD15, DIM14, RED11, YELLOW13, CYAN13, GREEN9, BAND_COLOR3, SEV_COLOR3;
 var init_events = __esm({
   "src/cli/events.ts"() {
     "use strict";
@@ -27186,23 +28281,23 @@ var init_events = __esm({
     init_report();
     init_patterns();
     init_relay();
-    RESET14 = "\x1B[0m";
-    BOLD14 = "\x1B[1m";
-    DIM13 = "\x1B[2m";
-    RED9 = "\x1B[31m";
-    YELLOW12 = "\x1B[33m";
-    CYAN12 = "\x1B[36m";
-    GREEN8 = "\x1B[32m";
+    RESET16 = "\x1B[0m";
+    BOLD15 = "\x1B[1m";
+    DIM14 = "\x1B[2m";
+    RED11 = "\x1B[31m";
+    YELLOW13 = "\x1B[33m";
+    CYAN13 = "\x1B[36m";
+    GREEN9 = "\x1B[32m";
     BAND_COLOR3 = {
-      critical: RED9,
-      high: RED9,
-      review: YELLOW12,
-      normal: DIM13
+      critical: RED11,
+      high: RED11,
+      review: YELLOW13,
+      normal: DIM14
     };
     SEV_COLOR3 = {
-      high: RED9,
-      medium: YELLOW12,
-      low: DIM13
+      high: RED11,
+      medium: YELLOW13,
+      low: DIM14
     };
   }
 });
@@ -27219,12 +28314,12 @@ __export(evidence_exports, {
 function hash(input) {
   return (0, import_crypto13.createHash)("sha256").update(input).digest("hex");
 }
-function argValue(args2, name) {
-  const prefix = `--${name}=`;
+function argValue(args2, name2) {
+  const prefix = `--${name2}=`;
   return args2.find((a) => a.startsWith(prefix))?.slice(prefix.length);
 }
-function hasFlag(args2, name) {
-  return args2.includes(`--${name}`);
+function hasFlag(args2, name2) {
+  return args2.includes(`--${name2}`);
 }
 function normalizeControlId(value) {
   return value.trim().replace(/\s+/g, " ").toUpperCase();
@@ -27283,29 +28378,44 @@ async function createEvidenceLink(db, evidenceId, targetType, targetId, now, not
   return id;
 }
 async function importEvidenceDocument(db, params) {
-  const filePath = (0, import_path14.resolve)(params.file);
-  const buf = (0, import_fs22.readFileSync)(filePath);
-  const stat = (0, import_fs22.statSync)(filePath);
+  const filePath = (0, import_path13.resolve)(params.file);
+  const buf = (0, import_fs23.readFileSync)(filePath);
+  const stat = (0, import_fs23.statSync)(filePath);
   const sha256 = hash(buf);
   const now = params.now ?? (/* @__PURE__ */ new Date()).toISOString();
-  const title = (0, import_path14.basename)(filePath);
+  const title = (0, import_path13.basename)(filePath);
   const documentId = sha256;
-  await db.$client.execute({
-    sql: `INSERT INTO evidence_documents (id, title, file_path, sha256, size_bytes, imported_at)
-          VALUES (?, ?, ?, ?, ?, ?)
-          ON CONFLICT(id) DO UPDATE SET
-            title = excluded.title,
-            file_path = excluded.file_path,
-            size_bytes = excluded.size_bytes,
-            imported_at = excluded.imported_at`,
-    args: [documentId, title, filePath, sha256, stat.size, now]
+  const resolvedControl = params.control ? resolveControlTarget(params.control, params.framework) : void 0;
+  const linkId = resolvedControl ? hash(`${documentId}:control:${resolvedControl.id}`) : null;
+  await db.transaction(async (tx) => {
+    await tx.insert(evidence_documents).values({
+      id: documentId,
+      title,
+      file_path: filePath,
+      sha256,
+      size_bytes: stat.size,
+      imported_at: now
+    }).onConflictDoUpdate({
+      target: evidence_documents.id,
+      set: { title, file_path: filePath, size_bytes: stat.size, imported_at: now }
+    });
+    if (resolvedControl && linkId) {
+      await tx.insert(evidence_links).values({
+        id: linkId,
+        evidence_id: documentId,
+        target_type: "control",
+        target_id: resolvedControl.id,
+        note: params.note ?? null,
+        created_at: now
+      }).onConflictDoUpdate({
+        target: evidence_links.id,
+        set: { note: params.note ?? null }
+      });
+    }
   });
-  let linkId = null;
   let target;
-  if (params.control) {
-    const resolved = resolveControlTarget(params.control, params.framework);
-    linkId = await createEvidenceLink(db, documentId, "control", resolved.id, now, params.note);
-    target = { type: "control", id: resolved.id, label: resolved.label };
+  if (resolvedControl) {
+    target = { type: "control", id: resolvedControl.id, label: resolvedControl.label };
   }
   return {
     document_id: documentId,
@@ -27434,13 +28544,13 @@ async function runEvidence(args2) {
   }
   throw new Error(`Unknown evidence command: ${subcommand}`);
 }
-var import_crypto13, import_path14, import_fs22, FW_LABELS5;
+var import_crypto13, import_path13, import_fs23, FW_LABELS5;
 var init_evidence2 = __esm({
   "src/cli/evidence.ts"() {
     "use strict";
     import_crypto13 = require("crypto");
-    import_path14 = require("path");
-    import_fs22 = require("fs");
+    import_path13 = require("path");
+    import_fs23 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -27457,7 +28567,8 @@ var init_evidence2 = __esm({
 // src/cli/reviews.ts
 var reviews_exports = {};
 __export(reviews_exports, {
-  runReviews: () => runReviews
+  runReviews: () => runReviews,
+  selectRequirements: () => selectRequirements
 });
 function fmtDt(iso) {
   return iso.slice(0, 16).replace("T", " ");
@@ -27474,11 +28585,15 @@ function groupBySession(reqs) {
   }
   return map;
 }
+function selectRequirements(reqs, now, opts) {
+  if (opts.showAll) return reqs;
+  return opts.overdueOnly ? reqs.filter((r) => isOverdue(r, now)) : reqs.filter((r) => r.status !== "reviewed");
+}
 function printReviewList(reqs, now, overdueOnly) {
-  const visible = overdueOnly ? reqs.filter((r) => isOverdue(r, now)) : reqs.filter((r) => r.status !== "reviewed");
+  const visible = selectRequirements(reqs, now, { showAll: false, overdueOnly });
   if (visible.length === 0) {
     const msg = overdueOnly ? "No overdue reviews." : "No pending reviews.";
-    process.stdout.write(`${DIM14}${msg}${RESET15}
+    process.stdout.write(`${DIM15}${msg}${RESET17}
 
 `);
     return;
@@ -27487,13 +28602,13 @@ function printReviewList(reqs, now, overdueOnly) {
   for (const [sessionId, items] of grouped) {
     const prefix = sessionId.slice(0, 8);
     const hasOverdue = items.some((r) => isOverdue(r, now));
-    const badge = hasOverdue ? `${RED10}${BOLD15}OVERDUE${RESET15}` : `${YELLOW13}${BOLD15}PENDING${RESET15}`;
+    const badge = hasOverdue ? `${RED12}${BOLD16}OVERDUE${RESET17}` : `${YELLOW14}${BOLD16}PENDING${RESET17}`;
     const deadline = items[0].required_by;
-    process.stdout.write(`  ${badge}  ${CYAN13}${prefix}${RESET15}  ${DIM14}review by ${fmtDt(deadline)}${RESET15}
+    process.stdout.write(`  ${badge}  ${CYAN14}${prefix}${RESET17}  ${DIM15}review by ${fmtDt(deadline)}${RESET17}
 `);
     for (const r of items) {
-      const color = SEV_COLOR4[r.severity] ?? DIM14;
-      process.stdout.write(`    ${DIM14}\xB7${RESET15} ${color}${r.severity}${RESET15}  ${REASON_LABEL2[r.reason] ?? r.reason}
+      const color = SEV_COLOR4[r.severity] ?? DIM15;
+      process.stdout.write(`    ${DIM15}\xB7${RESET17} ${color}${r.severity}${RESET17}  ${REASON_LABEL2[r.reason] ?? r.reason}
 `);
     }
     process.stdout.write("\n");
@@ -27501,7 +28616,7 @@ function printReviewList(reqs, now, overdueOnly) {
 }
 function printAllList(reqs, now) {
   if (reqs.length === 0) {
-    process.stdout.write(`${DIM14}No review requirements recorded yet. Run chron reviews to scan.${RESET15}
+    process.stdout.write(`${DIM15}No review requirements recorded yet. Run chron reviews to scan.${RESET17}
 
 `);
     return;
@@ -27510,15 +28625,15 @@ function printAllList(reqs, now) {
   for (const [sessionId, items] of grouped) {
     const prefix = sessionId.slice(0, 8);
     const isRev = items[0].status === "reviewed";
-    const statusStr = isRev ? `${GREEN9}${BOLD15}REVIEWED${RESET15}` : isOverdue(items[0], now) ? `${RED10}${BOLD15}OVERDUE${RESET15}` : `${YELLOW13}${BOLD15}PENDING${RESET15}`;
-    process.stdout.write(`  ${statusStr}  ${CYAN13}${prefix}${RESET15}`);
+    const statusStr = isRev ? `${GREEN10}${BOLD16}REVIEWED${RESET17}` : isOverdue(items[0], now) ? `${RED12}${BOLD16}OVERDUE${RESET17}` : `${YELLOW14}${BOLD16}PENDING${RESET17}`;
+    process.stdout.write(`  ${statusStr}  ${CYAN14}${prefix}${RESET17}`);
     if (isRev && items[0].reviewer) {
-      process.stdout.write(`  ${DIM14}by ${items[0].reviewer} at ${fmtDt(items[0].reviewed_at)}${RESET15}`);
+      process.stdout.write(`  ${DIM15}by ${items[0].reviewer} at ${fmtDt(items[0].reviewed_at)}${RESET17}`);
     }
     process.stdout.write("\n");
     for (const r of items) {
-      const color = SEV_COLOR4[r.severity] ?? DIM14;
-      process.stdout.write(`    ${DIM14}\xB7${RESET15} ${color}${r.severity}${RESET15}  ${REASON_LABEL2[r.reason] ?? r.reason}
+      const color = SEV_COLOR4[r.severity] ?? DIM15;
+      process.stdout.write(`    ${DIM15}\xB7${RESET17} ${color}${r.severity}${RESET17}  ${REASON_LABEL2[r.reason] ?? r.reason}
 `);
     }
     process.stdout.write("\n");
@@ -27533,14 +28648,14 @@ async function runReviews(args2) {
     if (!reviewer) throw new Error("--reviewer=<name> is required");
     const db2 = await initDb();
     const now2 = (/* @__PURE__ */ new Date()).toISOString();
-    const { sessionId, count } = await markReviewed(db2, sessionPrefix, reviewer, now2);
-    if (count === 0) {
-      process.stdout.write(`${DIM14}No pending review requirements found for session ${sessionId.slice(0, 8)}.${RESET15}
+    const { sessionId, count: count2 } = await markReviewed(db2, sessionPrefix, reviewer, now2);
+    if (count2 === 0) {
+      process.stdout.write(`${DIM15}No pending review requirements found for session ${sessionId.slice(0, 8)}.${RESET17}
 
 `);
     } else {
       process.stdout.write(
-        `${GREEN9}${BOLD15}\u2713 Marked reviewed${RESET15}  ${CYAN13}${sessionId.slice(0, 8)}${RESET15}  ${DIM14}by ${reviewer}  \xB7  ${count} requirement${count === 1 ? "" : "s"}${RESET15}
+        `${GREEN10}${BOLD16}\u2713 Marked reviewed${RESET17}  ${CYAN14}${sessionId.slice(0, 8)}${RESET17}  ${DIM15}by ${reviewer}  \xB7  ${count2} requirement${count2 === 1 ? "" : "s"}${RESET17}
 
 `
       );
@@ -27558,7 +28673,12 @@ async function runReviews(args2) {
   const reqs = await listRequirements(db);
   const stats = computeStats(reqs, now, scanned);
   if (jsonMode) {
-    process.stdout.write(JSON.stringify({ stats, requirements: reqs }, null, 2) + "\n");
+    const requirements = selectRequirements(reqs, now, { showAll, overdueOnly });
+    process.stdout.write(JSON.stringify({
+      stats,
+      requirements,
+      filter: { show_all: showAll, overdue_only: overdueOnly }
+    }, null, 2) + "\n");
     return;
   }
   const rangeLabel = sinceArg ? `last ${sinceArg}` : "all time";
@@ -27566,14 +28686,14 @@ async function runReviews(args2) {
   const flagPct = stats.scanned > 0 ? Math.round(stats.flagRate * 100) : null;
   const flagLabel = flagPct !== null ? `flag rate ${flagPct}% (${stats.flagged}/${stats.scanned})` : "";
   process.stdout.write(`
-${BOLD15}Chron Reviews${RESET15}  ${DIM14}${rangeLabel}${RESET15}
+${BOLD16}Chron Reviews${RESET17}  ${DIM15}${rangeLabel}${RESET17}
 `);
   process.stdout.write(
-    `${DIM14}${stats.overdue} overdue  \xB7  ${stats.pending} pending  \xB7  ${stats.reviewed} reviewed  \xB7  ${slaLabel}` + (flagLabel ? `  \xB7  ${flagLabel}` : "") + `${RESET15}` + (newFlags > 0 ? `  ${DIM14}(+${newFlags} new)${RESET15}` : "") + "\n\n"
+    `${DIM15}${stats.overdue} overdue  \xB7  ${stats.pending} pending  \xB7  ${stats.reviewed} reviewed  \xB7  ${slaLabel}` + (flagLabel ? `  \xB7  ${flagLabel}` : "") + `${RESET17}` + (newFlags > 0 ? `  ${DIM15}(+${newFlags} new)${RESET17}` : "") + "\n\n"
   );
   if (stats.highFlagRate) {
     process.stdout.write(
-      `${YELLOW13}${BOLD15}\u26A0  Review queue is flagging more than 20% of sessions. Tune triggers to avoid review fatigue.${RESET15}
+      `${YELLOW14}${BOLD16}\u26A0  Review queue is flagging more than 20% of sessions. Tune triggers to avoid review fatigue.${RESET17}
 
 `
     );
@@ -27581,7 +28701,7 @@ ${BOLD15}Chron Reviews${RESET15}  ${DIM14}${rangeLabel}${RESET15}
   const breakdownEntries = Object.entries(stats.reasonBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 3);
   if (breakdownEntries.length > 0) {
     const parts = breakdownEntries.map(([r, n]) => `${REASON_LABEL2[r] ?? r} (${n})`);
-    process.stdout.write(`${DIM14}Reasons: ${parts.join("  \xB7  ")}${RESET15}
+    process.stdout.write(`${DIM15}Reasons: ${parts.join("  \xB7  ")}${RESET17}
 
 `);
   }
@@ -27590,31 +28710,31 @@ ${BOLD15}Chron Reviews${RESET15}  ${DIM14}${rangeLabel}${RESET15}
   } else {
     printReviewList(reqs, now, overdueOnly);
     if (!overdueOnly && stats.reviewed > 0) {
-      process.stdout.write(`${DIM14}${stats.reviewed} reviewed session${stats.reviewed === 1 ? "" : "s"} hidden \u2014 use --all to include${RESET15}
+      process.stdout.write(`${DIM15}${stats.reviewed} reviewed session${stats.reviewed === 1 ? "" : "s"} hidden \u2014 use --all to include${RESET17}
 
 `);
     }
   }
   if (reqs.filter((r) => r.status !== "reviewed").length > 0) {
-    process.stdout.write(`${DIM14}To mark reviewed: chron reviews mark <session-prefix> --reviewer=<name>${RESET15}
+    process.stdout.write(`${DIM15}To mark reviewed: chron reviews mark <session-prefix> --reviewer=<name>${RESET17}
 
 `);
   }
 }
-var RESET15, BOLD15, DIM14, RED10, YELLOW13, GREEN9, CYAN13, REASON_LABEL2, SEV_COLOR4;
+var RESET17, BOLD16, DIM15, RED12, YELLOW14, GREEN10, CYAN14, REASON_LABEL2, SEV_COLOR4;
 var init_reviews = __esm({
   "src/cli/reviews.ts"() {
     "use strict";
     init_db2();
     init_report();
     init_queue2();
-    RESET15 = "\x1B[0m";
-    BOLD15 = "\x1B[1m";
-    DIM14 = "\x1B[2m";
-    RED10 = "\x1B[31m";
-    YELLOW13 = "\x1B[33m";
-    GREEN9 = "\x1B[32m";
-    CYAN13 = "\x1B[36m";
+    RESET17 = "\x1B[0m";
+    BOLD16 = "\x1B[1m";
+    DIM15 = "\x1B[2m";
+    RED12 = "\x1B[31m";
+    YELLOW14 = "\x1B[33m";
+    GREEN10 = "\x1B[32m";
+    CYAN14 = "\x1B[36m";
     REASON_LABEL2 = {
       secrets_detected: "secret detected",
       auth_code_change: "auth/access-control code changed",
@@ -27623,8 +28743,8 @@ var init_reviews = __esm({
       critical_finding: "critical or high compliance finding"
     };
     SEV_COLOR4 = {
-      critical: RED10,
-      high: YELLOW13
+      critical: RED12,
+      high: YELLOW14
     };
   }
 });
@@ -27632,18 +28752,24 @@ var init_reviews = __esm({
 // src/cli/setup.ts
 var setup_exports = {};
 __export(setup_exports, {
-  runSetup: () => runSetup
+  runSetup: () => runSetup,
+  shouldConfigureFromInstall: () => shouldConfigureFromInstall
 });
+function shouldConfigureFromInstall(env = process.env) {
+  if (env.npm_lifecycle_event !== "postinstall") return true;
+  return env.npm_config_global === "true";
+}
 async function runSetup() {
-  const home = (0, import_os14.homedir)();
-  const plat = (0, import_os14.platform)();
+  if (!shouldConfigureFromInstall()) return;
+  const home = (0, import_os15.homedir)();
+  const plat = (0, import_os15.platform)();
   const configs = userMcpClientConfigs(home, process.cwd(), plat, process.env.APPDATA);
   const GLOBAL_ONLY = ["Claude Code", "Cursor (global)", "Gemini CLI", "Codex (global)"];
   const fixable = configs.filter((c) => {
     if (c.name === "Codex (project)" || c.name === "Cursor (project)") return false;
-    if ((0, import_fs23.existsSync)(c.path)) return true;
+    if ((0, import_fs24.existsSync)(c.path)) return true;
     if (GLOBAL_ONLY.includes(c.name)) return true;
-    if ((0, import_fs23.existsSync)((0, import_path15.dirname)(c.path))) return true;
+    if ((0, import_fs24.existsSync)((0, import_path14.dirname)(c.path))) return true;
     return false;
   });
   const added = [];
@@ -27654,7 +28780,7 @@ async function runSetup() {
     } catch {
     }
   }
-  for (const write of [ensureClaudeCodeInstructions, ensureCodexInstructions, ensureCodexGlobalAgentsMd, ensureCursorInstructions, ensureGeminiInstructions]) {
+  for (const write of [ensureClaudeCodeInstructions, ensureCodexInstructions, ensureCodexGlobalAgentsMd, ensureGeminiInstructions]) {
     try {
       write();
     } catch {
@@ -27669,383 +28795,15 @@ async function runSetup() {
 `);
   }
 }
-var import_os14, import_path15, import_fs23;
+var import_os15, import_path14, import_fs24;
 var init_setup = __esm({
   "src/cli/setup.ts"() {
     "use strict";
-    import_os14 = require("os");
-    import_path15 = require("path");
-    import_fs23 = require("fs");
+    import_os15 = require("os");
+    import_path14 = require("path");
+    import_fs24 = require("fs");
     init_mcp_config();
     init_connect();
-  }
-});
-
-// src/cli/coverage.ts
-var coverage_exports = {};
-__export(coverage_exports, {
-  computeCoverage: () => computeCoverage,
-  computeFieldCardinality: () => computeFieldCardinality,
-  runCoverage: () => runCoverage
-});
-function checkConfigured(def, home, cwd) {
-  if (def.importOnly) return false;
-  const configs = userMcpClientConfigs(home, cwd, (0, import_os15.platform)(), process.env.APPDATA);
-  return def.configNames.some((name) => {
-    const c = configs.find((mc) => mc.name === name);
-    if (!c || !(0, import_fs24.existsSync)(c.path)) return false;
-    try {
-      const content = (0, import_fs24.readFileSync)(c.path, "utf8");
-      return c.type === "codex-toml" ? hasChronCodexToml(content) : hasChronJsonMcp(content) === true;
-    } catch {
-      return false;
-    }
-  });
-}
-function relativeTime(iso) {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diffMs / 6e4);
-  if (mins < 2) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days === 1) return "yesterday";
-  return `${days} days ago`;
-}
-function fmtDate7(iso) {
-  return iso.slice(0, 16).replace("T", " ");
-}
-function chunk(items, size) {
-  const batches = [];
-  for (let start = 0; start < items.length; start += size) {
-    batches.push(items.slice(start, start + size));
-  }
-  return batches;
-}
-function computeFieldCardinality(field, values) {
-  const counts = /* @__PURE__ */ new Map();
-  for (const value of values) {
-    if (value === null || value === void 0) continue;
-    counts.set(value, (counts.get(value) ?? 0) + 1);
-  }
-  const entries = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-  const [dominantValue, dominantCount] = entries[0] ?? [null, 0];
-  const observed = entries.reduce((sum, [, count]) => sum + count, 0);
-  const share = observed === 0 ? 0 : dominantCount / observed;
-  return {
-    field,
-    observed_values: observed,
-    distinct_values: entries.length,
-    dominant_value: dominantValue,
-    dominant_count: dominantCount,
-    dominant_share: share,
-    concentration_candidate: observed >= MIN_CARDINALITY_SAMPLE && share >= CONCENTRATION_THRESHOLD
-  };
-}
-async function computeEvidenceUse(db, sessionIds) {
-  const empty = {
-    sessions: {
-      total: 0,
-      referenced_by_findings: 0,
-      referenced_by_review_requirements: 0,
-      referenced_by_any_chron_workflow: 0,
-      reviewed: 0
-    },
-    messages: { total: 0, referenced_by_secret_detection: 0 },
-    fields: [],
-    scope: "Chron can report references recorded in its local review workflow. It cannot infer whether an external system or person used this evidence."
-  };
-  if (sessionIds.length === 0) return empty;
-  const messageRows = [];
-  const findingRows = [];
-  const requirementRows = [];
-  const secretRows = [];
-  for (const sessionBatch of chunk(sessionIds, SQLITE_BINDING_BATCH_SIZE)) {
-    const messageScope = inArray(messages.session_id, sessionBatch);
-    const [batchMessages, batchFindings, batchRequirements, batchSecrets] = await Promise.all([
-      db.select({ id: messages.id, role: messages.role, event_type: messages.event_type }).from(messages).where(messageScope),
-      db.select({ session_id: review_findings.session_id, status: review_findings.status }).from(review_findings).where(inArray(review_findings.session_id, sessionBatch)),
-      db.select({ session_id: review_requirements.session_id, status: review_requirements.status, reason: review_requirements.reason }).from(review_requirements).where(inArray(review_requirements.session_id, sessionBatch)),
-      db.select({ message_id: secrets_detected.message_id }).from(secrets_detected).innerJoin(messages, eq(secrets_detected.message_id, messages.id)).where(messageScope)
-    ]);
-    messageRows.push(...batchMessages);
-    findingRows.push(...batchFindings);
-    requirementRows.push(...batchRequirements);
-    secretRows.push(...batchSecrets);
-  }
-  const sessionsWithFindings = new Set(findingRows.map((row) => row.session_id));
-  const sessionsWithRequirements = new Set(requirementRows.map((row) => row.session_id));
-  const reviewedSessions = new Set(requirementRows.filter((row) => row.status === "reviewed").map((row) => row.session_id));
-  const referencedSessions = /* @__PURE__ */ new Set([...sessionsWithFindings, ...sessionsWithRequirements]);
-  const referencedMessages = new Set(secretRows.map((row) => row.message_id));
-  return {
-    sessions: {
-      total: sessionIds.length,
-      referenced_by_findings: sessionsWithFindings.size,
-      referenced_by_review_requirements: sessionsWithRequirements.size,
-      referenced_by_any_chron_workflow: referencedSessions.size,
-      reviewed: reviewedSessions.size
-    },
-    messages: {
-      total: messageRows.length,
-      referenced_by_secret_detection: referencedMessages.size
-    },
-    fields: [
-      computeFieldCardinality("messages.role", messageRows.map((row) => row.role)),
-      computeFieldCardinality("messages.event_type", messageRows.map((row) => row.event_type ?? "message")),
-      computeFieldCardinality("review_findings.status", findingRows.map((row) => row.status)),
-      computeFieldCardinality("review_requirements.status", requirementRows.map((row) => row.status)),
-      computeFieldCardinality("review_requirements.reason", requirementRows.map((row) => row.reason))
-    ],
-    scope: empty.scope
-  };
-}
-async function computeCoverage(since, opts = {}) {
-  const db = await initDb();
-  const home = (0, import_os15.homedir)();
-  const cwd = process.cwd();
-  const baseQuery = since ? db.select({
-    ai_tool: sessions.ai_tool,
-    count: sql`count(*)`,
-    last: sql`max(${sessions.updated_at})`
-  }).from(sessions).where(gte(sessions.updated_at, since)).groupBy(sessions.ai_tool) : db.select({
-    ai_tool: sessions.ai_tool,
-    count: sql`count(*)`,
-    last: sql`max(${sessions.updated_at})`
-  }).from(sessions).groupBy(sessions.ai_tool);
-  const rows = await baseQuery;
-  const globalQuery = since ? db.select({
-    first: sql`min(${sessions.created_at})`,
-    last: sql`max(${sessions.updated_at})`,
-    total: sql`count(*)`
-  }).from(sessions).where(gte(sessions.updated_at, since)) : db.select({
-    first: sql`min(${sessions.created_at})`,
-    last: sql`max(${sessions.updated_at})`,
-    total: sql`count(*)`
-  }).from(sessions);
-  const globalRows = await globalQuery;
-  const global = globalRows[0];
-  let evidenceUse;
-  if (opts.evidenceUse) {
-    const scopedSessions = since ? await db.select({ id: sessions.id }).from(sessions).where(gte(sessions.updated_at, since)) : await db.select({ id: sessions.id }).from(sessions);
-    evidenceUse = await computeEvidenceUse(db, scopedSessions.map((row) => row.id));
-  }
-  const toolMap = /* @__PURE__ */ new Map();
-  for (const r of rows) {
-    if (r.ai_tool) toolMap.set(r.ai_tool, { count: Number(r.count), last: r.last });
-  }
-  const tools = [];
-  const seenTools = /* @__PURE__ */ new Set();
-  for (const def of KNOWN_TOOLS) {
-    const stats = def.aliases.map((alias) => toolMap.get(alias)).filter((stat2) => Boolean(stat2));
-    const stat = stats.length > 0 ? {
-      count: stats.reduce((sum, item) => sum + item.count, 0),
-      last: stats.map((item) => item.last).sort().at(-1)
-    } : void 0;
-    const configured = checkConfigured(def, home, cwd);
-    const hasSessions = (stat?.count ?? 0) > 0;
-    if (!configured && !hasSessions) continue;
-    if (seenTools.has(def.ai_tool)) continue;
-    seenTools.add(def.ai_tool);
-    for (const alias of def.aliases) seenTools.add(alias);
-    tools.push({
-      tool: def.label,
-      ai_tool: def.ai_tool,
-      configured,
-      import_only: def.importOnly,
-      sessions: stat?.count ?? 0,
-      last_seen: stat?.last ?? null
-    });
-  }
-  for (const [ai_tool, stat] of toolMap) {
-    if (!seenTools.has(ai_tool)) {
-      tools.push({ tool: ai_tool, ai_tool, configured: false, import_only: true, sessions: stat.count, last_seen: stat.last });
-    }
-  }
-  const metaRows = since ? await db.select({ metadata: sessions.metadata }).from(sessions).where(gte(sessions.updated_at, since)) : await db.select({ metadata: sessions.metadata }).from(sessions);
-  const partial = { live_attach: 0, imported: 0, transcript_backfill: 0, total: 0 };
-  for (const row of metaRows) {
-    const meta = parseSessionMetadata(row.metadata);
-    const src = evidenceSourceOf(meta);
-    if (src === EVIDENCE_SOURCE.WITNESSED) continue;
-    partial.total++;
-    if (src === EVIDENCE_SOURCE.LIVE_ATTACH) partial.live_attach++;
-    else if (src === EVIDENCE_SOURCE.IMPORTED) partial.imported++;
-    else if (src === EVIDENCE_SOURCE.TRANSCRIPT_BACKFILL) partial.transcript_backfill++;
-  }
-  return {
-    boundary: { first: global?.first ?? null, latest: global?.last ?? null, total_sessions: Number(global?.total ?? 0) },
-    partial,
-    tools,
-    evidence_use: evidenceUse,
-    // The overlap sentence is part of the caveat rather than a separate field
-    // so it reaches --json consumers, who are the ones most likely to read the
-    // session count as a count of conversations.
-    caveat: [
-      "Chron can only review sessions captured after logging was enabled. Earlier AI work is outside the evidence boundary unless imported.",
-      ...partial.transcript_backfill > 0 ? [OVERLAP_DISCLOSURE] : []
-    ].join(" "),
-    since
-  };
-}
-function pct2(value) {
-  return `${Math.round(value * 100)}%`;
-}
-function printEvidenceUse(use) {
-  process.stdout.write(`
-${CYAN14}Evidence use (Chron-local)${RESET16}
-`);
-  process.stdout.write(`  Sessions referenced by findings:            ${use.sessions.referenced_by_findings} of ${use.sessions.total}
-`);
-  process.stdout.write(`  Sessions routed to review:                  ${use.sessions.referenced_by_review_requirements} of ${use.sessions.total}
-`);
-  process.stdout.write(`  Sessions with a completed human review:     ${use.sessions.reviewed} of ${use.sessions.total}
-`);
-  process.stdout.write(`  Messages referenced by secret detections:   ${use.messages.referenced_by_secret_detection} of ${use.messages.total}
-
-`);
-  const candidates = use.fields.filter((field) => field.concentration_candidate);
-  if (candidates.length > 0) {
-    process.stdout.write(`${YELLOW14}Fields to inspect${RESET16}
-`);
-    for (const field of candidates) {
-      process.stdout.write(
-        `  ${field.field}: ${field.dominant_value} in ${pct2(field.dominant_share)} of ${field.observed_values} values (${field.distinct_values} distinct)
-`
-      );
-    }
-    process.stdout.write(`  ${DIM15}High concentration is a review signal, not proof that a field is unused.${RESET16}
-
-`);
-  }
-  process.stdout.write(`${DIM15}${use.scope}${RESET16}
-
-`);
-}
-function printCoverage(r) {
-  process.stdout.write(`${BOLD16}Chron Coverage${RESET16}
-
-`);
-  if (r.since) {
-    process.stdout.write(`${DIM15}Filtered to sessions updated since ${r.since}${RESET16}
-
-`);
-  }
-  process.stdout.write(`${CYAN14}Evidence boundary${RESET16}
-`);
-  if (r.boundary.first) {
-    process.stdout.write(`  First logged session:    ${fmtDate7(r.boundary.first)}
-`);
-    process.stdout.write(`  Latest logged session:   ${fmtDate7(r.boundary.latest)}
-`);
-    process.stdout.write(`  Total evidence sessions: ${r.boundary.total_sessions}
-`);
-    if (r.partial.total > 0) {
-      const witnessed = r.boundary.total_sessions - r.partial.total;
-      process.stdout.write(`  ${YELLOW14}Partial evidence:${RESET16}        ${r.partial.total} of ${r.boundary.total_sessions} (${witnessed} witnessed in full)
-`);
-      if (r.partial.live_attach > 0) {
-        process.stdout.write(`    ${DIM15}${r.partial.live_attach} live attach \u2014 Chron began recording after the conversation had already started${RESET16}
-`);
-      }
-      if (r.partial.imported > 0) {
-        process.stdout.write(`    ${DIM15}${r.partial.imported} imported \u2014 from a vendor export, no tool calls or environment state${RESET16}
-`);
-      }
-      if (r.partial.transcript_backfill > 0) {
-        process.stdout.write(`    ${DIM15}${r.partial.transcript_backfill} transcript backfill \u2014 ingested from a client log, not directly observed${RESET16}
-`);
-      }
-    }
-  } else {
-    process.stdout.write(`  ${YELLOW14}No sessions logged yet${RESET16}
-`);
-    process.stdout.write(`  Run ${CYAN14}chron doctor --fix${RESET16} to configure AI tool logging.
-`);
-  }
-  process.stdout.write("\n");
-  process.stdout.write(`${CYAN14}Tool coverage${RESET16}
-`);
-  if (r.tools.length === 0) {
-    process.stdout.write(`  ${DIM15}No AI tools configured or sessions logged yet${RESET16}
-`);
-  } else {
-    const labelW = Math.max(...r.tools.map((t) => t.tool.length), 10);
-    for (const t of r.tools) {
-      const label = t.tool.padEnd(labelW);
-      let configCol;
-      if (t.import_only) {
-        configCol = `${DIM15}import only  ${RESET16}`;
-      } else if (t.configured) {
-        configCol = `${GREEN10}configured \u2713 ${RESET16}`;
-      } else {
-        configCol = `${RED11}not configured${RESET16}`;
-      }
-      let sessionCol;
-      if (t.sessions === 0) {
-        sessionCol = `${YELLOW14}no sessions yet${RESET16}`;
-      } else {
-        const ago = t.last_seen ? relativeTime(t.last_seen) : "";
-        sessionCol = `${GREEN10}logged \u2713${RESET16}  ${DIM15}last seen ${ago}${RESET16}`;
-      }
-      process.stdout.write(`  ${label}  ${configCol}  ${sessionCol}
-`);
-    }
-  }
-  process.stdout.write("\n");
-  const overlap = r.caveat.indexOf(OVERLAP_DISCLOSURE);
-  process.stdout.write(`${DIM15}Coverage caveat
-`);
-  process.stdout.write(`  ${(overlap >= 0 ? r.caveat.slice(0, overlap) : r.caveat).trimEnd()}
-`);
-  if (overlap >= 0) process.stdout.write(`  ${OVERLAP_DISCLOSURE}
-`);
-  process.stdout.write(RESET16);
-}
-async function runCoverage(args2) {
-  const jsonMode = args2.includes("--json");
-  const evidenceUseMode = args2.includes("--evidence-use");
-  const sinceArg = args2.find((a) => a.startsWith("--since="))?.split("=")[1];
-  const since = sinceArg ? parseSince(sinceArg) : void 0;
-  const result = await computeCoverage(since, { evidenceUse: evidenceUseMode });
-  if (jsonMode) {
-    process.stdout.write(JSON.stringify(result, null, 2) + "\n");
-    return;
-  }
-  printCoverage(result);
-  if (result.evidence_use) printEvidenceUse(result.evidence_use);
-}
-var import_fs24, import_os15, RESET16, BOLD16, DIM15, GREEN10, YELLOW14, CYAN14, RED11, KNOWN_TOOLS, MIN_CARDINALITY_SAMPLE, CONCENTRATION_THRESHOLD, SQLITE_BINDING_BATCH_SIZE;
-var init_coverage = __esm({
-  "src/cli/coverage.ts"() {
-    "use strict";
-    import_fs24 = require("fs");
-    import_os15 = require("os");
-    init_drizzle_orm();
-    init_db2();
-    init_schema();
-    init_evidence();
-    init_mcp_config();
-    init_report();
-    RESET16 = "\x1B[0m";
-    BOLD16 = "\x1B[1m";
-    DIM15 = "\x1B[2m";
-    GREEN10 = "\x1B[32m";
-    YELLOW14 = "\x1B[33m";
-    CYAN14 = "\x1B[36m";
-    RED11 = "\x1B[31m";
-    KNOWN_TOOLS = [
-      { label: "Claude Code", ai_tool: "claude", aliases: ["claude", "Claude Code", "claude-code", "chron-chat/claude", "chron-chat/claude-cli"], configNames: ["Claude Code", "Claude Desktop"], importOnly: false },
-      { label: "Cursor", ai_tool: "cursor", aliases: ["cursor"], configNames: ["Cursor (global)", "Cursor (project)"], importOnly: false },
-      { label: "Codex", ai_tool: "codex", aliases: ["codex"], configNames: ["Codex (global)", "Codex (project)"], importOnly: false },
-      { label: "Gemini CLI", ai_tool: "gemini", aliases: ["gemini"], configNames: ["Gemini CLI"], importOnly: false },
-      { label: "Windsurf", ai_tool: "windsurf", aliases: ["windsurf"], configNames: ["Windsurf"], importOnly: false },
-      { label: "ChatGPT", ai_tool: "chatgpt", aliases: ["chatgpt"], configNames: [], importOnly: true }
-    ];
-    MIN_CARDINALITY_SAMPLE = 10;
-    CONCENTRATION_THRESHOLD = 0.9;
-    SQLITE_BINDING_BATCH_SIZE = 900;
   }
 });
 
@@ -28055,7 +28813,7 @@ __export(bootstrap_exports, {
   bootstrapProjectLogging: () => bootstrapProjectLogging
 });
 function isRealProject(cwd) {
-  return PROJECT_INDICATORS.some((indicator) => (0, import_fs25.existsSync)((0, import_path16.join)(cwd, indicator)));
+  return PROJECT_INDICATORS.some((indicator) => (0, import_fs25.existsSync)((0, import_path15.join)(cwd, indicator)));
 }
 function bootstrapProjectLogging(cwd = process.cwd()) {
   try {
@@ -28075,13 +28833,13 @@ function bootstrapProjectLogging(cwd = process.cwd()) {
   } catch {
   }
 }
-var import_fs25, import_os16, import_path16, PROJECT_INDICATORS;
+var import_fs25, import_os16, import_path15, PROJECT_INDICATORS;
 var init_bootstrap = __esm({
   "src/bootstrap.ts"() {
     "use strict";
     import_fs25 = require("fs");
     import_os16 = require("os");
-    import_path16 = require("path");
+    import_path15 = require("path");
     init_connect();
     PROJECT_INDICATORS = [
       ".git",
@@ -28321,24 +29079,20 @@ var init_otlp = __esm({
 function isTransientStatus(status) {
   return status === 408 || status === 429 || status >= 500 && status <= 599;
 }
-function errorCodes(err) {
-  const codes = [];
-  let cur = err;
-  for (let i = 0; i < 5 && cur; i++) {
-    const e = cur;
-    if (typeof e.code === "string") codes.push(e.code);
-    if (typeof e.name === "string") codes.push(e.name);
-    cur = e.cause;
+function categorizeTransportError(err) {
+  const codes = errorCodes(err);
+  for (const [code, category] of CODE_CATEGORIES) {
+    if (codes.includes(code)) return category;
   }
-  return codes;
+  return "transport_unknown";
+}
+function categorizeHttpStatus(status) {
+  return status >= 500 ? "http_server_error" : "http_client_error";
 }
 function classifyTransportError(err) {
-  const codes = errorCodes(err);
-  if (codes.some((c) => ESTABLISHED_NON_DELIVERY.has(c))) return "failed";
-  return "unknown";
+  return ESTABLISHED_NON_DELIVERY2.has(categorizeTransportError(err)) ? "failed" : "unknown";
 }
-async function postBatch(spans, config, resource, deps) {
-  const body = JSON.stringify(toResourceSpans(spans, resource));
+async function postBatch(spanCount, body, payload, config, deps) {
   let attempts = 0;
   let last = {};
   let possiblyDelivered = false;
@@ -28354,15 +29108,15 @@ async function postBatch(spans, config, resource, deps) {
         signal: controller.signal
       });
       if (res.status >= 200 && res.status < 300) {
-        return { spans: spans.length, status: "sent", httpStatus: res.status, attempts };
+        return { spans: spanCount, status: "sent", httpStatus: res.status, attempts, ...payload };
       }
-      const detail = (await res.text().catch(() => "")).slice(0, 300);
-      last = { httpStatus: res.status, error: detail || `HTTP ${res.status}` };
+      await res.text().catch(() => "");
+      last = { httpStatus: res.status, errorCategory: categorizeHttpStatus(res.status) };
       if (!isTransientStatus(res.status)) {
-        return { spans: spans.length, status: "rejected", httpStatus: res.status, error: last.error, attempts };
+        return { spans: spanCount, status: "rejected", httpStatus: res.status, errorCategory: last.errorCategory, attempts, ...payload };
       }
     } catch (e) {
-      last = { error: e instanceof Error ? e.message : String(e) };
+      last = { errorCategory: categorizeTransportError(e) };
       if (classifyTransportError(e) === "unknown") possiblyDelivered = true;
     } finally {
       clearTimeout(timer);
@@ -28370,10 +29124,11 @@ async function postBatch(spans, config, resource, deps) {
     if (attempts <= deps.maxRetries) await deps.sleep(250 * 2 ** (attempts - 1));
   }
   return {
-    spans: spans.length,
+    spans: spanCount,
     status: possiblyDelivered ? "unknown" : "failed",
     ...last,
-    attempts
+    attempts,
+    ...payload
   };
 }
 async function exportSpans(spans, config, resource, deps = {}) {
@@ -28385,36 +29140,84 @@ async function exportSpans(spans, config, resource, deps = {}) {
   if (!resolved.fetchImpl) {
     throw new Error("No fetch implementation available \u2014 Node 18 or newer is required.");
   }
-  const result = { sent: 0, rejected: 0, failed: 0, unknown: 0, batches: [], complete: false };
+  const result = { sent: 0, rejected: 0, failed: 0, unknown: 0, batches: [], complete: false, receiptErrors: [] };
+  const note = (what, e) => result.receiptErrors.push(`${what}: ${e instanceof Error ? e.message : String(e)}`);
   if (spans.length === 0) {
     result.complete = true;
     return result;
   }
-  for (const batch of batchSpans(spans, config.batchSize)) {
-    const outcome = await postBatch(batch, config, resource, resolved);
+  let batchIndex = 0;
+  let gateHeld = false;
+  const allBatches = [...batchSpans(spans, config.batchSize)];
+  for (const batch of allBatches) {
+    const index = batchIndex++;
+    const remainingBatches = allBatches.slice(index + 1);
+    const body = JSON.stringify(toResourceSpans(batch, resource));
+    const payload = {
+      payloadDigest: (0, import_crypto15.createHash)("sha256").update(body).digest("hex"),
+      payloadBytes: Buffer.byteLength(body, "utf8")
+    };
+    if (deps.onBatchStart) {
+      try {
+        await deps.onBatchStart(index, batch.length, payload.payloadDigest, payload.payloadBytes);
+      } catch (e) {
+        note(`batch ${index} start`, e);
+        gateHeld = true;
+        for (const pending of [batch, ...remainingBatches]) {
+          result.batches.push({
+            spans: pending.length,
+            status: "failed",
+            attempts: 0,
+            errorCategory: "audit_gate_failed"
+          });
+        }
+        break;
+      }
+    }
+    const outcome = await postBatch(batch.length, body, payload, config, resolved);
+    if (deps.onBatchEnd) {
+      try {
+        await deps.onBatchEnd(index, outcome);
+      } catch (e) {
+        note(`batch ${index} end`, e);
+      }
+    }
     result.batches.push(outcome);
-    if (outcome.status === "sent") result.sent += outcome.spans;
-    else if (outcome.status === "rejected") result.rejected += outcome.spans;
-    else if (outcome.status === "unknown") result.unknown += outcome.spans;
-    else result.failed += outcome.spans;
   }
-  result.complete = result.sent === spans.length && result.rejected === 0 && result.failed === 0 && result.unknown === 0;
+  for (const b of result.batches) {
+    if (b.status === "sent") result.sent += b.spans;
+    else if (b.status === "rejected") result.rejected += b.spans;
+    else if (b.status === "unknown") result.unknown += b.spans;
+    else result.failed += b.spans;
+  }
+  result.complete = !gateHeld && result.sent === spans.length && result.rejected === 0 && result.failed === 0 && result.unknown === 0;
   return result;
 }
-var ESTABLISHED_NON_DELIVERY, defaultSleep;
+var import_crypto15, CODE_CATEGORIES, ESTABLISHED_NON_DELIVERY2, defaultSleep;
 var init_exporter = __esm({
   "src/otel/exporter.ts"() {
     "use strict";
+    import_crypto15 = require("crypto");
+    init_error_codes();
     init_otlp();
-    ESTABLISHED_NON_DELIVERY = /* @__PURE__ */ new Set([
-      "ECONNREFUSED",
+    CODE_CATEGORIES = [
+      ["ECONNREFUSED", "connection_refused"],
       // TCP refused before any bytes were sent
-      "ENOTFOUND",
+      ["ENOTFOUND", "dns_failure"],
       // DNS never resolved
-      "EAI_AGAIN",
+      ["EAI_AGAIN", "dns_failure"],
       // DNS lookup failed
-      "ERR_INVALID_URL",
-      "ECONNABORTED"
+      ["ERR_INVALID_URL", "invalid_url"],
+      ["ECONNABORTED", "timeout"],
+      // may fire after bytes were written; proves nothing
+      ["ECONNRESET", "connection_reset"],
+      ["AbortError", "timeout"],
+      ["TimeoutError", "timeout"]
+    ];
+    ESTABLISHED_NON_DELIVERY2 = /* @__PURE__ */ new Set([
+      "connection_refused",
+      "dns_failure",
+      "invalid_url"
     ]);
     defaultSleep = (ms) => new Promise((r) => setTimeout(r, ms));
   }
@@ -28494,16 +29297,539 @@ var init_config2 = __esm({
   }
 });
 
+// src/otel/destination.ts
+function sanitizeEndpoint(endpoint) {
+  let url;
+  try {
+    url = new URL(endpoint);
+  } catch {
+    return UNPARSEABLE;
+  }
+  url.username = "";
+  url.password = "";
+  url.search = "";
+  url.hash = "";
+  const segments = url.pathname.split("/").filter(Boolean);
+  const recognised = segments.every((s) => SAFE_PATH_SEGMENTS.has(s.toLowerCase()));
+  return recognised ? url.toString() : `${url.origin}${REDACTED_PATH}`;
+}
+function fingerprintDestination(endpoint) {
+  const label = sanitizeEndpoint(endpoint);
+  return { label, digest: (0, import_crypto16.createHash)("sha256").update(label).digest("hex") };
+}
+var import_crypto16, UNPARSEABLE, REDACTED_PATH, SAFE_PATH_SEGMENTS;
+var init_destination = __esm({
+  "src/otel/destination.ts"() {
+    "use strict";
+    import_crypto16 = require("crypto");
+    UNPARSEABLE = "<unparseable endpoint>";
+    REDACTED_PATH = "/<redacted path>";
+    SAFE_PATH_SEGMENTS = /* @__PURE__ */ new Set([
+      "v1",
+      "traces",
+      "trace",
+      "otlp",
+      "api",
+      "ingest",
+      "collector",
+      "v2",
+      "metrics",
+      "logs"
+    ]);
+  }
+});
+
+// src/otel/receipts.ts
+function canonicalJson(value) {
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  const entries = Object.entries(value).filter(([, v]) => v !== void 0).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
+  return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`).join(",")}}`;
+}
+function computeHeaderHash(header) {
+  return (0, import_crypto17.createHash)("sha256").update(canonicalJson(header)).digest("hex");
+}
+function computeEventHash(receiptId, sequence, eventType, logicalKey, createdAt, canonicalPayload, prevHash) {
+  return (0, import_crypto17.createHash)("sha256").update([receiptId, sequence, eventType, logicalKey, createdAt, canonicalPayload, prevHash ?? ""].join("|")).digest("hex");
+}
+async function appendEventTx(tx, receiptId, event) {
+  const existing = await tx.select().from(export_receipt_events).where(and(eq(export_receipt_events.receipt_id, receiptId), eq(export_receipt_events.logical_key, event.logicalKey))).limit(1);
+  if (existing[0]) {
+    const prior = existing[0];
+    const replay = canonicalJson(event.payload);
+    if (prior.event_type !== event.eventType || prior.canonical_payload !== replay) {
+      throw new Error(
+        `Conflicting replay of ${event.logicalKey} on receipt ${receiptId}: the same logical event is already recorded with different contents.`
+      );
+    }
+    return prior;
+  }
+  const tail = await tx.select({ sequence: export_receipt_events.sequence, event_hash: export_receipt_events.event_hash }).from(export_receipt_events).where(eq(export_receipt_events.receipt_id, receiptId)).orderBy(asc(export_receipt_events.sequence));
+  const last = tail[tail.length - 1];
+  const sequence = last ? last.sequence + 1 : 0;
+  const prev_hash = last?.event_hash ?? null;
+  const created_at = localISOString();
+  const canonical_payload = canonicalJson(event.payload);
+  const event_hash = computeEventHash(receiptId, sequence, event.eventType, event.logicalKey, created_at, canonical_payload, prev_hash);
+  await tx.insert(export_receipt_events).values({
+    id: v4_default(),
+    receipt_id: receiptId,
+    sequence,
+    event_type: event.eventType,
+    logical_key: event.logicalKey,
+    created_at,
+    canonical_payload,
+    prev_hash,
+    event_hash
+  });
+  return { sequence, event_type: event.eventType, logical_key: event.logicalKey, created_at, canonical_payload, prev_hash, event_hash };
+}
+async function appendEvent(db, receiptId, event) {
+  return db.transaction(async (tx) => appendEventTx(tx, receiptId, event));
+}
+async function prepareReceipt(db, input) {
+  const id = v4_default();
+  const destination = fingerprintDestination(input.endpoint);
+  const header = {
+    id,
+    created_at: localISOString(),
+    destination_label: destination.label,
+    destination_digest: destination.digest,
+    scope_selector: input.scopeSelector ?? null,
+    scope_session_ids: JSON.stringify(input.sessionIds),
+    session_count: input.sessionIds.length,
+    span_count: input.spanCount,
+    included_content: input.includeContent ? 1 : 0,
+    transport: input.transport,
+    chron_version: input.chronVersion
+  };
+  await db.transaction(async (tx) => {
+    await tx.insert(export_receipts).values(header);
+    await appendEventTx(tx, id, {
+      eventType: "prepared",
+      logicalKey: "prepared",
+      // Binding the whole header means the chain protects what the export was
+      // about, not only how it turned out.
+      payload: { header_hash: computeHeaderHash(header) }
+    });
+  });
+  return id;
+}
+async function recordBatchStarted(db, receiptId, batchIndex, spans, payloadDigest, payloadBytes) {
+  await appendEvent(db, receiptId, {
+    eventType: "batch_started",
+    logicalKey: `batch_started:${batchIndex}`,
+    payload: { batch_index: batchIndex, spans, payload_digest: payloadDigest, payload_bytes: payloadBytes }
+  });
+}
+async function recordBatchFinished(db, receiptId, batchIndex, outcome) {
+  await appendEvent(db, receiptId, {
+    eventType: "batch_finished",
+    logicalKey: `batch_finished:${batchIndex}`,
+    payload: {
+      batch_index: batchIndex,
+      spans: outcome.spans,
+      status: outcome.status,
+      http_status: outcome.httpStatus ?? null,
+      // A closed vocabulary, never the collector's own error text.
+      error_category: outcome.errorCategory ?? null,
+      attempts: outcome.attempts,
+      payload_digest: outcome.payloadDigest ?? null
+    }
+  });
+}
+async function finalizeReceipt(db, receiptId, result, spanCount) {
+  const state = deriveTerminalState(result, spanCount);
+  await appendEvent(db, receiptId, {
+    eventType: "finalized",
+    logicalKey: "finalized",
+    payload: {
+      state,
+      spans_sent: result.sent,
+      spans_rejected: result.rejected,
+      spans_failed: result.failed,
+      spans_unknown: result.unknown
+    }
+  });
+  return state;
+}
+function expectedState(tally, spanCount) {
+  if (spanCount === 0) return "prepared";
+  if (tally.sent === spanCount) return "delivered";
+  if (tally.sent > 0) return "partially_delivered";
+  if (tally.unknown > 0) return "unknown";
+  return "failed";
+}
+function deriveTerminalState(result, spanCount) {
+  return expectedState(result, spanCount);
+}
+function verifyIntegrity(header, events) {
+  let expectedPrev = null;
+  for (let i = 0; i < events.length; i++) {
+    const e = events[i];
+    if (e.sequence !== i) {
+      return { valid: false, events: events.length, first_break: e.sequence, reason: "sequence gap or duplicate" };
+    }
+    if (e.prev_hash !== expectedPrev) {
+      return { valid: false, events: events.length, first_break: e.sequence, reason: "prev_hash mismatch" };
+    }
+    const expected = computeEventHash(header.id, e.sequence, e.event_type, e.logical_key, e.created_at, e.canonical_payload, e.prev_hash);
+    if (e.event_hash !== expected) {
+      return { valid: false, events: events.length, first_break: e.sequence, reason: "event_hash mismatch \u2014 row was altered" };
+    }
+    expectedPrev = e.event_hash;
+  }
+  const first = events[0];
+  if (!first) return { valid: false, events: 0, reason: "receipt has no events" };
+  const opening = parsePayload(first);
+  if (!opening.ok) return { valid: false, events: events.length, first_break: 0, reason: opening.reason };
+  if (opening.value.header_hash !== computeHeaderHash(header)) {
+    return { valid: false, events: events.length, first_break: 0, reason: "header does not match the hash bound into the chain" };
+  }
+  return { valid: true, events: events.length };
+}
+function parsePayload(event) {
+  let value;
+  try {
+    value = JSON.parse(event.canonical_payload);
+  } catch {
+    return { ok: false, reason: `event ${event.sequence} has a payload that is not valid JSON` };
+  }
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return { ok: false, reason: `event ${event.sequence} payload is not an object` };
+  }
+  return { ok: true, value };
+}
+function checkPayload(event, payload) {
+  const suffix = event.logical_key.split(":")[1];
+  switch (event.event_type) {
+    case "prepared":
+      if (event.logical_key !== "prepared") return `event ${event.sequence} is prepared under a different logical key`;
+      return typeof payload.header_hash === "string" ? null : "prepared payload has no header hash";
+    case "batch_started":
+    case "batch_finished": {
+      if (!isInt(payload.batch_index)) return `event ${event.sequence} has no batch index`;
+      if (String(payload.batch_index) !== suffix) {
+        return `event ${event.sequence} logical key disagrees with its batch index`;
+      }
+      if (!isInt(payload.spans) || payload.spans < 0) return `event ${event.sequence} has an invalid span count`;
+      if (event.event_type === "batch_started") {
+        if (!isDigest(payload.payload_digest)) return `event ${event.sequence} has no payload digest`;
+        if (!isInt(payload.payload_bytes) || payload.payload_bytes < 0) return `event ${event.sequence} has an invalid payload size`;
+        return null;
+      }
+      if (!BATCH_STATUSES.has(String(payload.status))) return `event ${event.sequence} has an unrecognised batch status`;
+      if (!isInt(payload.attempts) || payload.attempts < 1) return `event ${event.sequence} has an invalid attempt count`;
+      if (!isDigest(payload.payload_digest)) return `event ${event.sequence} has no payload digest`;
+      return null;
+    }
+    case "finalized": {
+      if (event.logical_key !== "finalized") return `event ${event.sequence} is finalized under a different logical key`;
+      if (!RECEIPT_STATES.has(String(payload.state))) return "finalized payload has an unrecognised state";
+      for (const k of ["spans_sent", "spans_rejected", "spans_failed", "spans_unknown"]) {
+        if (!isInt(payload[k]) || payload[k] < 0) return `finalized payload has an invalid ${k}`;
+      }
+      return null;
+    }
+  }
+}
+function verifyLifecycle(header, events) {
+  const fail3 = (seq, reason) => ({ valid: false, events: events.length, first_break: seq, reason });
+  if (events.length === 0) return { valid: false, events: 0, reason: "receipt has no events" };
+  if (events[0].event_type !== "prepared") return fail3(0, "chain does not open with prepared");
+  const started = /* @__PURE__ */ new Map();
+  const finished = /* @__PURE__ */ new Set();
+  const tally = { sent: 0, rejected: 0, failed: 0, unknown: 0 };
+  let finalizedAt = null;
+  let finalPayload = null;
+  for (const e of events) {
+    if (finalizedAt !== null) return fail3(e.sequence, "event recorded after finalization");
+    const parsed = parsePayload(e);
+    if (!parsed.ok) return fail3(e.sequence, parsed.reason);
+    const contract = checkPayload(e, parsed.value);
+    if (contract) return fail3(e.sequence, contract);
+    const index = e.logical_key.split(":")[1];
+    switch (e.event_type) {
+      case "prepared":
+        if (e.sequence !== 0) return fail3(e.sequence, "more than one prepared event");
+        break;
+      case "batch_started":
+        if (started.has(index)) return fail3(e.sequence, `batch ${index} started twice`);
+        started.set(index, parsed.value);
+        break;
+      case "batch_finished": {
+        const start = started.get(index);
+        if (!start) return fail3(e.sequence, `batch ${index} finished without starting`);
+        if (finished.has(index)) return fail3(e.sequence, `batch ${index} finished twice`);
+        if (parsed.value.spans !== start.spans) {
+          return fail3(e.sequence, `batch ${index} finished with a different span count than it started with`);
+        }
+        if (parsed.value.payload_digest !== start.payload_digest) {
+          return fail3(e.sequence, `batch ${index} finished with a different payload than it started with`);
+        }
+        finished.add(index);
+        tally[parsed.value.status] += parsed.value.spans;
+        break;
+      }
+      case "finalized":
+        finalizedAt = e.sequence;
+        finalPayload = parsed.value;
+        break;
+    }
+  }
+  if (finalPayload) {
+    for (const index of started.keys()) {
+      if (!finished.has(index)) return fail3(finalizedAt, `finalized while batch ${index} had not finished`);
+    }
+    const declared = {
+      sent: finalPayload.spans_sent,
+      rejected: finalPayload.spans_rejected,
+      failed: finalPayload.spans_failed,
+      unknown: finalPayload.spans_unknown
+    };
+    if (String(Object.values(declared)) !== String([tally.sent, tally.rejected, tally.failed, tally.unknown])) {
+      return fail3(finalizedAt, "finalized counts do not reconcile with the recorded batch outcomes");
+    }
+    const total = declared.sent + declared.rejected + declared.failed + declared.unknown;
+    if (total !== header.span_count) {
+      return fail3(finalizedAt, `finalized counts total ${total} but the receipt was opened for ${header.span_count} span(s)`);
+    }
+    const implied = expectedState(declared, header.span_count);
+    if (finalPayload.state !== implied) {
+      return fail3(finalizedAt, `finalized as ${finalPayload.state} but the recorded counts imply ${implied}`);
+    }
+  }
+  return { valid: true, events: events.length };
+}
+function verifyReceipt(header, events) {
+  const integrity = verifyIntegrity(header, events);
+  return integrity.valid ? verifyLifecycle(header, events) : integrity;
+}
+function deriveState(events) {
+  const finalized = events.find((e) => e.event_type === "finalized");
+  if (finalized) {
+    const parsed = parsePayload(finalized);
+    return parsed.ok ? parsed.value.state : null;
+  }
+  if (events.some((e) => e.event_type === "batch_started")) return "unknown";
+  return "prepared";
+}
+function summarise(header, events) {
+  const finalized = events.find((e) => e.event_type === "finalized");
+  if (finalized) {
+    const p = parsePayload(finalized);
+    if (p.ok) {
+      return {
+        sent: p.value.spans_sent,
+        rejected: p.value.spans_rejected,
+        failed: p.value.spans_failed,
+        unknown: p.value.spans_unknown,
+        // Verification already required the totals to cover every selected span.
+        unattempted: 0
+      };
+    }
+  }
+  const tally = { sent: 0, rejected: 0, failed: 0, unknown: 0, unattempted: 0 };
+  const started = /* @__PURE__ */ new Map();
+  const finished = /* @__PURE__ */ new Set();
+  for (const e of events) {
+    const p = parsePayload(e);
+    if (!p.ok) continue;
+    if (e.event_type === "batch_started") started.set(p.value.batch_index, p.value.spans);
+    if (e.event_type === "batch_finished") {
+      finished.add(p.value.batch_index);
+      tally[p.value.status] += p.value.spans;
+    }
+  }
+  for (const [index, spans] of started) {
+    if (!finished.has(index)) tally.unknown += spans;
+  }
+  const accounted = tally.sent + tally.rejected + tally.failed + tally.unknown;
+  tally.unattempted = Math.max(0, header.span_count - accounted);
+  return tally;
+}
+async function readReceipt(db, receiptId) {
+  const [header] = await db.select().from(export_receipts).where(eq(export_receipts.id, receiptId)).limit(1);
+  if (!header) return null;
+  const events = await db.select().from(export_receipt_events).where(eq(export_receipt_events.receipt_id, receiptId)).orderBy(asc(export_receipt_events.sequence));
+  const verdict = verifyReceipt(header, events);
+  return {
+    header,
+    events,
+    verdict,
+    state: verdict.valid ? deriveState(events) : null,
+    summary: verdict.valid ? summarise(header, events) : null
+  };
+}
+async function listReceipts(db, limit) {
+  const headers = await db.select().from(export_receipts).orderBy(desc(export_receipts.created_at)).limit(limit);
+  const readings = [];
+  for (const header of headers) {
+    const reading = await readReceipt(db, header.id);
+    if (reading) readings.push(reading);
+  }
+  return readings;
+}
+var import_crypto17, BATCH_STATUSES, RECEIPT_STATES, isInt, isDigest;
+var init_receipts = __esm({
+  "src/otel/receipts.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    import_crypto17 = require("crypto");
+    init_esm();
+    init_schema();
+    init_time();
+    init_destination();
+    BATCH_STATUSES = /* @__PURE__ */ new Set(["sent", "rejected", "failed", "unknown"]);
+    RECEIPT_STATES = /* @__PURE__ */ new Set(["prepared", "delivered", "partially_delivered", "failed", "unknown"]);
+    isInt = (v) => typeof v === "number" && Number.isInteger(v);
+    isDigest = (v) => typeof v === "string" && /^[0-9a-f]{64}$/.test(v);
+  }
+});
+
+// src/cli/otel-receipts.ts
+var otel_receipts_exports = {};
+__export(otel_receipts_exports, {
+  runOtelReceipts: () => runOtelReceipts
+});
+function describe(reading) {
+  if (!reading.verdict.valid) return { text: "UNVERIFIED", colour: RED13 };
+  return STATE_LABEL[reading.state];
+}
+function toJson(readings) {
+  return readings.map((r) => ({
+    id: r.header.id,
+    created_at: r.header.created_at,
+    // Null, not a guess: a receipt that does not verify has no state.
+    state: r.state,
+    verified: r.verdict.valid,
+    // Always present, so the machine schema is the same shape either way.
+    verification_reason: r.verdict.valid ? null : r.verdict.reason,
+    // The summary word hides the distinction that matters — rejected and
+    // unanswered both read as "partly accepted" and mean different things.
+    spans_sent: r.summary?.sent ?? null,
+    spans_rejected: r.summary?.rejected ?? null,
+    spans_failed: r.summary?.failed ?? null,
+    spans_unknown: r.summary?.unknown ?? null,
+    /** Selected but never started — silence, as distinct from no answer. */
+    spans_unattempted: r.summary?.unattempted ?? null,
+    destination: r.header.destination_label,
+    destination_digest: r.header.destination_digest,
+    transport: r.header.transport,
+    scope_selector: r.header.scope_selector,
+    session_count: r.header.session_count,
+    span_count: r.header.span_count,
+    included_content: r.header.included_content === 1,
+    chron_version: r.header.chron_version,
+    events: r.events.length,
+    scope: "Chron can show that a collector accepted a payload. It cannot show that the collector retained it."
+  }));
+}
+async function runOtelReceipts(args2) {
+  const jsonMode = args2.includes("--json");
+  const rawLimit = args2.find((a) => a.startsWith("--limit="))?.split("=")[1];
+  const parsed = rawLimit === void 0 ? DEFAULT_LIMIT : Number(rawLimit);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    process.stderr.write(`Invalid --limit: ${rawLimit}. Expected a positive whole number.
+`);
+    process.exit(1);
+  }
+  const db = await initDb();
+  const readings = await listReceipts(db, parsed);
+  const unverifiedCount = readings.filter((r) => !r.verdict.valid).length;
+  if (jsonMode) {
+    process.stdout.write(JSON.stringify(toJson(readings), null, 2) + "\n");
+    if (unverifiedCount > 0) process.exit(1);
+    return;
+  }
+  process.stdout.write(`
+${BOLD17}chron otel receipts${RESET18}
+
+`);
+  if (readings.length === 0) {
+    process.stdout.write(`  ${DIM16}No exports recorded yet. Receipts are written by 'chron otel export'.${RESET18}
+
+`);
+    return;
+  }
+  for (const r of readings) {
+    const state = describe(r);
+    const when = r.header.created_at.slice(0, 16).replace("T", " ");
+    process.stdout.write(
+      `  ${DIM16}${when}${RESET18}  ${CYAN15}${r.header.id.slice(0, 8)}${RESET18}  ${state.colour}${state.text.padEnd(17)}${RESET18}  ${String(r.header.span_count).padStart(6)} span(s)  ${DIM16}${r.header.destination_label}${RESET18}
+`
+    );
+    if (!r.verdict.valid) {
+      process.stdout.write(`      ${RED13}\u2717${RESET18} ${r.verdict.reason}
+`);
+    } else {
+      const s = r.summary;
+      if (s.rejected > 0 || s.failed > 0 || s.unknown > 0 || s.unattempted > 0) {
+        const parts = [
+          s.sent > 0 ? `${GREEN11}${s.sent} accepted${RESET18}` : null,
+          s.rejected > 0 ? `${RED13}${s.rejected} rejected${RESET18}` : null,
+          s.failed > 0 ? `${RED13}${s.failed} not delivered${RESET18}` : null,
+          s.unknown > 0 ? `${YELLOW15}${s.unknown} unanswered${RESET18}` : null,
+          s.unattempted > 0 ? `${DIM16}${s.unattempted} never sent${RESET18}` : null
+        ].filter(Boolean);
+        process.stdout.write(`      ${DIM16}spans:${RESET18} ${parts.join(`${DIM16},${RESET18} `)}
+`);
+      }
+      if (r.header.included_content === 1) {
+        process.stdout.write(`      ${YELLOW15}!${RESET18} ${DIM16}human-authored text was included in this export${RESET18}
+`);
+      }
+    }
+  }
+  process.stdout.write("\n");
+  if (unverifiedCount > 0) {
+    process.stdout.write(`  ${RED13}${unverifiedCount} receipt(s) did not verify${RESET18} \u2014 their delivery state is not shown,
+`);
+    process.stdout.write(`  ${DIM16}because a record that does not hold up is not evidence of anything.${RESET18}
+
+`);
+  }
+  process.stdout.write(`${DIM16}"Accepted" means the collector returned success for the payload.
+`);
+  process.stdout.write(`Whether it retained the data is something only that platform can show.${RESET18}
+
+`);
+  if (unverifiedCount > 0) process.exit(1);
+}
+var RESET18, BOLD17, DIM16, GREEN11, RED13, YELLOW15, CYAN15, DEFAULT_LIMIT, STATE_LABEL;
+var init_otel_receipts = __esm({
+  "src/cli/otel-receipts.ts"() {
+    "use strict";
+    init_db2();
+    init_receipts();
+    RESET18 = "\x1B[0m";
+    BOLD17 = "\x1B[1m";
+    DIM16 = "\x1B[2m";
+    GREEN11 = "\x1B[32m";
+    RED13 = "\x1B[31m";
+    YELLOW15 = "\x1B[33m";
+    CYAN15 = "\x1B[36m";
+    DEFAULT_LIMIT = 20;
+    STATE_LABEL = {
+      delivered: { text: "accepted", colour: GREEN11 },
+      partially_delivered: { text: "partly accepted", colour: YELLOW15 },
+      failed: { text: "not delivered", colour: RED13 },
+      unknown: { text: "delivery unknown", colour: YELLOW15 },
+      prepared: { text: "nothing sent", colour: DIM16 }
+    };
+  }
+});
+
 // src/cli/otel.ts
 var otel_exports = {};
 __export(otel_exports, {
   runOtel: () => runOtel
 });
 function usage() {
-  return "Usage: chron otel export [options]\n\nExport logged sessions as OpenTelemetry spans.\n\nProtocol: OTLP over HTTP with JSON encoding (http/json). This is the only\nprotocol Chron speaks. If OTEL_EXPORTER_OTLP_PROTOCOL is set to grpc or\nhttp/protobuf, the export is refused rather than silently downgraded.\n\nExport is deliberate and manual. Chron never sends evidence off the machine\non its own; nothing leaves until you run this command.\n\nOptions:\n  --dry-run            Print the payload and send nothing. Fully offline.\n  --session=<prefix>   Export a single session\n  --since=<range>      7d, 30d, or YYYY-MM-DD\n  --endpoint=<url>     Base URL; /v1/traces is appended\n  --traces-endpoint=<url>  Full traces URL, used exactly as given\n  --include-content    Include human-authored text: messages, session titles\n                       and external references (off by default)\n  --batch-size=<n>     Spans per request (default 512)\n\nEnvironment (standard OTel variables):\n  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT   used as-is\n  OTEL_EXPORTER_OTLP_ENDPOINT          base URL, /v1/traces appended\n  OTEL_EXPORTER_OTLP_HEADERS           key1=value1,key2=value2\n  OTEL_EXPORTER_OTLP_TIMEOUT           milliseconds (default 10000)\n";
+  return "Usage: chron otel export [options]\n       chron otel receipts [--limit=<n>] [--json]\n\nExport logged sessions as OpenTelemetry spans.\n\nProtocol: OTLP over HTTP with JSON encoding (http/json). This is the only\nprotocol Chron speaks. If OTEL_EXPORTER_OTLP_PROTOCOL is set to grpc or\nhttp/protobuf, the export is refused rather than silently downgraded.\n\nExport is deliberate and manual. Chron never sends evidence off the machine\non its own; nothing leaves until you run this command.\n\nOptions:\n  --dry-run            Print the payload and send nothing. Fully offline.\n  --session=<prefix>   Export a single session\n  --since=<range>      7d, 30d, or YYYY-MM-DD\n  --endpoint=<url>     Base URL; /v1/traces is appended\n  --traces-endpoint=<url>  Full traces URL, used exactly as given\n  --include-content    Include human-authored text: messages, session titles\n                       and external references (off by default)\n  --batch-size=<n>     Spans per request (default 512)\n\nOptions (receipts):\n  --limit=<n>          Most recent receipts to show (default 20)\n  --json               Machine-readable output\n\nEnvironment (standard OTel variables):\n  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT   used as-is\n  OTEL_EXPORTER_OTLP_ENDPOINT          base URL, /v1/traces appended\n  OTEL_EXPORTER_OTLP_HEADERS           key1=value1,key2=value2\n  OTEL_EXPORTER_OTLP_TIMEOUT           milliseconds (default 10000)\n";
 }
-function flag(args2, name) {
-  return args2.find((a) => a.startsWith(`--${name}=`))?.split("=").slice(1).join("=");
+function flag(args2, name2) {
+  return args2.find((a) => a.startsWith(`--${name2}=`))?.split("=").slice(1).join("=");
 }
 async function collectSpans(sessionPrefix, since, includeContent) {
   const db = await initDb();
@@ -28516,10 +29842,15 @@ async function collectSpans(sessionPrefix, since, includeContent) {
     const rows = await db.select().from(messages).where(eq(messages.session_id, s.id)).orderBy(...messageOrderAsc());
     spans.push(...buildSessionTrace(s, rows, { includeContent }));
   }
-  return { spans, sessionCount: selected.length };
+  return { spans, sessionCount: selected.length, sessionIds: selected.map((s) => s.id), db };
 }
 async function runOtel(args2) {
   const sub = args2.find((a) => !a.startsWith("--"));
+  if (sub === "receipts") {
+    const { runOtelReceipts: runOtelReceipts2 } = await Promise.resolve().then(() => (init_otel_receipts(), otel_receipts_exports));
+    await runOtelReceipts2(args2);
+    return;
+  }
   if (!sub || sub !== "export") {
     process.stderr.write(usage());
     process.exit(1);
@@ -28541,7 +29872,7 @@ async function runOtel(args2) {
     } catch (e) {
       if (e instanceof OtelConfigError) {
         process.stderr.write(`
-${RED12}\u2717${RESET17} ${e.message}
+${RED14}\u2717${RESET19} ${e.message}
 
 `);
         process.exit(1);
@@ -28549,82 +29880,118 @@ ${RED12}\u2717${RESET17} ${e.message}
       throw e;
     }
   }
-  const { spans, sessionCount } = await collectSpans(flag(args2, "session"), since, includeContent);
+  const { spans, sessionCount, sessionIds, db } = await collectSpans(flag(args2, "session"), since, includeContent);
   const resource = { serviceName: "chron", serviceVersion: import_package4.version };
   process.stdout.write(`
-${BOLD17}chron otel export${RESET17}
+${BOLD18}chron otel export${RESET19}
 
 `);
   process.stdout.write(`  ${sessionCount} session(s), ${spans.length} span(s)
 `);
   if (includeContent) {
-    process.stdout.write(`  ${YELLOW15}!${RESET17} Human-authored text (messages, titles, external references) is included.
+    process.stdout.write(`  ${YELLOW16}!${RESET19} Human-authored text (messages, titles, external references) is included.
 `);
   } else {
-    process.stdout.write(`  ${DIM16}content excluded \u2014 identifiers, hashes and lengths only${RESET17}
+    process.stdout.write(`  ${DIM17}content excluded \u2014 identifiers, hashes and lengths only${RESET19}
 `);
   }
   if (dryRun) {
     process.stdout.write(`
-${BOLD17}Dry run \u2014 nothing sent${RESET17}
+${BOLD18}Dry run \u2014 nothing sent${RESET19}
 
 `);
     process.stdout.write(`${JSON.stringify(toResourceSpans(spans.slice(0, 2), resource), null, 2)}
 `);
-    if (spans.length > 2) process.stdout.write(`${DIM16}... ${spans.length - 2} more span(s) not shown${RESET17}
+    if (spans.length > 2) process.stdout.write(`${DIM17}... ${spans.length - 2} more span(s) not shown${RESET19}
 `);
     try {
       const cfg = resolveConfig(process.env, { endpoint: flag(args2, "endpoint"), tracesEndpoint: flag(args2, "traces-endpoint") });
       process.stdout.write(`
-${DIM16}would POST to: ${cfg.endpoint}${RESET17}
+${DIM17}would POST to: ${sanitizeEndpoint(cfg.endpoint)}${RESET19}
 `);
       const red = redactHeaders(cfg.headers);
       if (Object.keys(red).length > 0) {
-        process.stdout.write(`${DIM16}headers: ${JSON.stringify(red)}${RESET17}
+        process.stdout.write(`${DIM17}headers: ${JSON.stringify(red)}${RESET19}
 `);
       }
     } catch {
       process.stdout.write(`
-${DIM16}no endpoint configured \u2014 dry run does not need one${RESET17}
+${DIM17}no endpoint configured \u2014 dry run does not need one${RESET19}
 `);
     }
     process.stdout.write("\n");
     return;
   }
-  process.stdout.write(`  endpoint: ${config.endpoint}
+  process.stdout.write(`  endpoint: ${sanitizeEndpoint(config.endpoint)}
 
 `);
-  const result = await exportSpans(spans, config, resource);
-  if (result.complete) {
-    process.stdout.write(`  ${GREEN11}\u2713${RESET17} ${result.sent} span(s) accepted by the collector
+  const scopeSelector = [
+    flag(args2, "session") ? `--session=${flag(args2, "session")}` : null,
+    sinceRaw ? `--since=${sinceRaw}` : null
+  ].filter(Boolean).join(" ") || void 0;
+  const receiptId = await prepareReceipt(db, {
+    endpoint: config.endpoint,
+    sessionIds,
+    spanCount: spans.length,
+    includeContent,
+    chronVersion: import_package4.version,
+    transport: "http/json",
+    scopeSelector
+  });
+  const result = await exportSpans(spans, config, resource, {
+    onBatchStart: (i, n, digest, bytes2) => recordBatchStarted(db, receiptId, i, n, digest, bytes2),
+    onBatchEnd: (i, outcome) => recordBatchFinished(db, receiptId, i, outcome)
+  });
+  let state;
+  if (result.receiptErrors.length > 0) {
+    state = (await readReceipt(db, receiptId))?.state ?? "not recorded";
+  } else {
+    try {
+      state = await finalizeReceipt(db, receiptId, result, spans.length);
+    } catch (e) {
+      result.receiptErrors.push(`finalize: ${e instanceof Error ? e.message : String(e)}`);
+      state = (await readReceipt(db, receiptId))?.state ?? "not recorded";
+    }
+  }
+  process.stdout.write(`  ${DIM17}receipt ${receiptId.slice(0, 8)} \u2014 ${state}${RESET19}
+`);
+  if (result.complete && result.receiptErrors.length === 0) {
+    process.stdout.write(spans.length === 0 ? `  ${DIM17}Nothing in scope \u2014 no request was made.${RESET19}
+
+` : `  ${GREEN12}\u2713${RESET19} ${result.sent} span(s) accepted by the collector
 
 `);
     return;
   }
-  process.stdout.write(`  ${GREEN11}sent${RESET17}     ${result.sent}
+  if (result.complete) {
+    process.stdout.write(`  ${GREEN12}\u2713${RESET19} ${result.sent} span(s) accepted by the collector
 `);
-  process.stdout.write(`  ${RED12}rejected${RESET17} ${result.rejected}
+  } else {
+    process.stdout.write(`  ${GREEN12}sent${RESET19}     ${result.sent}
 `);
-  process.stdout.write(`  ${RED12}failed${RESET17}   ${result.failed}
+    process.stdout.write(`  ${RED14}rejected${RESET19} ${result.rejected}
 `);
-  process.stdout.write(`  ${YELLOW15}unknown${RESET17}  ${result.unknown}
+    process.stdout.write(`  ${RED14}failed${RESET19}   ${result.failed}
+`);
+    process.stdout.write(`  ${YELLOW16}unknown${RESET19}  ${result.unknown}
 
 `);
+  }
   for (const b of result.batches.filter((x) => x.status !== "sent")) {
     const code = b.httpStatus ? `HTTP ${b.httpStatus}` : "no response";
-    const mark = b.status === "unknown" ? `${YELLOW15}?${RESET17}` : `${RED12}\u2717${RESET17}`;
-    process.stderr.write(`  ${mark} ${b.spans} span(s) ${b.status} after ${b.attempts} attempt(s): ${code}${b.error ? ` \u2014 ${b.error}` : ""}
+    const mark = b.status === "unknown" ? `${YELLOW16}?${RESET19}` : `${RED14}\u2717${RESET19}`;
+    process.stderr.write(`  ${mark} ${b.spans} span(s) ${b.status} after ${b.attempts} attempt(s): ${code}${b.errorCategory ? ` \u2014 ${b.errorCategory}` : ""}
 `);
   }
   process.stderr.write("\n");
   if (result.rejected > 0 || result.failed > 0) {
-    process.stderr.write(`${RED12}Not delivered.${RESET17} ${result.rejected + result.failed} span(s) did not reach the collector.
+    process.stderr.write(`${RED14}Not delivered.${RESET19} ${result.rejected + result.failed} span(s) did not reach the collector.
 `);
     process.stderr.write(`  Check the endpoint, credentials and configuration, then export again.
 `);
   }
   if (result.unknown > 0) {
-    process.stderr.write(`${YELLOW15}Delivery unknown.${RESET17} ${result.unknown} span(s) may or may not have reached the collector;
+    process.stderr.write(`${YELLOW16}Delivery unknown.${RESET19} ${result.unknown} span(s) may or may not have reached the collector;
 `);
     process.stderr.write(`  the request was sent but no trustworthy response came back.
 `);
@@ -28633,10 +30000,22 @@ ${DIM16}no endpoint configured \u2014 dry run does not need one${RESET17}
     process.stderr.write(`  so a repeat updates the same spans rather than duplicating them.
 `);
   }
+  if (result.receiptErrors.length > 0) {
+    process.stderr.write(`${RED14}Receipt not fully recorded.${RESET19} The delivery result above is accurate;
+`);
+    process.stderr.write(`  what could not be written is the audit record of it. The receipt is left
+`);
+    process.stderr.write(`  open, and reads as its own recorded state rather than claiming an outcome
+`);
+    process.stderr.write(`  it cannot show. Run 'chron otel receipts' to see it.
+`);
+    for (const e of result.receiptErrors) process.stderr.write(`  ${RED14}\u2717${RESET19} ${e}
+`);
+  }
   process.stderr.write("\n");
   process.exit(1);
 }
-var import_package4, RESET17, BOLD17, DIM16, GREEN11, RED12, YELLOW15;
+var import_package4, RESET19, BOLD18, DIM17, GREEN12, RED14, YELLOW16;
 var init_otel = __esm({
   "src/cli/otel.ts"() {
     "use strict";
@@ -28648,20 +30027,22 @@ var init_otel = __esm({
     init_otlp();
     init_exporter();
     init_config2();
+    init_receipts();
     init_report();
     import_package4 = __toESM(require_package());
-    RESET17 = "\x1B[0m";
-    BOLD17 = "\x1B[1m";
-    DIM16 = "\x1B[2m";
-    GREEN11 = "\x1B[32m";
-    RED12 = "\x1B[31m";
-    YELLOW15 = "\x1B[33m";
+    init_destination();
+    RESET19 = "\x1B[0m";
+    BOLD18 = "\x1B[1m";
+    DIM17 = "\x1B[2m";
+    GREEN12 = "\x1B[32m";
+    RED14 = "\x1B[31m";
+    YELLOW16 = "\x1B[33m";
   }
 });
 
 // src/utils/ntp.ts
 function queryNtpUdp(server, timeout) {
-  return new Promise((resolve2, reject) => {
+  return new Promise((resolve3, reject) => {
     const client = (0, import_dgram.createSocket)("udp4");
     const timer = setTimeout(() => {
       try {
@@ -28688,7 +30069,7 @@ function queryNtpUdp(server, timeout) {
       const frac = msg.readUInt32BE(44);
       const t3 = (secs - NTP_OFFSET) * 1e3 + frac / 4294967296 * 1e3;
       const offset_ms = Math.round(t3 - (t1 + t4) / 2);
-      resolve2({ offset_ms });
+      resolve3({ offset_ms });
     });
     client.once("error", (err) => {
       clearTimeout(timer);
@@ -28764,6 +30145,16 @@ function attachNtpMetadata(db, sessionId) {
     }).catch(() => void 0);
   });
 }
+function rejectPlaceholderTool(aiTool) {
+  if (!isPlaceholderAiTool(aiTool)) return null;
+  return {
+    content: [{
+      type: "text",
+      text: `ai_tool="${aiTool}" is a placeholder, not a client identity. Pass the identifier of the client you are running in \u2014 for example claude, codex, cursor, gemini or windsurf \u2014 or omit ai_tool entirely.`
+    }],
+    isError: true
+  };
+}
 function resolveEvidenceMetadata(attach, metadata) {
   if (attach && !metadata) return liveAttachMetadata();
   if (!metadata?.source) return attach ? liveAttachMetadata() : null;
@@ -28778,6 +30169,8 @@ function resolveEvidenceMetadata(attach, metadata) {
 }
 function initSession(db) {
   return async (args2) => {
+    const rejection = rejectPlaceholderTool(args2.ai_tool);
+    if (rejection) return rejection;
     const id = v4_default();
     const now = localISOString();
     let session_id;
@@ -28898,6 +30291,7 @@ var init_sessions = __esm({
     init_signing();
     init_ntp();
     init_terminal();
+    init_roles();
     init_evidence();
   }
 });
@@ -28950,47 +30344,47 @@ Tools: ${Object.keys(KNOWN_TOOLS2).join(", ")}
   const { session_id, created, title } = await createAttachSession(db, aiTool, titleArg);
   const short = session_id.slice(0, 8);
   process.stdout.write(`
-${BOLD18}chron attach${RESET18} ${aiTool}
+${BOLD19}chron attach${RESET20} ${aiTool}
 
 `);
   if (created) {
-    process.stdout.write(`  ${GREEN12}\u2713${RESET18} session ${BOLD18}${short}${RESET18} created \u2014 ${title}
+    process.stdout.write(`  ${GREEN13}\u2713${RESET20} session ${BOLD19}${short}${RESET20} created \u2014 ${title}
 `);
   } else {
-    process.stdout.write(`  ${GREEN12}\u2713${RESET18} resumed existing session ${BOLD18}${short}${RESET18} \u2014 ${title}
+    process.stdout.write(`  ${GREEN13}\u2713${RESET20} resumed existing session ${BOLD19}${short}${RESET20} \u2014 ${title}
 `);
   }
-  process.stdout.write(`  ${YELLOW16}!${RESET18} Marked as partial evidence. Chron did not observe this
+  process.stdout.write(`  ${YELLOW17}!${RESET20} Marked as partial evidence. Chron did not observe this
 `);
   process.stdout.write(`    conversation before now, and does not claim to know what came before.
 
 `);
-  process.stdout.write(`${BOLD18}Paste this into the session you want recorded:${RESET18}
+  process.stdout.write(`${BOLD19}Paste this into the session you want recorded:${RESET20}
 
 `);
-  process.stdout.write(`${DIM17}  Log this conversation to Chron from now on using session_id ${session_id}.
+  process.stdout.write(`${DIM18}  Log this conversation to Chron from now on using session_id ${session_id}.
 `);
   process.stdout.write(`  Call log_message for this and every following exchange.
 `);
-  process.stdout.write(`  Do not attempt to reconstruct earlier messages.${RESET18}
+  process.stdout.write(`  Do not attempt to reconstruct earlier messages.${RESET20}
 
 `);
-  process.stdout.write(`${DIM17}  chron history ${short}   chron verify ${short}${RESET18}
+  process.stdout.write(`${DIM18}  chron history ${short}   chron verify ${short}${RESET20}
 
 `);
 }
-var RESET18, BOLD18, DIM17, GREEN12, YELLOW16, KNOWN_TOOLS2;
+var RESET20, BOLD19, DIM18, GREEN13, YELLOW17, KNOWN_TOOLS2;
 var init_attach = __esm({
   "src/cli/attach.ts"() {
     "use strict";
     init_db2();
     init_sessions();
     init_time();
-    RESET18 = "\x1B[0m";
-    BOLD18 = "\x1B[1m";
-    DIM17 = "\x1B[2m";
-    GREEN12 = "\x1B[32m";
-    YELLOW16 = "\x1B[33m";
+    RESET20 = "\x1B[0m";
+    BOLD19 = "\x1B[1m";
+    DIM18 = "\x1B[2m";
+    GREEN13 = "\x1B[32m";
+    YELLOW17 = "\x1B[33m";
     KNOWN_TOOLS2 = {
       claude: "claude",
       "claude-code": "claude",
@@ -29013,13 +30407,13 @@ async function resolveSession(prefix) {
   const all = await db.select({ id: sessions.id, title: sessions.title, signature: sessions.signature }).from(sessions);
   const matches = all.filter((s) => s.id.startsWith(prefix));
   if (matches.length === 0) {
-    process.stderr.write(`${RED13}\u2717${RESET19} No session found matching prefix: ${prefix}
+    process.stderr.write(`${RED15}\u2717${RESET21} No session found matching prefix: ${prefix}
 `);
     process.exit(1);
   }
   if (matches.length > 1) {
     process.stderr.write(
-      `${RED13}\u2717${RESET19} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
+      `${RED15}\u2717${RESET21} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
 `
     );
     process.exit(1);
@@ -29039,8 +30433,8 @@ async function renameSession(args2) {
   const { db, session } = await resolveSession(prefix);
   if (session.signature) {
     process.stderr.write(
-      `${RED13}\u2717${RESET19} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
-  Use ${CYAN15}chron session rename${RESET19} only on unsigned sessions.
+      `${RED15}\u2717${RESET21} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
+  Use ${CYAN16}chron session rename${RESET21} only on unsigned sessions.
 `
     );
     process.exit(1);
@@ -29048,9 +30442,9 @@ async function renameSession(args2) {
   const oldTitle = session.title;
   await db.update(sessions).set({ title: newTitle }).where(eq(sessions.id, session.id));
   process.stdout.write(
-    `${GREEN13}\u2713${RESET19} Session ${CYAN15}${session.id.slice(0, 8)}${RESET19} renamed
-  ${DIM18}before:${RESET19} ${oldTitle}
-  ${DIM18}after: ${RESET19} ${BOLD19}${newTitle}${RESET19}
+    `${GREEN14}\u2713${RESET21} Session ${CYAN16}${session.id.slice(0, 8)}${RESET21} renamed
+  ${DIM19}before:${RESET21} ${oldTitle}
+  ${DIM19}after: ${RESET21} ${BOLD20}${newTitle}${RESET21}
 
 Messages and timestamps are unchanged.
 `
@@ -29073,19 +30467,19 @@ Subcommands:
       if (subcommand) process.exit(1);
   }
 }
-var RESET19, BOLD19, DIM18, CYAN15, GREEN13, RED13;
+var RESET21, BOLD20, DIM19, CYAN16, GREEN14, RED15;
 var init_session3 = __esm({
   "src/cli/session.ts"() {
     "use strict";
     init_drizzle_orm();
     init_db2();
     init_schema();
-    RESET19 = "\x1B[0m";
-    BOLD19 = "\x1B[1m";
-    DIM18 = "\x1B[2m";
-    CYAN15 = "\x1B[36m";
-    GREEN13 = "\x1B[32m";
-    RED13 = "\x1B[31m";
+    RESET21 = "\x1B[0m";
+    BOLD20 = "\x1B[1m";
+    DIM19 = "\x1B[2m";
+    CYAN16 = "\x1B[36m";
+    GREEN14 = "\x1B[32m";
+    RED15 = "\x1B[31m";
   }
 });
 
@@ -29298,7 +30692,7 @@ Commands:
   reviews         Review queue \u2014 flag sessions for human review, track SLA compliance
   update          Update chron to the latest version
   attach          Start recording a conversation already in progress (partial evidence)
-  otel            Export sessions as OpenTelemetry spans (OTLP/HTTP JSON)
+  otel            Export sessions as OpenTelemetry spans, and show delivery receipts
   version         Print the installed chron-mcp version (also --version, -v)
 
 Options (history):
@@ -29315,7 +30709,7 @@ Options (report):
 
 Options (export):
   <id-prefix>       Markdown export for a single session
-  --signed          Tamper-evident bundle (JSONL + manifest + Ed25519 sig)
+  --signed          Tamper-evident bundle for ONE session (JSONL + manifest + Ed25519 sig)
   --session=<id>    Filter bundle to a single session
   --since=<range>   Filter bundle by date: 7d, 30d, or YYYY-MM-DD
   --output=<file>   Output path (default: bundle.chron.tar.gz)
@@ -29338,6 +30732,10 @@ Options (doctor):
   --json                     Machine-readable JSON output
   --fix                      Auto-configure Chron MCP + logging instructions in supported AI clients
   --verify-logging [tool]    Test that an AI client can call Chron MCP tools end-to-end (claude-code|cursor|codex|gemini)
+
+Options (otel):
+  export                     Send sessions to an OTLP/HTTP collector (--dry-run to inspect first)
+  receipts [--limit=<n>]     What was exported, where, and what came back (--json)
 
 Options (import):
   chatgpt <file>     Import from ChatGPT export (.zip or conversations.json)
