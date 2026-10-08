@@ -38,7 +38,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.60",
+      version: "0.1.61",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -3091,8 +3091,8 @@ var require_dist = __commonJS({
       const header = report.header;
       return typeof header === "object" && !!header && "glibcVersionRuntime" in header;
     }
-    function load(dirname6) {
-      const m = path.join(dirname6, "index.node");
+    function load(dirname7) {
+      const m = path.join(dirname7, "index.node");
       return fs.existsSync(m) ? require(m) : null;
     }
     exports2.load = load;
@@ -3121,19 +3121,19 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync14 = (path) => fs.readFileSync(path, "utf-8");
-    var readFile = (path) => new Promise((resolve3, reject) => {
+    var readFileSync15 = (path) => fs.readFileSync(path, "utf-8");
+    var readFile = (path) => new Promise((resolve5, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
           reject(err);
         } else {
-          resolve3(data);
+          resolve5(data);
         }
       });
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync14,
+      readFileSync: readFileSync15,
       readFile
     };
   }
@@ -3145,17 +3145,17 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync14 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync15 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command2 = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
     var commandOut = "";
     var safeCommand = () => {
       if (!commandOut) {
-        return new Promise((resolve3) => {
+        return new Promise((resolve5) => {
           childProcess.exec(command2, (err, out) => {
             commandOut = err ? " " : out;
-            resolve3(commandOut);
+            resolve5(commandOut);
           });
         });
       }
@@ -3226,7 +3226,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync14(LDD_PATH);
+        const lddContent = readFileSync15(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -3283,7 +3283,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync14(LDD_PATH);
+        const lddContent = readFileSync15(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -3310,33 +3310,33 @@ var require_detect_libc = __commonJS({
       }
       return null;
     };
-    var version6 = async () => {
-      let version7 = null;
+    var version7 = async () => {
+      let version8 = null;
       if (isLinux()) {
-        version7 = await versionFromFilesystem();
-        if (!version7) {
-          version7 = versionFromReport();
+        version8 = await versionFromFilesystem();
+        if (!version8) {
+          version8 = versionFromReport();
         }
-        if (!version7) {
+        if (!version8) {
           const out = await safeCommand();
-          version7 = versionFromCommand(out);
+          version8 = versionFromCommand(out);
         }
       }
-      return version7;
+      return version8;
     };
     var versionSync = () => {
-      let version7 = null;
+      let version8 = null;
       if (isLinux()) {
-        version7 = versionFromFilesystemSync();
-        if (!version7) {
-          version7 = versionFromReport();
+        version8 = versionFromFilesystemSync();
+        if (!version8) {
+          version8 = versionFromReport();
         }
-        if (!version7) {
+        if (!version8) {
           const out = safeCommandSync();
-          version7 = versionFromCommand(out);
+          version8 = versionFromCommand(out);
         }
       }
-      return version7;
+      return version8;
     };
     module2.exports = {
       GLIBC,
@@ -3345,7 +3345,7 @@ var require_detect_libc = __commonJS({
       familySync,
       isNonGlibcLinux,
       isNonGlibcLinuxSync,
-      version: version6,
+      version: version7,
       versionSync
     };
   }
@@ -6465,7 +6465,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash16 } = require("crypto");
+    var { randomBytes, createHash: createHash17 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -7133,7 +7133,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash16("sha1").update(key + GUID).digest("base64");
+        const digest = createHash17("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -7502,7 +7502,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash16 } = require("crypto");
+    var { createHash: createHash17 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -7703,7 +7703,7 @@ var require_websocket_server = __commonJS({
         socket.on("error", socketOnError);
         const key = req.headers["sec-websocket-key"];
         const upgrade = req.headers.upgrade;
-        const version6 = +req.headers["sec-websocket-version"];
+        const version7 = +req.headers["sec-websocket-version"];
         if (req.method !== "GET") {
           const message = "Invalid HTTP method";
           abortHandshakeOrEmitwsClientError(this, req, socket, 405, message);
@@ -7719,7 +7719,7 @@ var require_websocket_server = __commonJS({
           abortHandshakeOrEmitwsClientError(this, req, socket, 400, message);
           return;
         }
-        if (version6 !== 13 && version6 !== 8) {
+        if (version7 !== 13 && version7 !== 8) {
           const message = "Missing or invalid Sec-WebSocket-Version header";
           abortHandshakeOrEmitwsClientError(this, req, socket, 400, message, {
             "Sec-WebSocket-Version": "13, 8"
@@ -7763,7 +7763,7 @@ var require_websocket_server = __commonJS({
         }
         if (this.options.verifyClient) {
           const info2 = {
-            origin: req.headers[`${version6 === 8 ? "sec-websocket-origin" : "origin"}`],
+            origin: req.headers[`${version7 === 8 ? "sec-websocket-origin" : "origin"}`],
             secure: !!(req.socket.authorized || req.socket.encrypted),
             req
           };
@@ -7809,7 +7809,7 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest = createHash16("sha1").update(key + GUID).digest("base64");
+        const digest = createHash17("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -11578,7 +11578,7 @@ var init_lib_esm = __esm({
 });
 
 // node_modules/@libsql/client/lib-esm/hrana.js
-async function executeHranaBatch(mode, version6, batch, hranaStmts, disableForeignKeys = false) {
+async function executeHranaBatch(mode, version7, batch, hranaStmts, disableForeignKeys = false) {
   if (disableForeignKeys) {
     batch.step().run("PRAGMA foreign_keys=off");
   }
@@ -11587,7 +11587,7 @@ async function executeHranaBatch(mode, version6, batch, hranaStmts, disableForei
   let lastStep = beginStep;
   const stmtPromises = hranaStmts.map((hranaStmt) => {
     const stmtStep = batch.step().condition(BatchCond.ok(lastStep));
-    if (version6 >= 3) {
+    if (version7 >= 3) {
       stmtStep.condition(BatchCond.not(BatchCond.isAutocommit(batch)));
     }
     const stmtPromise = stmtStep.query(hranaStmt);
@@ -11595,7 +11595,7 @@ async function executeHranaBatch(mode, version6, batch, hranaStmts, disableForei
     return stmtPromise;
   });
   const commitStep = batch.step().condition(BatchCond.ok(lastStep));
-  if (version6 >= 3) {
+  if (version7 >= 3) {
     commitStep.condition(BatchCond.not(BatchCond.isAutocommit(batch)));
   }
   const commitPromise = commitStep.run("COMMIT");
@@ -11698,9 +11698,9 @@ var init_hrana = __esm({
       // BEGIN statement yet.
       #started;
       /** @private */
-      constructor(mode, version6) {
+      constructor(mode, version7) {
         this.#mode = mode;
-        this.#version = version6;
+        this.#version = version7;
         this.#started = void 0;
       }
       execute(stmt) {
@@ -11962,8 +11962,8 @@ var require_promise_limit = __commonJS({
         }
       }
       function queue(fn) {
-        return new Promise(function(resolve3, reject) {
-          jobs.push({ fn, resolve: resolve3, reject });
+        return new Promise(function(resolve5, reject) {
+          jobs.push({ fn, resolve: resolve5, reject });
           semaphore.queue = jobs.length;
         });
       }
@@ -12131,10 +12131,10 @@ var init_ws = __esm({
               return stmt;
             });
             const hranaStmts = normalizedStmts.map(stmtToHrana);
-            const version6 = await streamState.conn.client.getVersion();
+            const version7 = await streamState.conn.client.getVersion();
             streamState.conn.sqlCache.apply(hranaStmts);
-            const batch = streamState.stream.batch(version6 >= 3);
-            const resultsPromise = executeHranaBatch(mode, version6, batch, hranaStmts);
+            const batch = streamState.stream.batch(version7 >= 3);
+            const resultsPromise = executeHranaBatch(mode, version7, batch, hranaStmts);
             const results = await resultsPromise;
             return results;
           } catch (e) {
@@ -12149,9 +12149,9 @@ var init_ws = __esm({
           const streamState = await this.#openStream();
           try {
             const hranaStmts = stmts.map(stmtToHrana);
-            const version6 = await streamState.conn.client.getVersion();
-            const batch = streamState.stream.batch(version6 >= 3);
-            const resultsPromise = executeHranaBatch("deferred", version6, batch, hranaStmts, true);
+            const version7 = await streamState.conn.client.getVersion();
+            const batch = streamState.stream.batch(version7 >= 3);
+            const resultsPromise = executeHranaBatch("deferred", version7, batch, hranaStmts, true);
             const results = await resultsPromise;
             return results;
           } catch (e) {
@@ -12165,8 +12165,8 @@ var init_ws = __esm({
         return this.limit(async () => {
           const streamState = await this.#openStream();
           try {
-            const version6 = await streamState.conn.client.getVersion();
-            return new WsTransaction(this, streamState, mode, version6);
+            const version7 = await streamState.conn.client.getVersion();
+            return new WsTransaction(this, streamState, mode, version7);
           } catch (e) {
             this._closeStream(streamState);
             throw mapHranaError(e);
@@ -12273,8 +12273,8 @@ var init_ws = __esm({
           this.#futureConnState = void 0;
         }
         const next = this.#openConn();
-        const version6 = await next.client.getVersion();
-        next.useSqlCache = version6 >= 2;
+        const version7 = await next.client.getVersion();
+        next.useSqlCache = version7 >= 2;
         if (next.useSqlCache) {
           next.sqlCache.capacity = sqlCacheCapacity;
         }
@@ -12306,8 +12306,8 @@ var init_ws = __esm({
       #client;
       #streamState;
       /** @private */
-      constructor(client, state, mode, version6) {
-        super(mode, version6);
+      constructor(client, state, mode, version7) {
+        super(mode, version7);
         this.#client = client;
         this.#streamState = state;
       }
@@ -12424,14 +12424,14 @@ var init_http = __esm({
               return stmt;
             });
             const hranaStmts = normalizedStmts.map(stmtToHrana);
-            const version6 = await this.#client.getVersion();
+            const version7 = await this.#client.getVersion();
             let resultsPromise;
             const stream = this.#client.openStream();
             try {
               const sqlCache = new SqlCache(stream, sqlCacheCapacity2);
               sqlCache.apply(hranaStmts);
               const batch = stream.batch(false);
-              resultsPromise = executeHranaBatch(mode, version6, batch, hranaStmts);
+              resultsPromise = executeHranaBatch(mode, version7, batch, hranaStmts);
             } finally {
               stream.closeGracefully();
             }
@@ -12446,12 +12446,12 @@ var init_http = __esm({
         return this.limit(async () => {
           try {
             const hranaStmts = stmts.map(stmtToHrana);
-            const version6 = await this.#client.getVersion();
+            const version7 = await this.#client.getVersion();
             let resultsPromise;
             const stream = this.#client.openStream();
             try {
               const batch = stream.batch(false);
-              resultsPromise = executeHranaBatch("deferred", version6, batch, hranaStmts, true);
+              resultsPromise = executeHranaBatch("deferred", version7, batch, hranaStmts, true);
             } finally {
               stream.closeGracefully();
             }
@@ -12465,8 +12465,8 @@ var init_http = __esm({
       async transaction(mode = "write") {
         return this.limit(async () => {
           try {
-            const version6 = await this.#client.getVersion();
-            return new HttpTransaction(this.#client.openStream(), mode, version6);
+            const version7 = await this.#client.getVersion();
+            return new HttpTransaction(this.#client.openStream(), mode, version7);
           } catch (e) {
             throw mapHranaError(e);
           }
@@ -12512,8 +12512,8 @@ var init_http = __esm({
       #stream;
       #sqlCache;
       /** @private */
-      constructor(stream, mode, version6) {
-        super(mode, version6);
+      constructor(stream, mode, version7) {
+        super(mode, version7);
         this.#stream = stream;
         this.#sqlCache = new SqlCache(stream, sqlCacheCapacity2);
       }
@@ -20633,23 +20633,23 @@ function generateSessionKeypair(sessionId) {
   (0, import_fs4.writeFileSync)(pubKeyPath(sessionId), publicKey);
   return publicKey;
 }
-function sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt) {
-  const input = `${sessionId}|${finalContentHash}|${messageCount}|${firstCreatedAt}`;
+function sessionDigest(sessionId, finalContentHash2, messageCount, firstCreatedAt) {
+  const input = `${sessionId}|${finalContentHash2}|${messageCount}|${firstCreatedAt}`;
   return (0, import_crypto3.createHash)("sha256").update(input).digest();
 }
-function signSession(sessionId, finalContentHash, messageCount, firstCreatedAt) {
+function signSession(sessionId, finalContentHash2, messageCount, firstCreatedAt) {
   const privPath = privKeyPath(sessionId);
   if (!(0, import_fs4.existsSync)(privPath)) {
     throw new Error(`Private key not found: ${privPath}`);
   }
   const privateKey = (0, import_fs4.readFileSync)(privPath, "utf8");
-  const digest = sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt);
+  const digest = sessionDigest(sessionId, finalContentHash2, messageCount, firstCreatedAt);
   const sig = (0, import_crypto3.sign)(null, digest, privateKey);
   return sig.toString("base64");
 }
-function verifySignature(publicKeyPem, signatureB64, sessionId, finalContentHash, messageCount, firstCreatedAt) {
+function verifySignature(publicKeyPem, signatureB64, sessionId, finalContentHash2, messageCount, firstCreatedAt) {
   try {
-    const digest = sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt);
+    const digest = sessionDigest(sessionId, finalContentHash2, messageCount, firstCreatedAt);
     const sigBuf = Buffer.from(signatureB64, "base64");
     return (0, import_crypto3.verify)(null, digest, publicKeyPem, sigBuf);
   } catch {
@@ -20737,14 +20737,14 @@ async function runExportBundle(args2) {
       const msgs = await db.select().from(messages).where(eq(messages.session_id, sid)).orderBy(...messageOrderAsc());
       for (const m of msgs) msgsStream.write(JSON.stringify(m) + "\n");
     }
-    await new Promise((resolve3) => msgsStream.end(resolve3));
+    await new Promise((resolve5) => msgsStream.end(resolve5));
     const secretsPath = (0, import_path3.join)(tempDir, "secrets.jsonl");
     const secretsStream = (0, import_fs5.createWriteStream)(secretsPath);
     for (const sid of sessionIds) {
       const secs = await db.select().from(secrets_detected).where(eq(secrets_detected.session_id, sid));
       for (const s of secs) secretsStream.write(JSON.stringify(s) + "\n");
     }
-    await new Promise((resolve3) => secretsStream.end(resolve3));
+    await new Promise((resolve5) => secretsStream.end(resolve5));
     for (const s of filtered) {
       if (s.public_key) {
         (0, import_fs5.writeFileSync)((0, import_path3.join)(pubkeysDir, `${s.id}.pub`), s.public_key);
@@ -21077,7 +21077,25 @@ var init_secrets = __esm({
 // src/utils/config-path.ts
 function configPath() {
   const override = process.env.CHRON_CONFIG_PATH;
-  return override && override.trim() ? override : (0, import_path5.join)((0, import_os6.homedir)(), ".chron", "config.json");
+  const path = override && override.trim() ? override : (0, import_path5.join)((0, import_os6.homedir)(), ".chron", "config.json");
+  return guardTestRoot(path);
+}
+function guardTestRoot(path) {
+  const root = process.env.CHRON_TEST_ROOT;
+  if (!root) return path;
+  if (isContainedBy((0, import_path5.resolve)(path), (0, import_path5.resolve)(root))) return path;
+  throw new Error(
+    `Refusing to read configuration from ${(0, import_path5.resolve)(path)} during a test run.
+  Paths must stay inside ${root}. Set CHRON_CONFIG_PATH to a temporary file
+  before anything can read it \u2014 and set it before clearing other variables,
+  because an unset CHRON_CONFIG_PATH falls back to the real home directory.`
+  );
+}
+function isContainedBy(candidate, root) {
+  const rel = (0, import_path5.relative)(root, candidate);
+  if (rel === "") return true;
+  if ((0, import_path5.isAbsolute)(rel)) return false;
+  return rel !== ".." && !rel.startsWith(`..${import_path5.sep}`);
 }
 var import_os6, import_path5;
 var init_config_path = __esm({
@@ -21457,7 +21475,7 @@ function ensureCodexShellWrapper() {
   return { zsh: zshResult.status, bash: bashResult.status };
 }
 function prompt(rl, question) {
-  return new Promise((resolve3) => rl.question(question, resolve3));
+  return new Promise((resolve5) => rl.question(question, resolve5));
 }
 function configPath2() {
   return configPath();
@@ -22290,6 +22308,1138 @@ var init_summary = __esm({
   }
 });
 
+// src/db/readonly.ts
+function openReadOnly(path) {
+  if (!path.startsWith(":") && !(0, import_fs8.existsSync)(path)) return null;
+  const client = createClient({ url: path.startsWith(":") ? path : `file:${path}` });
+  return {
+    db: drizzle(client, { schema: schema_exports }),
+    close: () => {
+      try {
+        client.close();
+      } catch {
+      }
+    }
+  };
+}
+async function enforceReadOnly(handle) {
+  await handle.db.run(sql.raw("PRAGMA query_only = ON"));
+}
+function openUntouched(path) {
+  if (!(0, import_fs8.existsSync)(path)) return null;
+  const scratch = `${path}.read-copy-${process.pid}-${Date.now()}`;
+  const discard = () => {
+    for (const s of ["", ...SIDECARS]) (0, import_fs8.rmSync)(`${scratch}${s}`, { force: true });
+  };
+  try {
+    (0, import_fs8.copyFileSync)(path, scratch);
+    if ((0, import_fs8.existsSync)(`${path}-wal`)) (0, import_fs8.copyFileSync)(`${path}-wal`, `${scratch}-wal`);
+  } catch {
+    discard();
+    return null;
+  }
+  const inner = openReadOnly(scratch);
+  if (!inner) {
+    discard();
+    return null;
+  }
+  return { db: inner.db, close: () => {
+    inner.close();
+    discard();
+  } };
+}
+var import_fs8, SIDECARS;
+var init_readonly = __esm({
+  "src/db/readonly.ts"() {
+    "use strict";
+    init_node2();
+    init_drizzle_orm();
+    init_libsql();
+    import_fs8 = require("fs");
+    init_schema();
+    SIDECARS = ["-wal", "-shm"];
+  }
+});
+
+// src/utils/time.ts
+function localISOString() {
+  const d = /* @__PURE__ */ new Date();
+  const offsetMin = -d.getTimezoneOffset();
+  const sign = offsetMin >= 0 ? "+" : "-";
+  const absMin = Math.abs(offsetMin);
+  const hh = String(Math.floor(absMin / 60)).padStart(2, "0");
+  const mm = String(absMin % 60).padStart(2, "0");
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const seconds = String(d.getSeconds()).padStart(2, "0");
+  const ms = String(d.getMilliseconds()).padStart(3, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}${sign}${hh}:${mm}`;
+}
+var init_time = __esm({
+  "src/utils/time.ts"() {
+    "use strict";
+  }
+});
+
+// src/utils/hash.ts
+function computeContentHash(sessionId, role, content, createdAt, prevHash, eventType) {
+  const base = `${sessionId}|${role}|${content}|${createdAt}|${prevHash ?? ""}`;
+  const input = eventType != null ? `${base}|${eventType}` : base;
+  return (0, import_crypto5.createHash)("sha256").update(input).digest("hex");
+}
+var import_crypto5;
+var init_hash = __esm({
+  "src/utils/hash.ts"() {
+    "use strict";
+    import_crypto5 = require("crypto");
+  }
+});
+
+// src/utils/chain.ts
+function verifyMessageChain(rows) {
+  const chained = rows.filter((r) => r.content_hash !== null);
+  let expectedPrev = null;
+  for (let i = 0; i < chained.length; i++) {
+    const row = chained[i];
+    if (row.prev_hash !== expectedPrev) {
+      return { valid: false, chained: chained.length, firstBreakIndex: i, firstBreakId: row.id, reason: "prev_hash mismatch" };
+    }
+    const expected = computeContentHash(
+      row.session_id,
+      row.role,
+      row.content,
+      row.created_at,
+      row.prev_hash,
+      row.event_type ?? void 0
+    );
+    if (row.content_hash !== expected) {
+      return { valid: false, chained: chained.length, firstBreakIndex: i, firstBreakId: row.id, reason: "content_hash mismatch" };
+    }
+    expectedPrev = row.content_hash;
+  }
+  return { valid: true, chained: chained.length };
+}
+function finalContentHash(rows) {
+  const chained = rows.filter((r) => r.content_hash !== null);
+  return chained.length > 0 ? String(chained[chained.length - 1].content_hash) : "";
+}
+var init_chain = __esm({
+  "src/utils/chain.ts"() {
+    "use strict";
+    init_hash();
+  }
+});
+
+// node_modules/uuid/dist/esm/stringify.js
+function unsafeStringify(arr, offset = 0) {
+  return (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
+}
+var byteToHex;
+var init_stringify = __esm({
+  "node_modules/uuid/dist/esm/stringify.js"() {
+    byteToHex = [];
+    for (let i = 0; i < 256; ++i) {
+      byteToHex.push((i + 256).toString(16).slice(1));
+    }
+  }
+});
+
+// node_modules/uuid/dist/esm/rng.js
+function rng() {
+  if (poolPtr > rnds8Pool.length - 16) {
+    (0, import_crypto6.randomFillSync)(rnds8Pool);
+    poolPtr = 0;
+  }
+  return rnds8Pool.slice(poolPtr, poolPtr += 16);
+}
+var import_crypto6, rnds8Pool, poolPtr;
+var init_rng = __esm({
+  "node_modules/uuid/dist/esm/rng.js"() {
+    import_crypto6 = require("crypto");
+    rnds8Pool = new Uint8Array(256);
+    poolPtr = rnds8Pool.length;
+  }
+});
+
+// node_modules/uuid/dist/esm/native.js
+var import_crypto7, native_default;
+var init_native = __esm({
+  "node_modules/uuid/dist/esm/native.js"() {
+    import_crypto7 = require("crypto");
+    native_default = { randomUUID: import_crypto7.randomUUID };
+  }
+});
+
+// node_modules/uuid/dist/esm/v4.js
+function v4(options, buf, offset) {
+  if (native_default.randomUUID && !buf && !options) {
+    return native_default.randomUUID();
+  }
+  options = options || {};
+  const rnds = options.random ?? options.rng?.() ?? rng();
+  if (rnds.length < 16) {
+    throw new Error("Random bytes length must be >= 16");
+  }
+  rnds[6] = rnds[6] & 15 | 64;
+  rnds[8] = rnds[8] & 63 | 128;
+  if (buf) {
+    offset = offset || 0;
+    if (offset < 0 || offset + 16 > buf.length) {
+      throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
+    }
+    for (let i = 0; i < 16; ++i) {
+      buf[offset + i] = rnds[i];
+    }
+    return buf;
+  }
+  return unsafeStringify(rnds);
+}
+var v4_default;
+var init_v4 = __esm({
+  "node_modules/uuid/dist/esm/v4.js"() {
+    init_native();
+    init_rng();
+    init_stringify();
+    v4_default = v4;
+  }
+});
+
+// node_modules/uuid/dist/esm/index.js
+var init_esm = __esm({
+  "node_modules/uuid/dist/esm/index.js"() {
+    init_v4();
+  }
+});
+
+// src/otel/destination.ts
+function sanitizeEndpoint(endpoint) {
+  let url;
+  try {
+    url = new URL(endpoint);
+  } catch {
+    return UNPARSEABLE;
+  }
+  url.username = "";
+  url.password = "";
+  url.search = "";
+  url.hash = "";
+  const segments = url.pathname.split("/").filter(Boolean);
+  const recognised = segments.every((s) => SAFE_PATH_SEGMENTS.has(s.toLowerCase()));
+  return recognised ? url.toString() : `${url.origin}${REDACTED_PATH}`;
+}
+function fingerprintDestination(endpoint) {
+  const label = sanitizeEndpoint(endpoint);
+  return { label, digest: (0, import_crypto8.createHash)("sha256").update(label).digest("hex") };
+}
+var import_crypto8, UNPARSEABLE, REDACTED_PATH, SAFE_PATH_SEGMENTS;
+var init_destination = __esm({
+  "src/otel/destination.ts"() {
+    "use strict";
+    import_crypto8 = require("crypto");
+    UNPARSEABLE = "<unparseable endpoint>";
+    REDACTED_PATH = "/<redacted path>";
+    SAFE_PATH_SEGMENTS = /* @__PURE__ */ new Set([
+      "v1",
+      "traces",
+      "trace",
+      "otlp",
+      "api",
+      "ingest",
+      "collector",
+      "v2",
+      "metrics",
+      "logs"
+    ]);
+  }
+});
+
+// src/otel/receipts.ts
+function canonicalJson(value) {
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  const entries = Object.entries(value).filter(([, v]) => v !== void 0).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
+  return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`).join(",")}}`;
+}
+function computeHeaderHash(header) {
+  return (0, import_crypto9.createHash)("sha256").update(canonicalJson(header)).digest("hex");
+}
+function computeEventHash(receiptId, sequence, eventType, logicalKey, createdAt, canonicalPayload, prevHash) {
+  return (0, import_crypto9.createHash)("sha256").update([receiptId, sequence, eventType, logicalKey, createdAt, canonicalPayload, prevHash ?? ""].join("|")).digest("hex");
+}
+async function appendEventTx(tx, receiptId, event) {
+  const existing = await tx.select().from(export_receipt_events).where(and(eq(export_receipt_events.receipt_id, receiptId), eq(export_receipt_events.logical_key, event.logicalKey))).limit(1);
+  if (existing[0]) {
+    const prior = existing[0];
+    const replay = canonicalJson(event.payload);
+    if (prior.event_type !== event.eventType || prior.canonical_payload !== replay) {
+      throw new Error(
+        `Conflicting replay of ${event.logicalKey} on receipt ${receiptId}: the same logical event is already recorded with different contents.`
+      );
+    }
+    return prior;
+  }
+  const tail = await tx.select({ sequence: export_receipt_events.sequence, event_hash: export_receipt_events.event_hash }).from(export_receipt_events).where(eq(export_receipt_events.receipt_id, receiptId)).orderBy(asc(export_receipt_events.sequence));
+  const last = tail[tail.length - 1];
+  const sequence = last ? last.sequence + 1 : 0;
+  const prev_hash = last?.event_hash ?? null;
+  const created_at = localISOString();
+  const canonical_payload = canonicalJson(event.payload);
+  const event_hash = computeEventHash(receiptId, sequence, event.eventType, event.logicalKey, created_at, canonical_payload, prev_hash);
+  await tx.insert(export_receipt_events).values({
+    id: v4_default(),
+    receipt_id: receiptId,
+    sequence,
+    event_type: event.eventType,
+    logical_key: event.logicalKey,
+    created_at,
+    canonical_payload,
+    prev_hash,
+    event_hash
+  });
+  return { sequence, event_type: event.eventType, logical_key: event.logicalKey, created_at, canonical_payload, prev_hash, event_hash };
+}
+async function appendEvent(db, receiptId, event) {
+  return db.transaction(async (tx) => appendEventTx(tx, receiptId, event));
+}
+async function prepareReceipt(db, input) {
+  const id = v4_default();
+  const destination = fingerprintDestination(input.endpoint);
+  const header = {
+    id,
+    created_at: localISOString(),
+    destination_label: destination.label,
+    destination_digest: destination.digest,
+    scope_selector: input.scopeSelector ?? null,
+    scope_session_ids: JSON.stringify(input.sessionIds),
+    session_count: input.sessionIds.length,
+    span_count: input.spanCount,
+    included_content: input.includeContent ? 1 : 0,
+    transport: input.transport,
+    chron_version: input.chronVersion
+  };
+  await db.transaction(async (tx) => {
+    await tx.insert(export_receipts).values(header);
+    await appendEventTx(tx, id, {
+      eventType: "prepared",
+      logicalKey: "prepared",
+      // Binding the whole header means the chain protects what the export was
+      // about, not only how it turned out.
+      payload: { header_hash: computeHeaderHash(header) }
+    });
+  });
+  return id;
+}
+async function recordBatchStarted(db, receiptId, batchIndex, spans, payloadDigest, payloadBytes) {
+  await appendEvent(db, receiptId, {
+    eventType: "batch_started",
+    logicalKey: `batch_started:${batchIndex}`,
+    payload: { batch_index: batchIndex, spans, payload_digest: payloadDigest, payload_bytes: payloadBytes }
+  });
+}
+async function recordBatchFinished(db, receiptId, batchIndex, outcome) {
+  await appendEvent(db, receiptId, {
+    eventType: "batch_finished",
+    logicalKey: `batch_finished:${batchIndex}`,
+    payload: {
+      batch_index: batchIndex,
+      spans: outcome.spans,
+      status: outcome.status,
+      http_status: outcome.httpStatus ?? null,
+      // A closed vocabulary, never the collector's own error text.
+      error_category: outcome.errorCategory ?? null,
+      attempts: outcome.attempts,
+      payload_digest: outcome.payloadDigest ?? null
+    }
+  });
+}
+async function finalizeReceipt(db, receiptId, result, spanCount) {
+  const state = deriveTerminalState(result, spanCount);
+  await appendEvent(db, receiptId, {
+    eventType: "finalized",
+    logicalKey: "finalized",
+    payload: {
+      state,
+      spans_sent: result.sent,
+      spans_rejected: result.rejected,
+      spans_failed: result.failed,
+      spans_unknown: result.unknown
+    }
+  });
+  return state;
+}
+function expectedState(tally, spanCount) {
+  if (spanCount === 0) return "prepared";
+  if (tally.sent === spanCount) return "delivered";
+  if (tally.sent > 0) return "partially_delivered";
+  if (tally.unknown > 0) return "unknown";
+  return "failed";
+}
+function deriveTerminalState(result, spanCount) {
+  return expectedState(result, spanCount);
+}
+function verifyIntegrity(header, events) {
+  let expectedPrev = null;
+  for (let i = 0; i < events.length; i++) {
+    const e = events[i];
+    if (e.sequence !== i) {
+      return { valid: false, events: events.length, first_break: e.sequence, reason: "sequence gap or duplicate" };
+    }
+    if (e.prev_hash !== expectedPrev) {
+      return { valid: false, events: events.length, first_break: e.sequence, reason: "prev_hash mismatch" };
+    }
+    const expected = computeEventHash(header.id, e.sequence, e.event_type, e.logical_key, e.created_at, e.canonical_payload, e.prev_hash);
+    if (e.event_hash !== expected) {
+      return { valid: false, events: events.length, first_break: e.sequence, reason: "event_hash mismatch \u2014 row was altered" };
+    }
+    expectedPrev = e.event_hash;
+  }
+  const first = events[0];
+  if (!first) return { valid: false, events: 0, reason: "receipt has no events" };
+  const opening = parsePayload(first);
+  if (!opening.ok) return { valid: false, events: events.length, first_break: 0, reason: opening.reason };
+  if (opening.value.header_hash !== computeHeaderHash(header)) {
+    return { valid: false, events: events.length, first_break: 0, reason: "header does not match the hash bound into the chain" };
+  }
+  return { valid: true, events: events.length };
+}
+function parsePayload(event) {
+  let value;
+  try {
+    value = JSON.parse(event.canonical_payload);
+  } catch {
+    return { ok: false, reason: `event ${event.sequence} has a payload that is not valid JSON` };
+  }
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return { ok: false, reason: `event ${event.sequence} payload is not an object` };
+  }
+  return { ok: true, value };
+}
+function checkPayload(event, payload) {
+  const suffix = event.logical_key.split(":")[1];
+  switch (event.event_type) {
+    case "prepared":
+      if (event.logical_key !== "prepared") return `event ${event.sequence} is prepared under a different logical key`;
+      return typeof payload.header_hash === "string" ? null : "prepared payload has no header hash";
+    case "batch_started":
+    case "batch_finished": {
+      if (!isInt(payload.batch_index)) return `event ${event.sequence} has no batch index`;
+      if (String(payload.batch_index) !== suffix) {
+        return `event ${event.sequence} logical key disagrees with its batch index`;
+      }
+      if (!isInt(payload.spans) || payload.spans < 0) return `event ${event.sequence} has an invalid span count`;
+      if (event.event_type === "batch_started") {
+        if (!isDigest(payload.payload_digest)) return `event ${event.sequence} has no payload digest`;
+        if (!isInt(payload.payload_bytes) || payload.payload_bytes < 0) return `event ${event.sequence} has an invalid payload size`;
+        return null;
+      }
+      if (!BATCH_STATUSES.has(String(payload.status))) return `event ${event.sequence} has an unrecognised batch status`;
+      if (!isInt(payload.attempts) || payload.attempts < 1) return `event ${event.sequence} has an invalid attempt count`;
+      if (!isDigest(payload.payload_digest)) return `event ${event.sequence} has no payload digest`;
+      return null;
+    }
+    case "finalized": {
+      if (event.logical_key !== "finalized") return `event ${event.sequence} is finalized under a different logical key`;
+      if (!RECEIPT_STATES.has(String(payload.state))) return "finalized payload has an unrecognised state";
+      for (const k of ["spans_sent", "spans_rejected", "spans_failed", "spans_unknown"]) {
+        if (!isInt(payload[k]) || payload[k] < 0) return `finalized payload has an invalid ${k}`;
+      }
+      return null;
+    }
+  }
+}
+function verifyLifecycle(header, events) {
+  const fail3 = (seq, reason) => ({ valid: false, events: events.length, first_break: seq, reason });
+  if (events.length === 0) return { valid: false, events: 0, reason: "receipt has no events" };
+  if (events[0].event_type !== "prepared") return fail3(0, "chain does not open with prepared");
+  const started = /* @__PURE__ */ new Map();
+  const finished = /* @__PURE__ */ new Set();
+  const tally = { sent: 0, rejected: 0, failed: 0, unknown: 0 };
+  let finalizedAt = null;
+  let finalPayload = null;
+  for (const e of events) {
+    if (finalizedAt !== null) return fail3(e.sequence, "event recorded after finalization");
+    const parsed = parsePayload(e);
+    if (!parsed.ok) return fail3(e.sequence, parsed.reason);
+    const contract = checkPayload(e, parsed.value);
+    if (contract) return fail3(e.sequence, contract);
+    const index = e.logical_key.split(":")[1];
+    switch (e.event_type) {
+      case "prepared":
+        if (e.sequence !== 0) return fail3(e.sequence, "more than one prepared event");
+        break;
+      case "batch_started":
+        if (started.has(index)) return fail3(e.sequence, `batch ${index} started twice`);
+        started.set(index, parsed.value);
+        break;
+      case "batch_finished": {
+        const start = started.get(index);
+        if (!start) return fail3(e.sequence, `batch ${index} finished without starting`);
+        if (finished.has(index)) return fail3(e.sequence, `batch ${index} finished twice`);
+        if (parsed.value.spans !== start.spans) {
+          return fail3(e.sequence, `batch ${index} finished with a different span count than it started with`);
+        }
+        if (parsed.value.payload_digest !== start.payload_digest) {
+          return fail3(e.sequence, `batch ${index} finished with a different payload than it started with`);
+        }
+        finished.add(index);
+        tally[parsed.value.status] += parsed.value.spans;
+        break;
+      }
+      case "finalized":
+        finalizedAt = e.sequence;
+        finalPayload = parsed.value;
+        break;
+    }
+  }
+  if (finalPayload) {
+    for (const index of started.keys()) {
+      if (!finished.has(index)) return fail3(finalizedAt, `finalized while batch ${index} had not finished`);
+    }
+    const declared = {
+      sent: finalPayload.spans_sent,
+      rejected: finalPayload.spans_rejected,
+      failed: finalPayload.spans_failed,
+      unknown: finalPayload.spans_unknown
+    };
+    if (String(Object.values(declared)) !== String([tally.sent, tally.rejected, tally.failed, tally.unknown])) {
+      return fail3(finalizedAt, "finalized counts do not reconcile with the recorded batch outcomes");
+    }
+    const total = declared.sent + declared.rejected + declared.failed + declared.unknown;
+    if (total !== header.span_count) {
+      return fail3(finalizedAt, `finalized counts total ${total} but the receipt was opened for ${header.span_count} span(s)`);
+    }
+    const implied = expectedState(declared, header.span_count);
+    if (finalPayload.state !== implied) {
+      return fail3(finalizedAt, `finalized as ${finalPayload.state} but the recorded counts imply ${implied}`);
+    }
+  }
+  return { valid: true, events: events.length };
+}
+function verifyReceipt(header, events) {
+  const integrity = verifyIntegrity(header, events);
+  return integrity.valid ? verifyLifecycle(header, events) : integrity;
+}
+function deriveState(events) {
+  const finalized = events.find((e) => e.event_type === "finalized");
+  if (finalized) {
+    const parsed = parsePayload(finalized);
+    return parsed.ok ? parsed.value.state : null;
+  }
+  if (events.some((e) => e.event_type === "batch_started")) return "unknown";
+  return "prepared";
+}
+function summarise(header, events) {
+  const finalized = events.find((e) => e.event_type === "finalized");
+  if (finalized) {
+    const p = parsePayload(finalized);
+    if (p.ok) {
+      return {
+        sent: p.value.spans_sent,
+        rejected: p.value.spans_rejected,
+        failed: p.value.spans_failed,
+        unknown: p.value.spans_unknown,
+        // Verification already required the totals to cover every selected span.
+        unattempted: 0
+      };
+    }
+  }
+  const tally = { sent: 0, rejected: 0, failed: 0, unknown: 0, unattempted: 0 };
+  const started = /* @__PURE__ */ new Map();
+  const finished = /* @__PURE__ */ new Set();
+  for (const e of events) {
+    const p = parsePayload(e);
+    if (!p.ok) continue;
+    if (e.event_type === "batch_started") started.set(p.value.batch_index, p.value.spans);
+    if (e.event_type === "batch_finished") {
+      finished.add(p.value.batch_index);
+      tally[p.value.status] += p.value.spans;
+    }
+  }
+  for (const [index, spans] of started) {
+    if (!finished.has(index)) tally.unknown += spans;
+  }
+  const accounted = tally.sent + tally.rejected + tally.failed + tally.unknown;
+  tally.unattempted = Math.max(0, header.span_count - accounted);
+  return tally;
+}
+async function readReceipt(db, receiptId) {
+  const [header] = await db.select().from(export_receipts).where(eq(export_receipts.id, receiptId)).limit(1);
+  if (!header) return null;
+  const events = await db.select().from(export_receipt_events).where(eq(export_receipt_events.receipt_id, receiptId)).orderBy(asc(export_receipt_events.sequence));
+  const verdict = verifyReceipt(header, events);
+  return {
+    header,
+    events,
+    verdict,
+    state: verdict.valid ? deriveState(events) : null,
+    summary: verdict.valid ? summarise(header, events) : null
+  };
+}
+async function listReceipts(db, limit) {
+  const headers = await db.select().from(export_receipts).orderBy(desc(export_receipts.created_at)).limit(limit);
+  const readings = [];
+  for (const header of headers) {
+    const reading = await readReceipt(db, header.id);
+    if (reading) readings.push(reading);
+  }
+  return readings;
+}
+var import_crypto9, BATCH_STATUSES, RECEIPT_STATES, isInt, isDigest;
+var init_receipts = __esm({
+  "src/otel/receipts.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    import_crypto9 = require("crypto");
+    init_esm();
+    init_schema();
+    init_time();
+    init_destination();
+    BATCH_STATUSES = /* @__PURE__ */ new Set(["sent", "rejected", "failed", "unknown"]);
+    RECEIPT_STATES = /* @__PURE__ */ new Set(["prepared", "delivered", "partially_delivered", "failed", "unknown"]);
+    isInt = (v) => typeof v === "number" && Number.isInteger(v);
+    isDigest = (v) => typeof v === "string" && /^[0-9a-f]{64}$/.test(v);
+  }
+});
+
+// src/cli/backup-verify.ts
+var backup_verify_exports = {};
+__export(backup_verify_exports, {
+  verifyChainsIn: () => verifyChainsIn,
+  verifyReceiptsIn: () => verifyReceiptsIn
+});
+async function verifyChainsIn(dbFile) {
+  const client = createClient({ url: `file:${dbFile}` });
+  const problems = [];
+  const sessions2 = { total: 0, chainsValid: 0, signaturesValid: 0, signed: 0 };
+  const rows = (await client.execute("SELECT id, public_key, signature FROM sessions")).rows;
+  sessions2.total = rows.length;
+  for (const row of rows) {
+    const id = String(row.id);
+    const messages3 = (await client.execute({
+      sql: `SELECT id, session_id, role, content, created_at, prev_hash, content_hash, event_type
+            FROM messages WHERE session_id = ? ORDER BY ${ORDER_BY}`,
+      args: [id]
+    })).rows;
+    const rows2 = messages3.map((m) => ({
+      id: String(m.id),
+      session_id: String(m.session_id),
+      role: String(m.role),
+      content: String(m.content),
+      created_at: String(m.created_at),
+      prev_hash: m.prev_hash === null ? null : String(m.prev_hash),
+      content_hash: m.content_hash === null ? null : String(m.content_hash),
+      event_type: m.event_type === null ? null : String(m.event_type)
+    }));
+    const verdict = verifyMessageChain(rows2);
+    if (verdict.valid) sessions2.chainsValid++;
+    else problems.push(`session ${id.slice(0, 8)} has a broken hash chain in this snapshot (${verdict.reason})`);
+    if (row.public_key && row.signature) {
+      sessions2.signed++;
+      const finalHash = finalContentHash(rows2);
+      const firstCreatedAt = messages3.length > 0 ? String(messages3[0].created_at) : "";
+      const valid = verifySignature(
+        String(row.public_key),
+        String(row.signature),
+        id,
+        finalHash,
+        messages3.length,
+        firstCreatedAt
+      );
+      if (valid) sessions2.signaturesValid++;
+      else problems.push(`session ${id.slice(0, 8)} has a signature that does not verify in this snapshot`);
+    }
+  }
+  return { sessions: sessions2, problems };
+}
+async function verifyReceiptsIn(dbFile) {
+  const client = createClient({ url: `file:${dbFile}` });
+  let headers;
+  try {
+    headers = (await client.execute("SELECT * FROM export_receipts")).rows;
+  } catch {
+    return { total: 0, valid: 0 };
+  }
+  let valid = 0;
+  for (const header of headers) {
+    const events = (await client.execute({
+      sql: "SELECT * FROM export_receipt_events WHERE receipt_id = ? ORDER BY sequence",
+      args: [String(header.id)]
+    })).rows;
+    if (verifyReceipt(header, events).valid) valid++;
+  }
+  return { total: headers.length, valid };
+}
+var ORDER_BY;
+var init_backup_verify = __esm({
+  "src/cli/backup-verify.ts"() {
+    "use strict";
+    init_node2();
+    init_chain();
+    init_signing();
+    init_receipts();
+    ORDER_BY = "CASE WHEN source_sequence IS NULL THEN 1 ELSE 0 END, source_sequence, created_at, rowid";
+  }
+});
+
+// src/cli/backup.ts
+var backup_exports = {};
+__export(backup_exports, {
+  BackupError: () => BackupError,
+  createBackup: () => createBackup,
+  manifestPathFor: () => manifestPathFor,
+  restoreBackup: () => restoreBackup,
+  runBackup: () => runBackup,
+  runRestore: () => runRestore,
+  verifyBackup: () => verifyBackup
+});
+function manifestPathFor(snapshot) {
+  return `${snapshot}${MANIFEST_SUFFIX}`;
+}
+function sha256File(path) {
+  return (0, import_crypto10.createHash)("sha256").update((0, import_fs9.readFileSync)(path)).digest("hex");
+}
+async function countEvidence(dbFile) {
+  const client = createClient({ url: `file:${dbFile}` });
+  const one = async (sql9) => {
+    try {
+      return Number((await client.execute(sql9)).rows[0][0]);
+    } catch {
+      return 0;
+    }
+  };
+  return {
+    sessions: await one("SELECT count(*) FROM sessions"),
+    messages: await one("SELECT count(*) FROM messages"),
+    receipts: await one("SELECT count(*) FROM export_receipts"),
+    secrets: await one("SELECT count(*) FROM secrets_detected"),
+    schema_version: await one("PRAGMA schema_version")
+  };
+}
+async function createBackup(sourceDb, output) {
+  if (!(0, import_fs9.existsSync)(sourceDb)) {
+    throw new BackupError(`No database at ${sourceDb}. Nothing to back up.`);
+  }
+  (0, import_fs9.mkdirSync)((0, import_path8.dirname)((0, import_path8.resolve)(output)), { recursive: true });
+  if ((0, import_fs9.existsSync)(output)) {
+    throw new BackupError(`${output} already exists. Choose another path rather than overwriting a backup.`);
+  }
+  if ((0, import_fs9.existsSync)(manifestPathFor(output))) {
+    throw new BackupError(`${manifestPathFor(output)} already exists. Choose another path rather than overwriting a backup manifest.`);
+  }
+  const client = createClient({ url: `file:${sourceDb}` });
+  await client.execute({ sql: "VACUUM INTO ?", args: [(0, import_path8.resolve)(output)] });
+  const counts = await countEvidence(output);
+  const manifest = {
+    chron_backup: "v1",
+    created_at: localISOString(),
+    chron_version: import_package2.version,
+    schema_version: counts.schema_version,
+    snapshot_sha256: sha256File(output),
+    snapshot_bytes: (0, import_fs9.statSync)(output).size,
+    evidence: {
+      sessions: counts.sessions,
+      messages: counts.messages,
+      receipts: counts.receipts,
+      secrets: counts.secrets
+    }
+  };
+  (0, import_fs9.writeFileSync)(manifestPathFor(output), JSON.stringify(manifest, null, 2) + "\n");
+  return manifest;
+}
+async function verifyBackup(snapshot, manifest) {
+  const problems = [];
+  const manifestDigestMatches = sha256File(snapshot) === manifest.snapshot_sha256;
+  if (!manifestDigestMatches) {
+    problems.push("snapshot does not match the digest in its manifest \u2014 the file changed after the backup was taken");
+  }
+  let manifestFieldsMatch = true;
+  const actualBytes = (0, import_fs9.statSync)(snapshot).size;
+  if (actualBytes !== manifest.snapshot_bytes) {
+    manifestFieldsMatch = false;
+    problems.push(`snapshot is ${actualBytes} bytes, manifest says ${manifest.snapshot_bytes}`);
+  }
+  const client = createClient({ url: `file:${snapshot}` });
+  let integrityOk = false;
+  try {
+    const r = await client.execute("PRAGMA integrity_check");
+    integrityOk = String(r.rows[0][0]) === "ok";
+    if (!integrityOk) problems.push(`SQLite integrity_check failed: ${String(r.rows[0][0])}`);
+  } catch (e) {
+    problems.push(`could not open the snapshot: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  let schemaCompatible = true;
+  for (const table of REQUIRED_TABLES) {
+    const info2 = await client.execute(`PRAGMA table_info(${table})`).catch(() => ({ rows: [] }));
+    if (info2.rows.length === 0) {
+      schemaCompatible = false;
+      problems.push(`snapshot has no ${table} table \u2014 it was not written by a compatible version`);
+    }
+  }
+  const sessions2 = { total: 0, chainsValid: 0, signaturesValid: 0, signed: 0 };
+  const receipts = { total: 0, valid: 0 };
+  if (integrityOk && schemaCompatible) {
+    const counts = await countEvidence(snapshot);
+    if (counts.schema_version !== manifest.schema_version) {
+      manifestFieldsMatch = false;
+      problems.push(`snapshot schema version ${counts.schema_version} does not match the manifest's ${manifest.schema_version}`);
+    }
+    for (const [key, actual] of [
+      ["sessions", counts.sessions],
+      ["messages", counts.messages],
+      ["receipts", counts.receipts],
+      ["secrets", counts.secrets]
+    ]) {
+      const claimed = manifest.evidence[key];
+      if (actual !== claimed) {
+        manifestFieldsMatch = false;
+        problems.push(`snapshot holds ${actual} ${key}, manifest claims ${claimed}`);
+      }
+    }
+    const { verifyChainsIn: verifyChainsIn2, verifyReceiptsIn: verifyReceiptsIn2 } = await Promise.resolve().then(() => (init_backup_verify(), backup_verify_exports));
+    const chain = await verifyChainsIn2(snapshot);
+    Object.assign(sessions2, chain.sessions);
+    Object.assign(receipts, await verifyReceiptsIn2(snapshot));
+    problems.push(...chain.problems);
+  }
+  return { manifestDigestMatches, manifestFieldsMatch, integrityOk, schemaCompatible, sessions: sessions2, receipts, problems };
+}
+async function restoreBackup(snapshot, target, opts, deps = {}) {
+  const manifestPath = manifestPathFor(snapshot);
+  if (!(0, import_fs9.existsSync)(snapshot)) throw new BackupError(`No backup at ${snapshot}.`);
+  if (!(0, import_fs9.existsSync)(manifestPath)) {
+    throw new BackupError(
+      `No manifest beside the snapshot (expected ${manifestPath}).
+  Without it there is nothing binding this file to a backup Chron took.`
+    );
+  }
+  let manifest;
+  try {
+    manifest = JSON.parse((0, import_fs9.readFileSync)(manifestPath, "utf8"));
+  } catch (e) {
+    throw new BackupError(`Manifest is not readable JSON: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  if (manifest.chron_backup !== "v1") {
+    throw new BackupError(`Unrecognised backup format '${manifest.chron_backup}'.`);
+  }
+  const report = await verifyBackup(snapshot, manifest);
+  const gap = await measureGap(target, snapshot, manifest);
+  if (opts.drill) return { report, manifest, gap, displacedSidecars: [], drill: true };
+  if (report.problems.length > 0) {
+    throw new BackupError(
+      `Refusing to restore: the backup did not verify.
+  ` + report.problems.join("\n  ")
+    );
+  }
+  const staged = `${target}.restore-staged`;
+  (0, import_fs9.rmSync)(staged, { force: true });
+  (deps.stageFile ?? defaultStage)(snapshot, staged);
+  const stagedDigest = sha256File(staged);
+  if (stagedDigest !== manifest.snapshot_sha256) {
+    (0, import_fs9.rmSync)(staged, { force: true });
+    throw new BackupError(
+      `The staged copy does not match the backup it came from.
+  expected ${manifest.snapshot_sha256}
+  got      ${stagedDigest}
+  Nothing was replaced. The copy failed, not the backup.`
+    );
+  }
+  const displacedPrefix = `${target}.pre-restore-${Date.now()}`;
+  const moved = [];
+  const undo = () => {
+    let failure = null;
+    const restored = [];
+    for (const { from, to } of [...moved].reverse()) {
+      try {
+        (0, import_fs9.renameSync)(to, from);
+        restored.push(from);
+      } catch (e) {
+        failure ??= e instanceof Error ? e.message : String(e);
+      }
+    }
+    return { failure, restored };
+  };
+  try {
+    for (const suffix of ["", ...SIDECARS2]) {
+      const from = `${target}${suffix}`;
+      if (!(0, import_fs9.existsSync)(from)) continue;
+      const to = `${displacedPrefix}${suffix}`;
+      (0, import_fs9.renameSync)(from, to);
+      moved.push({ from, to });
+    }
+    (deps.promote ?? defaultPromote)(staged, target);
+  } catch (e) {
+    const cause = e instanceof Error ? e.message : String(e);
+    const { failure } = undo();
+    if (failure === null) {
+      (0, import_fs9.rmSync)(staged, { force: true });
+      throw new BackupError(
+        `Could not complete the restore: ${cause}
+` + (moved.length === 0 ? `  Nothing had been displaced yet, so the configured path is as it was.
+` : moved.some((m) => m.from === target) ? `  The previous database and its sidecars were put back. Nothing was
+  restored and nothing was lost.
+` : `  There was no database at the configured path. The sidecars found
+  beside it were put back. Nothing was restored.
+`) + `  The backup itself was never touched: ${snapshot}`
+      );
+    }
+    const present = inventoryAfterFailedUndo(target, displacedPrefix, staged);
+    const databaseBack = present.some((f) => f.path === target && f.isFile);
+    const strandedWal = present.some((f) => f.path === `${displacedPrefix}-wal` && f.isFile);
+    throw new BackupError(
+      `Could not complete the restore: ${cause}
+  Automatic recovery is incomplete: ${failure}
+  Chron has stopped and will move nothing else. Present on disk now:
+` + present.map(({ path, note }) => `    ${path}
+      ${note}
+`).join("") + (databaseBack ? `  A database is back at ${target}, but not every file was put back.
+` + (strandedWal ? `  Its write-ahead log is among the displaced files above and holds
+  transactions that database does not have. Put the log back beside
+  it before reading from it.` : `  Check the list above before trusting it.`) : `  There is no database at ${target}. Move one of the files above into
+  place by hand, or re-run the restore now that the path is clear.`)
+    );
+  }
+  const displacedTo = moved.some((m) => m.from === target) ? displacedPrefix : void 0;
+  const displacedSidecars = moved.filter((m) => m.from !== target).map((m) => m.to);
+  return { report, manifest, gap, displacedTo, displacedSidecars, drill: false };
+}
+function inventoryAfterFailedUndo(target, displacedPrefix, staged) {
+  const noun = {
+    "-wal": "write-ahead log",
+    "-shm": "shared-memory index"
+  };
+  const found = [];
+  const add = (path, what, where) => {
+    let st;
+    try {
+      st = (0, import_fs9.lstatSync)(path);
+    } catch {
+      return;
+    }
+    if (st.isFile()) {
+      found.push({ path, note: `${what}, ${where}`, isFile: true });
+      return;
+    }
+    const kind = st.isDirectory() ? "a directory" : st.isSymbolicLink() ? "a symbolic link" : "a special file";
+    found.push({ path, note: `${kind} occupying this path, not ${what}`, isFile: false });
+  };
+  add(target, "the database", "at the configured path");
+  for (const s of SIDECARS2) add(`${target}${s}`, `the ${noun[s]}`, "at the configured path");
+  add(displacedPrefix, "the previous database", "still displaced");
+  for (const s of SIDECARS2) add(`${displacedPrefix}${s}`, `the previous ${noun[s]}`, "still displaced");
+  add(staged, "the verified copy of the backup", "not installed");
+  return found;
+}
+async function measureGap(liveDb, snapshot, manifest) {
+  const created = Date.parse(manifest.created_at);
+  const backupAgeHours = Number.isNaN(created) ? null : (Date.now() - created) / 36e5;
+  const liveIds = await sessionIdsOfLive(liveDb);
+  const backupIds = await sessionIdsIn(snapshot);
+  if (liveIds === null || backupIds === null) {
+    return {
+      measured: false,
+      sessionsNotInBackup: 0,
+      sampleIds: [],
+      liveSessions: 0,
+      backupSessions: 0,
+      backupAgeHours
+    };
+  }
+  const missing = [...liveIds].filter((id) => !backupIds.has(id));
+  return {
+    measured: true,
+    sessionsNotInBackup: missing.length,
+    sampleIds: missing.slice(0, 5),
+    liveSessions: liveIds.size,
+    backupSessions: backupIds.size,
+    backupAgeHours
+  };
+}
+async function sessionIdsIn(file) {
+  if (!(0, import_fs9.existsSync)(file)) return /* @__PURE__ */ new Set();
+  const handle = openReadOnly(file);
+  if (!handle) return /* @__PURE__ */ new Set();
+  try {
+    await enforceReadOnly(handle);
+    const rows = await handle.db.all(sql.raw("SELECT id FROM sessions"));
+    return new Set(rows.map((r) => String(r.id)));
+  } catch {
+    return null;
+  } finally {
+    handle.close();
+  }
+}
+async function sessionIdsOfLive(file) {
+  if (!(0, import_fs9.existsSync)(file)) return /* @__PURE__ */ new Set();
+  const handle = openUntouched(file);
+  if (!handle) return null;
+  try {
+    await enforceReadOnly(handle);
+    const rows = await handle.db.all(sql.raw("SELECT id FROM sessions"));
+    return new Set(rows.map((r) => String(r.id)));
+  } catch {
+    return null;
+  } finally {
+    handle.close();
+  }
+}
+function usage() {
+  return "Usage: chron backup --output=<path>\n       chron restore --from=<path> [--drill]\n\n  backup    Consistent snapshot plus a manifest recording its digest,\n            versions and evidence counts. Unsigned: a backup must be\n            restorable here even when signing material is gone.\n\n  restore   Verifies the artefact, the database, the schema and the\n            evidence before replacing anything. The live database is\n            displaced and kept, never written over.\n\n  --drill   Verify and report without touching the live database.\n";
+}
+async function runBackup(args2) {
+  const output = args2.find((a) => a.startsWith("--output="))?.split("=").slice(1).join("=");
+  if (!output) {
+    process.stderr.write(usage());
+    process.exit(1);
+  }
+  try {
+    const source = getDbPathForRead();
+    const manifest = await createBackup(source, output);
+    process.stdout.write(`
+${BOLD7}Backup${RESET8} ${output}
+`);
+    process.stdout.write(`  ${manifest.evidence.sessions} session(s), ${manifest.evidence.messages} message(s), ${manifest.evidence.receipts} receipt(s)
+`);
+    process.stdout.write(`  ${DIM6}sha256 ${manifest.snapshot_sha256.slice(0, 16)}\u2026  ${(manifest.snapshot_bytes / 1048576).toFixed(1)} MB${RESET8}
+`);
+    process.stdout.write(`  ${DIM6}manifest: ${manifestPathFor(output)}${RESET8}
+`);
+    process.stdout.write(`  ${DIM6}Unsigned by design \u2014 restorable without signing material. Use
+`);
+    process.stdout.write(`  'chron export --signed' for an artefact someone else can verify.${RESET8}
+
+`);
+  } catch (e) {
+    if (e instanceof BackupError) {
+      process.stderr.write(`
+${RED5}\u2717${RESET8} ${e.message}
+
+`);
+      process.exit(1);
+    }
+    throw e;
+  }
+}
+async function runRestore(args2) {
+  const from = args2.find((a) => a.startsWith("--from="))?.split("=").slice(1).join("=");
+  const drill = args2.includes("--drill");
+  if (!from) {
+    process.stderr.write(usage());
+    process.exit(1);
+  }
+  try {
+    const outcome = await restoreBackup(from, getDbPathForRead(), { drill });
+    printOutcome(outcome, drill);
+    if (outcome.report.problems.length > 0) process.exit(1);
+  } catch (e) {
+    if (e instanceof BackupError) {
+      process.stderr.write(`
+${RED5}\u2717${RESET8} ${e.message}
+
+`);
+      process.exit(1);
+    }
+    throw e;
+  }
+}
+function printOutcome(o, drill) {
+  const r = o.report;
+  process.stdout.write(`
+${BOLD7}${drill ? "Recovery drill" : "Restore"}${RESET8}  ${DIM6}manifest records ${o.manifest.created_at}, chron ${o.manifest.chron_version}${RESET8}
+
+`);
+  const mark = (ok3) => ok3 ? `${GREEN4}\u2713${RESET8}` : `${RED5}\u2717${RESET8}`;
+  process.stdout.write(`  ${mark(r.manifestDigestMatches)} snapshot matches its manifest digest
+`);
+  process.stdout.write(`  ${mark(r.manifestFieldsMatch)} manifest size, schema version and counts recomputed
+`);
+  process.stdout.write(`    ${DIM6}creation time and Chron version are recorded, not verifiable \u2014 backups are unsigned${RESET8}
+`);
+  process.stdout.write(`  ${mark(r.integrityOk)} SQLite integrity check
+`);
+  process.stdout.write(`  ${mark(r.schemaCompatible)} schema is readable by this version
+`);
+  process.stdout.write(`  ${mark(r.sessions.chainsValid === r.sessions.total)} ${r.sessions.chainsValid} of ${r.sessions.total} session hash chain(s) verified
+`);
+  if (r.sessions.signed > 0) {
+    process.stdout.write(`  ${mark(r.sessions.signaturesValid === r.sessions.signed)} ${r.sessions.signaturesValid} of ${r.sessions.signed} signature(s) verified
+`);
+  }
+  if (r.receipts.total > 0) {
+    process.stdout.write(`  ${mark(r.receipts.valid === r.receipts.total)} ${r.receipts.valid} of ${r.receipts.total} receipt chain(s) verified
+`);
+  }
+  for (const p of r.problems) process.stdout.write(`  ${RED5}\u2717${RESET8} ${p}
+`);
+  process.stdout.write(`
+${BOLD7}What this backup does not contain${RESET8}
+`);
+  if (!o.gap.measured) {
+    process.stdout.write(`  ${YELLOW5}!${RESET8} could not be determined \u2014 the live database or the snapshot could not be read
+`);
+  } else if (o.gap.sessionsNotInBackup > 0) {
+    const age = o.gap.backupAgeHours === null ? "age not recorded" : o.gap.backupAgeHours < 48 ? `manifest records ${o.gap.backupAgeHours.toFixed(1)} hours ago` : `manifest records ${(o.gap.backupAgeHours / 24).toFixed(1)} days ago`;
+    process.stdout.write(`  ${YELLOW5}!${RESET8} ${o.gap.sessionsNotInBackup} of ${o.gap.liveSessions} live session(s) are absent from this backup (${age})
+`);
+    process.stdout.write(`    ${DIM6}${o.gap.sampleIds.map((i) => i.slice(0, 8)).join(", ")}${o.gap.sessionsNotInBackup > o.gap.sampleIds.length ? ", \u2026" : ""}${RESET8}
+`);
+  } else {
+    process.stdout.write(`  ${DIM6}nothing \u2014 every live session id is present in this backup${RESET8}
+`);
+  }
+  if (drill) {
+    process.stdout.write(`
+  ${DIM6}Drill only. The live database was not touched.${RESET8}
+
+`);
+  } else if (o.displacedTo) {
+    process.stdout.write(`
+  ${GREEN4}\u2713${RESET8} Restored. The previous database was kept at:
+    ${DIM6}${o.displacedTo}${RESET8}
+`);
+    if (o.displacedSidecars.length > 0) {
+      process.stdout.write(`    ${DIM6}with its write-ahead log: ${o.displacedSidecars.map((s) => s.slice(s.lastIndexOf("/") + 1)).join(", ")}${RESET8}
+`);
+    }
+    process.stdout.write("\n");
+  } else {
+    process.stdout.write(`
+  ${GREEN4}\u2713${RESET8} Restored.
+
+`);
+  }
+}
+var import_crypto10, import_fs9, import_path8, import_package2, RESET8, BOLD7, DIM6, GREEN4, RED5, YELLOW5, MANIFEST_SUFFIX, BackupError, REQUIRED_TABLES, defaultStage, defaultPromote, SIDECARS2;
+var init_backup = __esm({
+  "src/cli/backup.ts"() {
+    "use strict";
+    import_crypto10 = require("crypto");
+    init_node2();
+    import_fs9 = require("fs");
+    import_path8 = require("path");
+    init_drizzle_orm();
+    init_db2();
+    init_readonly();
+    init_time();
+    import_package2 = __toESM(require_package());
+    RESET8 = "\x1B[0m";
+    BOLD7 = "\x1B[1m";
+    DIM6 = "\x1B[2m";
+    GREEN4 = "\x1B[32m";
+    RED5 = "\x1B[31m";
+    YELLOW5 = "\x1B[33m";
+    MANIFEST_SUFFIX = ".manifest.json";
+    BackupError = class extends Error {
+    };
+    REQUIRED_TABLES = ["sessions", "messages"];
+    defaultStage = (source, staged) => (0, import_fs9.writeFileSync)(staged, (0, import_fs9.readFileSync)(source));
+    defaultPromote = (staged, target) => (0, import_fs9.renameSync)(staged, target);
+    SIDECARS2 = ["-wal", "-shm"];
+  }
+});
+
 // src/cli/prune.ts
 var prune_exports = {};
 __export(prune_exports, {
@@ -22297,9 +23447,9 @@ __export(prune_exports, {
 });
 function configRetentionDays() {
   const path = configPath();
-  if (!(0, import_fs8.existsSync)(path)) return null;
+  if (!(0, import_fs10.existsSync)(path)) return null;
   try {
-    const cfg = JSON.parse((0, import_fs8.readFileSync)(path, "utf8"));
+    const cfg = JSON.parse((0, import_fs10.readFileSync)(path, "utf8"));
     const v = Number(cfg.retention_days);
     return isNaN(v) ? null : v;
   } catch {
@@ -22315,9 +23465,10 @@ async function runPrune(args2) {
   const dryRun = args2.includes("--dry-run");
   const confirm = args2.includes("--confirm");
   const olderArg = args2.find((a) => a.startsWith("--older-than="))?.split("=")[1];
+  const backupArg = args2.find((a) => a.startsWith("--backup="))?.split("=").slice(1).join("=");
   if (!dryRun && !confirm) {
     process.stderr.write(
-      "Usage: chron prune --older-than=<n>d [--dry-run | --confirm]\n\n  --dry-run   Show what would be deleted without deleting\n  --confirm   Actually delete (required for real deletion)\n\nExample: chron prune --older-than=90d --dry-run\n"
+      "Usage: chron prune --older-than=<n>d [--dry-run | --confirm --backup=<path>]\n\n  --dry-run         Show what would be deleted without deleting\n  --confirm         Actually delete (required for real deletion)\n  --backup=<path>   Required with --confirm: a snapshot taken first\n\nExample: chron prune --older-than=90d --dry-run\n"
     );
     process.exit(1);
   }
@@ -22342,6 +23493,33 @@ async function runPrune(args2) {
 `);
   }
   const cutoff = cutoffDate(days);
+  if (confirm && !dryRun) {
+    if (!backupArg) {
+      process.stderr.write(
+        "\nRefusing to delete without a backup.\n  Pass --backup=<path> to snapshot the database first. Evidence that has\n  been pruned cannot be recovered from anywhere else.\n\n"
+      );
+      process.exit(1);
+    }
+    const { createBackup: createBackup2, BackupError: BackupError2, manifestPathFor: manifestPathFor2 } = await Promise.resolve().then(() => (init_backup(), backup_exports));
+    const { getDbPathForRead: getDbPathForRead2 } = await Promise.resolve().then(() => (init_db2(), db_exports));
+    try {
+      const manifest = await createBackup2(getDbPathForRead2(), backupArg);
+      process.stdout.write(
+        `Backed up ${manifest.evidence.sessions} session(s) to ${backupArg}
+  manifest: ${manifestPathFor2(backupArg)}
+
+`
+      );
+    } catch (e) {
+      const msg = e instanceof BackupError2 ? e.message : e instanceof Error ? e.message : String(e);
+      process.stderr.write(`
+Refusing to delete: the backup failed.
+  ${msg}
+
+`);
+      process.exit(1);
+    }
+  }
   const db = await initDb();
   const stale = await db.select({
     id: sessions.id,
@@ -22377,12 +23555,12 @@ Sessions to prune (last active before ${cutoff}):
   process.stdout.write(`Pruned ${stale.length} session(s) and ${totalMsgs} message(s).
 `);
 }
-var import_fs8;
+var import_fs10;
 var init_prune = __esm({
   "src/cli/prune.ts"() {
     "use strict";
     init_drizzle_orm();
-    import_fs8 = require("fs");
+    import_fs10 = require("fs");
     init_db2();
     init_schema();
     init_config_path();
@@ -22413,7 +23591,7 @@ async function runSign(args2) {
 `);
     process.exit(1);
   }
-  if (!(0, import_fs10.existsSync)(privKeyPath(session.id))) {
+  if (!(0, import_fs12.existsSync)(privKeyPath(session.id))) {
     process.stderr.write(`Private key not found: ${privKeyPath(session.id)}
 `);
     process.stderr.write("The key is stored on the machine where the session was created.\n");
@@ -22428,12 +23606,12 @@ async function runSign(args2) {
     process.exit(1);
   }
   const lastMsg = await db.select({ content_hash: messages.content_hash }).from(messages).where(eq(messages.session_id, session.id)).orderBy(...messageOrderDesc()).limit(1);
-  const finalContentHash = lastMsg[0]?.content_hash ?? "";
-  if (!finalContentHash) {
+  const finalContentHash2 = lastMsg[0]?.content_hash ?? "";
+  if (!finalContentHash2) {
     process.stderr.write("Session has no hash chain \u2014 cannot sign.\n");
     process.exit(1);
   }
-  const signature = signSession(session.id, finalContentHash, messageCount, firstCreatedAt);
+  const signature = signSession(session.id, finalContentHash2, messageCount, firstCreatedAt);
   try {
     await db.update(sessions).set({ signature }).where(eq(sessions.id, session.id));
   } catch (err) {
@@ -22450,47 +23628,33 @@ async function runSign(args2) {
     public_key_pem: session.public_key,
     message_count: messageCount,
     first_message_at: firstCreatedAt,
-    final_content_hash: finalContentHash,
+    final_content_hash: finalContentHash2,
     signature,
     signed_at: (/* @__PURE__ */ new Date()).toISOString()
   };
-  const sigFile = (0, import_path8.join)(process.cwd(), `${session.id.slice(0, 8)}.chron.sig`);
-  (0, import_fs9.writeFileSync)(sigFile, JSON.stringify(sigData, null, 2));
+  const sigFile = (0, import_path9.join)(process.cwd(), `${session.id.slice(0, 8)}.chron.sig`);
+  (0, import_fs11.writeFileSync)(sigFile, JSON.stringify(sigData, null, 2));
   process.stdout.write(`Signed session ${session.id.slice(0, 8)}
 `);
   process.stdout.write(`  messages : ${messageCount}
 `);
-  process.stdout.write(`  final hash: ${finalContentHash.slice(0, 16)}\u2026
+  process.stdout.write(`  final hash: ${finalContentHash2.slice(0, 16)}\u2026
 `);
   process.stdout.write(`  sig file : ${sigFile}
 `);
 }
-var import_fs9, import_path8, import_fs10;
+var import_fs11, import_path9, import_fs12;
 var init_sign = __esm({
   "src/cli/sign.ts"() {
     "use strict";
     init_drizzle_orm();
-    import_fs9 = require("fs");
-    import_path8 = require("path");
+    import_fs11 = require("fs");
+    import_path9 = require("path");
     init_db2();
     init_schema();
     init_signing();
-    import_fs10 = require("fs");
+    import_fs12 = require("fs");
     init_message_order();
-  }
-});
-
-// src/utils/hash.ts
-function computeContentHash(sessionId, role, content, createdAt, prevHash, eventType) {
-  const base = `${sessionId}|${role}|${content}|${createdAt}|${prevHash ?? ""}`;
-  const input = eventType != null ? `${base}|${eventType}` : base;
-  return (0, import_crypto5.createHash)("sha256").update(input).digest("hex");
-}
-var import_crypto5;
-var init_hash = __esm({
-  "src/utils/hash.ts"() {
-    "use strict";
-    import_crypto5 = require("crypto");
   }
 });
 
@@ -22570,46 +23734,46 @@ __export(verify_exports, {
   runVerify: () => runVerify
 });
 function ok(msg) {
-  process.stdout.write(`  ${GREEN4}\u2713${RESET8} ${msg}
+  process.stdout.write(`  ${GREEN5}\u2713${RESET9} ${msg}
 `);
 }
 function fail(msg) {
-  process.stdout.write(`  ${RED5}\u2717${RESET8} ${msg}
+  process.stdout.write(`  ${RED6}\u2717${RESET9} ${msg}
 `);
 }
 function warn(msg) {
-  process.stdout.write(`  ${YELLOW5}!${RESET8} ${msg}
+  process.stdout.write(`  ${YELLOW6}!${RESET9} ${msg}
 `);
 }
 async function runVerifyBundle(bundlePath) {
   process.stdout.write(`
-${BOLD7}Verifying bundle${RESET8} ${bundlePath}
+${BOLD8}Verifying bundle${RESET9} ${bundlePath}
 
 `);
-  const tempDir = (0, import_fs11.mkdtempSync)((0, import_path9.join)((0, import_os8.tmpdir)(), "chron-verify-"));
+  const tempDir = (0, import_fs13.mkdtempSync)((0, import_path10.join)((0, import_os8.tmpdir)(), "chron-verify-"));
   try {
     (0, import_child_process2.execFileSync)("tar", ["-xzf", bundlePath, "-C", tempDir], { stdio: "pipe" });
   } catch {
     process.stderr.write(`Failed to extract bundle: ${bundlePath}
 `);
-    (0, import_fs11.rmSync)(tempDir, { recursive: true, force: true });
+    (0, import_fs13.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   let allOk = true;
   try {
-    const manifestPath = (0, import_path9.join)(tempDir, "manifest.json");
-    const manifestBytes = (0, import_fs11.readFileSync)(manifestPath);
+    const manifestPath = (0, import_path10.join)(tempDir, "manifest.json");
+    const manifestBytes = (0, import_fs13.readFileSync)(manifestPath);
     const manifest = JSON.parse(manifestBytes.toString());
-    process.stdout.write(`${BOLD7}Manifest${RESET8} (${manifest.sessions.length} session(s), generated ${manifest.generated_at})
+    process.stdout.write(`${BOLD8}Manifest${RESET9} (${manifest.sessions.length} session(s), generated ${manifest.generated_at})
 `);
     process.stdout.write(`
-${BOLD7}File integrity${RESET8}
+${BOLD8}File integrity${RESET9}
 `);
     for (const [rel, expectedHash] of Object.entries(manifest.files)) {
-      const filePath = (0, import_path9.join)(tempDir, rel);
+      const filePath = (0, import_path10.join)(tempDir, rel);
       try {
-        const content = (0, import_fs11.readFileSync)(filePath);
-        const actual = (0, import_crypto6.createHash)("sha256").update(content).digest("hex");
+        const content = (0, import_fs13.readFileSync)(filePath);
+        const actual = (0, import_crypto11.createHash)("sha256").update(content).digest("hex");
         if (actual === expectedHash) {
           ok(rel);
         } else {
@@ -22622,16 +23786,16 @@ ${BOLD7}File integrity${RESET8}
       }
     }
     process.stdout.write(`
-${BOLD7}Signature${RESET8}
+${BOLD8}Signature${RESET9}
 `);
-    const sigPath = (0, import_path9.join)(tempDir, "manifest.sig");
+    const sigPath = (0, import_path10.join)(tempDir, "manifest.sig");
     let sigFile = null;
-    if (!(0, import_fs11.existsSync)(sigPath)) {
+    if (!(0, import_fs13.existsSync)(sigPath)) {
       fail("No manifest.sig \u2014 this bundle is unsigned and its origin cannot be established");
       allOk = false;
     } else {
       try {
-        const parsed = JSON.parse((0, import_fs11.readFileSync)(sigPath, "utf8"));
+        const parsed = JSON.parse((0, import_fs13.readFileSync)(sigPath, "utf8"));
         if (typeof parsed !== "object" || parsed === null || parsed.chron_sig !== "v1" || typeof parsed.session_id !== "string" || parsed.algorithm !== "Ed25519-SHA256" || typeof parsed.signature !== "string" || !parsed.signature) {
           throw new Error("invalid signature envelope");
         }
@@ -22646,9 +23810,9 @@ ${BOLD7}Signature${RESET8}
         fail("manifest.sig does not identify the exported session");
         allOk = false;
       }
-      const pubKeyPath2 = (0, import_path9.join)(tempDir, "pubkeys", `${sigFile.session_id}.pub`);
+      const pubKeyPath2 = (0, import_path10.join)(tempDir, "pubkeys", `${sigFile.session_id}.pub`);
       try {
-        const pubKey = (0, import_fs11.readFileSync)(pubKeyPath2, "utf8");
+        const pubKey = (0, import_fs13.readFileSync)(pubKeyPath2, "utf8");
         const valid = verifyBufferSignature(pubKey, sigFile.signature, manifestBytes);
         if (valid) {
           ok(`Ed25519 signature valid (session ${sigFile.session_id.slice(0, 8)})`);
@@ -22663,7 +23827,7 @@ ${BOLD7}Signature${RESET8}
     }
     process.stdout.write("\n");
   } finally {
-    (0, import_fs11.rmSync)(tempDir, { recursive: true, force: true });
+    (0, import_fs13.rmSync)(tempDir, { recursive: true, force: true });
   }
   process.exit(allOk ? 0 : 1);
 }
@@ -22689,32 +23853,23 @@ async function runVerify(args2) {
     process.exit(1);
   }
   process.stdout.write(`
-${BOLD7}Verifying session ${session.id.slice(0, 8)}${RESET8} \u2014 ${session.title}
+${BOLD8}Verifying session ${session.id.slice(0, 8)}${RESET9} \u2014 ${session.title}
 
 `);
   const rows = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(...messageOrderAsc());
   const sessionMeta = parseSessionMetadata(session.metadata);
-  process.stdout.write(`${BOLD7}Hash chain${RESET8} (${rows.length} messages)
+  process.stdout.write(`${BOLD8}Hash chain${RESET9} (${rows.length} messages)
 `);
   const chained = rows.filter((r) => r.content_hash !== null);
   let chainOk = true;
   if (chained.length === 0) {
     warn(rows.length === 0 ? "No messages logged yet \u2014 nothing to chain" : "No chained messages \u2014 session pre-dates hash chaining");
   } else {
-    for (let i = 0; i < chained.length; i++) {
-      const row = chained[i];
-      const expectedPrev = i === 0 ? null : chained[i - 1].content_hash;
-      if (row.prev_hash !== expectedPrev) {
-        fail(`Row ${i + 1} (${row.id.slice(0, 8)}): prev_hash mismatch \u2014 chain broken`);
-        chainOk = false;
-        break;
-      }
-      const expected = computeContentHash(row.session_id, row.role, row.content, row.created_at, row.prev_hash, row.event_type ?? void 0);
-      if (row.content_hash !== expected) {
-        fail(`Row ${i + 1} (${row.id.slice(0, 8)}): content_hash mismatch \u2014 row tampered`);
-        chainOk = false;
-        break;
-      }
+    const verdict = verifyMessageChain(rows);
+    if (!verdict.valid) {
+      const where = `Row ${(verdict.firstBreakIndex ?? 0) + 1} (${(verdict.firstBreakId ?? "").slice(0, 8)})`;
+      fail(verdict.reason === "content_hash mismatch" ? `${where}: content_hash mismatch \u2014 row tampered` : `${where}: prev_hash mismatch \u2014 chain broken`);
+      chainOk = false;
     }
     if (chainOk) {
       ok(`All ${chained.length} hashes valid \u2014 ${chainScopeLabel(sessionMeta)}`);
@@ -22723,33 +23878,26 @@ ${BOLD7}Verifying session ${session.id.slice(0, 8)}${RESET8} \u2014 ${session.ti
   const boundary = describeEvidenceBoundary(sessionMeta);
   if (boundary) {
     process.stdout.write(`
-${BOLD7}Evidence boundary${RESET8}
+${BOLD8}Evidence boundary${RESET9}
 `);
     warn(boundary);
   }
   process.stdout.write(`
-${BOLD7}Clock attestation${RESET8}
+${BOLD8}Clock attestation${RESET9}
 `);
-  if (session.metadata) {
-    try {
-      const meta = sessionMeta;
-      const status = meta.clock_sync_status ?? "unknown";
-      if (status === "synchronized") {
-        const offset = meta.clock_offset_ms !== void 0 ? ` (offset: ${meta.clock_offset_ms > 0 ? "+" : ""}${meta.clock_offset_ms}ms)` : "";
-        ok(`Clock synchronized via NTP${offset}`);
-      } else if (status === "not_synchronized") {
-        fail(`Clock NOT synchronized with NTP \u2014 timing analysis unreliable`);
-      } else {
-        warn("Clock sync status unknown (NTP check failed or offline)");
-      }
-    } catch {
-      warn("Could not parse session metadata");
-    }
+  const status = sessionMeta.clock_sync_status;
+  if (status === "synchronized") {
+    const offset = sessionMeta.clock_offset_ms !== void 0 ? ` (offset: ${sessionMeta.clock_offset_ms > 0 ? "+" : ""}${sessionMeta.clock_offset_ms}ms)` : "";
+    ok(`Clock synchronized via NTP${offset}`);
+  } else if (status === "not_synchronized") {
+    fail("Clock NOT synchronized with NTP \u2014 timing analysis unreliable");
+  } else if (status === void 0) {
+    warn("No clock attestation was recorded for this session.");
   } else {
-    warn("No clock attestation \u2014 session created before NTP support (v0.1.24)");
+    warn(`Clock sync status was recorded as '${status}'.`);
   }
   process.stdout.write(`
-${BOLD7}Signature${RESET8}
+${BOLD8}Signature${RESET9}
 `);
   if (!session.public_key) {
     warn("No public key \u2014 session was created before signing support (v0.1.19)");
@@ -22768,7 +23916,7 @@ ${BOLD7}Signature${RESET8}
     );
     if (sigValid) {
       ok("Ed25519 signature valid");
-      process.stdout.write(`  ${DIM6}public key: ${session.public_key.split("\n")[1]?.slice(0, 40)}\u2026${RESET8}
+      process.stdout.write(`  ${DIM7}public key: ${session.public_key.split("\n")[1]?.slice(0, 40)}\u2026${RESET9}
 `);
     } else {
       fail("Ed25519 signature INVALID \u2014 session data may have been altered after signing");
@@ -22778,28 +23926,28 @@ ${BOLD7}Signature${RESET8}
   const allOk = chainOk && (session.signature ? true : true);
   process.exit(allOk ? 0 : 1);
 }
-var import_fs11, import_crypto6, import_path9, import_os8, import_child_process2, RESET8, BOLD7, GREEN4, RED5, DIM6, YELLOW5;
+var import_fs13, import_crypto11, import_path10, import_os8, import_child_process2, RESET9, BOLD8, GREEN5, RED6, DIM7, YELLOW6;
 var init_verify = __esm({
   "src/cli/verify.ts"() {
     "use strict";
     init_drizzle_orm();
-    import_fs11 = require("fs");
-    import_crypto6 = require("crypto");
-    import_path9 = require("path");
+    import_fs13 = require("fs");
+    import_crypto11 = require("crypto");
+    import_path10 = require("path");
     import_os8 = require("os");
     import_child_process2 = require("child_process");
     init_db2();
     init_schema();
-    init_hash();
+    init_chain();
     init_message_order();
     init_evidence();
     init_signing();
-    RESET8 = "\x1B[0m";
-    BOLD7 = "\x1B[1m";
-    GREEN4 = "\x1B[32m";
-    RED5 = "\x1B[31m";
-    DIM6 = "\x1B[2m";
-    YELLOW5 = "\x1B[33m";
+    RESET9 = "\x1B[0m";
+    BOLD8 = "\x1B[1m";
+    GREEN5 = "\x1B[32m";
+    RED6 = "\x1B[31m";
+    DIM7 = "\x1B[2m";
+    YELLOW6 = "\x1B[33m";
   }
 });
 
@@ -22817,9 +23965,9 @@ function checkConfigured(def, home, cwd) {
   const configs = userMcpClientConfigs(home, cwd, (0, import_os9.platform)(), process.env.APPDATA);
   return def.configNames.some((name2) => {
     const c = configs.find((mc) => mc.name === name2);
-    if (!c || !(0, import_fs12.existsSync)(c.path)) return false;
+    if (!c || !(0, import_fs14.existsSync)(c.path)) return false;
     try {
-      const content = (0, import_fs12.readFileSync)(c.path, "utf8");
+      const content = (0, import_fs14.readFileSync)(c.path, "utf8");
       return c.type === "codex-toml" ? hasChronCodexToml(content) : hasChronJsonMcp(content) === true;
     } catch {
       return false;
@@ -23028,7 +24176,7 @@ function pct2(value) {
 }
 function printEvidenceUse(use) {
   process.stdout.write(`
-${CYAN6}Evidence use (Chron-local)${RESET9}
+${CYAN6}Evidence use (Chron-local)${RESET10}
 `);
   process.stdout.write(`  Sessions referenced by findings:            ${use.sessions.referenced_by_findings} of ${use.sessions.total}
 `);
@@ -23041,7 +24189,7 @@ ${CYAN6}Evidence use (Chron-local)${RESET9}
 `);
   const candidates = use.fields.filter((field) => field.concentration_candidate);
   if (candidates.length > 0) {
-    process.stdout.write(`${YELLOW6}Fields to inspect${RESET9}
+    process.stdout.write(`${YELLOW7}Fields to inspect${RESET10}
 `);
     for (const field of candidates) {
       process.stdout.write(
@@ -23049,24 +24197,24 @@ ${CYAN6}Evidence use (Chron-local)${RESET9}
 `
       );
     }
-    process.stdout.write(`  ${DIM7}High concentration is a review signal, not proof that a field is unused.${RESET9}
+    process.stdout.write(`  ${DIM8}High concentration is a review signal, not proof that a field is unused.${RESET10}
 
 `);
   }
-  process.stdout.write(`${DIM7}${use.scope}${RESET9}
+  process.stdout.write(`${DIM8}${use.scope}${RESET10}
 
 `);
 }
 function printCoverage(r) {
-  process.stdout.write(`${BOLD8}Chron Coverage${RESET9}
+  process.stdout.write(`${BOLD9}Chron Coverage${RESET10}
 
 `);
   if (r.since) {
-    process.stdout.write(`${DIM7}Filtered to sessions updated since ${r.since}${RESET9}
+    process.stdout.write(`${DIM8}Filtered to sessions updated since ${r.since}${RESET10}
 
 `);
   }
-  process.stdout.write(`${CYAN6}Evidence boundary${RESET9}
+  process.stdout.write(`${CYAN6}Evidence boundary${RESET10}
 `);
   if (r.boundary.first) {
     process.stdout.write(`  First logged session:    ${fmtDate4(r.boundary.first)}
@@ -23077,32 +24225,32 @@ function printCoverage(r) {
 `);
     if (r.partial.total > 0) {
       const witnessed = r.boundary.total_sessions - r.partial.total;
-      process.stdout.write(`  ${YELLOW6}Partial evidence:${RESET9}        ${r.partial.total} of ${r.boundary.total_sessions} (${witnessed} witnessed in full)
+      process.stdout.write(`  ${YELLOW7}Partial evidence:${RESET10}        ${r.partial.total} of ${r.boundary.total_sessions} (${witnessed} witnessed in full)
 `);
       if (r.partial.live_attach > 0) {
-        process.stdout.write(`    ${DIM7}${r.partial.live_attach} live attach \u2014 Chron began recording after the conversation had already started${RESET9}
+        process.stdout.write(`    ${DIM8}${r.partial.live_attach} live attach \u2014 Chron began recording after the conversation had already started${RESET10}
 `);
       }
       if (r.partial.imported > 0) {
-        process.stdout.write(`    ${DIM7}${r.partial.imported} imported \u2014 from a vendor export, no tool calls or environment state${RESET9}
+        process.stdout.write(`    ${DIM8}${r.partial.imported} imported \u2014 from a vendor export, no tool calls or environment state${RESET10}
 `);
       }
       if (r.partial.transcript_backfill > 0) {
-        process.stdout.write(`    ${DIM7}${r.partial.transcript_backfill} transcript backfill \u2014 ingested from a client log, not directly observed${RESET9}
+        process.stdout.write(`    ${DIM8}${r.partial.transcript_backfill} transcript backfill \u2014 ingested from a client log, not directly observed${RESET10}
 `);
       }
     }
   } else {
-    process.stdout.write(`  ${YELLOW6}No sessions logged yet${RESET9}
+    process.stdout.write(`  ${YELLOW7}No sessions logged yet${RESET10}
 `);
-    process.stdout.write(`  Run ${CYAN6}chron doctor --fix${RESET9} to configure AI tool logging.
+    process.stdout.write(`  Run ${CYAN6}chron doctor --fix${RESET10} to configure AI tool logging.
 `);
   }
   process.stdout.write("\n");
-  process.stdout.write(`${CYAN6}Tool coverage${RESET9}
+  process.stdout.write(`${CYAN6}Tool coverage${RESET10}
 `);
   if (r.tools.length === 0) {
-    process.stdout.write(`  ${DIM7}No AI tools configured or sessions logged yet${RESET9}
+    process.stdout.write(`  ${DIM8}No AI tools configured or sessions logged yet${RESET10}
 `);
   } else {
     const labelW = Math.max(...r.tools.map((t) => t.tool.length), 10);
@@ -23110,19 +24258,19 @@ function printCoverage(r) {
       const label = t.tool.padEnd(labelW);
       let configCol;
       if (t.import_only) {
-        configCol = `${DIM7}import only   ${RESET9}`;
+        configCol = `${DIM8}import only   ${RESET10}`;
       } else if (t.configured) {
-        configCol = `${DIM7}configured    ${RESET9}`;
+        configCol = `${DIM8}configured    ${RESET10}`;
       } else {
-        configCol = `${RED6}not configured${RESET9}`;
+        configCol = `${RED7}not configured${RESET10}`;
       }
       let sessionCol;
       if (t.sessions === 0) {
-        sessionCol = `${YELLOW6}never observed${RESET9}`;
+        sessionCol = `${YELLOW7}never observed${RESET10}`;
       } else if (t.silent_since_others_logged) {
-        sessionCol = `${YELLOW6}last session ${relativeTime(t.last_seen)}${RESET9}  ${YELLOW6}\u2014 silent since, while other tools logged${RESET9}`;
+        sessionCol = `${YELLOW7}last session ${relativeTime(t.last_seen)}${RESET10}  ${YELLOW7}\u2014 silent since, while other tools logged${RESET10}`;
       } else {
-        sessionCol = `${GREEN5}last session ${relativeTime(t.last_seen)}${RESET9}`;
+        sessionCol = `${GREEN6}last session ${relativeTime(t.last_seen)}${RESET10}`;
       }
       process.stdout.write(`  ${label}  ${configCol}  ${sessionCol}
 `);
@@ -23131,22 +24279,22 @@ function printCoverage(r) {
   const silent = r.tools.filter((t) => t.silent_since_others_logged);
   if (silent.length > 0) {
     process.stdout.write(`
-  ${YELLOW6}${silent.length} configured tool(s) stopped logging while others continued.${RESET9}
+  ${YELLOW7}${silent.length} configured tool(s) stopped logging while others continued.${RESET10}
 `);
-    process.stdout.write(`  ${DIM7}Being configured does not mean a client is calling Chron \u2014 check with
+    process.stdout.write(`  ${DIM8}Being configured does not mean a client is calling Chron \u2014 check with
 `);
-    process.stdout.write(`  'chron doctor --verify-logging <tool>'.${RESET9}
+    process.stdout.write(`  'chron doctor --verify-logging <tool>'.${RESET10}
 `);
   }
   process.stdout.write("\n");
   const overlap = r.caveat.indexOf(OVERLAP_DISCLOSURE);
-  process.stdout.write(`${DIM7}Coverage caveat
+  process.stdout.write(`${DIM8}Coverage caveat
 `);
   process.stdout.write(`  ${(overlap >= 0 ? r.caveat.slice(0, overlap) : r.caveat).trimEnd()}
 `);
   if (overlap >= 0) process.stdout.write(`  ${OVERLAP_DISCLOSURE}
 `);
-  process.stdout.write(RESET9);
+  process.stdout.write(RESET10);
 }
 async function runCoverage(args2) {
   const jsonMode = args2.includes("--json");
@@ -23161,11 +24309,11 @@ async function runCoverage(args2) {
   printCoverage(result);
   if (result.evidence_use) printEvidenceUse(result.evidence_use);
 }
-var import_fs12, import_os9, RESET9, BOLD8, DIM7, GREEN5, YELLOW6, CYAN6, RED6, KNOWN_TOOLS, MIN_CARDINALITY_SAMPLE, CONCENTRATION_THRESHOLD, SQLITE_BINDING_BATCH_SIZE;
+var import_fs14, import_os9, RESET10, BOLD9, DIM8, GREEN6, YELLOW7, CYAN6, RED7, KNOWN_TOOLS, MIN_CARDINALITY_SAMPLE, CONCENTRATION_THRESHOLD, SQLITE_BINDING_BATCH_SIZE;
 var init_coverage = __esm({
   "src/cli/coverage.ts"() {
     "use strict";
-    import_fs12 = require("fs");
+    import_fs14 = require("fs");
     import_os9 = require("os");
     init_drizzle_orm();
     init_db2();
@@ -23173,13 +24321,13 @@ var init_coverage = __esm({
     init_evidence();
     init_mcp_config();
     init_report();
-    RESET9 = "\x1B[0m";
-    BOLD8 = "\x1B[1m";
-    DIM7 = "\x1B[2m";
-    GREEN5 = "\x1B[32m";
-    YELLOW6 = "\x1B[33m";
+    RESET10 = "\x1B[0m";
+    BOLD9 = "\x1B[1m";
+    DIM8 = "\x1B[2m";
+    GREEN6 = "\x1B[32m";
+    YELLOW7 = "\x1B[33m";
     CYAN6 = "\x1B[36m";
-    RED6 = "\x1B[31m";
+    RED7 = "\x1B[31m";
     KNOWN_TOOLS = [
       { label: "Claude Code", ai_tool: "claude", aliases: ["claude", "Claude Code", "claude-code", "chron-chat/claude", "chron-chat/claude-cli"], configNames: ["Claude Code", "Claude Desktop"], importOnly: false },
       { label: "Cursor", ai_tool: "cursor", aliases: ["cursor"], configNames: ["Cursor (global)", "Cursor (project)"], importOnly: false },
@@ -23203,29 +24351,29 @@ __export(doctor_exports, {
   runDoctor: () => runDoctor
 });
 function ok2(label, detail = "") {
-  process.stdout.write(`  ${GREEN6}\u2713${RESET10} ${label}${detail ? `  ${DIM8}${detail}${RESET10}` : ""}
+  process.stdout.write(`  ${GREEN7}\u2713${RESET11} ${label}${detail ? `  ${DIM9}${detail}${RESET11}` : ""}
 `);
 }
 function fail2(label, detail = "") {
-  process.stdout.write(`  ${RED7}\u2717${RESET10} ${label}${detail ? `  ${DIM8}${detail}${RESET10}` : ""}
+  process.stdout.write(`  ${RED8}\u2717${RESET11} ${label}${detail ? `  ${DIM9}${detail}${RESET11}` : ""}
 `);
 }
 function warn2(label, detail = "") {
-  process.stdout.write(`  ${YELLOW7}!${RESET10} ${label}${detail ? `  ${DIM8}${detail}${RESET10}` : ""}
+  process.stdout.write(`  ${YELLOW8}!${RESET11} ${label}${detail ? `  ${DIM9}${detail}${RESET11}` : ""}
 `);
 }
 function info(label, detail = "") {
-  process.stdout.write(`  ${CYAN7}\xB7${RESET10} ${label}${detail ? `  ${DIM8}${detail}${RESET10}` : ""}
+  process.stdout.write(`  ${CYAN7}\xB7${RESET11} ${label}${detail ? `  ${DIM9}${detail}${RESET11}` : ""}
 `);
 }
 function section(title) {
   process.stdout.write(`
-${BOLD9}${title}${RESET10}
+${BOLD10}${title}${RESET11}
 `);
 }
 function canWrite(dir) {
   try {
-    (0, import_fs13.accessSync)(dir, import_fs13.constants.W_OK);
+    (0, import_fs15.accessSync)(dir, import_fs15.constants.W_OK);
     return true;
   } catch {
     return false;
@@ -23234,22 +24382,22 @@ function canWrite(dir) {
 function testWriteFile(path) {
   const probe = path + ".chron-probe";
   try {
-    (0, import_fs13.writeFileSync)(probe, "ok");
-    (0, import_fs13.unlinkSync)(probe);
+    (0, import_fs15.writeFileSync)(probe, "ok");
+    (0, import_fs15.unlinkSync)(probe);
     return true;
   } catch {
     return false;
   }
 }
 function dbPath2() {
-  return process.env.CHRON_DB_PATH ?? (0, import_path10.join)((0, import_os10.homedir)(), ".chron", "chron.db");
+  return process.env.CHRON_DB_PATH ?? (0, import_path11.join)((0, import_os10.homedir)(), ".chron", "chron.db");
 }
 function keysDir2() {
-  return (0, import_path10.join)((0, import_os10.homedir)(), ".chron", "keys");
+  return (0, import_path11.join)((0, import_os10.homedir)(), ".chron", "keys");
 }
 function loadConfig2() {
   try {
-    return JSON.parse((0, import_fs13.readFileSync)(configPath(), "utf8"));
+    return JSON.parse((0, import_fs15.readFileSync)(configPath(), "utf8"));
   } catch {
     return {};
   }
@@ -23301,17 +24449,17 @@ function mcpConfigs() {
     let instructionConfigured;
     if (instrPath) {
       try {
-        const content = (0, import_fs13.existsSync)(instrPath) ? (0, import_fs13.readFileSync)(instrPath, "utf8") : "";
+        const content = (0, import_fs15.existsSync)(instrPath) ? (0, import_fs15.readFileSync)(instrPath, "utf8") : "";
         instructionConfigured = content.includes(CHRON_INSTRUCTION_SENTINEL) || content.includes(CHRON_INSTRUCTION_BLOCK_START);
       } catch {
         instructionConfigured = false;
       }
     }
-    if (!(0, import_fs13.existsSync)(c.path)) {
+    if (!(0, import_fs15.existsSync)(c.path)) {
       return { name: c.name, path: c.path, exists: false, chronConfigured: null, connectCommand: c.connectCommand, instructionPath: instrPath, instructionConfigured };
     }
     try {
-      const content = (0, import_fs13.readFileSync)(c.path, "utf8");
+      const content = (0, import_fs15.readFileSync)(c.path, "utf8");
       const configured = c.type === "codex-toml" ? hasChronCodexToml(content) : hasChronJsonMcp(content);
       const launcher = inspectChronLauncher(content, c.type);
       return { name: c.name, path: c.path, exists: true, chronConfigured: configured, launcher, connectCommand: c.connectCommand, instructionPath: instrPath, instructionConfigured };
@@ -23323,9 +24471,9 @@ function mcpConfigs() {
 function fixableMcpConfigs() {
   const configs = userMcpClientConfigs((0, import_os10.homedir)(), process.cwd(), (0, import_os10.platform)(), process.env.APPDATA);
   return configs.filter((c) => {
-    if ((0, import_fs13.existsSync)(c.path)) return true;
+    if ((0, import_fs15.existsSync)(c.path)) return true;
     if (["Claude Code", "Cursor (global)", "Cursor (project)", "Gemini CLI", "Codex (global)"].includes(c.name)) return true;
-    if ((0, import_fs13.existsSync)((0, import_path10.dirname)(c.path))) return true;
+    if ((0, import_fs15.existsSync)((0, import_path11.dirname)(c.path))) return true;
     return false;
   });
 }
@@ -23336,8 +24484,8 @@ function npmLatestVersion() {
     return null;
   }
 }
-function versionParts(version6) {
-  return version6.split("-")[0].split(".").map((part) => Number.parseInt(part, 10)).map((part) => Number.isFinite(part) ? part : 0);
+function versionParts(version7) {
+  return version7.split("-")[0].split(".").map((part) => Number.parseInt(part, 10)).map((part) => Number.isFinite(part) ? part : 0);
 }
 function compareVersions(a, b) {
   const left = versionParts(a);
@@ -23392,7 +24540,7 @@ async function pollForSession(dbFile, token, timeoutMs) {
     }
     tick++;
     const dots = ".".repeat(tick % 3 + 1).padEnd(3, " ");
-    process.stdout.write(`\r  ${DIM8}Waiting${dots}${RESET10}`);
+    process.stdout.write(`\r  ${DIM9}Waiting${dots}${RESET11}`);
     await new Promise((r) => setTimeout(r, 3e3));
   }
   process.stdout.write("\r" + " ".repeat(20) + "\r");
@@ -23404,84 +24552,84 @@ async function runVerifyLogging(toolArg) {
   const token = `chron-verify-${Math.random().toString(36).slice(2, 10)}`;
   const displayTool = toolArg || "any AI client";
   process.stdout.write(`
-${BOLD9}Verify Chron Logging${RESET10}  ${DIM8}${displayTool}${RESET10}
+${BOLD10}Verify Chron Logging${RESET11}  ${DIM9}${displayTool}${RESET11}
 `);
-  process.stdout.write(`${DIM8}Tests that the Chron MCP server is reachable and can create sessions.${RESET10}
+  process.stdout.write(`${DIM9}Tests that the Chron MCP server is reachable and can create sessions.${RESET11}
 
 `);
-  process.stdout.write(`Verification token: ${CYAN7}${token}${RESET10}
+  process.stdout.write(`Verification token: ${CYAN7}${token}${RESET11}
 
 `);
-  process.stdout.write(`${BOLD9}Instructions:${RESET10}
+  process.stdout.write(`${BOLD10}Instructions:${RESET11}
 
 `);
   if (toolArg === "cursor") {
-    process.stdout.write(`  1. Open Cursor in ${BOLD9}Agent mode${RESET10}  ${DIM8}(MCP only works in Agent mode \u2014 not regular chat)${RESET10}
+    process.stdout.write(`  1. Open Cursor in ${BOLD10}Agent mode${RESET11}  ${DIM9}(MCP only works in Agent mode \u2014 not regular chat)${RESET11}
 `);
-    process.stdout.write(`  2. Open the project where you ran ${CYAN7}chron connect cursor${RESET10}
+    process.stdout.write(`  2. Open the project where you ran ${CYAN7}chron connect cursor${RESET11}
 `);
     process.stdout.write(`  3. In the agent chat, say:
 `);
-    process.stdout.write(`     ${DIM8}"Call the Chron init_session MCP tool with title: ${token} and ai_tool: cursor"${RESET10}
+    process.stdout.write(`     ${DIM9}"Call the Chron init_session MCP tool with title: ${token} and ai_tool: cursor"${RESET11}
 `);
     process.stdout.write(`
-  ${DIM8}Cursor Agent CLI equivalent, after login:${RESET10}
+  ${DIM9}Cursor Agent CLI equivalent, after login:${RESET11}
 `);
-    process.stdout.write(`     ${DIM8}cursor-agent -p --trust --approve-mcps "Call the Chron init_session MCP tool with title: ${token} and ai_tool: cursor"${RESET10}
+    process.stdout.write(`     ${DIM9}cursor-agent -p --trust --approve-mcps "Call the Chron init_session MCP tool with title: ${token} and ai_tool: cursor"${RESET11}
 `);
   } else if (toolArg === "codex") {
     process.stdout.write(`  1. Start a Codex session
 `);
     process.stdout.write(`  2. Ask Codex:
 `);
-    process.stdout.write(`     ${DIM8}"Call the Chron init_session MCP tool with title: ${token} and ai_tool: codex"${RESET10}
+    process.stdout.write(`     ${DIM9}"Call the Chron init_session MCP tool with title: ${token} and ai_tool: codex"${RESET11}
 `);
   } else if (toolArg === "gemini") {
     process.stdout.write(`  1. Start a Gemini CLI session
 `);
     process.stdout.write(`  2. Ask Gemini:
 `);
-    process.stdout.write(`     ${DIM8}"Call the Chron init_session MCP tool with title: ${token} and ai_tool: gemini"${RESET10}
+    process.stdout.write(`     ${DIM9}"Call the Chron init_session MCP tool with title: ${token} and ai_tool: gemini"${RESET11}
 `);
   } else {
     process.stdout.write(`  1. Open your AI client
 `);
     process.stdout.write(`  2. Say:
 `);
-    process.stdout.write(`     ${DIM8}"Call the Chron init_session MCP tool with title: ${token}"${RESET10}
+    process.stdout.write(`     ${DIM9}"Call the Chron init_session MCP tool with title: ${token}"${RESET11}
 `);
   }
   process.stdout.write(`
-${DIM8}Once you've done this, Chron will detect the new session below.${RESET10}
+${DIM9}Once you've done this, Chron will detect the new session below.${RESET11}
 `);
-  if (!(0, import_fs13.existsSync)(db)) {
+  if (!(0, import_fs15.existsSync)(db)) {
     process.stdout.write(`
-${RED7}\u2717${RESET10} Chron database not found at ${db}
+${RED8}\u2717${RESET11} Chron database not found at ${db}
 `);
-    process.stdout.write(`  ${DIM8}It is created on first use. Run chron doctor to check setup.${RESET10}
+    process.stdout.write(`  ${DIM9}It is created on first use. Run chron doctor to check setup.${RESET11}
 `);
     process.exit(1);
   }
   process.stdout.write(`
-${DIM8}Watching Chron DB (up to 2 minutes)... Ctrl-C to cancel${RESET10}
+${DIM9}Watching Chron DB (up to 2 minutes)... Ctrl-C to cancel${RESET11}
 
 `);
   const found = await pollForSession(db, token, 12e4);
   if (found) {
     process.stdout.write(`
-${GREEN6}${BOLD9}\u2713 Verified!${RESET10} Chron logging confirmed for ${displayTool}.
+${GREEN7}${BOLD10}\u2713 Verified!${RESET11} Chron logging confirmed for ${displayTool}.
 `);
     process.stdout.write(`  Session "${token}" appeared in the database.
 `);
-    process.stdout.write(`  Run ${CYAN7}chron history${RESET10} to see it.
+    process.stdout.write(`  Run ${CYAN7}chron history${RESET11} to see it.
 
 `);
   } else {
     process.stdout.write(`
-${RED7}\u2717${RESET10} No session appeared within 2 minutes.
+${RED8}\u2717${RESET11} No session appeared within 2 minutes.
 
 `);
-    process.stdout.write(`${BOLD9}Troubleshooting:${RESET10}
+    process.stdout.write(`${BOLD10}Troubleshooting:${RESET11}
 `);
     if (toolArg === "cursor") {
       process.stdout.write(`  \u2022 Cursor must be in Agent mode \u2014 MCP is not available in regular chat
@@ -23501,9 +24649,9 @@ ${RED7}\u2717${RESET10} No session appeared within 2 minutes.
       process.stdout.write(`  \u2022 Check ~/.gemini/settings.json has the chron MCP entry
 `);
     }
-    process.stdout.write(`  \u2022 Restart the AI client after running: ${CYAN7}chron doctor --fix${RESET10}
+    process.stdout.write(`  \u2022 Restart the AI client after running: ${CYAN7}chron doctor --fix${RESET11}
 `);
-    process.stdout.write(`  \u2022 Run: ${CYAN7}chron doctor${RESET10} to check full setup
+    process.stdout.write(`  \u2022 Run: ${CYAN7}chron doctor${RESET11} to check full setup
 
 `);
     process.exit(1);
@@ -23522,7 +24670,7 @@ async function runDoctor(args2) {
   const port = parseInt(process.env.PORT ?? "3001", 10);
   const results = [];
   if (!jsonMode) process.stdout.write(`
-${BOLD9}chron doctor${RESET10}  ${DIM8}v${import_package2.version}${RESET10}${fixMode ? `  ${CYAN7}--fix${RESET10}` : ""}
+${BOLD10}chron doctor${RESET11}  ${DIM9}v${import_package3.version}${RESET11}${fixMode ? `  ${CYAN7}--fix${RESET11}` : ""}
 `);
   if (!jsonMode) section("Runtime");
   const nodeVer = process.version.replace("v", "");
@@ -23532,22 +24680,22 @@ ${BOLD9}chron doctor${RESET10}  ${DIM8}v${import_package2.version}${RESET10}${fi
   if (!jsonMode) (nodeOk ? ok2 : fail2)(`Node.js ${process.version}`, nodeOk ? "" : "requires \u2265 18");
   const latestVersion = npmLatestVersion();
   if (latestVersion) {
-    const versionCompare = compareVersions(import_package2.version, latestVersion);
+    const versionCompare = compareVersions(import_package3.version, latestVersion);
     const upToDate = versionCompare === 0;
     const localAhead = versionCompare > 0;
     results.push({
       pass: upToDate || localAhead,
-      label: `chron-mcp ${import_package2.version}${upToDate ? "" : ` (latest: ${latestVersion})`}`,
+      label: `chron-mcp ${import_package3.version}${upToDate ? "" : ` (latest: ${latestVersion})`}`,
       fix: upToDate || localAhead ? void 0 : `npm install -g chron-mcp@latest`
     });
     if (!jsonMode) {
-      if (upToDate) ok2(`chron-mcp ${import_package2.version}`, "up to date");
-      else if (localAhead) ok2(`chron-mcp ${import_package2.version}`, `newer than published ${latestVersion}`);
-      else warn2(`chron-mcp ${import_package2.version}`, `latest is ${latestVersion} \u2014 run: npm install -g chron-mcp@latest`);
+      if (upToDate) ok2(`chron-mcp ${import_package3.version}`, "up to date");
+      else if (localAhead) ok2(`chron-mcp ${import_package3.version}`, `newer than published ${latestVersion}`);
+      else warn2(`chron-mcp ${import_package3.version}`, `latest is ${latestVersion} \u2014 run: npm install -g chron-mcp@latest`);
     }
   } else {
-    results.push({ pass: "warn", label: `chron-mcp ${import_package2.version}`, detail: "Could not reach npm to check for updates" });
-    if (!jsonMode) warn2(`chron-mcp ${import_package2.version}`, "could not check npm for updates");
+    results.push({ pass: "warn", label: `chron-mcp ${import_package3.version}`, detail: "Could not reach npm to check for updates" });
+    if (!jsonMode) warn2(`chron-mcp ${import_package3.version}`, "could not check npm for updates");
   }
   const launcherOk = mcpLauncherWorks();
   const launcherLabel = `${CHRON_MCP_SERVER.command} --version`;
@@ -23555,16 +24703,16 @@ ${BOLD9}chron doctor${RESET10}  ${DIM8}v${import_package2.version}${RESET10}${fi
   if (!jsonMode) (launcherOk ? ok2 : fail2)(launcherLabel, launcherOk ? "works" : "failed \u2014 run: npm install -g chron-mcp");
   if (!jsonMode) section("Storage");
   const db = dbPath2();
-  const dbDir = (0, import_path10.join)(db, "..");
-  const dbDirExists = (0, import_fs13.existsSync)(dbDir);
+  const dbDir = (0, import_path11.join)(db, "..");
+  const dbDirExists = (0, import_fs15.existsSync)(dbDir);
   if (!dbDirExists) {
     try {
-      (0, import_fs13.mkdirSync)(dbDir, { recursive: true });
+      (0, import_fs15.mkdirSync)(dbDir, { recursive: true });
     } catch {
     }
   }
   const dbWritable = testWriteFile(dbDir);
-  const dbExists = (0, import_fs13.existsSync)(db);
+  const dbExists = (0, import_fs15.existsSync)(db);
   results.push({
     pass: dbWritable,
     label: `DB directory: ${dbDir}`,
@@ -23574,10 +24722,10 @@ ${BOLD9}chron doctor${RESET10}  ${DIM8}v${import_package2.version}${RESET10}${fi
   if (!jsonMode) (dbWritable ? ok2 : fail2)(`DB: ${db}`, dbExists ? "found" : "not yet created \u2014 will init on first use");
   if (!dbWritable && !jsonMode) info("fix", `mkdir -p "${dbDir}" && chmod 700 "${dbDir}"`);
   const keys = keysDir2();
-  const keysExist = (0, import_fs13.existsSync)(keys);
+  const keysExist = (0, import_fs15.existsSync)(keys);
   if (!keysExist) {
     try {
-      (0, import_fs13.mkdirSync)(keys, { recursive: true });
+      (0, import_fs15.mkdirSync)(keys, { recursive: true });
     } catch {
     }
   }
@@ -23620,9 +24768,9 @@ ${BOLD9}chron doctor${RESET10}  ${DIM8}v${import_package2.version}${RESET10}${fi
     }
     if (!jsonMode) {
       process.stdout.write(`
-  ${DIM8}Restart your AI client, then verify end-to-end logging:${RESET10}
+  ${DIM9}Restart your AI client, then verify end-to-end logging:${RESET11}
 `);
-      process.stdout.write(`  ${CYAN7}chron doctor --verify-logging [cursor|codex|gemini]${RESET10}
+      process.stdout.write(`  ${CYAN7}chron doctor --verify-logging [cursor|codex|gemini]${RESET11}
 `);
     }
   }
@@ -23719,8 +24867,8 @@ ${BOLD9}chron doctor${RESET10}  ${DIM8}v${import_package2.version}${RESET10}${fi
     }
   }
   try {
-    const claudePath = (0, import_path10.join)((0, import_os10.homedir)(), ".claude.json");
-    const scopes = (0, import_fs13.existsSync)(claudePath) ? findClaudeChronScopes((0, import_fs13.readFileSync)(claudePath, "utf8"), process.cwd()) : [];
+    const claudePath = (0, import_path11.join)((0, import_os10.homedir)(), ".claude.json");
+    const scopes = (0, import_fs15.existsSync)(claudePath) ? findClaudeChronScopes((0, import_fs15.readFileSync)(claudePath, "utf8"), process.cwd()) : [];
     const endpointCount = new Set(scopes.map((s) => s.endpoint)).size;
     if (scopes.length > 1 && endpointCount > 1) {
       const fixCmds = claudeChronConflictFixes(scopes);
@@ -23731,13 +24879,13 @@ ${BOLD9}chron doctor${RESET10}  ${DIM8}v${import_package2.version}${RESET10}${fi
         for (const scope of scopes) {
           const remove = scope.scope === "local" || scope.scope === "project";
           const projectDetail = scope.project ? ` (${scope.project})` : "";
-          process.stdout.write(`     ${scope.scope} scope${projectDetail}: ${DIM8}${scope.endpoint}${RESET10}${remove ? `  ${RED7}\u2190 remove this${RESET10}` : ""}
+          process.stdout.write(`     ${scope.scope} scope${projectDetail}: ${DIM9}${scope.endpoint}${RESET11}${remove ? `  ${RED8}\u2190 remove this${RESET11}` : ""}
 `);
         }
         process.stdout.write(`     Fix:
 `);
         for (const fixCmd of fixCmds) {
-          process.stdout.write(`       ${CYAN7}${fixCmd}${RESET10}
+          process.stdout.write(`       ${CYAN7}${fixCmd}${RESET11}
 `);
         }
       }
@@ -23784,7 +24932,7 @@ ${BOLD9}chron doctor${RESET10}  ${DIM8}v${import_package2.version}${RESET10}${fi
     }
   }
   if (!anySiem && !jsonMode) {
-    process.stdout.write(`  ${DIM8}No SIEM configured. Events will only be stored locally.${RESET10}
+    process.stdout.write(`  ${DIM9}No SIEM configured. Events will only be stored locally.${RESET11}
 `);
   }
   const failures = results.filter((r) => r.pass === false);
@@ -23792,31 +24940,31 @@ ${BOLD9}chron doctor${RESET10}  ${DIM8}v${import_package2.version}${RESET10}${fi
   if (!jsonMode) {
     process.stdout.write("\n");
     if (failures.length === 0 && warnings.length === 0) {
-      process.stdout.write(`${GREEN6}${BOLD9}All checks passed.${RESET10} Chron is correctly set up.
+      process.stdout.write(`${GREEN7}${BOLD10}All checks passed.${RESET11} Chron is correctly set up.
 
 `);
-      process.stdout.write(`${DIM8}Team AI governance: CLAIIM adds runtime ALLOW/DENY gates on top of Chron proof \u2014 ${CLAIIM_PREVIEW_URL}${RESET10}
+      process.stdout.write(`${DIM9}Team AI governance: CLAIIM adds runtime ALLOW/DENY gates on top of Chron proof \u2014 ${CLAIIM_PREVIEW_URL}${RESET11}
 
 `);
     } else {
       if (failures.length > 0) {
-        process.stdout.write(`${RED7}${BOLD9}${failures.length} issue(s) need attention:${RESET10}
+        process.stdout.write(`${RED8}${BOLD10}${failures.length} issue(s) need attention:${RESET11}
 `);
         for (const f of failures) {
-          process.stdout.write(`  ${RED7}\u2717${RESET10} ${f.label}
+          process.stdout.write(`  ${RED8}\u2717${RESET11} ${f.label}
 `);
-          if (f.fix) process.stdout.write(`    ${DIM8}\u2192 ${f.fix}${RESET10}
+          if (f.fix) process.stdout.write(`    ${DIM9}\u2192 ${f.fix}${RESET11}
 `);
         }
         process.stdout.write("\n");
       }
       if (warnings.length > 0) {
-        process.stdout.write(`${YELLOW7}${BOLD9}${warnings.length} warning(s):${RESET10}
+        process.stdout.write(`${YELLOW8}${BOLD10}${warnings.length} warning(s):${RESET11}
 `);
         for (const w of warnings) {
-          process.stdout.write(`  ${YELLOW7}!${RESET10} ${w.label}
+          process.stdout.write(`  ${YELLOW8}!${RESET11} ${w.label}
 `);
-          if (w.fix) process.stdout.write(`    ${DIM8}\u2192 ${w.fix}${RESET10}
+          if (w.fix) process.stdout.write(`    ${DIM9}\u2192 ${w.fix}${RESET11}
 `);
         }
         process.stdout.write("\n");
@@ -23825,7 +24973,7 @@ ${BOLD9}chron doctor${RESET10}  ${DIM8}v${import_package2.version}${RESET10}${fi
   }
   if (jsonMode) {
     process.stdout.write(JSON.stringify({
-      chron_version: import_package2.version,
+      chron_version: import_package3.version,
       node_version: process.version,
       checks: results.map((r) => ({
         label: r.label,
@@ -23843,34 +24991,34 @@ ${BOLD9}chron doctor${RESET10}  ${DIM8}v${import_package2.version}${RESET10}${fi
   }
   process.exit(failures.length > 0 ? 1 : 0);
 }
-var import_os10, import_path10, import_fs13, import_child_process3, import_package2, RESET10, BOLD9, DIM8, GREEN6, RED7, YELLOW7, CYAN7, CLAIIM_PREVIEW_URL, INSTRUCTION_PATHS, AI_TOOL_FOR_CLIENT, CAPTURE_FAMILY_LABEL, VERIFY_SLUG;
+var import_os10, import_path11, import_fs15, import_child_process3, import_package3, RESET11, BOLD10, DIM9, GREEN7, RED8, YELLOW8, CYAN7, CLAIIM_PREVIEW_URL, INSTRUCTION_PATHS, AI_TOOL_FOR_CLIENT, CAPTURE_FAMILY_LABEL, VERIFY_SLUG;
 var init_doctor = __esm({
   "src/cli/doctor.ts"() {
     "use strict";
     import_os10 = require("os");
-    import_path10 = require("path");
-    import_fs13 = require("fs");
+    import_path11 = require("path");
+    import_fs15 = require("fs");
     import_child_process3 = require("child_process");
-    import_package2 = __toESM(require_package());
+    import_package3 = __toESM(require_package());
     init_mcp_config();
     init_coverage();
     init_connect();
     init_config_path();
-    RESET10 = "\x1B[0m";
-    BOLD9 = "\x1B[1m";
-    DIM8 = "\x1B[2m";
-    GREEN6 = "\x1B[32m";
-    RED7 = "\x1B[31m";
-    YELLOW7 = "\x1B[33m";
+    RESET11 = "\x1B[0m";
+    BOLD10 = "\x1B[1m";
+    DIM9 = "\x1B[2m";
+    GREEN7 = "\x1B[32m";
+    RED8 = "\x1B[31m";
+    YELLOW8 = "\x1B[33m";
     CYAN7 = "\x1B[36m";
     CLAIIM_PREVIEW_URL = "https://claiim.io/preview";
     INSTRUCTION_PATHS = {
-      "Claude Code": (0, import_path10.join)((0, import_os10.homedir)(), "CLAUDE.md"),
-      "Codex (global)": (0, import_path10.join)((0, import_os10.homedir)(), ".codex", "instructions.md"),
-      "Codex (~/AGENTS.md)": (0, import_path10.join)((0, import_os10.homedir)(), "AGENTS.md"),
-      "Codex (project AGENTS.md)": (0, import_path10.join)(process.cwd(), "AGENTS.md"),
-      "Gemini CLI": (0, import_path10.join)((0, import_os10.homedir)(), ".gemini", "GEMINI.md"),
-      "Cursor (project)": (0, import_path10.join)(process.cwd(), ".cursor", "rules", "chron.mdc")
+      "Claude Code": (0, import_path11.join)((0, import_os10.homedir)(), "CLAUDE.md"),
+      "Codex (global)": (0, import_path11.join)((0, import_os10.homedir)(), ".codex", "instructions.md"),
+      "Codex (~/AGENTS.md)": (0, import_path11.join)((0, import_os10.homedir)(), "AGENTS.md"),
+      "Codex (project AGENTS.md)": (0, import_path11.join)(process.cwd(), "AGENTS.md"),
+      "Gemini CLI": (0, import_path11.join)((0, import_os10.homedir)(), ".gemini", "GEMINI.md"),
+      "Cursor (project)": (0, import_path11.join)(process.cwd(), ".cursor", "rules", "chron.mdc")
     };
     AI_TOOL_FOR_CLIENT = {
       "Claude Code": "claude",
@@ -23894,87 +25042,6 @@ var init_doctor = __esm({
       "Cursor (global)": "cursor",
       "Cursor (project)": "cursor"
     };
-  }
-});
-
-// node_modules/uuid/dist/esm/stringify.js
-function unsafeStringify(arr, offset = 0) {
-  return (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
-}
-var byteToHex;
-var init_stringify = __esm({
-  "node_modules/uuid/dist/esm/stringify.js"() {
-    byteToHex = [];
-    for (let i = 0; i < 256; ++i) {
-      byteToHex.push((i + 256).toString(16).slice(1));
-    }
-  }
-});
-
-// node_modules/uuid/dist/esm/rng.js
-function rng() {
-  if (poolPtr > rnds8Pool.length - 16) {
-    (0, import_crypto7.randomFillSync)(rnds8Pool);
-    poolPtr = 0;
-  }
-  return rnds8Pool.slice(poolPtr, poolPtr += 16);
-}
-var import_crypto7, rnds8Pool, poolPtr;
-var init_rng = __esm({
-  "node_modules/uuid/dist/esm/rng.js"() {
-    import_crypto7 = require("crypto");
-    rnds8Pool = new Uint8Array(256);
-    poolPtr = rnds8Pool.length;
-  }
-});
-
-// node_modules/uuid/dist/esm/native.js
-var import_crypto8, native_default;
-var init_native = __esm({
-  "node_modules/uuid/dist/esm/native.js"() {
-    import_crypto8 = require("crypto");
-    native_default = { randomUUID: import_crypto8.randomUUID };
-  }
-});
-
-// node_modules/uuid/dist/esm/v4.js
-function v4(options, buf, offset) {
-  if (native_default.randomUUID && !buf && !options) {
-    return native_default.randomUUID();
-  }
-  options = options || {};
-  const rnds = options.random ?? options.rng?.() ?? rng();
-  if (rnds.length < 16) {
-    throw new Error("Random bytes length must be >= 16");
-  }
-  rnds[6] = rnds[6] & 15 | 64;
-  rnds[8] = rnds[8] & 63 | 128;
-  if (buf) {
-    offset = offset || 0;
-    if (offset < 0 || offset + 16 > buf.length) {
-      throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
-    }
-    for (let i = 0; i < 16; ++i) {
-      buf[offset + i] = rnds[i];
-    }
-    return buf;
-  }
-  return unsafeStringify(rnds);
-}
-var v4_default;
-var init_v4 = __esm({
-  "node_modules/uuid/dist/esm/v4.js"() {
-    init_native();
-    init_rng();
-    init_stringify();
-    v4_default = v4;
-  }
-});
-
-// node_modules/uuid/dist/esm/index.js
-var init_esm = __esm({
-  "node_modules/uuid/dist/esm/index.js"() {
-    init_v4();
   }
 });
 
@@ -24271,35 +25338,6 @@ var init_detect = __esm({
   }
 });
 
-// src/db/readonly.ts
-function openReadOnly(path) {
-  if (!path.startsWith(":") && !(0, import_fs14.existsSync)(path)) return null;
-  const client = createClient({ url: path.startsWith(":") ? path : `file:${path}` });
-  return {
-    db: drizzle(client, { schema: schema_exports }),
-    close: () => {
-      try {
-        client.close();
-      } catch {
-      }
-    }
-  };
-}
-async function enforceReadOnly(handle) {
-  await handle.db.run(sql.raw("PRAGMA query_only = ON"));
-}
-var import_fs14;
-var init_readonly = __esm({
-  "src/db/readonly.ts"() {
-    "use strict";
-    init_node2();
-    init_drizzle_orm();
-    init_libsql();
-    import_fs14 = require("fs");
-    init_schema();
-  }
-});
-
 // src/utils/redact.ts
 function redactSecrets(input) {
   const detected = scanForSecrets(input);
@@ -24367,7 +25405,7 @@ function summarizeToolResult(raw, opts = {}) {
   const { redacted } = redactSecrets(raw);
   const slice = redacted.slice(0, TOOL_OUTPUT_EXCERPT_BYTES);
   const truncated = redacted.length > slice.length;
-  const hash2 = (0, import_crypto9.createHash)("sha256").update(raw).digest("hex");
+  const hash2 = (0, import_crypto12.createHash)("sha256").update(raw).digest("hex");
   const header = `[tool output not ingested in full \u2014 ${originalBytes} bytes, sha256:${hash2.slice(0, 16)}` + (detected.length ? `, ${detected.length} secret detection(s)` : "") + "]";
   const body = truncated ? `${slice}
 [... truncated, ${originalBytes - Buffer.byteLength(slice, "utf8")} bytes not ingested]` : slice;
@@ -24517,16 +25555,16 @@ function parseTranscript(raw, opts = {}) {
     first_timestamp: first,
     last_timestamp: last,
     out_of_order_timestamps: outOfOrder,
-    content_hash: (0, import_crypto9.createHash)("sha256").update(raw).digest("hex"),
+    content_hash: (0, import_crypto12.createHash)("sha256").update(raw).digest("hex"),
     secrets_found: secrets,
     secret_detections
   };
 }
-var import_crypto9, TOOL_OUTPUT_EXCERPT_BYTES, COMPACTION_BOUNDARY_TEXT;
+var import_crypto12, TOOL_OUTPUT_EXCERPT_BYTES, COMPACTION_BOUNDARY_TEXT;
 var init_claude_code = __esm({
   "src/import/claude-code.ts"() {
     "use strict";
-    import_crypto9 = require("crypto");
+    import_crypto12 = require("crypto");
     init_detect();
     init_redact();
     TOOL_OUTPUT_EXCERPT_BYTES = 400;
@@ -24537,7 +25575,7 @@ var init_claude_code = __esm({
 // src/import/discover.ts
 function transcriptRoot() {
   const override = process.env.CHRON_CLAUDE_PROJECTS_DIR;
-  return override && override.trim() ? override : (0, import_path11.join)((0, import_os11.homedir)(), ".claude", "projects");
+  return override && override.trim() ? override : (0, import_path12.join)((0, import_os11.homedir)(), ".claude", "projects");
 }
 function sessionIdOf(file) {
   if (!file.endsWith(".jsonl")) return null;
@@ -24545,35 +25583,35 @@ function sessionIdOf(file) {
   return id.length > 0 ? id : null;
 }
 function discoverTranscripts(root = transcriptRoot()) {
-  if (!(0, import_fs15.existsSync)(root)) return [];
+  if (!(0, import_fs16.existsSync)(root)) return [];
   const found = [];
   let projects;
   try {
-    projects = (0, import_fs15.readdirSync)(root);
+    projects = (0, import_fs16.readdirSync)(root);
   } catch {
     return [];
   }
   for (const project of projects) {
-    const projectDir = (0, import_path11.join)(root, project);
+    const projectDir = (0, import_path12.join)(root, project);
     let stat;
     try {
-      stat = (0, import_fs15.statSync)(projectDir);
+      stat = (0, import_fs16.statSync)(projectDir);
     } catch {
       continue;
     }
     if (!stat.isDirectory()) continue;
     let entries;
     try {
-      entries = (0, import_fs15.readdirSync)(projectDir);
+      entries = (0, import_fs16.readdirSync)(projectDir);
     } catch {
       continue;
     }
     for (const entry of entries) {
       const sessionId = sessionIdOf(entry);
       if (!sessionId) continue;
-      const path = (0, import_path11.join)(projectDir, entry);
+      const path = (0, import_path12.join)(projectDir, entry);
       try {
-        const s = (0, import_fs15.statSync)(path);
+        const s = (0, import_fs16.statSync)(path);
         if (!s.isFile()) continue;
         found.push({
           path,
@@ -24589,21 +25627,21 @@ function discoverTranscripts(root = transcriptRoot()) {
   return found.sort((a, b) => b.modified_at.localeCompare(a.modified_at));
 }
 function countNestedTranscripts(root = transcriptRoot()) {
-  if (!(0, import_fs15.existsSync)(root)) return 0;
+  if (!(0, import_fs16.existsSync)(root)) return 0;
   let count2 = 0;
   const walk = (dir, depth) => {
     if (depth > 6) return;
     let entries;
     try {
-      entries = (0, import_fs15.readdirSync)(dir);
+      entries = (0, import_fs16.readdirSync)(dir);
     } catch {
       return;
     }
     for (const entry of entries) {
-      const full = (0, import_path11.join)(dir, entry);
+      const full = (0, import_path12.join)(dir, entry);
       let s;
       try {
-        s = (0, import_fs15.statSync)(full);
+        s = (0, import_fs16.statSync)(full);
       } catch {
         continue;
       }
@@ -24613,39 +25651,39 @@ function countNestedTranscripts(root = transcriptRoot()) {
   };
   for (const project of (() => {
     try {
-      return (0, import_fs15.readdirSync)(root);
+      return (0, import_fs16.readdirSync)(root);
     } catch {
       return [];
     }
   })()) {
-    const projectDir = (0, import_path11.join)(root, project);
+    const projectDir = (0, import_path12.join)(root, project);
     try {
-      if (!(0, import_fs15.statSync)(projectDir).isDirectory()) continue;
+      if (!(0, import_fs16.statSync)(projectDir).isDirectory()) continue;
     } catch {
       continue;
     }
     for (const entry of (() => {
       try {
-        return (0, import_fs15.readdirSync)(projectDir);
+        return (0, import_fs16.readdirSync)(projectDir);
       } catch {
         return [];
       }
     })()) {
-      const full = (0, import_path11.join)(projectDir, entry);
+      const full = (0, import_path12.join)(projectDir, entry);
       try {
-        if ((0, import_fs15.statSync)(full).isDirectory()) walk(full, 1);
+        if ((0, import_fs16.statSync)(full).isDirectory()) walk(full, 1);
       } catch {
       }
     }
   }
   return count2;
 }
-var import_fs15, import_path11, import_os11;
+var import_fs16, import_path12, import_os11;
 var init_discover = __esm({
   "src/import/discover.ts"() {
     "use strict";
-    import_fs15 = require("fs");
-    import_path11 = require("path");
+    import_fs16 = require("fs");
+    import_path12 = require("path");
     import_os11 = require("os");
   }
 });
@@ -24678,7 +25716,7 @@ async function buildPreview(db, opts = {}) {
     };
     let raw;
     try {
-      raw = (0, import_fs16.readFileSync)(f.path, "utf8");
+      raw = (0, import_fs17.readFileSync)(f.path, "utf8");
     } catch (e) {
       unreadable++;
       transcripts.push({
@@ -24747,11 +25785,11 @@ function totalExclusions(result) {
   }
   return t;
 }
-var import_fs16;
+var import_fs17;
 var init_claude_code_preview = __esm({
   "src/import/claude-code-preview.ts"() {
     "use strict";
-    import_fs16 = require("fs");
+    import_fs17 = require("fs");
     init_drizzle_orm();
     init_schema();
     init_claude_code();
@@ -24759,32 +25797,9 @@ var init_claude_code_preview = __esm({
   }
 });
 
-// src/utils/time.ts
-function localISOString() {
-  const d = /* @__PURE__ */ new Date();
-  const offsetMin = -d.getTimezoneOffset();
-  const sign = offsetMin >= 0 ? "+" : "-";
-  const absMin = Math.abs(offsetMin);
-  const hh = String(Math.floor(absMin / 60)).padStart(2, "0");
-  const mm = String(absMin % 60).padStart(2, "0");
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  const seconds = String(d.getSeconds()).padStart(2, "0");
-  const ms = String(d.getMilliseconds()).padStart(3, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}${sign}${hh}:${mm}`;
-}
-var init_time = __esm({
-  "src/utils/time.ts"() {
-    "use strict";
-  }
-});
-
 // src/import/claude-code-import.ts
 function stableId(...parts) {
-  return (0, import_crypto10.createHash)("sha256").update(parts.join("\0")).digest("hex");
+  return (0, import_crypto13.createHash)("sha256").update(parts.join("\0")).digest("hex");
 }
 function importedMessageId(transcriptSessionId, sourceUuid) {
   return stableId("claude-code", transcriptSessionId, sourceUuid);
@@ -24838,7 +25853,7 @@ function prepareEvents(chronSessionId, transcriptSessionId, events) {
 async function importTranscript(db, file, includeToolOutput) {
   let raw;
   try {
-    raw = (0, import_fs17.readFileSync)(file.path, "utf8");
+    raw = (0, import_fs18.readFileSync)(file.path, "utf8");
   } catch (error) {
     return { session_id: file.session_id, imported_events: 0, skipped_events: 0, secrets_detected: 0, status: "error", error: error instanceof Error ? error.message : String(error) };
   }
@@ -24981,12 +25996,12 @@ async function importClaudeCodeTranscripts(db, opts = {}) {
   }
   return result;
 }
-var import_crypto10, import_fs17, INSERT_BATCH_SIZE;
+var import_crypto13, import_fs18, INSERT_BATCH_SIZE;
 var init_claude_code_import = __esm({
   "src/import/claude-code-import.ts"() {
     "use strict";
-    import_crypto10 = require("crypto");
-    import_fs17 = require("fs");
+    import_crypto13 = require("crypto");
+    import_fs18 = require("fs");
     init_drizzle_orm();
     init_esm();
     init_schema();
@@ -25018,80 +26033,80 @@ function renderPreview(r, root) {
   const out = [];
   const ex = totalExclusions(r);
   out.push(`
-${BOLD10}chron import claude-code${RESET11} ${DIM9}(dry run \u2014 nothing will be written)${RESET11}
+${BOLD11}chron import claude-code${RESET12} ${DIM10}(dry run \u2014 nothing will be written)${RESET12}
 `);
-  out.push(`  source: ${DIM9}${root}${RESET11}
+  out.push(`  source: ${DIM10}${root}${RESET12}
 
 `);
   if (r.transcripts.length === 0) {
-    out.push(`  ${YELLOW8}No Claude Code transcripts found.${RESET11}
+    out.push(`  ${YELLOW9}No Claude Code transcripts found.${RESET12}
 `);
     out.push(`
-${DIM9}Nothing was written. To import after reviewing this preview, run 'chron import claude-code --confirm'.${RESET11}
+${DIM10}Nothing was written. To import after reviewing this preview, run 'chron import claude-code --confirm'.${RESET12}
 
 `);
     return out.join("");
   }
-  out.push(`${CYAN8}Transcripts${RESET11}
+  out.push(`${CYAN8}Transcripts${RESET12}
 `);
   for (const t of r.transcripts) {
-    const mark = t.error ? `${YELLOW8}!${RESET11}` : t.already_imported ? `${DIM9}\xB7${RESET11}` : `${GREEN7}+${RESET11}`;
-    const status = t.error ? `${YELLOW8}unreadable${RESET11}` : t.already_imported ? `${DIM9}already imported${RESET11}` : `${GREEN7}new${RESET11}`;
+    const mark = t.error ? `${YELLOW9}!${RESET12}` : t.already_imported ? `${DIM10}\xB7${RESET12}` : `${GREEN8}+${RESET12}`;
+    const status = t.error ? `${YELLOW9}unreadable${RESET12}` : t.already_imported ? `${DIM10}already imported${RESET12}` : `${GREEN8}new${RESET12}`;
     out.push(`  ${mark} ${t.session_id.slice(0, 8)}  ${String(t.events).padStart(6)} events  ${bytes(t.size_bytes).padStart(8)}  ${t.modified_at.slice(0, 10)}  ${status}
 `);
-    if (t.error) out.push(`      ${YELLOW8}${t.error}${RESET11}
+    if (t.error) out.push(`      ${YELLOW9}${t.error}${RESET12}
 `);
   }
   out.push(`
-${CYAN8}Would ingest${RESET11}
+${CYAN8}Would ingest${RESET12}
 `);
   out.push(`  ${r.totals.candidates} new session(s), ${r.totals.events} event(s)
 `);
   if (r.totals.already_imported > 0) {
-    out.push(`  ${DIM9}${r.totals.already_imported} already imported, would be skipped${RESET11}
+    out.push(`  ${DIM10}${r.totals.already_imported} already imported, would be skipped${RESET12}
 `);
   }
   if (r.totals.unreadable > 0) {
-    out.push(`  ${YELLOW8}${r.totals.unreadable} unreadable, would be skipped${RESET11}
+    out.push(`  ${YELLOW9}${r.totals.unreadable} unreadable, would be skipped${RESET12}
 `);
   }
   out.push(`
-${CYAN8}Would NOT ingest${RESET11}
+${CYAN8}Would NOT ingest${RESET12}
 `);
-  out.push(`  ${ex.thinking.blocks} thinking block(s), ${bytes(ex.thinking.bytes)}   ${DIM9}model reasoning, never shown to you${RESET11}
+  out.push(`  ${ex.thinking.blocks} thinking block(s), ${bytes(ex.thinking.bytes)}   ${DIM10}model reasoning, never shown to you${RESET12}
 `);
-  out.push(`  ${ex.hook_attachments.lines} hook record(s), ${bytes(ex.hook_attachments.bytes)}   ${DIM9}raw stdout/stderr${RESET11}
+  out.push(`  ${ex.hook_attachments.lines} hook record(s), ${bytes(ex.hook_attachments.bytes)}   ${DIM10}raw stdout/stderr${RESET12}
 `);
-  out.push(`  ${ex.meta_lines} system-injected line(s)   ${DIM9}not authored by you${RESET11}
+  out.push(`  ${ex.meta_lines} system-injected line(s)   ${DIM10}not authored by you${RESET12}
 `);
-  out.push(`  ${ex.compaction_summaries.count} compaction summar(ies), ${bytes(ex.compaction_summaries.bytes)}   ${DIM9}kept as boundary events only${RESET11}
+  out.push(`  ${ex.compaction_summaries.count} compaction summar(ies), ${bytes(ex.compaction_summaries.bytes)}   ${DIM10}kept as boundary events only${RESET12}
 `);
-  out.push(`  ${bytes(ex.tool_output_truncated.original_bytes - ex.tool_output_truncated.kept_bytes)} of tool output across ${ex.tool_output_truncated.results} result(s)   ${DIM9}redacted and excerpted${RESET11}
+  out.push(`  ${bytes(ex.tool_output_truncated.original_bytes - ex.tool_output_truncated.kept_bytes)} of tool output across ${ex.tool_output_truncated.results} result(s)   ${DIM10}redacted and excerpted${RESET12}
 `);
   if (r.nested_excluded > 0) {
-    out.push(`  ${r.nested_excluded} nested subagent/workflow transcript(s)   ${DIM9}not in default scope${RESET11}
+    out.push(`  ${r.nested_excluded} nested subagent/workflow transcript(s)   ${DIM10}not in default scope${RESET12}
 `);
   }
   const secrets = r.transcripts.reduce((n, t) => n + t.secrets_found, 0);
   const outOfOrder = r.transcripts.reduce((n, t) => n + t.out_of_order_timestamps, 0);
   if (secrets > 0 || outOfOrder > 0) {
     out.push(`
-${CYAN8}Notes${RESET11}
+${CYAN8}Notes${RESET12}
 `);
     if (secrets > 0) {
-      out.push(`  ${secrets} secret detection(s) across these transcripts   ${DIM9}redacted before excerpting${RESET11}
+      out.push(`  ${secrets} secret detection(s) across these transcripts   ${DIM10}redacted before excerpting${RESET12}
 `);
     }
     if (outOfOrder > 0) {
-      out.push(`  ${outOfOrder} line(s) whose timestamp precedes an earlier line   ${DIM9}source order preserved separately${RESET11}
+      out.push(`  ${outOfOrder} line(s) whose timestamp precedes an earlier line   ${DIM10}source order preserved separately${RESET12}
 `);
     }
   }
   out.push(`
-${DIM9}${OVERLAP_DISCLOSURE}${RESET11}
+${DIM10}${OVERLAP_DISCLOSURE}${RESET12}
 `);
   out.push(`
-${DIM9}Nothing was written. To import after reviewing this preview, run 'chron import claude-code --confirm'.${RESET11}
+${DIM10}Nothing was written. To import after reviewing this preview, run 'chron import claude-code --confirm'.${RESET12}
 
 `);
   return out.join("");
@@ -25102,7 +26117,7 @@ async function runClaudeCodeDryRun(args2) {
   process.stderr.write(
     "Scanning local Claude Code transcripts; large histories can take a few minutes...\n"
   );
-  const handle = openReadOnly(getDbPathForRead());
+  const handle = openUntouched(getDbPathForRead());
   try {
     if (handle) await enforceReadOnly(handle);
     const result = await buildPreview(handle?.db ?? null, { includeToolOutput, root });
@@ -25114,36 +26129,36 @@ async function runClaudeCodeDryRun(args2) {
 function renderImportResult(result, root) {
   const out = [];
   out.push(`
-${BOLD10}chron import claude-code${RESET11}
+${BOLD11}chron import claude-code${RESET12}
 `);
-  out.push(`  source: ${DIM9}${root}${RESET11}
+  out.push(`  source: ${DIM10}${root}${RESET12}
 
 `);
-  out.push(`${GREEN7}Imported${RESET11}
+  out.push(`${GREEN8}Imported${RESET12}
 `);
   out.push(`  ${result.imported_sessions} session(s), ${result.imported_events} event(s)
 `);
-  if (result.already_current > 0) out.push(`  ${DIM9}${result.already_current} transcript(s) already current (${result.skipped_events} event(s) unchanged)${RESET11}
+  if (result.already_current > 0) out.push(`  ${DIM10}${result.already_current} transcript(s) already current (${result.skipped_events} event(s) unchanged)${RESET12}
 `);
-  if (result.skipped_empty > 0) out.push(`  ${DIM9}${result.skipped_empty} transcript(s) had no ingestible events${RESET11}
+  if (result.skipped_empty > 0) out.push(`  ${DIM10}${result.skipped_empty} transcript(s) had no ingestible events${RESET12}
 `);
-  if (result.secrets_detected > 0) out.push(`  ${YELLOW8}${result.secrets_detected} secret detection(s) recorded with masked values${RESET11}
+  if (result.secrets_detected > 0) out.push(`  ${YELLOW9}${result.secrets_detected} secret detection(s) recorded with masked values${RESET12}
 `);
   if (result.errors > 0) {
     out.push(`
-${YELLOW8}Not imported${RESET11}
+${YELLOW9}Not imported${RESET12}
 `);
     for (const item of result.items.filter((item2) => item2.status === "error")) {
-      out.push(`  ${YELLOW8}!${RESET11} ${item.session_id.slice(0, 8)}  ${item.error}
+      out.push(`  ${YELLOW9}!${RESET12} ${item.session_id.slice(0, 8)}  ${item.error}
 `);
     }
   }
   out.push(`
-${DIM9}Imported sessions are partial evidence: Chron ingested a Claude Code client transcript and did not witness the original events.${RESET11}
+${DIM10}Imported sessions are partial evidence: Chron ingested a Claude Code client transcript and did not witness the original events.${RESET12}
 `);
-  out.push(`${DIM9}${OVERLAP_DISCLOSURE}${RESET11}
+  out.push(`${DIM10}${OVERLAP_DISCLOSURE}${RESET12}
 `);
-  out.push(`${DIM9}Run 'chron coverage --evidence-use' to see their local evidence boundary and review references.${RESET11}
+  out.push(`${DIM10}Run 'chron coverage --evidence-use' to see their local evidence boundary and review references.${RESET12}
 
 `);
   return out.join("");
@@ -25163,7 +26178,7 @@ async function runClaudeCodeImport(args2) {
   const result = await importClaudeCodeTranscripts(db, { root, includeToolOutput });
   process.stdout.write(renderImportResult(result, root));
 }
-var RESET11, BOLD10, DIM9, GREEN7, YELLOW8, CYAN8;
+var RESET12, BOLD11, DIM10, GREEN8, YELLOW9, CYAN8;
 var init_import_claude_code = __esm({
   "src/cli/import-claude-code.ts"() {
     "use strict";
@@ -25174,11 +26189,11 @@ var init_import_claude_code = __esm({
     init_claude_code_import();
     init_discover();
     init_evidence();
-    RESET11 = "\x1B[0m";
-    BOLD10 = "\x1B[1m";
-    DIM9 = "\x1B[2m";
-    GREEN7 = "\x1B[32m";
-    YELLOW8 = "\x1B[33m";
+    RESET12 = "\x1B[0m";
+    BOLD11 = "\x1B[1m";
+    DIM10 = "\x1B[2m";
+    GREEN8 = "\x1B[32m";
+    YELLOW9 = "\x1B[33m";
     CYAN8 = "\x1B[36m";
   }
 });
@@ -25229,10 +26244,10 @@ function messagesFromConversation(conv) {
   return result;
 }
 function findFile(dir, name2) {
-  for (const entry of (0, import_fs18.readdirSync)(dir)) {
-    const full = (0, import_path12.join)(dir, entry);
+  for (const entry of (0, import_fs19.readdirSync)(dir)) {
+    const full = (0, import_path13.join)(dir, entry);
     try {
-      if ((0, import_fs18.statSync)(full).isDirectory()) {
+      if ((0, import_fs19.statSync)(full).isDirectory()) {
         const found = findFile(full, name2);
         if (found) return found;
       } else if (entry === name2) {
@@ -25340,10 +26355,10 @@ async function importConversations(filePath) {
   const db = await initDb();
   let raw;
   let tempDir = null;
-  const ext = (0, import_path12.extname)(filePath).toLowerCase();
+  const ext = (0, import_path13.extname)(filePath).toLowerCase();
   if (ext === ".zip") {
-    tempDir = (0, import_path12.join)((0, import_os12.tmpdir)(), `chron-import-${Date.now()}`);
-    (0, import_fs18.mkdirSync)(tempDir, { recursive: true });
+    tempDir = (0, import_path13.join)((0, import_os12.tmpdir)(), `chron-import-${Date.now()}`);
+    (0, import_fs19.mkdirSync)(tempDir, { recursive: true });
     try {
       (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "conversations.json", "-d", tempDir], { stdio: "pipe" });
     } catch {
@@ -25352,7 +26367,7 @@ async function importConversations(filePath) {
       } catch {
         process.stderr.write(`Failed to extract ${filePath}. Make sure 'unzip' is installed.
 `);
-        (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
+        (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
         process.exit(1);
       }
     }
@@ -25360,12 +26375,12 @@ async function importConversations(filePath) {
     if (!found) {
       process.stderr.write(`conversations.json not found inside the ZIP.
 `);
-      (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
+      (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
       process.exit(1);
     }
-    raw = (0, import_fs18.readFileSync)(found, "utf8");
+    raw = (0, import_fs19.readFileSync)(found, "utf8");
   } else if (ext === ".json") {
-    raw = (0, import_fs18.readFileSync)(filePath, "utf8");
+    raw = (0, import_fs19.readFileSync)(filePath, "utf8");
   } else {
     process.stderr.write(`Unsupported file type: ${ext}. Pass a .zip export or a conversations.json file.
 `);
@@ -25378,30 +26393,30 @@ async function importConversations(filePath) {
   } catch {
     process.stderr.write(`Failed to parse conversations JSON.
 `);
-    if (tempDir) (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
+    if (tempDir) (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   process.stdout.write(`
-${BOLD11}chron import chatgpt${RESET12}  ${DIM10}${filePath}${RESET12}
+${BOLD12}chron import chatgpt${RESET13}  ${DIM11}${filePath}${RESET13}
 `);
-  process.stdout.write(`${DIM10}${conversations.length} conversation(s) found${RESET12}
+  process.stdout.write(`${DIM11}${conversations.length} conversation(s) found${RESET13}
 
 `);
   const result = await importGptConversations(db, conversations);
   for (const e of result.errors) {
-    process.stderr.write(`  ${YELLOW9}!${RESET12} Failed to import "${e.title}": ${e.error}
+    process.stderr.write(`  ${YELLOW10}!${RESET13} Failed to import "${e.title}": ${e.error}
 `);
   }
-  if (tempDir) (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
+  if (tempDir) (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
   process.stdout.write("\n");
-  process.stdout.write(`${BOLD11}Done.${RESET12}  `);
-  process.stdout.write(`${GREEN8}${result.imported} imported${RESET12}`);
-  if (result.skipped > 0) process.stdout.write(`  ${DIM10}${result.skipped} skipped (already in DB)${RESET12}`);
-  process.stdout.write(`  ${CYAN9}${result.totalMessages} messages total${RESET12}`);
-  if (result.totalSecrets > 0) process.stdout.write(`  ${YELLOW9}${result.totalSecrets} secret(s) detected${RESET12}`);
-  if (result.errors.length > 0) process.stdout.write(`  ${YELLOW9}${result.errors.length} error(s)${RESET12}`);
+  process.stdout.write(`${BOLD12}Done.${RESET13}  `);
+  process.stdout.write(`${GREEN9}${result.imported} imported${RESET13}`);
+  if (result.skipped > 0) process.stdout.write(`  ${DIM11}${result.skipped} skipped (already in DB)${RESET13}`);
+  process.stdout.write(`  ${CYAN9}${result.totalMessages} messages total${RESET13}`);
+  if (result.totalSecrets > 0) process.stdout.write(`  ${YELLOW10}${result.totalSecrets} secret(s) detected${RESET13}`);
+  if (result.errors.length > 0) process.stdout.write(`  ${YELLOW10}${result.errors.length} error(s)${RESET13}`);
   process.stdout.write("\n\n");
-  process.stdout.write(`${DIM10}Run 'chron history' to browse imported sessions.${RESET12}
+  process.stdout.write(`${DIM11}Run 'chron history' to browse imported sessions.${RESET13}
 
 `);
 }
@@ -25504,10 +26519,10 @@ async function importClaudeAi(filePath) {
   const db = await initDb();
   let raw;
   let tempDir = null;
-  const ext = (0, import_path12.extname)(filePath).toLowerCase();
+  const ext = (0, import_path13.extname)(filePath).toLowerCase();
   if (ext === ".zip") {
-    tempDir = (0, import_path12.join)((0, import_os12.tmpdir)(), `chron-import-${Date.now()}`);
-    (0, import_fs18.mkdirSync)(tempDir, { recursive: true });
+    tempDir = (0, import_path13.join)((0, import_os12.tmpdir)(), `chron-import-${Date.now()}`);
+    (0, import_fs19.mkdirSync)(tempDir, { recursive: true });
     try {
       (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "conversations.json", "-d", tempDir], { stdio: "pipe" });
     } catch {
@@ -25516,7 +26531,7 @@ async function importClaudeAi(filePath) {
       } catch {
         process.stderr.write(`Failed to extract ${filePath}. Make sure 'unzip' is installed.
 `);
-        if (tempDir) (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
+        if (tempDir) (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
         process.exit(1);
       }
     }
@@ -25524,12 +26539,12 @@ async function importClaudeAi(filePath) {
     if (!found) {
       process.stderr.write(`conversations.json not found inside the ZIP.
 `);
-      if (tempDir) (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
+      if (tempDir) (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
       process.exit(1);
     }
-    raw = (0, import_fs18.readFileSync)(found, "utf8");
+    raw = (0, import_fs19.readFileSync)(found, "utf8");
   } else if (ext === ".json") {
-    raw = (0, import_fs18.readFileSync)(filePath, "utf8");
+    raw = (0, import_fs19.readFileSync)(filePath, "utf8");
   } else {
     process.stderr.write(`Unsupported file type: ${ext}. Pass the claude-ai-export-*.zip or conversations.json.
 `);
@@ -25542,34 +26557,34 @@ async function importClaudeAi(filePath) {
   } catch {
     process.stderr.write(`Failed to parse conversations JSON.
 `);
-    if (tempDir) (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
+    if (tempDir) (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   process.stdout.write(`
-${BOLD11}chron import claude${RESET12}  ${DIM10}${filePath}${RESET12}
+${BOLD12}chron import claude${RESET13}  ${DIM11}${filePath}${RESET13}
 `);
-  process.stdout.write(`${DIM10}${conversations.length} conversation(s) found${RESET12}
+  process.stdout.write(`${DIM11}${conversations.length} conversation(s) found${RESET13}
 `);
-  process.stdout.write(`${YELLOW9}Imported sessions are marked as partial evidence \u2014 tool calls and environment state are not captured in claude.ai exports.${RESET12}
+  process.stdout.write(`${YELLOW10}Imported sessions are marked as partial evidence \u2014 tool calls and environment state are not captured in claude.ai exports.${RESET13}
 
 `);
   const result = await importClaudeAiConversations(db, conversations);
   for (const e of result.errors) {
-    process.stderr.write(`  ${YELLOW9}!${RESET12} Failed to import "${e.title}": ${e.error}
+    process.stderr.write(`  ${YELLOW10}!${RESET13} Failed to import "${e.title}": ${e.error}
 `);
   }
-  if (tempDir) (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
+  if (tempDir) (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
   process.stdout.write("\n");
-  process.stdout.write(`${BOLD11}Done.${RESET12}  `);
-  process.stdout.write(`${GREEN8}${result.imported} imported${RESET12}`);
-  if (result.skipped > 0) process.stdout.write(`  ${DIM10}${result.skipped} skipped (already in DB)${RESET12}`);
-  process.stdout.write(`  ${CYAN9}${result.totalMessages} messages total${RESET12}`);
-  if (result.totalSecrets > 0) process.stdout.write(`  ${YELLOW9}${result.totalSecrets} secret(s) detected${RESET12}`);
-  if (result.errors.length > 0) process.stdout.write(`  ${YELLOW9}${result.errors.length} error(s)${RESET12}`);
+  process.stdout.write(`${BOLD12}Done.${RESET13}  `);
+  process.stdout.write(`${GREEN9}${result.imported} imported${RESET13}`);
+  if (result.skipped > 0) process.stdout.write(`  ${DIM11}${result.skipped} skipped (already in DB)${RESET13}`);
+  process.stdout.write(`  ${CYAN9}${result.totalMessages} messages total${RESET13}`);
+  if (result.totalSecrets > 0) process.stdout.write(`  ${YELLOW10}${result.totalSecrets} secret(s) detected${RESET13}`);
+  if (result.errors.length > 0) process.stdout.write(`  ${YELLOW10}${result.errors.length} error(s)${RESET13}`);
   process.stdout.write("\n\n");
-  process.stdout.write(`${DIM10}Run 'chron history' to browse imported sessions.${RESET12}
+  process.stdout.write(`${DIM11}Run 'chron history' to browse imported sessions.${RESET13}
 `);
-  process.stdout.write(`${DIM10}Run 'chron coverage' to see your full evidence boundary.${RESET12}
+  process.stdout.write(`${DIM11}Run 'chron coverage' to see your full evidence boundary.${RESET13}
 
 `);
 }
@@ -25583,7 +26598,7 @@ async function runImport(args2) {
       process.exit(1);
     }
     const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
-    if (!(0, import_fs18.existsSync)(resolved)) {
+    if (!(0, import_fs19.existsSync)(resolved)) {
       process.stderr.write(`File not found: ${resolved}
 `);
       process.exit(1);
@@ -25599,7 +26614,7 @@ async function runImport(args2) {
       process.exit(1);
     }
     const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
-    if (!(0, import_fs18.existsSync)(resolved)) {
+    if (!(0, import_fs19.existsSync)(resolved)) {
       process.stderr.write(`File not found: ${resolved}
 `);
       process.exit(1);
@@ -25638,12 +26653,12 @@ Available importers: chatgpt, claude
   );
   process.exit(1);
 }
-var import_fs18, import_path12, import_os12, import_child_process4, RESET12, BOLD11, DIM10, GREEN8, YELLOW9, CYAN9;
+var import_fs19, import_path13, import_os12, import_child_process4, RESET13, BOLD12, DIM11, GREEN9, YELLOW10, CYAN9;
 var init_import = __esm({
   "src/cli/import.ts"() {
     "use strict";
-    import_fs18 = require("fs");
-    import_path12 = require("path");
+    import_fs19 = require("fs");
+    import_path13 = require("path");
     import_os12 = require("os");
     import_child_process4 = require("child_process");
     init_drizzle_orm();
@@ -25654,18 +26669,18 @@ var init_import = __esm({
     init_content();
     init_detect();
     init_signing();
-    RESET12 = "\x1B[0m";
-    BOLD11 = "\x1B[1m";
-    DIM10 = "\x1B[2m";
-    GREEN8 = "\x1B[32m";
-    YELLOW9 = "\x1B[33m";
+    RESET13 = "\x1B[0m";
+    BOLD12 = "\x1B[1m";
+    DIM11 = "\x1B[2m";
+    GREEN9 = "\x1B[32m";
+    YELLOW10 = "\x1B[33m";
     CYAN9 = "\x1B[36m";
   }
 });
 
 // src/review/workflow.ts
 function findingId(ruleId, sessionId) {
-  return (0, import_crypto11.createHash)("sha256").update(`${ruleId}:${sessionId}`).digest("hex");
+  return (0, import_crypto14.createHash)("sha256").update(`${ruleId}:${sessionId}`).digest("hex");
 }
 async function hydrateFindingStatuses(db, findings) {
   if (findings.length === 0) return findings;
@@ -25737,11 +26752,11 @@ async function loadFindingStates(client, ids) {
     reviewed_at: row.reviewed_at == null ? null : String(row.reviewed_at)
   }));
 }
-var import_crypto11;
+var import_crypto14;
 var init_workflow = __esm({
   "src/review/workflow.ts"() {
     "use strict";
-    import_crypto11 = require("crypto");
+    import_crypto14 = require("crypto");
   }
 });
 
@@ -25939,56 +26954,56 @@ function printFindings(findings, framework, sessionCount, showAll) {
   const controlsHit = new Set(findings.flatMap((f) => f.controls));
   process.stdout.write(
     `
-${BOLD12}Chron Review${RESET13}  ${CYAN10}${framework.toUpperCase()}${RESET13}  ${DIM11}${sessionCount} session(s) reviewed${showAll ? " \xB7 all statuses" : " \xB7 open findings"}${RESET13}
+${BOLD13}Chron Review${RESET14}  ${CYAN10}${framework.toUpperCase()}${RESET14}  ${DIM12}${sessionCount} session(s) reviewed${showAll ? " \xB7 all statuses" : " \xB7 open findings"}${RESET14}
 
 `
   );
   if (findings.length === 0) {
     process.stdout.write(
-      showAll ? `${DIM11}No findings. No sessions matched any control review criteria.${RESET13}
+      showAll ? `${DIM12}No findings. No sessions matched any control review criteria.${RESET14}
 
-` : `${DIM11}No open findings. Use --all to include accepted, dismissed, and resolved findings.${RESET13}
+` : `${DIM12}No open findings. Use --all to include accepted, dismissed, and resolved findings.${RESET14}
 
 `
     );
     return;
   }
   process.stdout.write(
-    `${BOLD12}${findings.length}${RESET13} finding${findings.length === 1 ? "" : "s"}  across  ${BOLD12}${controlsHit.size}${RESET13} control${controlsHit.size === 1 ? "" : "s"}
+    `${BOLD13}${findings.length}${RESET14} finding${findings.length === 1 ? "" : "s"}  across  ${BOLD13}${controlsHit.size}${RESET14} control${controlsHit.size === 1 ? "" : "s"}
 
 `
   );
   process.stdout.write(
-    `${DIM11}This report identifies AI-session evidence that may require control-owner review.
-It is not a certification of compliance or evidence of any violation.${RESET13}
+    `${DIM12}This report identifies AI-session evidence that may require control-owner review.
+It is not a certification of compliance or evidence of any violation.${RESET14}
 
 `
   );
   for (const f of findings) {
-    const sevColor = SEV_COLOR[f.severity] ?? DIM11;
-    const statusColor = STATUS_COLOR[f.status] ?? DIM11;
+    const sevColor = SEV_COLOR[f.severity] ?? DIM12;
+    const statusColor = STATUS_COLOR[f.status] ?? DIM12;
     const controls = f.controls.join(", ");
     const sev = f.severity.toUpperCase().padEnd(8);
     const status = f.status.toUpperCase().padEnd(9);
     process.stdout.write(
-      `  ${sevColor}${BOLD12}${sev}${RESET13}  ${statusColor}${status}${RESET13}  ${MAGENTA2}${controls.padEnd(16)}${RESET13}  ${CYAN10}${f.session_prefix}${RESET13}  ${f.session_title}
+      `  ${sevColor}${BOLD13}${sev}${RESET14}  ${statusColor}${status}${RESET14}  ${MAGENTA2}${controls.padEnd(16)}${RESET14}  ${CYAN10}${f.session_prefix}${RESET14}  ${f.session_title}
 `
     );
-    process.stdout.write(`    ${DIM11}id: ${f.id.slice(0, 16)}${RESET13}
+    process.stdout.write(`    ${DIM12}id: ${f.id.slice(0, 16)}${RESET14}
 `);
     process.stdout.write(`    ${f.finding}
 `);
     for (const item of f.evidence_items.slice(0, 5)) {
-      process.stdout.write(`    ${DIM11}\u2022 ${item}${RESET13}
+      process.stdout.write(`    ${DIM12}\u2022 ${item}${RESET14}
 `);
     }
     if (f.evidence_items.length > 5) {
-      process.stdout.write(`    ${DIM11}  \u2026 ${f.evidence_items.length - 5} more event(s)${RESET13}
+      process.stdout.write(`    ${DIM12}  \u2026 ${f.evidence_items.length - 5} more event(s)${RESET14}
 `);
     }
-    process.stdout.write(`    ${DIM11}Suggested: ${f.suggested_evidence[0]}${RESET13}
+    process.stdout.write(`    ${DIM12}Suggested: ${f.suggested_evidence[0]}${RESET14}
 `);
-    if (f.note) process.stdout.write(`    ${DIM11}Note: ${f.note}${RESET13}
+    if (f.note) process.stdout.write(`    ${DIM12}Note: ${f.note}${RESET14}
 `);
     process.stdout.write("\n");
   }
@@ -26006,16 +27021,16 @@ function renderFullMapCli(framework, map, info2) {
   const counts = { covered: 0, needs_evidence: 0, manual_review: 0, out_of_scope: 0 };
   for (const e of map) counts[e.coverage] = (counts[e.coverage] ?? 0) + 1;
   process.stdout.write(`
-${BOLD12}Control Map \u2014 ${info2.title}${RESET13}
+${BOLD13}Control Map \u2014 ${info2.title}${RESET14}
 
 `);
-  process.stdout.write(`  ${CYAN10}Covered by session evidence:${RESET13}  ${BOLD12}${counts["covered"] ?? 0}${RESET13}
+  process.stdout.write(`  ${CYAN10}Covered by session evidence:${RESET14}  ${BOLD13}${counts["covered"] ?? 0}${RESET14}
 `);
-  process.stdout.write(`  ${YELLOW10}Needs additional evidence:${RESET13}   ${BOLD12}${counts["needs_evidence"] ?? 0}${RESET13}
+  process.stdout.write(`  ${YELLOW11}Needs additional evidence:${RESET14}   ${BOLD13}${counts["needs_evidence"] ?? 0}${RESET14}
 `);
-  process.stdout.write(`  ${DIM11}Manual review required:${RESET13}      ${BOLD12}${counts["manual_review"] ?? 0}${RESET13}
+  process.stdout.write(`  ${DIM12}Manual review required:${RESET14}      ${BOLD13}${counts["manual_review"] ?? 0}${RESET14}
 `);
-  process.stdout.write(`  ${DIM11}Out of scope:${RESET13}                ${BOLD12}${counts["out_of_scope"] ?? 0}${RESET13}
+  process.stdout.write(`  ${DIM12}Out of scope:${RESET14}                ${BOLD13}${counts["out_of_scope"] ?? 0}${RESET14}
 
 `);
   const groups = { covered: [], needs_evidence: [], manual_review: [], out_of_scope: [] };
@@ -26023,23 +27038,23 @@ ${BOLD12}Control Map \u2014 ${info2.title}${RESET13}
   for (const cov of COV_ORDER) {
     const entries = groups[cov];
     if (!entries || entries.length === 0) continue;
-    process.stdout.write(`${BOLD12}${COV_LABELS[cov]}:${RESET13}
+    process.stdout.write(`${BOLD13}${COV_LABELS[cov]}:${RESET14}
 `);
     for (const e of entries) {
       const id = e.id.padEnd(22);
       const title = e.title.length > 50 ? e.title.slice(0, 47) + "\u2026" : e.title.padEnd(50);
       let suffix = "";
-      if (cov === "covered") suffix = `${DIM11}rule: ${e.rule_id}${RESET13}`;
-      if (cov === "needs_evidence") suffix = `${DIM11}source: ${e.required_source}${RESET13}`;
-      if (cov === "manual_review") suffix = `${DIM11}human judgement required${RESET13}`;
-      process.stdout.write(`  ${CYAN10}${id}${RESET13}  ${title}  ${suffix}
+      if (cov === "covered") suffix = `${DIM12}rule: ${e.rule_id}${RESET14}`;
+      if (cov === "needs_evidence") suffix = `${DIM12}source: ${e.required_source}${RESET14}`;
+      if (cov === "manual_review") suffix = `${DIM12}human judgement required${RESET14}`;
+      process.stdout.write(`  ${CYAN10}${id}${RESET14}  ${title}  ${suffix}
 `);
     }
     process.stdout.write("\n");
   }
   process.stdout.write(
-    `${DIM11}Covered does not mean compliant. It means Chron has a deterministic session-evidence rule for this control.
-A full framework assessment requires policy documents, auditor judgement, and evidence beyond session logs.${RESET13}
+    `${DIM12}Covered does not mean compliant. It means Chron has a deterministic session-evidence rule for this control.
+A full framework assessment requires policy documents, auditor judgement, and evidence beyond session logs.${RESET14}
 
 `
   );
@@ -26324,7 +27339,7 @@ async function runReview2(args2) {
       findings,
       coverageMapHtml
     });
-    (0, import_fs19.writeFileSync)(outputArg, html, "utf8");
+    (0, import_fs20.writeFileSync)(outputArg, html, "utf8");
     process.stdout.write(`Review report written to ${outputArg}
 `);
   }
@@ -26356,11 +27371,11 @@ async function runReviewAction(action, args2) {
     process.exit(1);
   }
 }
-var import_fs19, import_os13, RESET13, BOLD12, DIM11, RED8, YELLOW10, CYAN10, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
+var import_fs20, import_os13, RESET14, BOLD13, DIM12, RED9, YELLOW11, CYAN10, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
 var init_review = __esm({
   "src/cli/review.ts"() {
     "use strict";
-    import_fs19 = require("fs");
+    import_fs20 = require("fs");
     import_os13 = require("os");
     init_db2();
     init_report();
@@ -26368,23 +27383,23 @@ var init_review = __esm({
     init_control_map();
     init_engine();
     init_workflow();
-    RESET13 = "\x1B[0m";
-    BOLD12 = "\x1B[1m";
-    DIM11 = "\x1B[2m";
-    RED8 = "\x1B[31m";
-    YELLOW10 = "\x1B[33m";
+    RESET14 = "\x1B[0m";
+    BOLD13 = "\x1B[1m";
+    DIM12 = "\x1B[2m";
+    RED9 = "\x1B[31m";
+    YELLOW11 = "\x1B[33m";
     CYAN10 = "\x1B[36m";
     MAGENTA2 = "\x1B[35m";
     SEV_COLOR = {
-      critical: RED8,
-      high: YELLOW10,
+      critical: RED9,
+      high: YELLOW11,
       medium: CYAN10,
-      low: DIM11
+      low: DIM12
     };
     STATUS_COLOR = {
-      open: YELLOW10,
+      open: YELLOW11,
       accepted: CYAN10,
-      dismissed: DIM11,
+      dismissed: DIM12,
       resolved: CYAN10
     };
     REPORT_CSS = `
@@ -26552,11 +27567,11 @@ async function runRisk(args2) {
   const scored = rows.map((r) => ({ ...r, risk: scores.get(r.id) })).filter((r) => showAll || r.risk.score > 0).sort((a, b) => b.risk.score - a.risk.score);
   const label = since ? `since ${sinceArg}` : "all time";
   process.stdout.write(`
-${BOLD13}Sessions requiring attention${RESET14}  ${DIM12}(${label})${RESET14}
+${BOLD14}Sessions requiring attention${RESET15}  ${DIM13}(${label})${RESET15}
 
 `);
   if (scored.length === 0) {
-    process.stdout.write(`${DIM12}No sessions with attention signals detected.${RESET14}
+    process.stdout.write(`${DIM13}No sessions with attention signals detected.${RESET15}
 
 `);
     return;
@@ -26570,11 +27585,11 @@ ${BOLD13}Sessions requiring attention${RESET14}  ${DIM12}(${label})${RESET14}
     const date = fmtDate5(row.updated_at);
     const tool = row.ai_tool ?? "unknown";
     process.stdout.write(
-      `  ${color}${BOLD13}${score}${RESET14}  ${color}${dots}${RESET14}  ${CYAN11}${prefix}${RESET14}  ${DIM12}${tool.padEnd(12)}${RESET14}  ${DIM12}${date}${RESET14}  ${row.title}
+      `  ${color}${BOLD14}${score}${RESET15}  ${color}${dots}${RESET15}  ${CYAN11}${prefix}${RESET15}  ${DIM13}${tool.padEnd(12)}${RESET15}  ${DIM13}${date}${RESET15}  ${row.title}
 `
     );
     for (const reason of risk.reasons.slice(0, 3)) {
-      process.stdout.write(`      ${DIM12}\u21B3 ${reason}${RESET14}
+      process.stdout.write(`      ${DIM13}\u21B3 ${reason}${RESET15}
 `);
     }
     process.stdout.write("\n");
@@ -26583,15 +27598,15 @@ ${BOLD13}Sessions requiring attention${RESET14}  ${DIM12}(${label})${RESET14}
   const critical = scored.filter((r) => r.risk.band === "critical").length;
   const high = scored.filter((r) => r.risk.band === "high").length;
   const summary = [];
-  if (critical > 0) summary.push(`${RED9}${BOLD13}${critical} critical${RESET14}`);
-  if (high > 0) summary.push(`${YELLOW11}${high} high${RESET14}`);
+  if (critical > 0) summary.push(`${RED10}${BOLD14}${critical} critical${RESET15}`);
+  if (high > 0) summary.push(`${YELLOW12}${high} high${RESET15}`);
   const rest = total - critical - high;
-  if (rest > 0) summary.push(`${DIM12}${rest} review${RESET14}`);
-  process.stdout.write(`  ${BOLD13}${total}${RESET14} session${total === 1 ? "" : "s"} flagged`);
+  if (rest > 0) summary.push(`${DIM13}${rest} review${RESET15}`);
+  process.stdout.write(`  ${BOLD14}${total}${RESET15} session${total === 1 ? "" : "s"} flagged`);
   if (summary.length > 0) process.stdout.write(`  \xB7  ${summary.join("  ")}`);
   process.stdout.write("\n\n");
 }
-var RESET14, BOLD13, DIM12, RED9, YELLOW11, CYAN11, BAND_COLOR2, BAND_DOTS;
+var RESET15, BOLD14, DIM13, RED10, YELLOW12, CYAN11, BAND_COLOR2, BAND_DOTS;
 var init_risk2 = __esm({
   "src/cli/risk.ts"() {
     "use strict";
@@ -26600,17 +27615,17 @@ var init_risk2 = __esm({
     init_schema();
     init_report();
     init_risk();
-    RESET14 = "\x1B[0m";
-    BOLD13 = "\x1B[1m";
-    DIM12 = "\x1B[2m";
-    RED9 = "\x1B[31m";
-    YELLOW11 = "\x1B[33m";
+    RESET15 = "\x1B[0m";
+    BOLD14 = "\x1B[1m";
+    DIM13 = "\x1B[2m";
+    RED10 = "\x1B[31m";
+    YELLOW12 = "\x1B[33m";
     CYAN11 = "\x1B[36m";
     BAND_COLOR2 = {
-      critical: RED9,
-      high: YELLOW11,
-      review: YELLOW11,
-      normal: DIM12
+      critical: RED10,
+      high: YELLOW12,
+      review: YELLOW12,
+      normal: DIM13
     };
     BAND_DOTS = {
       critical: "\u25CF\u25CF\u25CF\u25CF",
@@ -26648,20 +27663,7 @@ async function computeTamperStatus(session, msgs) {
   let chain_count = 0;
   if (chained.length > 0) {
     chain_count = chained.length;
-    let ok3 = true;
-    for (let i = 0; i < chained.length; i++) {
-      const row = chained[i];
-      const expectedPrev = i === 0 ? null : chained[i - 1].content_hash;
-      if (row.prev_hash !== expectedPrev) {
-        ok3 = false;
-        break;
-      }
-      const expected = computeContentHash(row.session_id, row.role, row.content, row.created_at, row.prev_hash, row.event_type ?? void 0);
-      if (row.content_hash !== expected) {
-        ok3 = false;
-        break;
-      }
-    }
+    const ok3 = verifyMessageChain(msgs).valid;
     chain = ok3 ? "valid" : "broken";
     chain_msg = ok3 ? `All ${chained.length} message hashes valid` : "Hash chain broken \u2014 content may have been altered";
   }
@@ -26958,7 +27960,7 @@ async function runSessionDetail(prefix, outputArg) {
   const html = buildDetailHtml(session, msgs, secretsByMsg, findings, risk, tamper, generatedAt);
   const defaultOut = `chron-session-${session.id.slice(0, 8)}.html`;
   const outFile = outputArg !== "chron-dashboard.html" ? outputArg : defaultOut;
-  (0, import_fs20.writeFileSync)(outFile, html, "utf8");
+  (0, import_fs21.writeFileSync)(outFile, html, "utf8");
   const openCount = findings.filter((f) => f.status === "open").length;
   process.stdout.write(
     `
@@ -26972,11 +27974,11 @@ async function runSessionDetail(prefix, outputArg) {
 `
   );
 }
-var import_fs20, RULE_META3, FW_LABELS3, DETAIL_CSS;
+var import_fs21, RULE_META3, FW_LABELS3, DETAIL_CSS;
 var init_session_detail = __esm({
   "src/cli/session-detail.ts"() {
     "use strict";
-    import_fs20 = require("fs");
+    import_fs21 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_roles();
@@ -26984,7 +27986,7 @@ var init_session_detail = __esm({
     init_risk();
     init_rules();
     init_control_map();
-    init_hash();
+    init_chain();
     init_message_order();
     init_signing();
     RULE_META3 = new Map(
@@ -27456,7 +28458,7 @@ async function runDashboard(args2) {
     minute: "2-digit"
   });
   const html = buildDashboardHtml(rows, findings, requirements, sessionIds.length, since, sinceArg, generatedAt, now);
-  (0, import_fs21.writeFileSync)(outputArg, html, "utf8");
+  (0, import_fs22.writeFileSync)(outputArg, html, "utf8");
   const criticalCount = rows.filter((r) => r.risk.band === "critical").length;
   const highCount = rows.filter((r) => r.risk.band === "high").length;
   process.stdout.write(
@@ -27470,11 +28472,11 @@ async function runDashboard(args2) {
 `
   );
 }
-var import_fs21, RULE_META4, FW_LABELS4, DASHBOARD_CSS, REASON_LABEL;
+var import_fs22, RULE_META4, FW_LABELS4, DASHBOARD_CSS, REASON_LABEL;
 var init_dashboard = __esm({
   "src/cli/dashboard.ts"() {
     "use strict";
-    import_fs21 = require("fs");
+    import_fs22 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -27592,11 +28594,11 @@ async function runPatterns(args2) {
   }
   const rangeLabel = sinceArg ? `last ${sinceArg}` : "all time";
   process.stdout.write(`
-${BOLD14}Chron Patterns${RESET15}  ${DIM13}${rangeLabel} \xB7 ${sessionCount} session${sessionCount === 1 ? "" : "s"}${RESET15}
+${BOLD15}Chron Patterns${RESET16}  ${DIM14}${rangeLabel} \xB7 ${sessionCount} session${sessionCount === 1 ? "" : "s"}${RESET16}
 
 `);
   if (patterns.length === 0) {
-    process.stdout.write(`${DIM13}No patterns detected \u2014 no repeated signals across sessions.${RESET15}
+    process.stdout.write(`${DIM14}No patterns detected \u2014 no repeated signals across sessions.${RESET16}
 
 `);
     return;
@@ -27605,18 +28607,18 @@ ${BOLD14}Chron Patterns${RESET15}  ${DIM13}${rangeLabel} \xB7 ${sessionCount} se
     const color = SEV_COLOR2[p.severity];
     const dots = SEV_DOTS[p.severity];
     const sev = p.severity.toUpperCase().padEnd(6);
-    process.stdout.write(`${color}${dots}${RESET15} ${color}${BOLD14}${sev}${RESET15}  ${BOLD14}${p.title}${RESET15}
+    process.stdout.write(`${color}${dots}${RESET16} ${color}${BOLD15}${sev}${RESET16}  ${BOLD15}${p.title}${RESET16}
 `);
-    process.stdout.write(`       ${DIM13}${p.detail}${RESET15}
+    process.stdout.write(`       ${DIM14}${p.detail}${RESET16}
 `);
     if (p.evidence.length > 0) {
       for (const line of p.evidence) {
-        process.stdout.write(`       ${DIM13}\xB7 ${line}${RESET15}
+        process.stdout.write(`       ${DIM14}\xB7 ${line}${RESET16}
 `);
       }
     }
-    const prefixes = p.session_ids.slice(0, 5).map((id) => `${CYAN12}${id.slice(0, 8)}${RESET15}`);
-    const more = p.session_ids.length > 5 ? ` ${DIM13}+${p.session_ids.length - 5} more${RESET15}` : "";
+    const prefixes = p.session_ids.slice(0, 5).map((id) => `${CYAN12}${id.slice(0, 8)}${RESET16}`);
+    const more = p.session_ids.length > 5 ? ` ${DIM14}+${p.session_ids.length - 5} more${RESET16}` : "";
     process.stdout.write(`       Sessions: ${prefixes.join("  ")}${more}
 
 `);
@@ -27625,26 +28627,26 @@ ${BOLD14}Chron Patterns${RESET15}  ${DIM13}${rangeLabel} \xB7 ${sessionCount} se
   const medium = patterns.filter((p) => p.severity === "medium").length;
   const low = patterns.filter((p) => p.severity === "low").length;
   process.stdout.write(
-    `${DIM13}${patterns.length} pattern${patterns.length === 1 ? "" : "s"} detected${RESET15}` + (high ? `  ${RED10}${high} high${RESET15}` : "") + (medium ? `  ${YELLOW12}${medium} medium${RESET15}` : "") + (low ? `  ${DIM13}${low} low${RESET15}` : "") + "\n\n"
+    `${DIM14}${patterns.length} pattern${patterns.length === 1 ? "" : "s"} detected${RESET16}` + (high ? `  ${RED11}${high} high${RESET16}` : "") + (medium ? `  ${YELLOW13}${medium} medium${RESET16}` : "") + (low ? `  ${DIM14}${low} low${RESET16}` : "") + "\n\n"
   );
 }
-var RESET15, BOLD14, DIM13, RED10, YELLOW12, CYAN12, SEV_COLOR2, SEV_DOTS;
+var RESET16, BOLD15, DIM14, RED11, YELLOW13, CYAN12, SEV_COLOR2, SEV_DOTS;
 var init_patterns2 = __esm({
   "src/cli/patterns.ts"() {
     "use strict";
     init_db2();
     init_report();
     init_patterns();
-    RESET15 = "\x1B[0m";
-    BOLD14 = "\x1B[1m";
-    DIM13 = "\x1B[2m";
-    RED10 = "\x1B[31m";
-    YELLOW12 = "\x1B[33m";
+    RESET16 = "\x1B[0m";
+    BOLD15 = "\x1B[1m";
+    DIM14 = "\x1B[2m";
+    RED11 = "\x1B[31m";
+    YELLOW13 = "\x1B[33m";
     CYAN12 = "\x1B[36m";
     SEV_COLOR2 = {
-      high: RED10,
-      medium: YELLOW12,
-      low: DIM13
+      high: RED11,
+      medium: YELLOW13,
+      low: DIM14
     };
     SEV_DOTS = {
       high: "\u25CF\u25CF\u25CF\u25CF",
@@ -27692,10 +28694,12 @@ function getSplunkConfig() {
     return { url: envUrl, token: envToken, insecure: process.env.CHRON_SPLUNK_INSECURE === "1" };
   }
   const now = Date.now();
-  if (now < _splunkCacheExpiry) return _splunkCache;
+  const path = configPath();
+  if (now < _splunkCacheExpiry && path === _splunkCachePath) return _splunkCache;
   _splunkCacheExpiry = now + 1e4;
+  _splunkCachePath = path;
   try {
-    const cfg = JSON.parse((0, import_fs22.readFileSync)(configPath(), "utf8"));
+    const cfg = JSON.parse((0, import_fs23.readFileSync)(path, "utf8"));
     const s = cfg?.splunk;
     _splunkCache = s?.url && s?.token ? { url: s.url, token: s.token, insecure: s.insecure ?? false } : null;
   } catch {
@@ -27715,10 +28719,12 @@ function getSentinelConfig() {
     return { dce: envDce, dcrId: envDcrId, stream: envStream, tenantId: envTenantId, clientId: envClientId, clientSecret: envClientSecret };
   }
   const now = Date.now();
-  if (now < _sentinelCacheExpiry) return _sentinelCache;
+  const path = configPath();
+  if (now < _sentinelCacheExpiry && path === _sentinelCachePath) return _sentinelCache;
   _sentinelCacheExpiry = now + 1e4;
+  _sentinelCachePath = path;
   try {
-    const cfg = JSON.parse((0, import_fs22.readFileSync)(configPath(), "utf8"));
+    const cfg = JSON.parse((0, import_fs23.readFileSync)(path, "utf8"));
     const s = cfg?.sentinel;
     _sentinelCache = s?.dce && s?.dcrId && s?.stream && s?.tenantId && s?.clientId && s?.clientSecret ? { dce: s.dce, dcrId: s.dcrId, stream: s.stream, tenantId: s.tenantId, clientId: s.clientId, clientSecret: s.clientSecret } : null;
   } catch {
@@ -27765,7 +28771,7 @@ async function getAzureToken(tenantId, clientId, clientSecret) {
 }
 function getMachineId() {
   if (!_machineId) {
-    _machineId = "sha256:" + (0, import_crypto12.createHash)("sha256").update((0, import_os14.hostname)()).digest("hex").slice(0, 16);
+    _machineId = "sha256:" + (0, import_crypto15.createHash)("sha256").update((0, import_os14.hostname)()).digest("hex").slice(0, 16);
   }
   return _machineId;
 }
@@ -27775,7 +28781,7 @@ function toSplunkEvent(payload) {
     session_id_prefix: payload.session.id_prefix,
     ai_tool: payload.session.ai_tool ?? "",
     os: process.platform,
-    chron_version: import_package3.version
+    chron_version: import_package4.version
   };
   if (payload.event_type === "message_logged") {
     event.role = payload.message.role;
@@ -27813,7 +28819,7 @@ function toSentinelRecord(payload) {
     SessionIdPrefix: payload.session.id_prefix,
     AiTool: payload.session.ai_tool ?? "",
     OS: process.platform,
-    ChronVersion: import_package3.version,
+    ChronVersion: import_package4.version,
     Computer: (0, import_os14.hostname)(),
     Role: "",
     DetectionType: "",
@@ -27853,7 +28859,7 @@ function toLogScaleAttributes(payload) {
     session_id_prefix: payload.session.id_prefix,
     ai_tool: payload.session.ai_tool ?? "",
     os: process.platform,
-    chron_version: import_package3.version
+    chron_version: import_package4.version
   };
   if (payload.event_type === "message_logged") {
     attrs.role = payload.message.role;
@@ -27888,7 +28894,7 @@ function emitEvent(payload) {
   if (url && token) {
     const event = {
       schema_version: "1.0",
-      chron_version: import_package3.version,
+      chron_version: import_package4.version,
       machine_id: getMachineId(),
       os: process.platform,
       ...payload
@@ -27912,7 +28918,7 @@ function toSplunkRiskEvent(payload) {
   const base = {
     event_type: payload.event_type,
     os: process.platform,
-    chron_version: import_package3.version
+    chron_version: import_package4.version
   };
   if (payload.event_type === "pattern_detected") {
     base.pattern_id = payload.pattern_id;
@@ -27938,7 +28944,7 @@ function toSentinelRiskRecord(payload) {
     TimeGenerated: payload.timestamp,
     EventType: payload.event_type,
     OS: process.platform,
-    ChronVersion: import_package3.version,
+    ChronVersion: import_package4.version,
     Computer: (0, import_os14.hostname)()
   };
   if (payload.event_type === "pattern_detected") {
@@ -27964,7 +28970,7 @@ function toLogScaleRiskAttributes(payload) {
   const base = {
     event_type: payload.event_type,
     os: process.platform,
-    chron_version: import_package3.version
+    chron_version: import_package4.version
   };
   if (payload.event_type === "pattern_detected") {
     base.pattern_id = payload.pattern_id;
@@ -27999,7 +29005,7 @@ async function emitRiskEvent(payload) {
   const relayUrl = process.env.CHRON_RELAY_URL;
   const relayToken = process.env.CHRON_RELAY_TOKEN;
   if (relayUrl && relayToken) {
-    const event = { schema_version: "1.0", chron_version: import_package3.version, machine_id: getMachineId(), os: process.platform, ...payload };
+    const event = { schema_version: "1.0", chron_version: import_package4.version, machine_id: getMachineId(), os: process.platform, ...payload };
     deliveries.push(post(
       "relay",
       relayUrl,
@@ -28050,14 +29056,14 @@ async function emitRiskEvent(payload) {
   }
   return Promise.all(deliveries);
 }
-var import_fs22, import_crypto12, import_os14, import_package3, _splunkCache, _splunkCacheExpiry, _sentinelCache, _sentinelCacheExpiry, _azureTokenCache, _machineId;
+var import_fs23, import_crypto15, import_os14, import_package4, _splunkCache, _splunkCacheExpiry, _splunkCachePath, _sentinelCache, _sentinelCacheExpiry, _sentinelCachePath, _azureTokenCache, _machineId;
 var init_relay = __esm({
   "src/utils/relay.ts"() {
     "use strict";
-    import_fs22 = require("fs");
-    import_crypto12 = require("crypto");
+    import_fs23 = require("fs");
+    import_crypto15 = require("crypto");
     import_os14 = require("os");
-    import_package3 = __toESM(require_package());
+    import_package4 = __toESM(require_package());
     init_config_path();
     init_error_codes();
     if (process.env.CHRON_SPLUNK_INSECURE === "1") {
@@ -28065,8 +29071,10 @@ var init_relay = __esm({
     }
     _splunkCache = null;
     _splunkCacheExpiry = 0;
+    _splunkCachePath = "";
     _sentinelCache = null;
     _sentinelCacheExpiry = 0;
+    _sentinelCachePath = "";
     _azureTokenCache = null;
     _machineId = null;
   }
@@ -28144,13 +29152,13 @@ async function runEvents(args2) {
   }
   const rangeLabel = sinceArg ? `last ${sinceArg}` : "all time";
   process.stdout.write(`
-${BOLD15}Chron Events${RESET16}  ${DIM14}${rangeLabel} \xB7 ${sessionCount} session${sessionCount === 1 ? "" : "s"}${RESET16}
+${BOLD16}Chron Events${RESET17}  ${DIM15}${rangeLabel} \xB7 ${sessionCount} session${sessionCount === 1 ? "" : "s"}${RESET17}
 
 `);
   if (events.length === 0) {
-    process.stdout.write(`${DIM14}No risk events \u2014 no patterns detected and no sessions with attention score > 0.${RESET16}
+    process.stdout.write(`${DIM15}No risk events \u2014 no patterns detected and no sessions with attention score > 0.${RESET17}
 `);
-    if (emitMode) process.stdout.write(`${DIM14}Nothing to emit \u2014 no delivery was attempted.${RESET16}
+    if (emitMode) process.stdout.write(`${DIM15}Nothing to emit \u2014 no delivery was attempted.${RESET17}
 `);
     process.stdout.write("\n");
     return;
@@ -28159,55 +29167,55 @@ ${BOLD15}Chron Events${RESET16}  ${DIM14}${rangeLabel} \xB7 ${sessionCount} sess
   const highAttn = events.filter((e) => e.event_type === "high_attention_session");
   const allScored = events.filter((e) => e.event_type === "attention_score_computed");
   if (patterns.length > 0) {
-    process.stdout.write(`${BOLD15}Pattern events${RESET16}  ${DIM14}${patterns.length} detected${RESET16}
+    process.stdout.write(`${BOLD16}Pattern events${RESET17}  ${DIM15}${patterns.length} detected${RESET17}
 
 `);
     for (const ev of patterns) {
       if (ev.event_type !== "pattern_detected") continue;
-      const color = SEV_COLOR3[ev.severity] ?? DIM14;
-      process.stdout.write(`  ${color}${BOLD15}${ev.severity.toUpperCase()}${RESET16}  ${BOLD15}${ev.title}${RESET16}
+      const color = SEV_COLOR3[ev.severity] ?? DIM15;
+      process.stdout.write(`  ${color}${BOLD16}${ev.severity.toUpperCase()}${RESET17}  ${BOLD16}${ev.title}${RESET17}
 `);
-      process.stdout.write(`  ${DIM14}id: ${ev.pattern_id}${RESET16}
+      process.stdout.write(`  ${DIM15}id: ${ev.pattern_id}${RESET17}
 `);
-      process.stdout.write(`  ${DIM14}${ev.detail}${RESET16}
+      process.stdout.write(`  ${DIM15}${ev.detail}${RESET17}
 `);
-      const prefixes = ev.session_ids.slice(0, 5).map((id) => `${CYAN13}${id.slice(0, 8)}${RESET16}`);
-      const more = ev.session_ids.length > 5 ? ` ${DIM14}+${ev.session_ids.length - 5} more${RESET16}` : "";
+      const prefixes = ev.session_ids.slice(0, 5).map((id) => `${CYAN13}${id.slice(0, 8)}${RESET17}`);
+      const more = ev.session_ids.length > 5 ? ` ${DIM15}+${ev.session_ids.length - 5} more${RESET17}` : "";
       process.stdout.write(`  sessions: ${prefixes.join("  ")}${more}
 
 `);
     }
   }
   if (highAttn.length > 0) {
-    process.stdout.write(`${BOLD15}High-attention sessions${RESET16}  ${DIM14}${highAttn.length} flagged${RESET16}
+    process.stdout.write(`${BOLD16}High-attention sessions${RESET17}  ${DIM15}${highAttn.length} flagged${RESET17}
 
 `);
     for (const ev of highAttn) {
       if (ev.event_type !== "high_attention_session") continue;
-      const color = BAND_COLOR3[ev.band] ?? DIM14;
-      process.stdout.write(`  ${color}${BOLD15}${ev.band.toUpperCase()}${RESET16}  score ${BOLD15}${ev.score}${RESET16}  ${CYAN13}${ev.session_id.slice(0, 8)}${RESET16}
+      const color = BAND_COLOR3[ev.band] ?? DIM15;
+      process.stdout.write(`  ${color}${BOLD16}${ev.band.toUpperCase()}${RESET17}  score ${BOLD16}${ev.score}${RESET17}  ${CYAN13}${ev.session_id.slice(0, 8)}${RESET17}
 `);
       if (ev.reasons.length > 0) {
-        process.stdout.write(`  ${DIM14}${ev.reasons[0]}${ev.reasons.length > 1 ? ` +${ev.reasons.length - 1} more` : ""}${RESET16}
+        process.stdout.write(`  ${DIM15}${ev.reasons[0]}${ev.reasons.length > 1 ? ` +${ev.reasons.length - 1} more` : ""}${RESET17}
 `);
       }
       process.stdout.write("\n");
     }
   }
   if (allScored.length > 0 && allScored.length !== highAttn.length) {
-    process.stdout.write(`${DIM14}+ ${allScored.length} attention_score_computed event${allScored.length === 1 ? "" : "s"} (sessions with score > 0)${RESET16}
+    process.stdout.write(`${DIM15}+ ${allScored.length} attention_score_computed event${allScored.length === 1 ? "" : "s"} (sessions with score > 0)${RESET17}
 
 `);
   }
   const total = events.length;
-  process.stdout.write(`${DIM14}${total} event${total === 1 ? "" : "s"} total${RESET16}`);
+  process.stdout.write(`${DIM15}${total} event${total === 1 ? "" : "s"} total${RESET17}`);
   if (emitMode) {
     process.stdout.write("\n\n");
     const report = await deliver(events);
     process.stdout.write(renderDelivery(report, false));
     if (!report.ok) process.exit(1);
   } else {
-    process.stdout.write(`  ${DIM14}(use --emit to send to configured SIEM targets)${RESET16}
+    process.stdout.write(`  ${DIM15}(use --emit to send to configured SIEM targets)${RESET17}
 
 `);
   }
@@ -28238,42 +29246,42 @@ async function deliver(events) {
 function renderDelivery(r, toStderr) {
   const out = [];
   if (r.targets === 0) {
-    out.push(`  ${YELLOW13}!${RESET16} No SIEM target is configured, so nothing was sent.
+    out.push(`  ${YELLOW14}!${RESET17} No SIEM target is configured, so nothing was sent.
 `);
-    out.push(`  ${DIM14}Configure one with 'chron connect <splunk|sentinel|crowdstrike>' and try again.${RESET16}
+    out.push(`  ${DIM15}Configure one with 'chron connect <splunk|sentinel|crowdstrike>' and try again.${RESET17}
 
 `);
     return out.join("");
   }
   if (r.ok) {
-    out.push(`  ${GREEN9}${BOLD15}\u2713${RESET16} ${r.accepted} event delivery(ies) accepted by ${r.targets} target(s)
+    out.push(`  ${GREEN10}${BOLD16}\u2713${RESET17} ${r.accepted} event delivery(ies) accepted by ${r.targets} target(s)
 `);
-    out.push(`  ${DIM14}Accepted means the target returned success. Whether it retained the data
+    out.push(`  ${DIM15}Accepted means the target returned success. Whether it retained the data
 `);
-    out.push(`  is something only that platform can show.${RESET16}
+    out.push(`  is something only that platform can show.${RESET17}
 
 `);
     return out.join("");
   }
-  out.push(`  ${GREEN9}accepted${RESET16} ${r.accepted}   ${RED11}rejected${RESET16} ${r.rejected}   ${RED11}failed${RESET16} ${r.failed}   ${YELLOW13}unknown${RESET16} ${r.unknown}
+  out.push(`  ${GREEN10}accepted${RESET17} ${r.accepted}   ${RED12}rejected${RESET17} ${r.rejected}   ${RED12}failed${RESET17} ${r.failed}   ${YELLOW14}unknown${RESET17} ${r.unknown}
 `);
   for (const [target, results] of r.detail) {
     for (const d of results.filter((x) => x.status !== "accepted")) {
       const code = d.httpStatus ? `HTTP ${d.httpStatus}` : d.reason ?? "no response";
-      out.push(`  ${d.status === "unknown" ? YELLOW13 + "?" : RED11 + "\u2717"}${RESET16} ${target}: ${d.status} \u2014 ${code}
+      out.push(`  ${d.status === "unknown" ? YELLOW14 + "?" : RED12 + "\u2717"}${RESET17} ${target}: ${d.status} \u2014 ${code}
 `);
     }
   }
   if (r.unknown > 0) {
-    out.push(`  ${YELLOW13}Some deliveries are unknown${RESET16} \u2014 the request was sent but no trustworthy
+    out.push(`  ${YELLOW14}Some deliveries are unknown${RESET17} \u2014 the request was sent but no trustworthy
 `);
-    out.push(`  ${DIM14}response came back, so they may or may not have arrived.${RESET16}
+    out.push(`  ${DIM15}response came back, so they may or may not have arrived.${RESET17}
 `);
   }
   out.push("\n");
   return out.join("");
 }
-var RESET16, BOLD15, DIM14, RED11, YELLOW13, CYAN13, GREEN9, BAND_COLOR3, SEV_COLOR3;
+var RESET17, BOLD16, DIM15, RED12, YELLOW14, CYAN13, GREEN10, BAND_COLOR3, SEV_COLOR3;
 var init_events = __esm({
   "src/cli/events.ts"() {
     "use strict";
@@ -28281,23 +29289,23 @@ var init_events = __esm({
     init_report();
     init_patterns();
     init_relay();
-    RESET16 = "\x1B[0m";
-    BOLD15 = "\x1B[1m";
-    DIM14 = "\x1B[2m";
-    RED11 = "\x1B[31m";
-    YELLOW13 = "\x1B[33m";
+    RESET17 = "\x1B[0m";
+    BOLD16 = "\x1B[1m";
+    DIM15 = "\x1B[2m";
+    RED12 = "\x1B[31m";
+    YELLOW14 = "\x1B[33m";
     CYAN13 = "\x1B[36m";
-    GREEN9 = "\x1B[32m";
+    GREEN10 = "\x1B[32m";
     BAND_COLOR3 = {
-      critical: RED11,
-      high: RED11,
-      review: YELLOW13,
-      normal: DIM14
+      critical: RED12,
+      high: RED12,
+      review: YELLOW14,
+      normal: DIM15
     };
     SEV_COLOR3 = {
-      high: RED11,
-      medium: YELLOW13,
-      low: DIM14
+      high: RED12,
+      medium: YELLOW14,
+      low: DIM15
     };
   }
 });
@@ -28312,7 +29320,7 @@ __export(evidence_exports, {
   runEvidence: () => runEvidence
 });
 function hash(input) {
-  return (0, import_crypto13.createHash)("sha256").update(input).digest("hex");
+  return (0, import_crypto16.createHash)("sha256").update(input).digest("hex");
 }
 function argValue(args2, name2) {
   const prefix = `--${name2}=`;
@@ -28378,12 +29386,12 @@ async function createEvidenceLink(db, evidenceId, targetType, targetId, now, not
   return id;
 }
 async function importEvidenceDocument(db, params) {
-  const filePath = (0, import_path13.resolve)(params.file);
-  const buf = (0, import_fs23.readFileSync)(filePath);
-  const stat = (0, import_fs23.statSync)(filePath);
+  const filePath = (0, import_path14.resolve)(params.file);
+  const buf = (0, import_fs24.readFileSync)(filePath);
+  const stat = (0, import_fs24.statSync)(filePath);
   const sha256 = hash(buf);
   const now = params.now ?? (/* @__PURE__ */ new Date()).toISOString();
-  const title = (0, import_path13.basename)(filePath);
+  const title = (0, import_path14.basename)(filePath);
   const documentId = sha256;
   const resolvedControl = params.control ? resolveControlTarget(params.control, params.framework) : void 0;
   const linkId = resolvedControl ? hash(`${documentId}:control:${resolvedControl.id}`) : null;
@@ -28544,13 +29552,13 @@ async function runEvidence(args2) {
   }
   throw new Error(`Unknown evidence command: ${subcommand}`);
 }
-var import_crypto13, import_path13, import_fs23, FW_LABELS5;
+var import_crypto16, import_path14, import_fs24, FW_LABELS5;
 var init_evidence2 = __esm({
   "src/cli/evidence.ts"() {
     "use strict";
-    import_crypto13 = require("crypto");
-    import_path13 = require("path");
-    import_fs23 = require("fs");
+    import_crypto16 = require("crypto");
+    import_path14 = require("path");
+    import_fs24 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -28593,7 +29601,7 @@ function printReviewList(reqs, now, overdueOnly) {
   const visible = selectRequirements(reqs, now, { showAll: false, overdueOnly });
   if (visible.length === 0) {
     const msg = overdueOnly ? "No overdue reviews." : "No pending reviews.";
-    process.stdout.write(`${DIM15}${msg}${RESET17}
+    process.stdout.write(`${DIM16}${msg}${RESET18}
 
 `);
     return;
@@ -28602,13 +29610,13 @@ function printReviewList(reqs, now, overdueOnly) {
   for (const [sessionId, items] of grouped) {
     const prefix = sessionId.slice(0, 8);
     const hasOverdue = items.some((r) => isOverdue(r, now));
-    const badge = hasOverdue ? `${RED12}${BOLD16}OVERDUE${RESET17}` : `${YELLOW14}${BOLD16}PENDING${RESET17}`;
+    const badge = hasOverdue ? `${RED13}${BOLD17}OVERDUE${RESET18}` : `${YELLOW15}${BOLD17}PENDING${RESET18}`;
     const deadline = items[0].required_by;
-    process.stdout.write(`  ${badge}  ${CYAN14}${prefix}${RESET17}  ${DIM15}review by ${fmtDt(deadline)}${RESET17}
+    process.stdout.write(`  ${badge}  ${CYAN14}${prefix}${RESET18}  ${DIM16}review by ${fmtDt(deadline)}${RESET18}
 `);
     for (const r of items) {
-      const color = SEV_COLOR4[r.severity] ?? DIM15;
-      process.stdout.write(`    ${DIM15}\xB7${RESET17} ${color}${r.severity}${RESET17}  ${REASON_LABEL2[r.reason] ?? r.reason}
+      const color = SEV_COLOR4[r.severity] ?? DIM16;
+      process.stdout.write(`    ${DIM16}\xB7${RESET18} ${color}${r.severity}${RESET18}  ${REASON_LABEL2[r.reason] ?? r.reason}
 `);
     }
     process.stdout.write("\n");
@@ -28616,7 +29624,7 @@ function printReviewList(reqs, now, overdueOnly) {
 }
 function printAllList(reqs, now) {
   if (reqs.length === 0) {
-    process.stdout.write(`${DIM15}No review requirements recorded yet. Run chron reviews to scan.${RESET17}
+    process.stdout.write(`${DIM16}No review requirements recorded yet. Run chron reviews to scan.${RESET18}
 
 `);
     return;
@@ -28625,15 +29633,15 @@ function printAllList(reqs, now) {
   for (const [sessionId, items] of grouped) {
     const prefix = sessionId.slice(0, 8);
     const isRev = items[0].status === "reviewed";
-    const statusStr = isRev ? `${GREEN10}${BOLD16}REVIEWED${RESET17}` : isOverdue(items[0], now) ? `${RED12}${BOLD16}OVERDUE${RESET17}` : `${YELLOW14}${BOLD16}PENDING${RESET17}`;
-    process.stdout.write(`  ${statusStr}  ${CYAN14}${prefix}${RESET17}`);
+    const statusStr = isRev ? `${GREEN11}${BOLD17}REVIEWED${RESET18}` : isOverdue(items[0], now) ? `${RED13}${BOLD17}OVERDUE${RESET18}` : `${YELLOW15}${BOLD17}PENDING${RESET18}`;
+    process.stdout.write(`  ${statusStr}  ${CYAN14}${prefix}${RESET18}`);
     if (isRev && items[0].reviewer) {
-      process.stdout.write(`  ${DIM15}by ${items[0].reviewer} at ${fmtDt(items[0].reviewed_at)}${RESET17}`);
+      process.stdout.write(`  ${DIM16}by ${items[0].reviewer} at ${fmtDt(items[0].reviewed_at)}${RESET18}`);
     }
     process.stdout.write("\n");
     for (const r of items) {
-      const color = SEV_COLOR4[r.severity] ?? DIM15;
-      process.stdout.write(`    ${DIM15}\xB7${RESET17} ${color}${r.severity}${RESET17}  ${REASON_LABEL2[r.reason] ?? r.reason}
+      const color = SEV_COLOR4[r.severity] ?? DIM16;
+      process.stdout.write(`    ${DIM16}\xB7${RESET18} ${color}${r.severity}${RESET18}  ${REASON_LABEL2[r.reason] ?? r.reason}
 `);
     }
     process.stdout.write("\n");
@@ -28650,12 +29658,12 @@ async function runReviews(args2) {
     const now2 = (/* @__PURE__ */ new Date()).toISOString();
     const { sessionId, count: count2 } = await markReviewed(db2, sessionPrefix, reviewer, now2);
     if (count2 === 0) {
-      process.stdout.write(`${DIM15}No pending review requirements found for session ${sessionId.slice(0, 8)}.${RESET17}
+      process.stdout.write(`${DIM16}No pending review requirements found for session ${sessionId.slice(0, 8)}.${RESET18}
 
 `);
     } else {
       process.stdout.write(
-        `${GREEN10}${BOLD16}\u2713 Marked reviewed${RESET17}  ${CYAN14}${sessionId.slice(0, 8)}${RESET17}  ${DIM15}by ${reviewer}  \xB7  ${count2} requirement${count2 === 1 ? "" : "s"}${RESET17}
+        `${GREEN11}${BOLD17}\u2713 Marked reviewed${RESET18}  ${CYAN14}${sessionId.slice(0, 8)}${RESET18}  ${DIM16}by ${reviewer}  \xB7  ${count2} requirement${count2 === 1 ? "" : "s"}${RESET18}
 
 `
       );
@@ -28686,14 +29694,14 @@ async function runReviews(args2) {
   const flagPct = stats.scanned > 0 ? Math.round(stats.flagRate * 100) : null;
   const flagLabel = flagPct !== null ? `flag rate ${flagPct}% (${stats.flagged}/${stats.scanned})` : "";
   process.stdout.write(`
-${BOLD16}Chron Reviews${RESET17}  ${DIM15}${rangeLabel}${RESET17}
+${BOLD17}Chron Reviews${RESET18}  ${DIM16}${rangeLabel}${RESET18}
 `);
   process.stdout.write(
-    `${DIM15}${stats.overdue} overdue  \xB7  ${stats.pending} pending  \xB7  ${stats.reviewed} reviewed  \xB7  ${slaLabel}` + (flagLabel ? `  \xB7  ${flagLabel}` : "") + `${RESET17}` + (newFlags > 0 ? `  ${DIM15}(+${newFlags} new)${RESET17}` : "") + "\n\n"
+    `${DIM16}${stats.overdue} overdue  \xB7  ${stats.pending} pending  \xB7  ${stats.reviewed} reviewed  \xB7  ${slaLabel}` + (flagLabel ? `  \xB7  ${flagLabel}` : "") + `${RESET18}` + (newFlags > 0 ? `  ${DIM16}(+${newFlags} new)${RESET18}` : "") + "\n\n"
   );
   if (stats.highFlagRate) {
     process.stdout.write(
-      `${YELLOW14}${BOLD16}\u26A0  Review queue is flagging more than 20% of sessions. Tune triggers to avoid review fatigue.${RESET17}
+      `${YELLOW15}${BOLD17}\u26A0  Review queue is flagging more than 20% of sessions. Tune triggers to avoid review fatigue.${RESET18}
 
 `
     );
@@ -28701,7 +29709,7 @@ ${BOLD16}Chron Reviews${RESET17}  ${DIM15}${rangeLabel}${RESET17}
   const breakdownEntries = Object.entries(stats.reasonBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 3);
   if (breakdownEntries.length > 0) {
     const parts = breakdownEntries.map(([r, n]) => `${REASON_LABEL2[r] ?? r} (${n})`);
-    process.stdout.write(`${DIM15}Reasons: ${parts.join("  \xB7  ")}${RESET17}
+    process.stdout.write(`${DIM16}Reasons: ${parts.join("  \xB7  ")}${RESET18}
 
 `);
   }
@@ -28710,30 +29718,30 @@ ${BOLD16}Chron Reviews${RESET17}  ${DIM15}${rangeLabel}${RESET17}
   } else {
     printReviewList(reqs, now, overdueOnly);
     if (!overdueOnly && stats.reviewed > 0) {
-      process.stdout.write(`${DIM15}${stats.reviewed} reviewed session${stats.reviewed === 1 ? "" : "s"} hidden \u2014 use --all to include${RESET17}
+      process.stdout.write(`${DIM16}${stats.reviewed} reviewed session${stats.reviewed === 1 ? "" : "s"} hidden \u2014 use --all to include${RESET18}
 
 `);
     }
   }
   if (reqs.filter((r) => r.status !== "reviewed").length > 0) {
-    process.stdout.write(`${DIM15}To mark reviewed: chron reviews mark <session-prefix> --reviewer=<name>${RESET17}
+    process.stdout.write(`${DIM16}To mark reviewed: chron reviews mark <session-prefix> --reviewer=<name>${RESET18}
 
 `);
   }
 }
-var RESET17, BOLD16, DIM15, RED12, YELLOW14, GREEN10, CYAN14, REASON_LABEL2, SEV_COLOR4;
+var RESET18, BOLD17, DIM16, RED13, YELLOW15, GREEN11, CYAN14, REASON_LABEL2, SEV_COLOR4;
 var init_reviews = __esm({
   "src/cli/reviews.ts"() {
     "use strict";
     init_db2();
     init_report();
     init_queue2();
-    RESET17 = "\x1B[0m";
-    BOLD16 = "\x1B[1m";
-    DIM15 = "\x1B[2m";
-    RED12 = "\x1B[31m";
-    YELLOW14 = "\x1B[33m";
-    GREEN10 = "\x1B[32m";
+    RESET18 = "\x1B[0m";
+    BOLD17 = "\x1B[1m";
+    DIM16 = "\x1B[2m";
+    RED13 = "\x1B[31m";
+    YELLOW15 = "\x1B[33m";
+    GREEN11 = "\x1B[32m";
     CYAN14 = "\x1B[36m";
     REASON_LABEL2 = {
       secrets_detected: "secret detected",
@@ -28743,8 +29751,8 @@ var init_reviews = __esm({
       critical_finding: "critical or high compliance finding"
     };
     SEV_COLOR4 = {
-      critical: RED12,
-      high: YELLOW14
+      critical: RED13,
+      high: YELLOW15
     };
   }
 });
@@ -28767,9 +29775,9 @@ async function runSetup() {
   const GLOBAL_ONLY = ["Claude Code", "Cursor (global)", "Gemini CLI", "Codex (global)"];
   const fixable = configs.filter((c) => {
     if (c.name === "Codex (project)" || c.name === "Cursor (project)") return false;
-    if ((0, import_fs24.existsSync)(c.path)) return true;
+    if ((0, import_fs25.existsSync)(c.path)) return true;
     if (GLOBAL_ONLY.includes(c.name)) return true;
-    if ((0, import_fs24.existsSync)((0, import_path14.dirname)(c.path))) return true;
+    if ((0, import_fs25.existsSync)((0, import_path15.dirname)(c.path))) return true;
     return false;
   });
   const added = [];
@@ -28795,13 +29803,13 @@ async function runSetup() {
 `);
   }
 }
-var import_os15, import_path14, import_fs24;
+var import_os15, import_path15, import_fs25;
 var init_setup = __esm({
   "src/cli/setup.ts"() {
     "use strict";
     import_os15 = require("os");
-    import_path14 = require("path");
-    import_fs24 = require("fs");
+    import_path15 = require("path");
+    import_fs25 = require("fs");
     init_mcp_config();
     init_connect();
   }
@@ -28813,7 +29821,7 @@ __export(bootstrap_exports, {
   bootstrapProjectLogging: () => bootstrapProjectLogging
 });
 function isRealProject(cwd) {
-  return PROJECT_INDICATORS.some((indicator) => (0, import_fs25.existsSync)((0, import_path15.join)(cwd, indicator)));
+  return PROJECT_INDICATORS.some((indicator) => (0, import_fs26.existsSync)((0, import_path16.join)(cwd, indicator)));
 }
 function bootstrapProjectLogging(cwd = process.cwd()) {
   try {
@@ -28833,13 +29841,13 @@ function bootstrapProjectLogging(cwd = process.cwd()) {
   } catch {
   }
 }
-var import_fs25, import_os16, import_path15, PROJECT_INDICATORS;
+var import_fs26, import_os16, import_path16, PROJECT_INDICATORS;
 var init_bootstrap = __esm({
   "src/bootstrap.ts"() {
     "use strict";
-    import_fs25 = require("fs");
+    import_fs26 = require("fs");
     import_os16 = require("os");
-    import_path15 = require("path");
+    import_path16 = require("path");
     init_connect();
     PROJECT_INDICATORS = [
       ".git",
@@ -28920,7 +29928,7 @@ var init_semconv = __esm({
 
 // src/otel/spans.ts
 function deriveId(input, bytes2) {
-  const hex = (0, import_crypto14.createHash)("sha256").update(input).digest("hex").slice(0, bytes2 * 2);
+  const hex = (0, import_crypto17.createHash)("sha256").update(input).digest("hex").slice(0, bytes2 * 2);
   return /^0+$/.test(hex) ? hex.slice(0, -1) + "1" : hex;
 }
 function traceIdForSession(sessionId) {
@@ -29009,11 +30017,11 @@ function buildSessionTrace(session, messages3, opts = {}) {
     ...messages3.map((m, i) => buildMessageSpan(m, session, messages3[i - 1], opts))
   ];
 }
-var import_crypto14;
+var import_crypto17;
 var init_spans = __esm({
   "src/otel/spans.ts"() {
     "use strict";
-    import_crypto14 = require("crypto");
+    import_crypto17 = require("crypto");
     init_semconv();
   }
 });
@@ -29154,7 +30162,7 @@ async function exportSpans(spans, config, resource, deps = {}) {
     const remainingBatches = allBatches.slice(index + 1);
     const body = JSON.stringify(toResourceSpans(batch, resource));
     const payload = {
-      payloadDigest: (0, import_crypto15.createHash)("sha256").update(body).digest("hex"),
+      payloadDigest: (0, import_crypto18.createHash)("sha256").update(body).digest("hex"),
       payloadBytes: Buffer.byteLength(body, "utf8")
     };
     if (deps.onBatchStart) {
@@ -29193,11 +30201,11 @@ async function exportSpans(spans, config, resource, deps = {}) {
   result.complete = !gateHeld && result.sent === spans.length && result.rejected === 0 && result.failed === 0 && result.unknown === 0;
   return result;
 }
-var import_crypto15, CODE_CATEGORIES, ESTABLISHED_NON_DELIVERY2, defaultSleep;
+var import_crypto18, CODE_CATEGORIES, ESTABLISHED_NON_DELIVERY2, defaultSleep;
 var init_exporter = __esm({
   "src/otel/exporter.ts"() {
     "use strict";
-    import_crypto15 = require("crypto");
+    import_crypto18 = require("crypto");
     init_error_codes();
     init_otlp();
     CODE_CATEGORIES = [
@@ -29297,403 +30305,13 @@ var init_config2 = __esm({
   }
 });
 
-// src/otel/destination.ts
-function sanitizeEndpoint(endpoint) {
-  let url;
-  try {
-    url = new URL(endpoint);
-  } catch {
-    return UNPARSEABLE;
-  }
-  url.username = "";
-  url.password = "";
-  url.search = "";
-  url.hash = "";
-  const segments = url.pathname.split("/").filter(Boolean);
-  const recognised = segments.every((s) => SAFE_PATH_SEGMENTS.has(s.toLowerCase()));
-  return recognised ? url.toString() : `${url.origin}${REDACTED_PATH}`;
-}
-function fingerprintDestination(endpoint) {
-  const label = sanitizeEndpoint(endpoint);
-  return { label, digest: (0, import_crypto16.createHash)("sha256").update(label).digest("hex") };
-}
-var import_crypto16, UNPARSEABLE, REDACTED_PATH, SAFE_PATH_SEGMENTS;
-var init_destination = __esm({
-  "src/otel/destination.ts"() {
-    "use strict";
-    import_crypto16 = require("crypto");
-    UNPARSEABLE = "<unparseable endpoint>";
-    REDACTED_PATH = "/<redacted path>";
-    SAFE_PATH_SEGMENTS = /* @__PURE__ */ new Set([
-      "v1",
-      "traces",
-      "trace",
-      "otlp",
-      "api",
-      "ingest",
-      "collector",
-      "v2",
-      "metrics",
-      "logs"
-    ]);
-  }
-});
-
-// src/otel/receipts.ts
-function canonicalJson(value) {
-  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
-  const entries = Object.entries(value).filter(([, v]) => v !== void 0).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
-  return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`).join(",")}}`;
-}
-function computeHeaderHash(header) {
-  return (0, import_crypto17.createHash)("sha256").update(canonicalJson(header)).digest("hex");
-}
-function computeEventHash(receiptId, sequence, eventType, logicalKey, createdAt, canonicalPayload, prevHash) {
-  return (0, import_crypto17.createHash)("sha256").update([receiptId, sequence, eventType, logicalKey, createdAt, canonicalPayload, prevHash ?? ""].join("|")).digest("hex");
-}
-async function appendEventTx(tx, receiptId, event) {
-  const existing = await tx.select().from(export_receipt_events).where(and(eq(export_receipt_events.receipt_id, receiptId), eq(export_receipt_events.logical_key, event.logicalKey))).limit(1);
-  if (existing[0]) {
-    const prior = existing[0];
-    const replay = canonicalJson(event.payload);
-    if (prior.event_type !== event.eventType || prior.canonical_payload !== replay) {
-      throw new Error(
-        `Conflicting replay of ${event.logicalKey} on receipt ${receiptId}: the same logical event is already recorded with different contents.`
-      );
-    }
-    return prior;
-  }
-  const tail = await tx.select({ sequence: export_receipt_events.sequence, event_hash: export_receipt_events.event_hash }).from(export_receipt_events).where(eq(export_receipt_events.receipt_id, receiptId)).orderBy(asc(export_receipt_events.sequence));
-  const last = tail[tail.length - 1];
-  const sequence = last ? last.sequence + 1 : 0;
-  const prev_hash = last?.event_hash ?? null;
-  const created_at = localISOString();
-  const canonical_payload = canonicalJson(event.payload);
-  const event_hash = computeEventHash(receiptId, sequence, event.eventType, event.logicalKey, created_at, canonical_payload, prev_hash);
-  await tx.insert(export_receipt_events).values({
-    id: v4_default(),
-    receipt_id: receiptId,
-    sequence,
-    event_type: event.eventType,
-    logical_key: event.logicalKey,
-    created_at,
-    canonical_payload,
-    prev_hash,
-    event_hash
-  });
-  return { sequence, event_type: event.eventType, logical_key: event.logicalKey, created_at, canonical_payload, prev_hash, event_hash };
-}
-async function appendEvent(db, receiptId, event) {
-  return db.transaction(async (tx) => appendEventTx(tx, receiptId, event));
-}
-async function prepareReceipt(db, input) {
-  const id = v4_default();
-  const destination = fingerprintDestination(input.endpoint);
-  const header = {
-    id,
-    created_at: localISOString(),
-    destination_label: destination.label,
-    destination_digest: destination.digest,
-    scope_selector: input.scopeSelector ?? null,
-    scope_session_ids: JSON.stringify(input.sessionIds),
-    session_count: input.sessionIds.length,
-    span_count: input.spanCount,
-    included_content: input.includeContent ? 1 : 0,
-    transport: input.transport,
-    chron_version: input.chronVersion
-  };
-  await db.transaction(async (tx) => {
-    await tx.insert(export_receipts).values(header);
-    await appendEventTx(tx, id, {
-      eventType: "prepared",
-      logicalKey: "prepared",
-      // Binding the whole header means the chain protects what the export was
-      // about, not only how it turned out.
-      payload: { header_hash: computeHeaderHash(header) }
-    });
-  });
-  return id;
-}
-async function recordBatchStarted(db, receiptId, batchIndex, spans, payloadDigest, payloadBytes) {
-  await appendEvent(db, receiptId, {
-    eventType: "batch_started",
-    logicalKey: `batch_started:${batchIndex}`,
-    payload: { batch_index: batchIndex, spans, payload_digest: payloadDigest, payload_bytes: payloadBytes }
-  });
-}
-async function recordBatchFinished(db, receiptId, batchIndex, outcome) {
-  await appendEvent(db, receiptId, {
-    eventType: "batch_finished",
-    logicalKey: `batch_finished:${batchIndex}`,
-    payload: {
-      batch_index: batchIndex,
-      spans: outcome.spans,
-      status: outcome.status,
-      http_status: outcome.httpStatus ?? null,
-      // A closed vocabulary, never the collector's own error text.
-      error_category: outcome.errorCategory ?? null,
-      attempts: outcome.attempts,
-      payload_digest: outcome.payloadDigest ?? null
-    }
-  });
-}
-async function finalizeReceipt(db, receiptId, result, spanCount) {
-  const state = deriveTerminalState(result, spanCount);
-  await appendEvent(db, receiptId, {
-    eventType: "finalized",
-    logicalKey: "finalized",
-    payload: {
-      state,
-      spans_sent: result.sent,
-      spans_rejected: result.rejected,
-      spans_failed: result.failed,
-      spans_unknown: result.unknown
-    }
-  });
-  return state;
-}
-function expectedState(tally, spanCount) {
-  if (spanCount === 0) return "prepared";
-  if (tally.sent === spanCount) return "delivered";
-  if (tally.sent > 0) return "partially_delivered";
-  if (tally.unknown > 0) return "unknown";
-  return "failed";
-}
-function deriveTerminalState(result, spanCount) {
-  return expectedState(result, spanCount);
-}
-function verifyIntegrity(header, events) {
-  let expectedPrev = null;
-  for (let i = 0; i < events.length; i++) {
-    const e = events[i];
-    if (e.sequence !== i) {
-      return { valid: false, events: events.length, first_break: e.sequence, reason: "sequence gap or duplicate" };
-    }
-    if (e.prev_hash !== expectedPrev) {
-      return { valid: false, events: events.length, first_break: e.sequence, reason: "prev_hash mismatch" };
-    }
-    const expected = computeEventHash(header.id, e.sequence, e.event_type, e.logical_key, e.created_at, e.canonical_payload, e.prev_hash);
-    if (e.event_hash !== expected) {
-      return { valid: false, events: events.length, first_break: e.sequence, reason: "event_hash mismatch \u2014 row was altered" };
-    }
-    expectedPrev = e.event_hash;
-  }
-  const first = events[0];
-  if (!first) return { valid: false, events: 0, reason: "receipt has no events" };
-  const opening = parsePayload(first);
-  if (!opening.ok) return { valid: false, events: events.length, first_break: 0, reason: opening.reason };
-  if (opening.value.header_hash !== computeHeaderHash(header)) {
-    return { valid: false, events: events.length, first_break: 0, reason: "header does not match the hash bound into the chain" };
-  }
-  return { valid: true, events: events.length };
-}
-function parsePayload(event) {
-  let value;
-  try {
-    value = JSON.parse(event.canonical_payload);
-  } catch {
-    return { ok: false, reason: `event ${event.sequence} has a payload that is not valid JSON` };
-  }
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    return { ok: false, reason: `event ${event.sequence} payload is not an object` };
-  }
-  return { ok: true, value };
-}
-function checkPayload(event, payload) {
-  const suffix = event.logical_key.split(":")[1];
-  switch (event.event_type) {
-    case "prepared":
-      if (event.logical_key !== "prepared") return `event ${event.sequence} is prepared under a different logical key`;
-      return typeof payload.header_hash === "string" ? null : "prepared payload has no header hash";
-    case "batch_started":
-    case "batch_finished": {
-      if (!isInt(payload.batch_index)) return `event ${event.sequence} has no batch index`;
-      if (String(payload.batch_index) !== suffix) {
-        return `event ${event.sequence} logical key disagrees with its batch index`;
-      }
-      if (!isInt(payload.spans) || payload.spans < 0) return `event ${event.sequence} has an invalid span count`;
-      if (event.event_type === "batch_started") {
-        if (!isDigest(payload.payload_digest)) return `event ${event.sequence} has no payload digest`;
-        if (!isInt(payload.payload_bytes) || payload.payload_bytes < 0) return `event ${event.sequence} has an invalid payload size`;
-        return null;
-      }
-      if (!BATCH_STATUSES.has(String(payload.status))) return `event ${event.sequence} has an unrecognised batch status`;
-      if (!isInt(payload.attempts) || payload.attempts < 1) return `event ${event.sequence} has an invalid attempt count`;
-      if (!isDigest(payload.payload_digest)) return `event ${event.sequence} has no payload digest`;
-      return null;
-    }
-    case "finalized": {
-      if (event.logical_key !== "finalized") return `event ${event.sequence} is finalized under a different logical key`;
-      if (!RECEIPT_STATES.has(String(payload.state))) return "finalized payload has an unrecognised state";
-      for (const k of ["spans_sent", "spans_rejected", "spans_failed", "spans_unknown"]) {
-        if (!isInt(payload[k]) || payload[k] < 0) return `finalized payload has an invalid ${k}`;
-      }
-      return null;
-    }
-  }
-}
-function verifyLifecycle(header, events) {
-  const fail3 = (seq, reason) => ({ valid: false, events: events.length, first_break: seq, reason });
-  if (events.length === 0) return { valid: false, events: 0, reason: "receipt has no events" };
-  if (events[0].event_type !== "prepared") return fail3(0, "chain does not open with prepared");
-  const started = /* @__PURE__ */ new Map();
-  const finished = /* @__PURE__ */ new Set();
-  const tally = { sent: 0, rejected: 0, failed: 0, unknown: 0 };
-  let finalizedAt = null;
-  let finalPayload = null;
-  for (const e of events) {
-    if (finalizedAt !== null) return fail3(e.sequence, "event recorded after finalization");
-    const parsed = parsePayload(e);
-    if (!parsed.ok) return fail3(e.sequence, parsed.reason);
-    const contract = checkPayload(e, parsed.value);
-    if (contract) return fail3(e.sequence, contract);
-    const index = e.logical_key.split(":")[1];
-    switch (e.event_type) {
-      case "prepared":
-        if (e.sequence !== 0) return fail3(e.sequence, "more than one prepared event");
-        break;
-      case "batch_started":
-        if (started.has(index)) return fail3(e.sequence, `batch ${index} started twice`);
-        started.set(index, parsed.value);
-        break;
-      case "batch_finished": {
-        const start = started.get(index);
-        if (!start) return fail3(e.sequence, `batch ${index} finished without starting`);
-        if (finished.has(index)) return fail3(e.sequence, `batch ${index} finished twice`);
-        if (parsed.value.spans !== start.spans) {
-          return fail3(e.sequence, `batch ${index} finished with a different span count than it started with`);
-        }
-        if (parsed.value.payload_digest !== start.payload_digest) {
-          return fail3(e.sequence, `batch ${index} finished with a different payload than it started with`);
-        }
-        finished.add(index);
-        tally[parsed.value.status] += parsed.value.spans;
-        break;
-      }
-      case "finalized":
-        finalizedAt = e.sequence;
-        finalPayload = parsed.value;
-        break;
-    }
-  }
-  if (finalPayload) {
-    for (const index of started.keys()) {
-      if (!finished.has(index)) return fail3(finalizedAt, `finalized while batch ${index} had not finished`);
-    }
-    const declared = {
-      sent: finalPayload.spans_sent,
-      rejected: finalPayload.spans_rejected,
-      failed: finalPayload.spans_failed,
-      unknown: finalPayload.spans_unknown
-    };
-    if (String(Object.values(declared)) !== String([tally.sent, tally.rejected, tally.failed, tally.unknown])) {
-      return fail3(finalizedAt, "finalized counts do not reconcile with the recorded batch outcomes");
-    }
-    const total = declared.sent + declared.rejected + declared.failed + declared.unknown;
-    if (total !== header.span_count) {
-      return fail3(finalizedAt, `finalized counts total ${total} but the receipt was opened for ${header.span_count} span(s)`);
-    }
-    const implied = expectedState(declared, header.span_count);
-    if (finalPayload.state !== implied) {
-      return fail3(finalizedAt, `finalized as ${finalPayload.state} but the recorded counts imply ${implied}`);
-    }
-  }
-  return { valid: true, events: events.length };
-}
-function verifyReceipt(header, events) {
-  const integrity = verifyIntegrity(header, events);
-  return integrity.valid ? verifyLifecycle(header, events) : integrity;
-}
-function deriveState(events) {
-  const finalized = events.find((e) => e.event_type === "finalized");
-  if (finalized) {
-    const parsed = parsePayload(finalized);
-    return parsed.ok ? parsed.value.state : null;
-  }
-  if (events.some((e) => e.event_type === "batch_started")) return "unknown";
-  return "prepared";
-}
-function summarise(header, events) {
-  const finalized = events.find((e) => e.event_type === "finalized");
-  if (finalized) {
-    const p = parsePayload(finalized);
-    if (p.ok) {
-      return {
-        sent: p.value.spans_sent,
-        rejected: p.value.spans_rejected,
-        failed: p.value.spans_failed,
-        unknown: p.value.spans_unknown,
-        // Verification already required the totals to cover every selected span.
-        unattempted: 0
-      };
-    }
-  }
-  const tally = { sent: 0, rejected: 0, failed: 0, unknown: 0, unattempted: 0 };
-  const started = /* @__PURE__ */ new Map();
-  const finished = /* @__PURE__ */ new Set();
-  for (const e of events) {
-    const p = parsePayload(e);
-    if (!p.ok) continue;
-    if (e.event_type === "batch_started") started.set(p.value.batch_index, p.value.spans);
-    if (e.event_type === "batch_finished") {
-      finished.add(p.value.batch_index);
-      tally[p.value.status] += p.value.spans;
-    }
-  }
-  for (const [index, spans] of started) {
-    if (!finished.has(index)) tally.unknown += spans;
-  }
-  const accounted = tally.sent + tally.rejected + tally.failed + tally.unknown;
-  tally.unattempted = Math.max(0, header.span_count - accounted);
-  return tally;
-}
-async function readReceipt(db, receiptId) {
-  const [header] = await db.select().from(export_receipts).where(eq(export_receipts.id, receiptId)).limit(1);
-  if (!header) return null;
-  const events = await db.select().from(export_receipt_events).where(eq(export_receipt_events.receipt_id, receiptId)).orderBy(asc(export_receipt_events.sequence));
-  const verdict = verifyReceipt(header, events);
-  return {
-    header,
-    events,
-    verdict,
-    state: verdict.valid ? deriveState(events) : null,
-    summary: verdict.valid ? summarise(header, events) : null
-  };
-}
-async function listReceipts(db, limit) {
-  const headers = await db.select().from(export_receipts).orderBy(desc(export_receipts.created_at)).limit(limit);
-  const readings = [];
-  for (const header of headers) {
-    const reading = await readReceipt(db, header.id);
-    if (reading) readings.push(reading);
-  }
-  return readings;
-}
-var import_crypto17, BATCH_STATUSES, RECEIPT_STATES, isInt, isDigest;
-var init_receipts = __esm({
-  "src/otel/receipts.ts"() {
-    "use strict";
-    init_drizzle_orm();
-    import_crypto17 = require("crypto");
-    init_esm();
-    init_schema();
-    init_time();
-    init_destination();
-    BATCH_STATUSES = /* @__PURE__ */ new Set(["sent", "rejected", "failed", "unknown"]);
-    RECEIPT_STATES = /* @__PURE__ */ new Set(["prepared", "delivered", "partially_delivered", "failed", "unknown"]);
-    isInt = (v) => typeof v === "number" && Number.isInteger(v);
-    isDigest = (v) => typeof v === "string" && /^[0-9a-f]{64}$/.test(v);
-  }
-});
-
 // src/cli/otel-receipts.ts
 var otel_receipts_exports = {};
 __export(otel_receipts_exports, {
   runOtelReceipts: () => runOtelReceipts
 });
 function describe(reading) {
-  if (!reading.verdict.valid) return { text: "UNVERIFIED", colour: RED13 };
+  if (!reading.verdict.valid) return { text: "UNVERIFIED", colour: RED14 };
   return STATE_LABEL[reading.state];
 }
 function toJson(readings) {
@@ -29743,11 +30361,11 @@ async function runOtelReceipts(args2) {
     return;
   }
   process.stdout.write(`
-${BOLD17}chron otel receipts${RESET18}
+${BOLD18}chron otel receipts${RESET19}
 
 `);
   if (readings.length === 0) {
-    process.stdout.write(`  ${DIM16}No exports recorded yet. Receipts are written by 'chron otel export'.${RESET18}
+    process.stdout.write(`  ${DIM17}No exports recorded yet. Receipts are written by 'chron otel export'.${RESET19}
 
 `);
     return;
@@ -29756,66 +30374,66 @@ ${BOLD17}chron otel receipts${RESET18}
     const state = describe(r);
     const when = r.header.created_at.slice(0, 16).replace("T", " ");
     process.stdout.write(
-      `  ${DIM16}${when}${RESET18}  ${CYAN15}${r.header.id.slice(0, 8)}${RESET18}  ${state.colour}${state.text.padEnd(17)}${RESET18}  ${String(r.header.span_count).padStart(6)} span(s)  ${DIM16}${r.header.destination_label}${RESET18}
+      `  ${DIM17}${when}${RESET19}  ${CYAN15}${r.header.id.slice(0, 8)}${RESET19}  ${state.colour}${state.text.padEnd(17)}${RESET19}  ${String(r.header.span_count).padStart(6)} span(s)  ${DIM17}${r.header.destination_label}${RESET19}
 `
     );
     if (!r.verdict.valid) {
-      process.stdout.write(`      ${RED13}\u2717${RESET18} ${r.verdict.reason}
+      process.stdout.write(`      ${RED14}\u2717${RESET19} ${r.verdict.reason}
 `);
     } else {
       const s = r.summary;
       if (s.rejected > 0 || s.failed > 0 || s.unknown > 0 || s.unattempted > 0) {
         const parts = [
-          s.sent > 0 ? `${GREEN11}${s.sent} accepted${RESET18}` : null,
-          s.rejected > 0 ? `${RED13}${s.rejected} rejected${RESET18}` : null,
-          s.failed > 0 ? `${RED13}${s.failed} not delivered${RESET18}` : null,
-          s.unknown > 0 ? `${YELLOW15}${s.unknown} unanswered${RESET18}` : null,
-          s.unattempted > 0 ? `${DIM16}${s.unattempted} never sent${RESET18}` : null
+          s.sent > 0 ? `${GREEN12}${s.sent} accepted${RESET19}` : null,
+          s.rejected > 0 ? `${RED14}${s.rejected} rejected${RESET19}` : null,
+          s.failed > 0 ? `${RED14}${s.failed} not delivered${RESET19}` : null,
+          s.unknown > 0 ? `${YELLOW16}${s.unknown} unanswered${RESET19}` : null,
+          s.unattempted > 0 ? `${DIM17}${s.unattempted} never sent${RESET19}` : null
         ].filter(Boolean);
-        process.stdout.write(`      ${DIM16}spans:${RESET18} ${parts.join(`${DIM16},${RESET18} `)}
+        process.stdout.write(`      ${DIM17}spans:${RESET19} ${parts.join(`${DIM17},${RESET19} `)}
 `);
       }
       if (r.header.included_content === 1) {
-        process.stdout.write(`      ${YELLOW15}!${RESET18} ${DIM16}human-authored text was included in this export${RESET18}
+        process.stdout.write(`      ${YELLOW16}!${RESET19} ${DIM17}human-authored text was included in this export${RESET19}
 `);
       }
     }
   }
   process.stdout.write("\n");
   if (unverifiedCount > 0) {
-    process.stdout.write(`  ${RED13}${unverifiedCount} receipt(s) did not verify${RESET18} \u2014 their delivery state is not shown,
+    process.stdout.write(`  ${RED14}${unverifiedCount} receipt(s) did not verify${RESET19} \u2014 their delivery state is not shown,
 `);
-    process.stdout.write(`  ${DIM16}because a record that does not hold up is not evidence of anything.${RESET18}
+    process.stdout.write(`  ${DIM17}because a record that does not hold up is not evidence of anything.${RESET19}
 
 `);
   }
-  process.stdout.write(`${DIM16}"Accepted" means the collector returned success for the payload.
+  process.stdout.write(`${DIM17}"Accepted" means the collector returned success for the payload.
 `);
-  process.stdout.write(`Whether it retained the data is something only that platform can show.${RESET18}
+  process.stdout.write(`Whether it retained the data is something only that platform can show.${RESET19}
 
 `);
   if (unverifiedCount > 0) process.exit(1);
 }
-var RESET18, BOLD17, DIM16, GREEN11, RED13, YELLOW15, CYAN15, DEFAULT_LIMIT, STATE_LABEL;
+var RESET19, BOLD18, DIM17, GREEN12, RED14, YELLOW16, CYAN15, DEFAULT_LIMIT, STATE_LABEL;
 var init_otel_receipts = __esm({
   "src/cli/otel-receipts.ts"() {
     "use strict";
     init_db2();
     init_receipts();
-    RESET18 = "\x1B[0m";
-    BOLD17 = "\x1B[1m";
-    DIM16 = "\x1B[2m";
-    GREEN11 = "\x1B[32m";
-    RED13 = "\x1B[31m";
-    YELLOW15 = "\x1B[33m";
+    RESET19 = "\x1B[0m";
+    BOLD18 = "\x1B[1m";
+    DIM17 = "\x1B[2m";
+    GREEN12 = "\x1B[32m";
+    RED14 = "\x1B[31m";
+    YELLOW16 = "\x1B[33m";
     CYAN15 = "\x1B[36m";
     DEFAULT_LIMIT = 20;
     STATE_LABEL = {
-      delivered: { text: "accepted", colour: GREEN11 },
-      partially_delivered: { text: "partly accepted", colour: YELLOW15 },
-      failed: { text: "not delivered", colour: RED13 },
-      unknown: { text: "delivery unknown", colour: YELLOW15 },
-      prepared: { text: "nothing sent", colour: DIM16 }
+      delivered: { text: "accepted", colour: GREEN12 },
+      partially_delivered: { text: "partly accepted", colour: YELLOW16 },
+      failed: { text: "not delivered", colour: RED14 },
+      unknown: { text: "delivery unknown", colour: YELLOW16 },
+      prepared: { text: "nothing sent", colour: DIM17 }
     };
   }
 });
@@ -29825,7 +30443,7 @@ var otel_exports = {};
 __export(otel_exports, {
   runOtel: () => runOtel
 });
-function usage() {
+function usage2() {
   return "Usage: chron otel export [options]\n       chron otel receipts [--limit=<n>] [--json]\n\nExport logged sessions as OpenTelemetry spans.\n\nProtocol: OTLP over HTTP with JSON encoding (http/json). This is the only\nprotocol Chron speaks. If OTEL_EXPORTER_OTLP_PROTOCOL is set to grpc or\nhttp/protobuf, the export is refused rather than silently downgraded.\n\nExport is deliberate and manual. Chron never sends evidence off the machine\non its own; nothing leaves until you run this command.\n\nOptions:\n  --dry-run            Print the payload and send nothing. Fully offline.\n  --session=<prefix>   Export a single session\n  --since=<range>      7d, 30d, or YYYY-MM-DD\n  --endpoint=<url>     Base URL; /v1/traces is appended\n  --traces-endpoint=<url>  Full traces URL, used exactly as given\n  --include-content    Include human-authored text: messages, session titles\n                       and external references (off by default)\n  --batch-size=<n>     Spans per request (default 512)\n\nOptions (receipts):\n  --limit=<n>          Most recent receipts to show (default 20)\n  --json               Machine-readable output\n\nEnvironment (standard OTel variables):\n  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT   used as-is\n  OTEL_EXPORTER_OTLP_ENDPOINT          base URL, /v1/traces appended\n  OTEL_EXPORTER_OTLP_HEADERS           key1=value1,key2=value2\n  OTEL_EXPORTER_OTLP_TIMEOUT           milliseconds (default 10000)\n";
 }
 function flag(args2, name2) {
@@ -29852,7 +30470,7 @@ async function runOtel(args2) {
     return;
   }
   if (!sub || sub !== "export") {
-    process.stderr.write(usage());
+    process.stderr.write(usage2());
     process.exit(1);
   }
   const dryRun = args2.includes("--dry-run");
@@ -29872,7 +30490,7 @@ async function runOtel(args2) {
     } catch (e) {
       if (e instanceof OtelConfigError) {
         process.stderr.write(`
-${RED14}\u2717${RESET19} ${e.message}
+${RED15}\u2717${RESET20} ${e.message}
 
 `);
         process.exit(1);
@@ -29881,42 +30499,42 @@ ${RED14}\u2717${RESET19} ${e.message}
     }
   }
   const { spans, sessionCount, sessionIds, db } = await collectSpans(flag(args2, "session"), since, includeContent);
-  const resource = { serviceName: "chron", serviceVersion: import_package4.version };
+  const resource = { serviceName: "chron", serviceVersion: import_package5.version };
   process.stdout.write(`
-${BOLD18}chron otel export${RESET19}
+${BOLD19}chron otel export${RESET20}
 
 `);
   process.stdout.write(`  ${sessionCount} session(s), ${spans.length} span(s)
 `);
   if (includeContent) {
-    process.stdout.write(`  ${YELLOW16}!${RESET19} Human-authored text (messages, titles, external references) is included.
+    process.stdout.write(`  ${YELLOW17}!${RESET20} Human-authored text (messages, titles, external references) is included.
 `);
   } else {
-    process.stdout.write(`  ${DIM17}content excluded \u2014 identifiers, hashes and lengths only${RESET19}
+    process.stdout.write(`  ${DIM18}content excluded \u2014 identifiers, hashes and lengths only${RESET20}
 `);
   }
   if (dryRun) {
     process.stdout.write(`
-${BOLD18}Dry run \u2014 nothing sent${RESET19}
+${BOLD19}Dry run \u2014 nothing sent${RESET20}
 
 `);
     process.stdout.write(`${JSON.stringify(toResourceSpans(spans.slice(0, 2), resource), null, 2)}
 `);
-    if (spans.length > 2) process.stdout.write(`${DIM17}... ${spans.length - 2} more span(s) not shown${RESET19}
+    if (spans.length > 2) process.stdout.write(`${DIM18}... ${spans.length - 2} more span(s) not shown${RESET20}
 `);
     try {
       const cfg = resolveConfig(process.env, { endpoint: flag(args2, "endpoint"), tracesEndpoint: flag(args2, "traces-endpoint") });
       process.stdout.write(`
-${DIM17}would POST to: ${sanitizeEndpoint(cfg.endpoint)}${RESET19}
+${DIM18}would POST to: ${sanitizeEndpoint(cfg.endpoint)}${RESET20}
 `);
       const red = redactHeaders(cfg.headers);
       if (Object.keys(red).length > 0) {
-        process.stdout.write(`${DIM17}headers: ${JSON.stringify(red)}${RESET19}
+        process.stdout.write(`${DIM18}headers: ${JSON.stringify(red)}${RESET20}
 `);
       }
     } catch {
       process.stdout.write(`
-${DIM17}no endpoint configured \u2014 dry run does not need one${RESET19}
+${DIM18}no endpoint configured \u2014 dry run does not need one${RESET20}
 `);
     }
     process.stdout.write("\n");
@@ -29934,7 +30552,7 @@ ${DIM17}no endpoint configured \u2014 dry run does not need one${RESET19}
     sessionIds,
     spanCount: spans.length,
     includeContent,
-    chronVersion: import_package4.version,
+    chronVersion: import_package5.version,
     transport: "http/json",
     scopeSelector
   });
@@ -29953,45 +30571,45 @@ ${DIM17}no endpoint configured \u2014 dry run does not need one${RESET19}
       state = (await readReceipt(db, receiptId))?.state ?? "not recorded";
     }
   }
-  process.stdout.write(`  ${DIM17}receipt ${receiptId.slice(0, 8)} \u2014 ${state}${RESET19}
+  process.stdout.write(`  ${DIM18}receipt ${receiptId.slice(0, 8)} \u2014 ${state}${RESET20}
 `);
   if (result.complete && result.receiptErrors.length === 0) {
-    process.stdout.write(spans.length === 0 ? `  ${DIM17}Nothing in scope \u2014 no request was made.${RESET19}
+    process.stdout.write(spans.length === 0 ? `  ${DIM18}Nothing in scope \u2014 no request was made.${RESET20}
 
-` : `  ${GREEN12}\u2713${RESET19} ${result.sent} span(s) accepted by the collector
+` : `  ${GREEN13}\u2713${RESET20} ${result.sent} span(s) accepted by the collector
 
 `);
     return;
   }
   if (result.complete) {
-    process.stdout.write(`  ${GREEN12}\u2713${RESET19} ${result.sent} span(s) accepted by the collector
+    process.stdout.write(`  ${GREEN13}\u2713${RESET20} ${result.sent} span(s) accepted by the collector
 `);
   } else {
-    process.stdout.write(`  ${GREEN12}sent${RESET19}     ${result.sent}
+    process.stdout.write(`  ${GREEN13}sent${RESET20}     ${result.sent}
 `);
-    process.stdout.write(`  ${RED14}rejected${RESET19} ${result.rejected}
+    process.stdout.write(`  ${RED15}rejected${RESET20} ${result.rejected}
 `);
-    process.stdout.write(`  ${RED14}failed${RESET19}   ${result.failed}
+    process.stdout.write(`  ${RED15}failed${RESET20}   ${result.failed}
 `);
-    process.stdout.write(`  ${YELLOW16}unknown${RESET19}  ${result.unknown}
+    process.stdout.write(`  ${YELLOW17}unknown${RESET20}  ${result.unknown}
 
 `);
   }
   for (const b of result.batches.filter((x) => x.status !== "sent")) {
     const code = b.httpStatus ? `HTTP ${b.httpStatus}` : "no response";
-    const mark = b.status === "unknown" ? `${YELLOW16}?${RESET19}` : `${RED14}\u2717${RESET19}`;
+    const mark = b.status === "unknown" ? `${YELLOW17}?${RESET20}` : `${RED15}\u2717${RESET20}`;
     process.stderr.write(`  ${mark} ${b.spans} span(s) ${b.status} after ${b.attempts} attempt(s): ${code}${b.errorCategory ? ` \u2014 ${b.errorCategory}` : ""}
 `);
   }
   process.stderr.write("\n");
   if (result.rejected > 0 || result.failed > 0) {
-    process.stderr.write(`${RED14}Not delivered.${RESET19} ${result.rejected + result.failed} span(s) did not reach the collector.
+    process.stderr.write(`${RED15}Not delivered.${RESET20} ${result.rejected + result.failed} span(s) did not reach the collector.
 `);
     process.stderr.write(`  Check the endpoint, credentials and configuration, then export again.
 `);
   }
   if (result.unknown > 0) {
-    process.stderr.write(`${YELLOW16}Delivery unknown.${RESET19} ${result.unknown} span(s) may or may not have reached the collector;
+    process.stderr.write(`${YELLOW17}Delivery unknown.${RESET20} ${result.unknown} span(s) may or may not have reached the collector;
 `);
     process.stderr.write(`  the request was sent but no trustworthy response came back.
 `);
@@ -30001,7 +30619,7 @@ ${DIM17}no endpoint configured \u2014 dry run does not need one${RESET19}
 `);
   }
   if (result.receiptErrors.length > 0) {
-    process.stderr.write(`${RED14}Receipt not fully recorded.${RESET19} The delivery result above is accurate;
+    process.stderr.write(`${RED15}Receipt not fully recorded.${RESET20} The delivery result above is accurate;
 `);
     process.stderr.write(`  what could not be written is the audit record of it. The receipt is left
 `);
@@ -30009,13 +30627,13 @@ ${DIM17}no endpoint configured \u2014 dry run does not need one${RESET19}
 `);
     process.stderr.write(`  it cannot show. Run 'chron otel receipts' to see it.
 `);
-    for (const e of result.receiptErrors) process.stderr.write(`  ${RED14}\u2717${RESET19} ${e}
+    for (const e of result.receiptErrors) process.stderr.write(`  ${RED15}\u2717${RESET20} ${e}
 `);
   }
   process.stderr.write("\n");
   process.exit(1);
 }
-var import_package4, RESET19, BOLD18, DIM17, GREEN12, RED14, YELLOW16;
+var import_package5, RESET20, BOLD19, DIM18, GREEN13, RED15, YELLOW17;
 var init_otel = __esm({
   "src/cli/otel.ts"() {
     "use strict";
@@ -30029,20 +30647,20 @@ var init_otel = __esm({
     init_config2();
     init_receipts();
     init_report();
-    import_package4 = __toESM(require_package());
+    import_package5 = __toESM(require_package());
     init_destination();
-    RESET19 = "\x1B[0m";
-    BOLD18 = "\x1B[1m";
-    DIM17 = "\x1B[2m";
-    GREEN12 = "\x1B[32m";
-    RED14 = "\x1B[31m";
-    YELLOW16 = "\x1B[33m";
+    RESET20 = "\x1B[0m";
+    BOLD19 = "\x1B[1m";
+    DIM18 = "\x1B[2m";
+    GREEN13 = "\x1B[32m";
+    RED15 = "\x1B[31m";
+    YELLOW17 = "\x1B[33m";
   }
 });
 
 // src/utils/ntp.ts
 function queryNtpUdp(server, timeout) {
-  return new Promise((resolve3, reject) => {
+  return new Promise((resolve5, reject) => {
     const client = (0, import_dgram.createSocket)("udp4");
     const timer = setTimeout(() => {
       try {
@@ -30069,7 +30687,7 @@ function queryNtpUdp(server, timeout) {
       const frac = msg.readUInt32BE(44);
       const t3 = (secs - NTP_OFFSET) * 1e3 + frac / 4294967296 * 1e3;
       const offset_ms = Math.round(t3 - (t1 + t4) / 2);
-      resolve3({ offset_ms });
+      resolve5({ offset_ms });
     });
     client.once("error", (err) => {
       clearTimeout(timer);
@@ -30344,47 +30962,47 @@ Tools: ${Object.keys(KNOWN_TOOLS2).join(", ")}
   const { session_id, created, title } = await createAttachSession(db, aiTool, titleArg);
   const short = session_id.slice(0, 8);
   process.stdout.write(`
-${BOLD19}chron attach${RESET20} ${aiTool}
+${BOLD20}chron attach${RESET21} ${aiTool}
 
 `);
   if (created) {
-    process.stdout.write(`  ${GREEN13}\u2713${RESET20} session ${BOLD19}${short}${RESET20} created \u2014 ${title}
+    process.stdout.write(`  ${GREEN14}\u2713${RESET21} session ${BOLD20}${short}${RESET21} created \u2014 ${title}
 `);
   } else {
-    process.stdout.write(`  ${GREEN13}\u2713${RESET20} resumed existing session ${BOLD19}${short}${RESET20} \u2014 ${title}
+    process.stdout.write(`  ${GREEN14}\u2713${RESET21} resumed existing session ${BOLD20}${short}${RESET21} \u2014 ${title}
 `);
   }
-  process.stdout.write(`  ${YELLOW17}!${RESET20} Marked as partial evidence. Chron did not observe this
+  process.stdout.write(`  ${YELLOW18}!${RESET21} Marked as partial evidence. Chron did not observe this
 `);
   process.stdout.write(`    conversation before now, and does not claim to know what came before.
 
 `);
-  process.stdout.write(`${BOLD19}Paste this into the session you want recorded:${RESET20}
+  process.stdout.write(`${BOLD20}Paste this into the session you want recorded:${RESET21}
 
 `);
-  process.stdout.write(`${DIM18}  Log this conversation to Chron from now on using session_id ${session_id}.
+  process.stdout.write(`${DIM19}  Log this conversation to Chron from now on using session_id ${session_id}.
 `);
   process.stdout.write(`  Call log_message for this and every following exchange.
 `);
-  process.stdout.write(`  Do not attempt to reconstruct earlier messages.${RESET20}
+  process.stdout.write(`  Do not attempt to reconstruct earlier messages.${RESET21}
 
 `);
-  process.stdout.write(`${DIM18}  chron history ${short}   chron verify ${short}${RESET20}
+  process.stdout.write(`${DIM19}  chron history ${short}   chron verify ${short}${RESET21}
 
 `);
 }
-var RESET20, BOLD19, DIM18, GREEN13, YELLOW17, KNOWN_TOOLS2;
+var RESET21, BOLD20, DIM19, GREEN14, YELLOW18, KNOWN_TOOLS2;
 var init_attach = __esm({
   "src/cli/attach.ts"() {
     "use strict";
     init_db2();
     init_sessions();
     init_time();
-    RESET20 = "\x1B[0m";
-    BOLD19 = "\x1B[1m";
-    DIM18 = "\x1B[2m";
-    GREEN13 = "\x1B[32m";
-    YELLOW17 = "\x1B[33m";
+    RESET21 = "\x1B[0m";
+    BOLD20 = "\x1B[1m";
+    DIM19 = "\x1B[2m";
+    GREEN14 = "\x1B[32m";
+    YELLOW18 = "\x1B[33m";
     KNOWN_TOOLS2 = {
       claude: "claude",
       "claude-code": "claude",
@@ -30407,13 +31025,13 @@ async function resolveSession(prefix) {
   const all = await db.select({ id: sessions.id, title: sessions.title, signature: sessions.signature }).from(sessions);
   const matches = all.filter((s) => s.id.startsWith(prefix));
   if (matches.length === 0) {
-    process.stderr.write(`${RED15}\u2717${RESET21} No session found matching prefix: ${prefix}
+    process.stderr.write(`${RED16}\u2717${RESET22} No session found matching prefix: ${prefix}
 `);
     process.exit(1);
   }
   if (matches.length > 1) {
     process.stderr.write(
-      `${RED15}\u2717${RESET21} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
+      `${RED16}\u2717${RESET22} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
 `
     );
     process.exit(1);
@@ -30433,8 +31051,8 @@ async function renameSession(args2) {
   const { db, session } = await resolveSession(prefix);
   if (session.signature) {
     process.stderr.write(
-      `${RED15}\u2717${RESET21} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
-  Use ${CYAN16}chron session rename${RESET21} only on unsigned sessions.
+      `${RED16}\u2717${RESET22} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
+  Use ${CYAN16}chron session rename${RESET22} only on unsigned sessions.
 `
     );
     process.exit(1);
@@ -30442,9 +31060,9 @@ async function renameSession(args2) {
   const oldTitle = session.title;
   await db.update(sessions).set({ title: newTitle }).where(eq(sessions.id, session.id));
   process.stdout.write(
-    `${GREEN14}\u2713${RESET21} Session ${CYAN16}${session.id.slice(0, 8)}${RESET21} renamed
-  ${DIM19}before:${RESET21} ${oldTitle}
-  ${DIM19}after: ${RESET21} ${BOLD20}${newTitle}${RESET21}
+    `${GREEN15}\u2713${RESET22} Session ${CYAN16}${session.id.slice(0, 8)}${RESET22} renamed
+  ${DIM20}before:${RESET22} ${oldTitle}
+  ${DIM20}after: ${RESET22} ${BOLD21}${newTitle}${RESET22}
 
 Messages and timestamps are unchanged.
 `
@@ -30467,19 +31085,19 @@ Subcommands:
       if (subcommand) process.exit(1);
   }
 }
-var RESET21, BOLD20, DIM19, CYAN16, GREEN14, RED15;
+var RESET22, BOLD21, DIM20, CYAN16, GREEN15, RED16;
 var init_session3 = __esm({
   "src/cli/session.ts"() {
     "use strict";
     init_drizzle_orm();
     init_db2();
     init_schema();
-    RESET21 = "\x1B[0m";
-    BOLD20 = "\x1B[1m";
-    DIM19 = "\x1B[2m";
+    RESET22 = "\x1B[0m";
+    BOLD21 = "\x1B[1m";
+    DIM20 = "\x1B[2m";
     CYAN16 = "\x1B[36m";
-    GREEN14 = "\x1B[32m";
-    RED15 = "\x1B[31m";
+    GREEN15 = "\x1B[32m";
+    RED16 = "\x1B[31m";
   }
 });
 
@@ -30493,8 +31111,8 @@ __export(version_exports, {
 function isVersionCommand(command2) {
   return command2 !== void 0 && VERSION_FLAGS.includes(command2);
 }
-function formatVersion(version6) {
-  return `chron-mcp ${version6}`;
+function formatVersion(version7) {
+  return `chron-mcp ${version7}`;
 }
 var VERSION_FLAGS;
 var init_version2 = __esm({
@@ -30505,7 +31123,7 @@ var init_version2 = __esm({
 });
 
 // src/cli/index.ts
-var import_package5 = __toESM(require_package());
+var import_package6 = __toESM(require_package());
 var [, , command, ...args] = process.argv;
 async function main() {
   switch (command) {
@@ -30548,6 +31166,16 @@ async function main() {
     case "summary": {
       const { runSummary: runSummary2 } = await Promise.resolve().then(() => (init_summary(), summary_exports));
       await runSummary2(args);
+      break;
+    }
+    case "backup": {
+      const { runBackup: runBackup2 } = await Promise.resolve().then(() => (init_backup(), backup_exports));
+      await runBackup2(args);
+      break;
+    }
+    case "restore": {
+      const { runRestore: runRestore2 } = await Promise.resolve().then(() => (init_backup(), backup_exports));
+      await runRestore2(args);
       break;
     }
     case "prune": {
@@ -30651,7 +31279,7 @@ async function main() {
     case "--version":
     case "-v": {
       const { formatVersion: formatVersion2 } = await Promise.resolve().then(() => (init_version2(), version_exports));
-      process.stdout.write(`${formatVersion2(import_package5.version)}
+      process.stdout.write(`${formatVersion2(import_package6.version)}
 `);
       break;
     }
@@ -30681,6 +31309,8 @@ Commands:
   sign            Sign a session with its Ed25519 key \u2014 produces a .chron.sig file
   verify          Verify a session's hash chain and Ed25519 signature
   prune           Delete sessions older than a retention cutoff
+  backup          Snapshot the database with a verifiable manifest
+  restore         Restore a backup, or drill the recovery without touching anything
   doctor          Check your Chron setup \u2014 Node version, DB, MCP configs, SIEM
   import          Import conversations from external AI tools
   review          Review AI sessions against compliance control criteria
