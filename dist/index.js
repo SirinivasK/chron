@@ -22798,16 +22798,56 @@ var init_schema = __esm({
   }
 });
 
+// src/utils/config-path.ts
+function configPath() {
+  const override = process.env.CHRON_CONFIG_PATH;
+  const path = override && override.trim() ? override : (0, import_path.join)((0, import_os.homedir)(), ".chron", "config.json");
+  return guardTestRoot("configuration", path, "CHRON_CONFIG_PATH");
+}
+function guardedDbPath(path) {
+  return guardTestRoot("a database", path, "CHRON_DB_PATH");
+}
+function guardedKeysDir(path) {
+  return guardTestRoot("signing keys", path, "CHRON_KEYS_DIR");
+}
+function guardTestRoot(what, path, envVar) {
+  const root = process.env.CHRON_TEST_ROOT;
+  if (!root) return path;
+  if (isContainedBy((0, import_path.resolve)(path), (0, import_path.resolve)(root))) return path;
+  throw new Error(
+    `Refusing to use ${what} at ${(0, import_path.resolve)(path)} during a test run.
+  Paths must stay inside ${root}. Set ${envVar} to a path within it
+  before anything can read it \u2014 and set it before clearing other variables,
+  because an unset ${envVar} falls back to the real home directory.
+  If this is a shell script, check the variables are exported in the current
+  shell: assignments inside $(...) apply only to the subshell.`
+  );
+}
+function isContainedBy(candidate, root) {
+  const rel = (0, import_path.relative)(root, candidate);
+  if (rel === "") return true;
+  if ((0, import_path.isAbsolute)(rel)) return false;
+  return rel !== ".." && !rel.startsWith(`..${import_path.sep}`);
+}
+var import_os, import_path;
+var init_config_path = __esm({
+  "src/utils/config-path.ts"() {
+    "use strict";
+    import_os = require("os");
+    import_path = require("path");
+  }
+});
+
 // src/db/index.ts
 function getDbPath() {
   const envPath = process.env.CHRON_DB_PATH;
   if (envPath) return envPath;
-  return (0, import_path.join)((0, import_os.homedir)(), ".chron", "chron.db");
+  return (0, import_path2.join)((0, import_os2.homedir)(), ".chron", "chron.db");
 }
 async function initDb(dbPath) {
-  const path = dbPath ?? getDbPath();
+  const path = guardedDbPath(dbPath ?? getDbPath());
   if (!path.startsWith(":")) {
-    (0, import_fs.mkdirSync)((0, import_path.dirname)(path), { recursive: true });
+    (0, import_fs.mkdirSync)((0, import_path2.dirname)(path), { recursive: true });
   }
   const client = createClient({ url: path.startsWith(":") ? path : `file:${path}` });
   await client.execute("PRAGMA journal_mode = WAL");
@@ -22983,16 +23023,17 @@ async function initDb(dbPath) {
   }
   return drizzle(client, { schema: schema_exports });
 }
-var import_os, import_fs, import_path, CREATE_SQL;
+var import_os2, import_fs, import_path2, CREATE_SQL;
 var init_db2 = __esm({
   "src/db/index.ts"() {
     "use strict";
     init_node2();
     init_libsql();
-    import_os = require("os");
+    import_os2 = require("os");
     import_fs = require("fs");
-    import_path = require("path");
+    import_path2 = require("path");
     init_schema();
+    init_config_path();
     CREATE_SQL = [
       `CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
@@ -38755,7 +38796,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.61",
+      version: "0.1.62",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -38827,38 +38868,6 @@ var require_package = __commonJS({
         "@hono/node-server": "^2.0.5"
       }
     };
-  }
-});
-
-// src/utils/config-path.ts
-function configPath() {
-  const override = process.env.CHRON_CONFIG_PATH;
-  const path = override && override.trim() ? override : (0, import_path2.join)((0, import_os2.homedir)(), ".chron", "config.json");
-  return guardTestRoot(path);
-}
-function guardTestRoot(path) {
-  const root = process.env.CHRON_TEST_ROOT;
-  if (!root) return path;
-  if (isContainedBy((0, import_path2.resolve)(path), (0, import_path2.resolve)(root))) return path;
-  throw new Error(
-    `Refusing to read configuration from ${(0, import_path2.resolve)(path)} during a test run.
-  Paths must stay inside ${root}. Set CHRON_CONFIG_PATH to a temporary file
-  before anything can read it \u2014 and set it before clearing other variables,
-  because an unset CHRON_CONFIG_PATH falls back to the real home directory.`
-  );
-}
-function isContainedBy(candidate, root) {
-  const rel = (0, import_path2.relative)(root, candidate);
-  if (rel === "") return true;
-  if ((0, import_path2.isAbsolute)(rel)) return false;
-  return rel !== ".." && !rel.startsWith(`..${import_path2.sep}`);
-}
-var import_os2, import_path2;
-var init_config_path = __esm({
-  "src/utils/config-path.ts"() {
-    "use strict";
-    import_os2 = require("os");
-    import_path2 = require("path");
   }
 });
 
@@ -39124,7 +39133,7 @@ var init_relay = __esm({
 // src/utils/signing.ts
 function keysDir() {
   const override = process.env.CHRON_KEYS_DIR;
-  return override && override.trim() ? override : (0, import_path3.join)((0, import_os4.homedir)(), ".chron", "keys");
+  return guardedKeysDir(override && override.trim() ? override : (0, import_path3.join)((0, import_os4.homedir)(), ".chron", "keys"));
 }
 function privKeyPath(sessionId) {
   return (0, import_path3.join)(keysDir(), `${sessionId}.key`);
@@ -39164,10 +39173,14 @@ var init_signing = __esm({
     import_fs3 = require("fs");
     import_path3 = require("path");
     import_os4 = require("os");
+    init_config_path();
   }
 });
 
 // src/utils/ntp.ts
+function ntpDisabled() {
+  return process.env[NTP_DISABLED_ENV] === "1";
+}
 function queryNtpUdp(server, timeout) {
   return new Promise((resolve2, reject) => {
     const client = (0, import_dgram.createSocket)("udp4");
@@ -39218,21 +39231,26 @@ function queryNtpUdp(server, timeout) {
     });
   });
 }
-async function checkNtpSync(server = "pool.ntp.org", timeout = 2e3) {
+async function checkNtpSync(server, timeout = 2e3) {
+  if (ntpDisabled()) return { clock_sync_status: "disabled" };
+  const target = server ?? process.env[NTP_SERVER_ENV] ?? DEFAULT_NTP_SERVER;
   try {
-    const { offset_ms } = await queryNtpUdp(server, timeout);
+    const { offset_ms } = await queryNtpUdp(target, timeout);
     const status = Math.abs(offset_ms) <= 1e3 ? "synchronized" : "not_synchronized";
-    return { clock_sync_status: status, clock_offset_ms: offset_ms, ntp_server: server };
+    return { clock_sync_status: status, clock_offset_ms: offset_ms, ntp_server: target };
   } catch {
-    return { clock_sync_status: "unknown", ntp_server: server };
+    return { clock_sync_status: "unknown", ntp_server: target };
   }
 }
-var import_dgram, NTP_OFFSET;
+var import_dgram, NTP_OFFSET, NTP_DISABLED_ENV, NTP_SERVER_ENV, DEFAULT_NTP_SERVER;
 var init_ntp = __esm({
   "src/utils/ntp.ts"() {
     "use strict";
     import_dgram = require("dgram");
     NTP_OFFSET = 2208988800;
+    NTP_DISABLED_ENV = "CHRON_DISABLE_NTP";
+    NTP_SERVER_ENV = "CHRON_NTP_SERVER";
+    DEFAULT_NTP_SERVER = "pool.ntp.org";
   }
 });
 
@@ -39359,7 +39377,7 @@ function describeEvidenceBoundary(meta) {
       return null;
   }
 }
-var EVIDENCE_SOURCE, EVIDENCE_SOURCES, ATTACH_REASON_MID_SESSION;
+var EVIDENCE_SOURCE, EVIDENCE_SOURCES, CAPTURE_MODE, CAPTURE_MODES, CALLER_ASSERTABLE_SOURCES, ATTACH_REASON_MID_SESSION;
 var init_evidence = __esm({
   "src/utils/evidence.ts"() {
     "use strict";
@@ -39374,6 +39392,16 @@ var init_evidence = __esm({
       TRANSCRIPT_BACKFILL: "transcript_backfill"
     };
     EVIDENCE_SOURCES = Object.values(EVIDENCE_SOURCE);
+    CAPTURE_MODE = {
+      /** Nothing prevented this interaction from occurring unrecorded. The default, and today the only reachable value. */
+      UNENFORCED: "unenforced",
+      /** Chron's wrapper recorded the interaction durably before releasing the output. Not built. */
+      ENFORCED_WRAPPER: "enforced:wrapper",
+      /** A control outside Chron's command path prevented bypass of the wrapper. Not built. */
+      ENFORCED_POLICY: "enforced:policy"
+    };
+    CAPTURE_MODES = Object.values(CAPTURE_MODE);
+    CALLER_ASSERTABLE_SOURCES = EVIDENCE_SOURCES;
     ATTACH_REASON_MID_SESSION = "chron_available_mid_session";
   }
 });
@@ -39461,14 +39489,15 @@ function startSession(db) {
 }
 function resolveEvidenceMetadata(attach, metadata) {
   if (attach && !metadata) return liveAttachMetadata();
-  if (!metadata?.source) return attach ? liveAttachMetadata() : null;
-  const source = metadata.source;
+  const asserted = metadata?.source;
+  const source = asserted && CALLER_ASSERTABLE_SOURCES.includes(asserted) ? asserted : void 0;
+  if (!source) return attach ? liveAttachMetadata() : null;
   const resolved = { source };
   if (source !== EVIDENCE_SOURCE.WITNESSED) resolved.partial = true;
   if (source === EVIDENCE_SOURCE.LIVE_ATTACH) {
-    resolved.attach_reason = metadata.attach_reason ?? liveAttachMetadata().attach_reason;
+    resolved.attach_reason = metadata?.attach_reason ?? liveAttachMetadata().attach_reason;
   }
-  if (metadata.client) resolved.client = metadata.client;
+  if (metadata?.client) resolved.client = metadata.client;
   return resolved;
 }
 function initSession(db) {

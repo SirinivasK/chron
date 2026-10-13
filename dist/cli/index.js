@@ -38,7 +38,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.61",
+      version: "0.1.62",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -1280,7 +1280,7 @@ var init_sql = __esm({
         return new SQL([new StringChunk(str)]);
       }
       sql22.raw = raw;
-      function join15(chunks, separator) {
+      function join18(chunks, separator) {
         const result = [];
         for (const [i, chunk2] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -1290,7 +1290,7 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql22.join = join15;
+      sql22.join = join18;
       function identifier(value) {
         return new Name(value);
       }
@@ -3091,8 +3091,8 @@ var require_dist = __commonJS({
       const header = report.header;
       return typeof header === "object" && !!header && "glibcVersionRuntime" in header;
     }
-    function load(dirname7) {
-      const m = path.join(dirname7, "index.node");
+    function load(dirname9) {
+      const m = path.join(dirname9, "index.node");
       return fs.existsSync(m) ? require(m) : null;
     }
     exports2.load = load;
@@ -3121,7 +3121,7 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync15 = (path) => fs.readFileSync(path, "utf-8");
+    var readFileSync17 = (path) => fs.readFileSync(path, "utf-8");
     var readFile = (path) => new Promise((resolve5, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
@@ -3133,7 +3133,7 @@ var require_filesystem = __commonJS({
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync15,
+      readFileSync: readFileSync17,
       readFile
     };
   }
@@ -3145,7 +3145,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync15 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync17 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command2 = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
@@ -3226,7 +3226,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync15(LDD_PATH);
+        const lddContent = readFileSync17(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -3283,7 +3283,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync15(LDD_PATH);
+        const lddContent = readFileSync17(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -6465,7 +6465,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash17 } = require("crypto");
+    var { randomBytes, createHash: createHash18 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -7133,7 +7133,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash17("sha1").update(key + GUID).digest("base64");
+        const digest = createHash18("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -7502,7 +7502,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash17 } = require("crypto");
+    var { createHash: createHash18 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -7809,7 +7809,7 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest = createHash17("sha1").update(key + GUID).digest("base64");
+        const digest = createHash18("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -14523,7 +14523,7 @@ var init_select2 = __esm({
           const baseTableName = this.tableName;
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table)) this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join15) => join15.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join18) => join18.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -15409,7 +15409,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join15) => join15.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join18) => join18.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -16923,6 +16923,56 @@ var init_schema = __esm({
   }
 });
 
+// src/utils/config-path.ts
+var config_path_exports = {};
+__export(config_path_exports, {
+  configPath: () => configPath,
+  guardedDbPath: () => guardedDbPath,
+  guardedJournalPath: () => guardedJournalPath,
+  guardedKeysDir: () => guardedKeysDir
+});
+function configPath() {
+  const override = process.env.CHRON_CONFIG_PATH;
+  const path = override && override.trim() ? override : (0, import_path.join)((0, import_os.homedir)(), ".chron", "config.json");
+  return guardTestRoot("configuration", path, "CHRON_CONFIG_PATH");
+}
+function guardedDbPath(path) {
+  return guardTestRoot("a database", path, "CHRON_DB_PATH");
+}
+function guardedJournalPath(path) {
+  return guardTestRoot("a capture journal", path, "CHRON_JOURNAL_PATH");
+}
+function guardedKeysDir(path) {
+  return guardTestRoot("signing keys", path, "CHRON_KEYS_DIR");
+}
+function guardTestRoot(what, path, envVar) {
+  const root = process.env.CHRON_TEST_ROOT;
+  if (!root) return path;
+  if (isContainedBy((0, import_path.resolve)(path), (0, import_path.resolve)(root))) return path;
+  throw new Error(
+    `Refusing to use ${what} at ${(0, import_path.resolve)(path)} during a test run.
+  Paths must stay inside ${root}. Set ${envVar} to a path within it
+  before anything can read it \u2014 and set it before clearing other variables,
+  because an unset ${envVar} falls back to the real home directory.
+  If this is a shell script, check the variables are exported in the current
+  shell: assignments inside $(...) apply only to the subshell.`
+  );
+}
+function isContainedBy(candidate, root) {
+  const rel = (0, import_path.relative)(root, candidate);
+  if (rel === "") return true;
+  if ((0, import_path.isAbsolute)(rel)) return false;
+  return rel !== ".." && !rel.startsWith(`..${import_path.sep}`);
+}
+var import_os, import_path;
+var init_config_path = __esm({
+  "src/utils/config-path.ts"() {
+    "use strict";
+    import_os = require("os");
+    import_path = require("path");
+  }
+});
+
 // src/db/index.ts
 var db_exports = {};
 __export(db_exports, {
@@ -16936,12 +16986,12 @@ function getDbPathForRead() {
 function getDbPath() {
   const envPath = process.env.CHRON_DB_PATH;
   if (envPath) return envPath;
-  return (0, import_path.join)((0, import_os.homedir)(), ".chron", "chron.db");
+  return (0, import_path2.join)((0, import_os2.homedir)(), ".chron", "chron.db");
 }
 async function initDb(dbPath3) {
-  const path = dbPath3 ?? getDbPath();
+  const path = guardedDbPath(dbPath3 ?? getDbPath());
   if (!path.startsWith(":")) {
-    (0, import_fs.mkdirSync)((0, import_path.dirname)(path), { recursive: true });
+    (0, import_fs.mkdirSync)((0, import_path2.dirname)(path), { recursive: true });
   }
   const client = createClient({ url: path.startsWith(":") ? path : `file:${path}` });
   await client.execute("PRAGMA journal_mode = WAL");
@@ -17117,16 +17167,17 @@ async function initDb(dbPath3) {
   }
   return drizzle(client, { schema: schema_exports });
 }
-var import_os, import_fs, import_path, CREATE_SQL;
+var import_os2, import_fs, import_path2, CREATE_SQL;
 var init_db2 = __esm({
   "src/db/index.ts"() {
     "use strict";
     init_node2();
     init_libsql();
-    import_os = require("os");
+    import_os2 = require("os");
     import_fs = require("fs");
-    import_path = require("path");
+    import_path2 = require("path");
     init_schema();
+    init_config_path();
     CREATE_SQL = [
       `CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
@@ -18464,7 +18515,7 @@ async function buildSoc2Report(outputPath) {
     dbFingerprint(db)
   ]);
   const html = buildHtml({
-    host: (0, import_os2.hostname)(),
+    host: (0, import_os3.hostname)(),
     fingerprint,
     overview,
     toolUsage,
@@ -18475,12 +18526,12 @@ async function buildSoc2Report(outputPath) {
   });
   (0, import_fs2.writeFileSync)(outputPath, html, "utf8");
 }
-var import_fs2, import_os2, import_crypto, SEVERITY, CSS;
+var import_fs2, import_os3, import_crypto, SEVERITY, CSS;
 var init_soc2 = __esm({
   "src/cli/soc2.ts"() {
     "use strict";
     import_fs2 = require("fs");
-    import_os2 = require("os");
+    import_os3 = require("os");
     import_crypto = require("crypto");
     init_db2();
     SEVERITY = {
@@ -20614,13 +20665,13 @@ var init_report = __esm({
 // src/utils/signing.ts
 function keysDir() {
   const override = process.env.CHRON_KEYS_DIR;
-  return override && override.trim() ? override : (0, import_path2.join)((0, import_os3.homedir)(), ".chron", "keys");
+  return guardedKeysDir(override && override.trim() ? override : (0, import_path3.join)((0, import_os4.homedir)(), ".chron", "keys"));
 }
 function privKeyPath(sessionId) {
-  return (0, import_path2.join)(keysDir(), `${sessionId}.key`);
+  return (0, import_path3.join)(keysDir(), `${sessionId}.key`);
 }
 function pubKeyPath(sessionId) {
-  return (0, import_path2.join)(keysDir(), `${sessionId}.pub`);
+  return (0, import_path3.join)(keysDir(), `${sessionId}.pub`);
 }
 function generateSessionKeypair(sessionId) {
   const { privateKey, publicKey } = (0, import_crypto3.generateKeyPairSync)("ed25519", {
@@ -20671,14 +20722,15 @@ function verifyBufferSignature(publicKeyPem, signatureB64, data) {
     return false;
   }
 }
-var import_crypto3, import_fs4, import_path2, import_os3;
+var import_crypto3, import_fs4, import_path3, import_os4;
 var init_signing = __esm({
   "src/utils/signing.ts"() {
     "use strict";
     import_crypto3 = require("crypto");
     import_fs4 = require("fs");
-    import_path2 = require("path");
-    import_os3 = require("os");
+    import_path3 = require("path");
+    import_os4 = require("os");
+    init_config_path();
   }
 });
 
@@ -20724,21 +20776,21 @@ async function runExportBundle(args2) {
     process.exit(1);
   }
   const sessionIds = filtered.map((s) => s.id);
-  const tempDir = (0, import_fs5.mkdtempSync)((0, import_path3.resolve)((0, import_os4.tmpdir)(), "chron-bundle-"));
-  const absOutput = (0, import_path3.resolve)(outputPath);
+  const tempDir = (0, import_fs5.mkdtempSync)((0, import_path4.resolve)((0, import_os5.tmpdir)(), "chron-bundle-"));
+  const absOutput = (0, import_path4.resolve)(outputPath);
   const tempOutput = `${absOutput}.tmp-${process.pid}-${(0, import_crypto4.randomUUID)()}`;
-  const pubkeysDir = (0, import_path3.join)(tempDir, "pubkeys");
+  const pubkeysDir = (0, import_path4.join)(tempDir, "pubkeys");
   (0, import_fs5.mkdirSync)(pubkeysDir);
   try {
-    (0, import_fs5.writeFileSync)((0, import_path3.join)(tempDir, "sessions.json"), JSON.stringify(filtered, null, 2));
-    const msgsPath = (0, import_path3.join)(tempDir, "messages.jsonl");
+    (0, import_fs5.writeFileSync)((0, import_path4.join)(tempDir, "sessions.json"), JSON.stringify(filtered, null, 2));
+    const msgsPath = (0, import_path4.join)(tempDir, "messages.jsonl");
     const msgsStream = (0, import_fs5.createWriteStream)(msgsPath);
     for (const sid of sessionIds) {
       const msgs = await db.select().from(messages).where(eq(messages.session_id, sid)).orderBy(...messageOrderAsc());
       for (const m of msgs) msgsStream.write(JSON.stringify(m) + "\n");
     }
     await new Promise((resolve5) => msgsStream.end(resolve5));
-    const secretsPath = (0, import_path3.join)(tempDir, "secrets.jsonl");
+    const secretsPath = (0, import_path4.join)(tempDir, "secrets.jsonl");
     const secretsStream = (0, import_fs5.createWriteStream)(secretsPath);
     for (const sid of sessionIds) {
       const secs = await db.select().from(secrets_detected).where(eq(secrets_detected.session_id, sid));
@@ -20747,29 +20799,29 @@ async function runExportBundle(args2) {
     await new Promise((resolve5) => secretsStream.end(resolve5));
     for (const s of filtered) {
       if (s.public_key) {
-        (0, import_fs5.writeFileSync)((0, import_path3.join)(pubkeysDir, `${s.id}.pub`), s.public_key);
+        (0, import_fs5.writeFileSync)((0, import_path4.join)(pubkeysDir, `${s.id}.pub`), s.public_key);
       }
     }
     const fileHashes = {
-      "sessions.json": sha256file((0, import_path3.join)(tempDir, "sessions.json")),
+      "sessions.json": sha256file((0, import_path4.join)(tempDir, "sessions.json")),
       "messages.jsonl": sha256file(msgsPath),
       "secrets.jsonl": sha256file(secretsPath)
     };
     for (const s of filtered) {
       if (s.public_key) {
-        fileHashes[`pubkeys/${s.id}.pub`] = sha256file((0, import_path3.join)(pubkeysDir, `${s.id}.pub`));
+        fileHashes[`pubkeys/${s.id}.pub`] = sha256file((0, import_path4.join)(pubkeysDir, `${s.id}.pub`));
       }
     }
     const manifest = {
       chron_bundle: "v1",
       generated_at: (/* @__PURE__ */ new Date()).toISOString(),
       chron_version: import_package.version,
-      machine_id: (0, import_os4.hostname)(),
+      machine_id: (0, import_os5.hostname)(),
       sessions: sessionIds,
       files: fileHashes
     };
     const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2));
-    (0, import_fs5.writeFileSync)((0, import_path3.join)(tempDir, "manifest.json"), manifestBytes);
+    (0, import_fs5.writeFileSync)((0, import_path4.join)(tempDir, "manifest.json"), manifestBytes);
     if (filtered.length !== 1) {
       throw new BundleError(
         `--signed covers a single session, and this selection has ${filtered.length}.
@@ -20793,7 +20845,7 @@ async function runExportBundle(args2) {
     }
     try {
       const sig = signBuffer(only.id, manifestBytes);
-      (0, import_fs5.writeFileSync)((0, import_path3.join)(tempDir, "manifest.sig"), JSON.stringify({
+      (0, import_fs5.writeFileSync)((0, import_path4.join)(tempDir, "manifest.sig"), JSON.stringify({
         chron_sig: "v1",
         session_id: only.id,
         algorithm: "Ed25519-SHA256",
@@ -20826,13 +20878,13 @@ ${RED2}\u2717 Bundle not created.${RESET3} ${e.message}
     (0, import_fs5.rmSync)(tempDir, { recursive: true, force: true });
   }
 }
-var import_fs5, import_path3, import_os4, import_crypto4, import_child_process, import_package, RED2, RESET3, BundleError;
+var import_fs5, import_path4, import_os5, import_crypto4, import_child_process, import_package, RED2, RESET3, BundleError;
 var init_export_bundle = __esm({
   "src/cli/export-bundle.ts"() {
     "use strict";
     import_fs5 = require("fs");
-    import_path3 = require("path");
-    import_os4 = require("os");
+    import_path4 = require("path");
+    import_os5 = require("os");
     import_crypto4 = require("crypto");
     import_child_process = require("child_process");
     init_drizzle_orm();
@@ -20962,7 +21014,7 @@ __export(settings_exports, {
   runSettings: () => runSettings
 });
 function dbPath() {
-  return process.env.CHRON_DB_PATH ?? (0, import_path4.join)((0, import_os5.homedir)(), ".chron", "chron.db");
+  return process.env.CHRON_DB_PATH ?? (0, import_path5.join)((0, import_os6.homedir)(), ".chron", "chron.db");
 }
 async function runSettings(_args) {
   process.stdout.write(`
@@ -20976,12 +21028,12 @@ ${BOLD3}Chron Settings${RESET4}
 
 `);
 }
-var import_os5, import_path4, RESET4, BOLD3, DIM2, CYAN2;
+var import_os6, import_path5, RESET4, BOLD3, DIM2, CYAN2;
 var init_settings = __esm({
   "src/cli/settings.ts"() {
     "use strict";
-    import_os5 = require("os");
-    import_path4 = require("path");
+    import_os6 = require("os");
+    import_path5 = require("path");
     RESET4 = "\x1B[0m";
     BOLD3 = "\x1B[1m";
     DIM2 = "\x1B[2m";
@@ -21071,38 +21123,6 @@ var init_secrets = __esm({
     DIM3 = "\x1B[2m";
     CYAN3 = "\x1B[36m";
     YELLOW2 = "\x1B[33m";
-  }
-});
-
-// src/utils/config-path.ts
-function configPath() {
-  const override = process.env.CHRON_CONFIG_PATH;
-  const path = override && override.trim() ? override : (0, import_path5.join)((0, import_os6.homedir)(), ".chron", "config.json");
-  return guardTestRoot(path);
-}
-function guardTestRoot(path) {
-  const root = process.env.CHRON_TEST_ROOT;
-  if (!root) return path;
-  if (isContainedBy((0, import_path5.resolve)(path), (0, import_path5.resolve)(root))) return path;
-  throw new Error(
-    `Refusing to read configuration from ${(0, import_path5.resolve)(path)} during a test run.
-  Paths must stay inside ${root}. Set CHRON_CONFIG_PATH to a temporary file
-  before anything can read it \u2014 and set it before clearing other variables,
-  because an unset CHRON_CONFIG_PATH falls back to the real home directory.`
-  );
-}
-function isContainedBy(candidate, root) {
-  const rel = (0, import_path5.relative)(root, candidate);
-  if (rel === "") return true;
-  if ((0, import_path5.isAbsolute)(rel)) return false;
-  return rel !== ".." && !rel.startsWith(`..${import_path5.sep}`);
-}
-var import_os6, import_path5;
-var init_config_path = __esm({
-  "src/utils/config-path.ts"() {
-    "use strict";
-    import_os6 = require("os");
-    import_path5 = require("path");
   }
 });
 
@@ -23192,8 +23212,8 @@ async function restoreBackup(snapshot, target, opts, deps = {}) {
       `Could not complete the restore: ${cause}
   Automatic recovery is incomplete: ${failure}
   Chron has stopped and will move nothing else. Present on disk now:
-` + present.map(({ path, note }) => `    ${path}
-      ${note}
+` + present.map(({ path, note: note2 }) => `    ${path}
+      ${note2}
 `).join("") + (databaseBack ? `  A database is back at ${target}, but not every file was put back.
 ` + (strandedWal ? `  Its write-ahead log is among the displaced files above and holds
   transactions that database does not have. Put the log back beside
@@ -23675,6 +23695,34 @@ function evidenceSourceOf(meta) {
   const source = meta.source;
   return source && EVIDENCE_SOURCES.includes(source) ? source : EVIDENCE_SOURCE.WITNESSED;
 }
+function recordedCaptureMode(meta) {
+  const mode = meta.capture_mode;
+  return mode && CAPTURE_MODES.includes(mode) ? mode : CAPTURE_MODE.UNENFORCED;
+}
+function claimsEnforcement(meta) {
+  return recordedCaptureMode(meta) !== CAPTURE_MODE.UNENFORCED;
+}
+function enforcementSupport(_meta) {
+  return "none";
+}
+function describeEnforcementSupport(meta) {
+  if (!claimsEnforcement(meta)) return null;
+  if (enforcementSupport(meta) === "none") {
+    return `Recorded as '${recordedCaptureMode(meta)}', but nothing supports that claim. Session metadata is not covered by the hash chain or the signature, so this value could have been written by anything with access to the database.`;
+  }
+  return describeCaptureMode(meta);
+}
+function describeCaptureMode(meta) {
+  switch (recordedCaptureMode(meta)) {
+    case CAPTURE_MODE.ENFORCED_WRAPPER:
+      return "Recorded durably before the output was released on this path. Running the client outside the wrapper bypasses it, which this value does not speak to.";
+    case CAPTURE_MODE.ENFORCED_POLICY:
+      return "A managed control outside Chron prevented bypass of the wrapper for this interaction.";
+    case CAPTURE_MODE.UNENFORCED:
+    default:
+      return "Nothing required this interaction to be recorded. Capture depended on the client calling Chron.";
+  }
+}
 function liveAttachMetadata() {
   return {
     source: EVIDENCE_SOURCE.LIVE_ATTACH,
@@ -23708,7 +23756,7 @@ function describeEvidenceBoundary(meta) {
       return null;
   }
 }
-var EVIDENCE_SOURCE, EVIDENCE_SOURCES, ATTACH_REASON_MID_SESSION, OVERLAP_DISCLOSURE;
+var EVIDENCE_SOURCE, EVIDENCE_SOURCES, CAPTURE_MODE, CAPTURE_MODES, CALLER_ASSERTABLE_SOURCES, ATTACH_REASON_MID_SESSION, OVERLAP_DISCLOSURE;
 var init_evidence = __esm({
   "src/utils/evidence.ts"() {
     "use strict";
@@ -23723,14 +23771,1266 @@ var init_evidence = __esm({
       TRANSCRIPT_BACKFILL: "transcript_backfill"
     };
     EVIDENCE_SOURCES = Object.values(EVIDENCE_SOURCE);
+    CAPTURE_MODE = {
+      /** Nothing prevented this interaction from occurring unrecorded. The default, and today the only reachable value. */
+      UNENFORCED: "unenforced",
+      /** Chron's wrapper recorded the interaction durably before releasing the output. Not built. */
+      ENFORCED_WRAPPER: "enforced:wrapper",
+      /** A control outside Chron's command path prevented bypass of the wrapper. Not built. */
+      ENFORCED_POLICY: "enforced:policy"
+    };
+    CAPTURE_MODES = Object.values(CAPTURE_MODE);
+    CALLER_ASSERTABLE_SOURCES = EVIDENCE_SOURCES;
     ATTACH_REASON_MID_SESSION = "chron_available_mid_session";
     OVERLAP_DISCLOSURE = "Transcript backfills may overlap conversations already witnessed by Chron. Both evidence records are retained; Chron does not infer that they are the same conversation.";
   }
 });
 
-// src/cli/verify.ts
+// src/utils/content.ts
+function canonicalContent(content) {
+  return content.replace(UNREPRESENTABLE, "\uFFFD");
+}
+var UNREPRESENTABLE;
+var init_content = __esm({
+  "src/utils/content.ts"() {
+    "use strict";
+    UNREPRESENTABLE = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
+  }
+});
+
+// src/journal/format.ts
+function canonicalJson2(value) {
+  if (value === null) return "null";
+  if (typeof value === "string") return JSON.stringify(canonicalContent(value));
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) throw new Error(`journal: non-finite number ${String(value)}`);
+    return JSON.stringify(value);
+  }
+  if (typeof value === "boolean") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalJson2).join(",")}]`;
+  if (typeof value === "object") {
+    const keys = Object.keys(value).sort();
+    const parts = keys.filter((k) => value[k] !== void 0).map((k) => `${JSON.stringify(canonicalContent(k))}:${canonicalJson2(value[k])}`);
+    return `{${parts.join(",")}}`;
+  }
+  throw new Error(`journal: value of type ${typeof value} cannot be recorded`);
+}
+function journalRecordHash(r) {
+  const input = [
+    String(r.v),
+    String(r.seq),
+    canonicalContent(r.at),
+    canonicalContent(r.kind),
+    canonicalJson2(r.data),
+    r.prev ?? ""
+  ].join("|");
+  return (0, import_crypto11.createHash)("sha256").update(input, "utf8").digest("hex");
+}
+function serializeRecord(r) {
+  return `{"v":${r.v},"seq":${r.seq},"at":${JSON.stringify(canonicalContent(r.at))},"kind":${JSON.stringify(canonicalContent(r.kind))},"data":${canonicalJson2(r.data)},"prev":${r.prev === null ? "null" : JSON.stringify(r.prev)},"hash":${JSON.stringify(r.hash)}}
+`;
+}
+function makeRecord(seq, at, kind, data, prev) {
+  const base = { v: JOURNAL_FORMAT_VERSION, seq, at, kind, data, prev };
+  return { ...base, hash: journalRecordHash(base) };
+}
+function isRecordShaped(x) {
+  if (!x || typeof x !== "object" || Array.isArray(x)) return false;
+  const r = x;
+  return typeof r.v === "number" && typeof r.seq === "number" && typeof r.at === "string" && typeof r.kind === "string" && typeof r.data === "object" && r.data !== null && !Array.isArray(r.data) && (r.prev === null || typeof r.prev === "string") && typeof r.hash === "string";
+}
+var import_crypto11, JOURNAL_FORMAT_VERSION, CONTINUATION_KIND;
+var init_format = __esm({
+  "src/journal/format.ts"() {
+    "use strict";
+    import_crypto11 = require("crypto");
+    init_content();
+    JOURNAL_FORMAT_VERSION = 1;
+    CONTINUATION_KIND = "journal.continued";
+  }
+});
+
+// src/journal/verify.ts
 var verify_exports = {};
 __export(verify_exports, {
+  lastHashOf: () => lastHashOf,
+  verifyJournalBytes: () => verifyJournalBytes,
+  verifyJournalFile: () => verifyJournalFile,
+  verifyJournalSequence: () => verifyJournalSequence
+});
+function verifyJournalBytes(bytes2, expectedFirstPrev = null) {
+  const text2 = bytes2.toString("utf8");
+  if (text2.length === 0) {
+    return {
+      status: "empty",
+      records: [],
+      validPrefixBytes: 0,
+      discardableBytes: 0,
+      coverage: expectedFirstPrev === null ? "whole_chain" : "segment"
+    };
+  }
+  const records = [];
+  let validPrefixBytes = 0;
+  let prev = expectedFirstPrev;
+  let expectedSeq = null;
+  let line = 0;
+  let continuesFrom;
+  const coverageSoFar = () => continuesFrom !== void 0 || expectedFirstPrev !== null ? "segment" : "whole_chain";
+  let firstRecordPending = true;
+  let cursor = 0;
+  while (cursor < text2.length) {
+    const nl = text2.indexOf("\n", cursor);
+    if (nl === -1) break;
+    line++;
+    const raw = text2.slice(cursor, nl);
+    const lineBytes = Buffer.byteLength(text2.slice(cursor, nl + 1), "utf8");
+    const fail3 = (reason, seq) => ({
+      status: "corrupt",
+      continuesFrom,
+      coverage: coverageSoFar(),
+      records,
+      validPrefixBytes,
+      discardableBytes: bytes2.length - validPrefixBytes,
+      problem: { line, seq, reason }
+    });
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return fail3("line is terminated but not valid JSON");
+    }
+    if (!isRecordShaped(parsed)) return fail3("line is JSON but not a journal record");
+    const rec = parsed;
+    if (journalRecordHash(rec) !== rec.hash) {
+      return fail3("record does not match its own hash", rec.seq);
+    }
+    if (rec.prev !== prev) {
+      const opensAsContinuation = firstRecordPending && expectedFirstPrev === null && rec.kind === CONTINUATION_KIND && typeof rec.prev === "string";
+      if (opensAsContinuation) {
+        continuesFrom = rec.prev;
+      } else {
+        return fail3(
+          prev === null ? "first record should not link to a predecessor" : "prev_hash does not match the preceding record",
+          rec.seq
+        );
+      }
+    }
+    if (expectedSeq !== null && rec.seq !== expectedSeq) {
+      return fail3(`sequence jumped from ${expectedSeq - 1} to ${rec.seq}`, rec.seq);
+    }
+    records.push(rec);
+    firstRecordPending = false;
+    validPrefixBytes += lineBytes;
+    prev = rec.hash;
+    expectedSeq = rec.seq + 1;
+    cursor = nl + 1;
+  }
+  const tail = text2.slice(cursor);
+  if (tail.length === 0) {
+    return {
+      status: "ok",
+      continuesFrom,
+      coverage: coverageSoFar(),
+      records,
+      validPrefixBytes,
+      discardableBytes: 0
+    };
+  }
+  return {
+    status: "unterminated_tail",
+    continuesFrom,
+    coverage: coverageSoFar(),
+    records,
+    validPrefixBytes,
+    discardableBytes: bytes2.length - validPrefixBytes,
+    problem: {
+      line: line + 1,
+      reason: "final line is not newline-terminated: consistent with an interrupted write, and equally with deliberate truncation"
+    }
+  };
+}
+function verifyJournalFile(path, expectedFirstPrev = null) {
+  if (!(0, import_fs13.existsSync)(path)) {
+    return {
+      status: "empty",
+      records: [],
+      validPrefixBytes: 0,
+      discardableBytes: 0,
+      coverage: expectedFirstPrev === null ? "whole_chain" : "segment"
+    };
+  }
+  return verifyJournalBytes((0, import_fs13.readFileSync)(path), expectedFirstPrev);
+}
+function verifyJournalSequence(paths) {
+  const files = [];
+  const records = [];
+  let expected = null;
+  for (let i = 0; i < paths.length; i++) {
+    const path = paths[i];
+    const last = i === paths.length - 1;
+    const verdict = verifyJournalFile(path, expected);
+    files.push({ path, verdict });
+    records.push(...verdict.records);
+    if (verdict.status === "corrupt") {
+      return { status: "corrupt", files, records, problem: { ...verdict.problem, path } };
+    }
+    if (verdict.status === "unterminated_tail" && !last) {
+      return {
+        status: "corrupt",
+        files,
+        records,
+        problem: { path, line: verdict.problem?.line ?? 0, reason: "a rotated file ends mid-record" }
+      };
+    }
+    if (verdict.status === "unterminated_tail") {
+      return { status: "unterminated_tail", files, records, problem: { ...verdict.problem, path } };
+    }
+    expected = lastHashOf(verdict) ?? expected;
+  }
+  return { status: records.length ? "ok" : "empty", files, records };
+}
+function lastHashOf(verdict) {
+  return verdict.records.length ? verdict.records[verdict.records.length - 1].hash : null;
+}
+var import_fs13;
+var init_verify = __esm({
+  "src/journal/verify.ts"() {
+    "use strict";
+    import_fs13 = require("fs");
+    init_format();
+  }
+});
+
+// src/journal/writer.ts
+var writer_exports = {};
+__export(writer_exports, {
+  ACCEPT_UNSYNCED_DIRECTORIES_ENV: () => ACCEPT_UNSYNCED_DIRECTORIES_ENV,
+  DIRECTORY_SYNC_SUPPORTED: () => DIRECTORY_SYNC_SUPPORTED,
+  JournalBrokenError: () => JournalBrokenError,
+  JournalWriter: () => JournalWriter,
+  ROTATE_BYTES_ENV: () => ROTATE_BYTES_ENV,
+  __internals: () => __internals,
+  acquireJournalLock: () => acquireJournalLock,
+  journalStatus: () => journalStatus,
+  recoverUnterminatedTail: () => recoverUnterminatedTail,
+  requireDirectorySyncCapability: () => requireDirectorySyncCapability
+});
+function configuredRotateBytes() {
+  const raw = process.env[ROTATE_BYTES_ENV];
+  if (raw === void 0) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
+}
+function fsyncDirDefault(dir) {
+  if (!DIRECTORY_SYNC_SUPPORTED) return false;
+  const fd = (0, import_fs14.openSync)(dir, "r");
+  try {
+    (0, import_fs14.fsyncSync)(fd);
+  } finally {
+    (0, import_fs14.closeSync)(fd);
+  }
+  return true;
+}
+function requireDirectorySyncCapability(opts) {
+  if (DIRECTORY_SYNC_SUPPORTED) return;
+  if (opts.acceptUnsyncedDirectories) return;
+  if (process.env[ACCEPT_UNSYNCED_DIRECTORIES_ENV] === "1") return;
+  throw new JournalBrokenError(
+    `this platform (${process.platform}) cannot sync directory entries, so a file holding acknowledged records can lose its name in a crash. The durability guarantee is not available. Set ${ACCEPT_UNSYNCED_DIRECTORIES_ENV}=1 to proceed without it, knowingly.`
+  );
+}
+function acquireJournalLock(lockPath, now) {
+  const mine = JSON.stringify({ pid: process.pid, at: now() });
+  const lock = {
+    path: lockPath,
+    release: () => {
+      try {
+        (0, import_fs14.unlinkSync)(lockPath);
+      } catch {
+      }
+    }
+  };
+  try {
+    (0, import_fs14.writeFileSync)(lockPath, mine, { flag: "wx" });
+    return lock;
+  } catch (e) {
+    if (e.code !== "EEXIST") throw e;
+  }
+  let holder = {};
+  try {
+    holder = JSON.parse((0, import_fs14.readFileSync)(lockPath, "utf8"));
+  } catch {
+    throw new JournalBrokenError(`journal lock ${lockPath} is unreadable; not stealing it`);
+  }
+  if (typeof holder.pid !== "number") {
+    throw new JournalBrokenError(`journal lock ${lockPath} names no pid; not stealing it`);
+  }
+  if (holder.pid === process.pid) {
+    throw new JournalBrokenError("journal is already open in this process");
+  }
+  try {
+    process.kill(holder.pid, 0);
+    throw new JournalBrokenError(`journal is locked by live process ${holder.pid}`);
+  } catch (e) {
+    if (e instanceof JournalBrokenError) throw e;
+    if (e.code === "EPERM") {
+      throw new JournalBrokenError(`journal is locked by process ${holder.pid}`);
+    }
+  }
+  (0, import_fs14.unlinkSync)(lockPath);
+  (0, import_fs14.writeFileSync)(lockPath, mine, { flag: "wx" });
+  return lock;
+}
+function freeBytesFor(path) {
+  const fs = require("fs");
+  if (typeof fs.statfsSync !== "function") return null;
+  try {
+    const s = fs.statfsSync((0, import_path10.dirname)(path));
+    return s.bsize * s.bavail;
+  } catch {
+    return null;
+  }
+}
+function recoverUnterminatedTail(path, opts = {}) {
+  const now = opts.now ?? localISOString;
+  const ops = { ...defaultFsOps, ...opts.fs };
+  requireDirectorySyncCapability(opts);
+  (0, import_fs14.mkdirSync)((0, import_path10.dirname)(path), { recursive: true });
+  const lock = acquireJournalLock(`${path}.lock`, now);
+  let lockHandedOver = false;
+  try {
+    const verdict = verifyJournalFile(path);
+    const lastValidSeq = verdict.records.length ? verdict.records[verdict.records.length - 1].seq : null;
+    if (verdict.status === "corrupt") {
+      return {
+        recovered: false,
+        setAsideBytes: 0,
+        lastValidSeq,
+        reason: `interior corruption at line ${verdict.problem?.line}: ${verdict.problem?.reason}`
+      };
+    }
+    if (verdict.status !== "unterminated_tail") {
+      return {
+        recovered: false,
+        setAsideBytes: 0,
+        lastValidSeq,
+        reason: `nothing to recover: journal is ${verdict.status}`
+      };
+    }
+    const setAside = verdict.discardableBytes;
+    const preservedTailPath = `${path}.unterminated-${now().replace(/[:.]/g, "-")}`;
+    const whole = (0, import_fs14.readFileSync)(path);
+    const tail = whole.subarray(verdict.validPrefixBytes);
+    const fd = (0, import_fs14.openSync)(preservedTailPath, "wx");
+    try {
+      let off = 0;
+      while (off < tail.length) {
+        const n = ops.writeSync(fd, tail.subarray(off));
+        if (!Number.isInteger(n) || n <= 0) {
+          throw new JournalBrokenError(
+            `preserving the unterminated tail made no progress after ${off} of ${tail.length} bytes`
+          );
+        }
+        off += n;
+      }
+      ops.fsyncSync(fd);
+    } finally {
+      (0, import_fs14.closeSync)(fd);
+    }
+    let tailNameDurable;
+    try {
+      tailNameDurable = ops.fsyncDirSync((0, import_path10.dirname)(preservedTailPath));
+    } catch (e) {
+      return {
+        recovered: false,
+        setAsideBytes: 0,
+        lastValidSeq,
+        preservedTailPath,
+        reason: `the preserved tail could not be made reachable (${e instanceof Error ? e.message : String(e)}), so the journal was left unchanged`
+      };
+    }
+    if (!tailNameDurable && !(opts.acceptUnsyncedDirectories || process.env[ACCEPT_UNSYNCED_DIRECTORIES_ENV] === "1")) {
+      return {
+        recovered: false,
+        setAsideBytes: 0,
+        lastValidSeq,
+        preservedTailPath,
+        reason: "this platform cannot make the preserved tail reachable after a crash; the journal was left unchanged"
+      };
+    }
+    (0, import_fs14.truncateSync)(path, verdict.validPrefixBytes);
+    const w = JournalWriter.open(path, opts, lock);
+    lockHandedOver = true;
+    try {
+      const outage = w.appendDurable("journal.outage", {
+        establishes: "journal_outage",
+        does_not_establish: "activity during the interval",
+        detail: "the journal ended with an unterminated record. That is consistent with an interrupted write and equally with deliberate truncation; this record does not choose between them. It marks an interval in which the journal was not recording, and says nothing about what happened during it.",
+        set_aside_bytes: setAside,
+        preserved_tail_path: preservedTailPath,
+        preserved_tail_name_synced: tailNameDurable,
+        last_valid_seq: lastValidSeq,
+        last_valid_offset: verdict.validPrefixBytes
+      });
+      return { recovered: true, setAsideBytes: setAside, preservedTailPath, lastValidSeq, outage };
+    } finally {
+      w.close();
+    }
+  } finally {
+    if (!lockHandedOver) lock.release();
+  }
+}
+function journalStatus(path) {
+  return verifyJournalFile(path);
+}
+var import_fs14, import_path10, DIRECTORY_SYNC_SUPPORTED, ACCEPT_UNSYNCED_DIRECTORIES_ENV, ROTATE_BYTES_ENV, defaultFsOps, JournalBrokenError, DEFAULT_FLUSH_BYTES, DEFAULT_ROTATE_BYTES, DEFAULT_MIN_FREE_BYTES, JournalWriter, __internals;
+var init_writer = __esm({
+  "src/journal/writer.ts"() {
+    "use strict";
+    import_fs14 = require("fs");
+    import_path10 = require("path");
+    init_time();
+    init_format();
+    init_verify();
+    DIRECTORY_SYNC_SUPPORTED = process.platform !== "win32";
+    ACCEPT_UNSYNCED_DIRECTORIES_ENV = "CHRON_ACCEPT_UNSYNCED_DIRECTORIES";
+    ROTATE_BYTES_ENV = "CHRON_JOURNAL_ROTATE_BYTES";
+    defaultFsOps = {
+      openSync: import_fs14.openSync,
+      writeSync: (fd, data) => (0, import_fs14.writeSync)(fd, data),
+      fsyncSync: import_fs14.fsyncSync,
+      closeSync: import_fs14.closeSync,
+      fsyncDirSync: fsyncDirDefault,
+      renameSync: import_fs14.renameSync
+    };
+    JournalBrokenError = class extends Error {
+      constructor(message, cause) {
+        super(message);
+        this.cause = cause;
+        this.name = "JournalBrokenError";
+      }
+    };
+    DEFAULT_FLUSH_BYTES = 64 * 1024;
+    DEFAULT_ROTATE_BYTES = 32 * 1024 * 1024;
+    DEFAULT_MIN_FREE_BYTES = 16 * 1024 * 1024;
+    JournalWriter = class _JournalWriter {
+      constructor(path, opts) {
+        this.path = path;
+        this.ops = { ...defaultFsOps, ...opts.fs };
+        this.flushBytes = opts.flushBytes ?? DEFAULT_FLUSH_BYTES;
+        this.rotateBytes = opts.rotateBytes ?? configuredRotateBytes() ?? DEFAULT_ROTATE_BYTES;
+        this.minFreeBytes = opts.minFreeBytes ?? DEFAULT_MIN_FREE_BYTES;
+        this.now = opts.now ?? localISOString;
+        this.acceptUnsynced = opts.acceptUnsyncedDirectories === true || process.env[ACCEPT_UNSYNCED_DIRECTORIES_ENV] === "1";
+        this.lockPath = `${path}.lock`;
+      }
+      fd = null;
+      buffer = "";
+      bufferedRecords = [];
+      seq = 0;
+      prev = null;
+      bytesOnDisk = 0;
+      broken = null;
+      lockPath;
+      lock = null;
+      ops;
+      flushBytes;
+      rotateBytes;
+      minFreeBytes;
+      now;
+      acceptUnsynced;
+      /**
+       * The durability this journal committed to on open. `null` until then, so the
+       * open-time sync itself is not measured against a capability it is setting.
+       */
+      established = null;
+      /**
+       * Open a journal for appending.
+       *
+       * Refuses to open a file with interior corruption. A writer that appends past
+       * a broken link would produce a journal whose valid suffix looks intact, which
+       * is how a damaged record becomes invisible.
+       *
+       * A torn tail is also refused here rather than silently fixed, because
+       * truncating is a decision that gets recorded. `recoverTornTail` does it.
+       */
+      static open(path, opts = {}, heldLock) {
+        const w = new _JournalWriter(path, opts);
+        (0, import_fs14.mkdirSync)((0, import_path10.dirname)(path), { recursive: true });
+        requireDirectorySyncCapability(opts);
+        if (heldLock) w.lock = heldLock;
+        else w.acquireLock();
+        try {
+          const verdict = verifyJournalFile(path);
+          if (verdict.status === "corrupt") {
+            throw new JournalBrokenError(
+              `journal has interior corruption at line ${verdict.problem?.line}: ${verdict.problem?.reason}`
+            );
+          }
+          if (verdict.status === "unterminated_tail") {
+            throw new JournalBrokenError(
+              "journal ends with an unterminated record; recover it before appending"
+            );
+          }
+          w.seq = verdict.records.length ? verdict.records[verdict.records.length - 1].seq + 1 : 0;
+          w.prev = lastHashOf(verdict);
+          w.bytesOnDisk = verdict.validPrefixBytes;
+          w.fd = w.ops.openSync(path, "a");
+          w.established = w.syncDirOrStop((0, import_path10.dirname)(path));
+          return w;
+        } catch (e) {
+          if (w.fd !== null) {
+            try {
+              w.ops.closeSync(w.fd);
+            } catch {
+            }
+            w.fd = null;
+          }
+          w.releaseLock();
+          throw e;
+        }
+      }
+      /**
+       * Exclusive append (§5.2). Two writers appending to one journal interleave
+       * partial lines, which looks exactly like corruption and is unrecoverable.
+       */
+      acquireLock() {
+        this.lock = acquireJournalLock(this.lockPath, this.now);
+      }
+      releaseLock() {
+        this.lock?.release();
+        this.lock = null;
+      }
+      /**
+       * Write every byte, or fail closed.
+       *
+       * `writeSync` may write fewer bytes than it was given, and the first version of
+       * this code ignored the return value entirely: a 194-byte file was reported as
+       * 209 durable bytes with `durableSeq` advanced and no error raised. The wrapper
+       * would then have released output whose journal record was incomplete, which is
+       * the one thing it exists not to do.
+       *
+       * A short write that makes progress is resumed. A write that makes none cannot
+       * be retried into working, so it stops the writer rather than spinning.
+       */
+      writeAll(fd, data) {
+        let offset = 0;
+        while (offset < data.length) {
+          const n = this.ops.writeSync(fd, data.subarray(offset));
+          if (!Number.isInteger(n) || n <= 0) {
+            throw new Error(
+              `write made no progress after ${offset} of ${data.length} bytes (returned ${String(n)})`
+            );
+          }
+          offset += n;
+        }
+      }
+      /**
+       * Move to the broken state and raise. The only way the writer stops.
+       *
+       * Rotation used to run outside this transition, so a rotation failure threw
+       * without marking the writer broken and the next `appendDurable` succeeded —
+       * appending after a missing continuation record, which is precisely the
+       * fail-stop contract being violated. Reproduced: marker write returns 0, first
+       * append throws, next append succeeds.
+       */
+      fail(what, e) {
+        this.broken = new JournalBrokenError(
+          `${what}; capture has stopped: ${e instanceof Error ? e.message : String(e)}`,
+          e
+        );
+        throw this.broken;
+      }
+      /**
+       * Sync a directory entry, or stop.
+       *
+       * Three outcomes, kept distinct because collapsing them is what caused the
+       * bug. An error stops the writer. A `false` return means the operation does
+       * not exist here, which stops the writer too *unless* an operator has accepted
+       * that — because without it the durability guarantee is unavailable, and
+       * continuing would release output under a guarantee that does not hold.
+       *
+       * The platform gate in `requireDirectorySyncCapability` is an early, clearer
+       * refusal for the obvious case. This is the control: checking the platform and
+       * not the returned value was a check that looked like it covered the claim
+       * while the actual value could still say otherwise.
+       */
+      syncDirOrStop(dir) {
+        let synced;
+        try {
+          synced = this.ops.fsyncDirSync(dir);
+        } catch (e) {
+          return this.fail(`journal directory sync failed for ${dir}`, e);
+        }
+        if (!synced) {
+          if (this.established === true) {
+            this.fail(
+              `journal directory ${dir} could not be synced during rotation, and this journal opened with durable names. Capture has stopped rather than continue under a weaker guarantee than its own evidence claims`,
+              new Error("a run that starts durable stays durable or stops")
+            );
+          }
+          if (!this.acceptUnsynced) {
+            this.fail(
+              `journal directory ${dir} could not be synced on this platform, so a file holding acknowledged records can lose its name in a crash`,
+              new Error(`set ${ACCEPT_UNSYNCED_DIRECTORIES_ENV}=1 to proceed without that guarantee`)
+            );
+          }
+        }
+        return synced;
+      }
+      assertUsable() {
+        if (this.broken) throw this.broken;
+        if (this.fd === null) throw new JournalBrokenError("journal is closed");
+      }
+      /**
+       * Bytes for which fsync has returned in this process.
+       *
+       * This is the only durable position anyone has, and it is not recoverable by
+       * reading the file. A reader sees terminated records, which proves the writer
+       * emitted whole lines, not that the kernel acknowledged them — a complete record
+       * can sit in the page cache, be visible to every reader, and be gone after a
+       * power loss. So a release gate compares against this, held by the process that
+       * did the writing, and never against a verdict's `validPrefixBytes`.
+       */
+      get durableBytes() {
+        return this.bytesOnDisk;
+      }
+      /** Highest seq confirmed on disk, or null when nothing is. */
+      get durableSeq() {
+        return this.seq - this.bufferedRecords.length - 1 >= 0 ? this.seq - this.bufferedRecords.length - 1 : null;
+      }
+      /**
+       * Whether this journal's file names are durable, as measured on open.
+       *
+       * Reported rather than inferred from the platform, because the observed result
+       * is the fact. A caller releasing work under a durability guarantee has to be
+       * able to state which guarantee it actually has — an operator accepting the
+       * trade-off authorises it, and cannot make it true.
+       */
+      get namesDurable() {
+        return this.established === true;
+      }
+      get activePath() {
+        return this.path;
+      }
+      get formatVersion() {
+        return JOURNAL_FORMAT_VERSION;
+      }
+      /**
+       * Append a record. Buffered; durable only after a flush reports success.
+       *
+       * Returns the record so a caller can hold its seq and hash, but holding them
+       * is not permission to act on them — `durableSeq` is.
+       */
+      append(kind, data) {
+        this.assertUsable();
+        const rec = makeRecord(this.seq, this.now(), kind, data, this.prev);
+        this.buffer += serializeRecord(rec);
+        this.bufferedRecords.push(rec);
+        this.seq++;
+        this.prev = rec.hash;
+        if (Buffer.byteLength(this.buffer, "utf8") >= this.flushBytes) this.flush();
+        return rec;
+      }
+      /** Append and make it durable before returning. The fail-closed path. */
+      appendDurable(kind, data) {
+        const rec = this.append(kind, data);
+        this.flush();
+        return rec;
+      }
+      /**
+       * Write the buffer and fsync it.
+       *
+       * On failure the writer is marked broken and the error is thrown. The buffer is
+       * kept rather than cleared, so nothing is reported as written that was not, and
+       * a caller that catches this cannot carry on appending as though the gap were
+       * not there.
+       */
+      flush() {
+        this.assertUsable();
+        if (this.buffer.length === 0) return;
+        const pending = Buffer.byteLength(this.buffer, "utf8");
+        const free = freeBytesFor(this.path);
+        if (free !== null && free < this.minFreeBytes + pending) {
+          this.broken = new JournalBrokenError(
+            `refusing to append: ${free} bytes free, need ${this.minFreeBytes + pending}`
+          );
+          throw this.broken;
+        }
+        try {
+          this.writeAll(this.fd, Buffer.from(this.buffer, "utf8"));
+          this.ops.fsyncSync(this.fd);
+        } catch (e) {
+          this.fail("journal write failed", e);
+        }
+        this.bytesOnDisk += pending;
+        this.buffer = "";
+        this.bufferedRecords = [];
+        if (this.bytesOnDisk >= this.rotateBytes) {
+          try {
+            this.rotate();
+          } catch (e) {
+            if (e instanceof JournalBrokenError && this.broken === e) throw e;
+            this.fail("journal rotation failed", e);
+          }
+        }
+      }
+      /**
+       * Move the active file aside and continue in a fresh one.
+       *
+       * The continuation's first record carries `prev` from the last record of the
+       * rotated file, so the chain crosses the boundary. Without that, rotation is a
+       * place where a chain can be restarted and nothing in either file says so.
+       */
+      rotate() {
+        const stamp = this.now().replace(/[:.]/g, "-");
+        const rotated = `${this.path}.${stamp}.${this.seq}`;
+        this.ops.fsyncSync(this.fd);
+        this.syncDirOrStop((0, import_path10.dirname)(this.path));
+        this.ops.closeSync(this.fd);
+        this.fd = null;
+        this.ops.renameSync(this.path, rotated);
+        this.fd = this.ops.openSync(this.path, "a");
+        this.bytesOnDisk = 0;
+        this.syncDirOrStop((0, import_path10.dirname)(this.path));
+        const marker = makeRecord(this.seq, this.now(), CONTINUATION_KIND, { rotated_to: rotated }, this.prev);
+        this.seq++;
+        this.prev = marker.hash;
+        const line = Buffer.from(serializeRecord(marker), "utf8");
+        this.writeAll(this.fd, line);
+        this.ops.fsyncSync(this.fd);
+        this.syncDirOrStop((0, import_path10.dirname)(this.path));
+        this.bytesOnDisk += line.length;
+      }
+      /**
+       * Close the journal, releasing the lock unconditionally.
+       *
+       * A final flush can fail — that is the whole point of the broken state — and if
+       * the failure escaped before the lock was released, a disk error would leave the
+       * journal locked by a process that had exited. Capture would then refuse to
+       * start until someone deleted a file by hand. So the flush error is recorded on
+       * the writer and rethrown only after the lock is gone.
+       */
+      close() {
+        let pendingError;
+        if (this.fd !== null) {
+          try {
+            if (this.buffer.length > 0) this.flush();
+          } catch (e) {
+            pendingError = e;
+          } finally {
+            try {
+              this.ops.fsyncSync(this.fd);
+            } catch {
+            }
+            try {
+              this.ops.closeSync(this.fd);
+            } catch {
+            }
+            this.fd = null;
+          }
+        }
+        this.releaseLock();
+        if (pendingError !== void 0) throw pendingError;
+      }
+    };
+    __internals = { freeBytesFor, statSync: import_fs14.statSync };
+  }
+});
+
+// src/journal/scope.ts
+function captureScope(durability) {
+  const durableNames = durability === "durable";
+  return {
+    scope_version: CAPTURE_SCOPE_VERSION,
+    durability,
+    covered: [
+      "bytes written by the operator to this process stdin, recorded before being forwarded to the child",
+      "bytes written by the child to stdout, recorded and made durable before being released to the terminal",
+      "bytes written by the child to stderr, on the same terms as stdout, because stderr can carry interaction content",
+      "the child command line, its exit status, and the time each of those was recorded"
+    ],
+    not_covered: [
+      "files the child reads or writes",
+      "subprocesses the child spawns, and anything those do",
+      "network requests the child makes, including the model API call itself",
+      "any terminal the child opens directly rather than through the inherited pipes",
+      "side effects already committed before the wrapper observed the output describing them"
+    ],
+    establishes: [
+      durableNames ? "no byte was released to the terminal before the journal write covering it was flushed and fsynced" : "no byte was released to the terminal before the journal write covering it was flushed and fsynced \u2014 but see durability below: the file holding those records does not have a durable name",
+      "the order of releases within a single stream matches the order in which they were recorded",
+      "a journal write failure stopped forwarding in both directions and terminated the child"
+    ],
+    does_not_establish: [
+      "that the child performed no work that went unrecorded",
+      "that a person read what was released",
+      "that the interleaving of stdout and stderr matches what an unwrapped run would have produced",
+      "that the wrapper was used at all for any other invocation \u2014 that needs a control outside Chron (enforced:policy)",
+      ...durableNames ? [] : [
+        "that a released record still exists after a system crash. Its contents were fsynced; its file name was not, because this platform cannot sync a directory entry and an operator accepted that trade-off. The record can survive without a name to reach it by.",
+        "the durability guarantee a fully durable run makes. A run recorded under this capability must not be classified as `enforced:wrapper` on the same terms."
+      ]
+    ],
+    known_limitations: [
+      "there is no database projection yet: a wrapped run reaches the journal and nothing else, so it does not appear in `chron history` or `chron verify <session-id>`. Inspect it with `chron verify --journal`.",
+      "no session is marked `enforced:wrapper` on the strength of a wrapped run. That needs journal evidence bound to a session and verified on read; the binding does not exist, so `enforcementSupport()` still returns `none` for every session.",
+      "one client shape is supported: a child that speaks through inherited stdio pipes."
+    ]
+  };
+}
+function formatCaptureScope(durability = "durable") {
+  const scope = captureScope(durability);
+  const bullet = (s) => `  - ${s}`;
+  return [
+    "chron run \u2014 capture scope",
+    "",
+    `Storage durability: ${durability === "durable" ? "record contents and file names both survive a crash" : "contents are fsynced; file names are NOT \u2014 a record can outlive the name that reaches it"}`,
+    "",
+    "Covered, and therefore withheld until durable:",
+    ...scope.covered.map(bullet),
+    "",
+    "Not covered. The wrapper never sees these:",
+    ...scope.not_covered.map(bullet),
+    "",
+    "What a completed run establishes:",
+    ...scope.establishes.map(bullet),
+    "",
+    "What it does not establish:",
+    ...scope.does_not_establish.map(bullet),
+    "",
+    "Not built yet:",
+    ...scope.known_limitations.map(bullet),
+    ""
+  ].join("\n");
+}
+var CAPTURE_SCOPE_VERSION, CAPTURE_SCOPE;
+var init_scope = __esm({
+  "src/journal/scope.ts"() {
+    "use strict";
+    CAPTURE_SCOPE_VERSION = 2;
+    CAPTURE_SCOPE = captureScope("durable");
+  }
+});
+
+// src/journal/runs.ts
+var runs_exports = {};
+__export(runs_exports, {
+  INTERACTION_INPUT: () => INTERACTION_INPUT,
+  INTERACTION_OUTPUT: () => INTERACTION_OUTPUT,
+  RUN_COMPLETED: () => RUN_COMPLETED,
+  RUN_STARTED: () => RUN_STARTED,
+  SUPPORTED_SCOPE_VERSIONS: () => SUPPORTED_SCOPE_VERSIONS,
+  collectRuns: () => collectRuns,
+  journalSegmentPaths: () => journalSegmentPaths
+});
+function runIdOf(r) {
+  const id = r.data.run_id;
+  return typeof id === "string" && id.length > 0 ? id : null;
+}
+function collectRuns(records) {
+  const byRun = /* @__PURE__ */ new Map();
+  for (const r of records) {
+    const id = runIdOf(r);
+    if (!id) continue;
+    const list = byRun.get(id);
+    if (list) list.push(r);
+    else byRun.set(id, [r]);
+  }
+  const runs = [];
+  for (const [run_id, rs] of byRun) {
+    const starts = rs.filter((r) => r.kind === RUN_STARTED);
+    const completions = rs.filter((r) => r.kind === RUN_COMPLETED);
+    const started = starts[0];
+    if (!started) continue;
+    const problems = [];
+    if (starts.length !== 1) problems.push(`${starts.length} start records; a run has exactly one`);
+    if (completions.length > 1) {
+      problems.push(`${completions.length} completion records; a run has at most one`);
+    }
+    const completed = completions[0] ?? null;
+    const interactions = rs.filter((r) => r.kind === INTERACTION_INPUT || r.kind === INTERACTION_OUTPUT);
+    for (const i of interactions) {
+      if (i.seq <= started.seq) {
+        problems.push(`interaction at seq ${i.seq} precedes the run's start at ${started.seq}`);
+      }
+      if (completed && i.seq >= completed.seq) {
+        problems.push(`interaction at seq ${i.seq} follows the run's completion at ${completed.seq}`);
+      }
+    }
+    if (completed && completed.seq <= started.seq) {
+      problems.push("the completion record precedes the start record");
+    }
+    const scope = started.data.scope;
+    let durability = "unknown";
+    if (!scope || typeof scope !== "object") {
+      problems.push("the start record carries no capture scope");
+    } else if (typeof scope.scope_version !== "number" || !SUPPORTED_SCOPE_VERSIONS.includes(scope.scope_version)) {
+      problems.push(`unsupported capture scope version ${String(scope.scope_version)}`);
+    } else if (scope.durability === "durable" || scope.durability === "names_not_durable") {
+      durability = scope.durability;
+    } else {
+      problems.push(`unrecognised durability ${JSON.stringify(scope.durability)}`);
+    }
+    runs.push({
+      run_id,
+      command: String(started.data.command ?? ""),
+      args: Array.isArray(started.data.args) ? started.data.args.map(String) : [],
+      durability,
+      started,
+      completed,
+      interactions,
+      records: rs,
+      last_record_hash: rs[rs.length - 1].hash,
+      record_count: rs.length,
+      problems
+    });
+  }
+  runs.sort((a, b) => a.started.seq - b.started.seq);
+  return runs;
+}
+function journalSegmentPaths(activePath) {
+  const dir = (0, import_path11.dirname)(activePath);
+  const name2 = (0, import_path11.basename)(activePath);
+  let entries;
+  try {
+    entries = (0, import_fs15.readdirSync)(dir);
+  } catch {
+    return [activePath];
+  }
+  const rotated = [];
+  for (const e of entries) {
+    if (!e.startsWith(`${name2}.`)) continue;
+    if (e.endsWith(".lock")) continue;
+    if (e.slice(name2.length + 1).startsWith("unterminated-")) continue;
+    const m = /\.(\d+)$/.exec(e);
+    if (!m) continue;
+    rotated.push({ path: (0, import_path11.join)(dir, e), seq: Number(m[1]) });
+  }
+  rotated.sort((a, b) => a.seq - b.seq);
+  return [...rotated.map((r) => r.path), activePath];
+}
+var import_fs15, import_path11, RUN_STARTED, RUN_COMPLETED, INTERACTION_INPUT, INTERACTION_OUTPUT, SUPPORTED_SCOPE_VERSIONS;
+var init_runs = __esm({
+  "src/journal/runs.ts"() {
+    "use strict";
+    import_fs15 = require("fs");
+    import_path11 = require("path");
+    init_scope();
+    RUN_STARTED = "run.started";
+    RUN_COMPLETED = "run.completed";
+    INTERACTION_INPUT = "interaction.input";
+    INTERACTION_OUTPUT = "interaction.output";
+    SUPPORTED_SCOPE_VERSIONS = [CAPTURE_SCOPE_VERSION];
+  }
+});
+
+// src/projection/project.ts
+var project_exports = {};
+__export(project_exports, {
+  projectInteractions: () => projectInteractions,
+  projectJournal: () => projectJournal,
+  projectedMetadata: () => projectedMetadata,
+  projectedTitle: () => projectedTitle
+});
+function describeError(e) {
+  if (!(e instanceof Error)) return String(e);
+  const cause = e.cause;
+  const causeText = cause instanceof Error ? cause.message : cause === void 0 ? "" : String(cause);
+  return causeText ? `${causeText} (while: ${e.message.split("\n")[0]})` : e.message;
+}
+function projectInteractions(interactions) {
+  const out = [];
+  let pendingRole = null;
+  let buffers = [];
+  let at = "";
+  let seq = 0;
+  const flush = () => {
+    if (pendingRole === null) return;
+    out.push({
+      role: pendingRole,
+      // Canonicalised before it is hashed and before it is stored, which is the
+      // ordering a NUL byte broke in v0.1.59.
+      content: canonicalContent(Buffer.concat(buffers).toString("utf8")),
+      created_at: at,
+      source_sequence: seq
+    });
+    pendingRole = null;
+    buffers = [];
+  };
+  for (const r of interactions) {
+    const role = r.kind === INTERACTION_INPUT ? "user" : "assistant";
+    const b64 = r.data.bytes_b64;
+    if (typeof b64 !== "string") continue;
+    if (role !== pendingRole) {
+      flush();
+      pendingRole = role;
+      at = r.at;
+      seq = r.seq;
+    }
+    buffers.push(Buffer.from(b64, "base64"));
+  }
+  flush();
+  return out;
+}
+function projectedTitle(run) {
+  return `chron run \u2014 ${(0, import_path12.basename)(run.command)} \u2014 ${run.started.at} (${run.run_id.slice(0, 8)})`;
+}
+function bindingOf(run, journalPath2, messageCount) {
+  return {
+    run_id: run.run_id,
+    last_record_hash: run.last_record_hash,
+    record_count: run.record_count,
+    message_count: messageCount,
+    durability: run.durability,
+    journal_path: journalPath2
+  };
+}
+function projectedMetadata(run, binding) {
+  const meta = {
+    source: EVIDENCE_SOURCE.WITNESSED,
+    journal: binding
+  };
+  if (run.durability === "durable" && run.problems.length === 0) {
+    meta.capture_mode = CAPTURE_MODE.ENFORCED_WRAPPER;
+  }
+  return meta;
+}
+async function projectJournal(db, activeJournalPath) {
+  const segments = journalSegmentPaths(activeJournalPath);
+  const verdict = verifyJournalSequence(segments);
+  const runs = collectRuns(verdict.records);
+  const outcome = { projected: [], unchanged: [], failed: [], verdict };
+  for (const run of runs) {
+    if (!run.completed) {
+      outcome.failed.push({ run_id: run.run_id, reason: "run has no completion record yet" });
+      continue;
+    }
+    if (run.problems.length > 0) {
+      outcome.failed.push({
+        run_id: run.run_id,
+        reason: `run shape is not valid: ${run.problems.join("; ")}`
+      });
+      continue;
+    }
+    const projected = projectInteractions(run.interactions);
+    const binding = bindingOf(run, activeJournalPath, projected.length);
+    try {
+      await db.run(sql.raw("BEGIN IMMEDIATE"));
+    } catch (e) {
+      const now = await db.select({ id: sessions.id }).from(sessions).where(eq(sessions.id, run.run_id)).limit(1);
+      if (now.length > 0) {
+        outcome.unchanged.push(run.run_id);
+      } else {
+        outcome.failed.push({ run_id: run.run_id, reason: describeError(e) });
+      }
+      continue;
+    }
+    try {
+      const existing = await db.select({ id: sessions.id }).from(sessions).where(eq(sessions.id, run.run_id)).limit(1);
+      if (existing.length > 0) {
+        await db.run(sql.raw("ROLLBACK"));
+        outcome.unchanged.push(run.run_id);
+        continue;
+      }
+      await db.insert(sessions).values({
+        id: run.run_id,
+        title: projectedTitle(run),
+        ai_tool: "chron-run",
+        created_at: run.started.at,
+        updated_at: run.completed.at,
+        metadata: JSON.stringify(projectedMetadata(run, binding))
+      });
+      let prev = null;
+      for (let i = 0; i < projected.length; i++) {
+        const m = projected[i];
+        const hash2 = computeContentHash(
+          run.run_id,
+          m.role,
+          m.content,
+          m.created_at,
+          prev,
+          "message"
+        );
+        await db.insert(messages).values({
+          id: `${run.run_id}-${m.source_sequence}`,
+          session_id: run.run_id,
+          role: m.role,
+          content: m.content,
+          created_at: m.created_at,
+          prev_hash: prev,
+          content_hash: hash2,
+          event_type: "message",
+          source_sequence: m.source_sequence
+        });
+        prev = hash2;
+      }
+      await db.run(sql.raw("COMMIT"));
+      outcome.projected.push(run.run_id);
+    } catch (e) {
+      try {
+        await db.run(sql.raw("ROLLBACK"));
+      } catch {
+      }
+      outcome.failed.push({ run_id: run.run_id, reason: describeError(e) });
+    }
+  }
+  return outcome;
+}
+var import_path12;
+var init_project = __esm({
+  "src/projection/project.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    import_path12 = require("path");
+    init_schema();
+    init_hash();
+    init_content();
+    init_evidence();
+    init_verify();
+    init_runs();
+    init_runs();
+  }
+});
+
+// src/projection/enforcement.ts
+var enforcement_exports = {};
+__export(enforcement_exports, {
+  journalBindingOf: () => journalBindingOf,
+  verifyEnforcement: () => verifyEnforcement
+});
+function journalBindingOf(meta) {
+  const raw = meta.journal;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const b = raw;
+  if (typeof b.run_id !== "string" || typeof b.last_record_hash !== "string") return null;
+  if (typeof b.record_count !== "number" || typeof b.message_count !== "number") return null;
+  return {
+    run_id: b.run_id,
+    last_record_hash: b.last_record_hash,
+    record_count: b.record_count,
+    message_count: b.message_count,
+    durability: b.durability === "names_not_durable" ? "names_not_durable" : "durable",
+    journal_path: typeof b.journal_path === "string" ? b.journal_path : ""
+  };
+}
+async function verifyEnforcement(db, sessionId, metadataRaw, journalPathOverride) {
+  const meta = parseSessionMetadata(metadataRaw);
+  const binding = journalBindingOf(meta);
+  if (!binding) {
+    return {
+      supported: false,
+      reason: recordedCaptureMode(meta) === CAPTURE_MODE.UNENFORCED ? "this session carries no journal binding, and claims no enforcement" : "this session claims enforcement but carries no journal binding to check it against"
+    };
+  }
+  const path = journalPathOverride ?? binding.journal_path;
+  if (!path) {
+    return { supported: false, reason: "the binding names no journal to check", run_id: binding.run_id };
+  }
+  const verdict = verifyJournalSequence(journalSegmentPaths(path));
+  if (verdict.status === "corrupt") {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: `the journal does not verify (${verdict.problem?.reason ?? "corrupt"}), so nothing in it supports a claim`
+    };
+  }
+  if (sessionId !== binding.run_id) {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: `this session is ${sessionId.slice(0, 8)} and the binding names run ${binding.run_id.slice(0, 8)}; a binding belongs to the session it was written for`
+    };
+  }
+  const run = collectRuns(verdict.records).find((r) => r.run_id === binding.run_id);
+  if (!run) {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: "the run named by this session is not in the journal"
+    };
+  }
+  if (run.last_record_hash !== binding.last_record_hash) {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: "the journal's record of this run no longer matches what the session was bound to"
+    };
+  }
+  if (run.record_count !== binding.record_count) {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: `the run has ${run.record_count} records; the session was bound to ${binding.record_count}`
+    };
+  }
+  const expected = projectInteractions(run.interactions);
+  if (expected.length !== binding.message_count) {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: `the journal implies ${expected.length} messages; the binding records ${binding.message_count}`
+    };
+  }
+  const rows = await db.select().from(messages).where(eq(messages.session_id, sessionId)).orderBy(asc(messages.source_sequence));
+  if (rows.length !== expected.length) {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: `the projection holds ${rows.length} messages; the journal implies ${expected.length}`
+    };
+  }
+  for (let i = 0; i < expected.length; i++) {
+    const want = expected[i];
+    const got = rows[i];
+    const mismatch = got.role !== want.role ? `role ${got.role} should be ${want.role}` : got.content !== want.content ? "content does not match the journal" : got.created_at !== want.created_at ? "timestamp does not match the journal" : got.source_sequence !== want.source_sequence ? `sequence ${String(got.source_sequence)} should be ${want.source_sequence}` : null;
+    if (mismatch) {
+      return {
+        supported: false,
+        run_id: binding.run_id,
+        reason: `projected message ${i + 1} does not match the journal: ${mismatch}`
+      };
+    }
+  }
+  if (run.problems.length > 0) {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: `the run's shape is not valid: ${run.problems.join("; ")}`
+    };
+  }
+  if (run.durability === "unknown") {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: "the durability of this run could not be read from its scope, so the guarantee it was recorded under is unknown. An unreadable claim is not a weaker claim"
+    };
+  }
+  if (run.durability !== "durable") {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reduced: true,
+      reason: "this run was recorded under reduced durability, so it is not eligible for the full enforced:wrapper guarantee. Output was still withheld until recorded; the record's file name was never made durable"
+    };
+  }
+  return { supported: true, mode: CAPTURE_MODE.ENFORCED_WRAPPER, run_id: binding.run_id };
+}
+var init_enforcement = __esm({
+  "src/projection/enforcement.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    init_schema();
+    init_project();
+    init_evidence();
+    init_verify();
+    init_runs();
+  }
+});
+
+// src/cli/verify.ts
+var verify_exports2 = {};
+__export(verify_exports2, {
   runVerify: () => runVerify
 });
 function ok(msg) {
@@ -23745,24 +25045,28 @@ function warn(msg) {
   process.stdout.write(`  ${YELLOW6}!${RESET9} ${msg}
 `);
 }
+function note(msg) {
+  process.stdout.write(`  ${DIM7}\xB7${RESET9} ${msg}
+`);
+}
 async function runVerifyBundle(bundlePath) {
   process.stdout.write(`
 ${BOLD8}Verifying bundle${RESET9} ${bundlePath}
 
 `);
-  const tempDir = (0, import_fs13.mkdtempSync)((0, import_path10.join)((0, import_os8.tmpdir)(), "chron-verify-"));
+  const tempDir = (0, import_fs16.mkdtempSync)((0, import_path13.join)((0, import_os8.tmpdir)(), "chron-verify-"));
   try {
     (0, import_child_process2.execFileSync)("tar", ["-xzf", bundlePath, "-C", tempDir], { stdio: "pipe" });
   } catch {
     process.stderr.write(`Failed to extract bundle: ${bundlePath}
 `);
-    (0, import_fs13.rmSync)(tempDir, { recursive: true, force: true });
+    (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   let allOk = true;
   try {
-    const manifestPath = (0, import_path10.join)(tempDir, "manifest.json");
-    const manifestBytes = (0, import_fs13.readFileSync)(manifestPath);
+    const manifestPath = (0, import_path13.join)(tempDir, "manifest.json");
+    const manifestBytes = (0, import_fs16.readFileSync)(manifestPath);
     const manifest = JSON.parse(manifestBytes.toString());
     process.stdout.write(`${BOLD8}Manifest${RESET9} (${manifest.sessions.length} session(s), generated ${manifest.generated_at})
 `);
@@ -23770,10 +25074,10 @@ ${BOLD8}Verifying bundle${RESET9} ${bundlePath}
 ${BOLD8}File integrity${RESET9}
 `);
     for (const [rel, expectedHash] of Object.entries(manifest.files)) {
-      const filePath = (0, import_path10.join)(tempDir, rel);
+      const filePath = (0, import_path13.join)(tempDir, rel);
       try {
-        const content = (0, import_fs13.readFileSync)(filePath);
-        const actual = (0, import_crypto11.createHash)("sha256").update(content).digest("hex");
+        const content = (0, import_fs16.readFileSync)(filePath);
+        const actual = (0, import_crypto12.createHash)("sha256").update(content).digest("hex");
         if (actual === expectedHash) {
           ok(rel);
         } else {
@@ -23788,14 +25092,14 @@ ${BOLD8}File integrity${RESET9}
     process.stdout.write(`
 ${BOLD8}Signature${RESET9}
 `);
-    const sigPath = (0, import_path10.join)(tempDir, "manifest.sig");
+    const sigPath = (0, import_path13.join)(tempDir, "manifest.sig");
     let sigFile = null;
-    if (!(0, import_fs13.existsSync)(sigPath)) {
+    if (!(0, import_fs16.existsSync)(sigPath)) {
       fail("No manifest.sig \u2014 this bundle is unsigned and its origin cannot be established");
       allOk = false;
     } else {
       try {
-        const parsed = JSON.parse((0, import_fs13.readFileSync)(sigPath, "utf8"));
+        const parsed = JSON.parse((0, import_fs16.readFileSync)(sigPath, "utf8"));
         if (typeof parsed !== "object" || parsed === null || parsed.chron_sig !== "v1" || typeof parsed.session_id !== "string" || parsed.algorithm !== "Ed25519-SHA256" || typeof parsed.signature !== "string" || !parsed.signature) {
           throw new Error("invalid signature envelope");
         }
@@ -23810,9 +25114,9 @@ ${BOLD8}Signature${RESET9}
         fail("manifest.sig does not identify the exported session");
         allOk = false;
       }
-      const pubKeyPath2 = (0, import_path10.join)(tempDir, "pubkeys", `${sigFile.session_id}.pub`);
+      const pubKeyPath2 = (0, import_path13.join)(tempDir, "pubkeys", `${sigFile.session_id}.pub`);
       try {
-        const pubKey = (0, import_fs13.readFileSync)(pubKeyPath2, "utf8");
+        const pubKey = (0, import_fs16.readFileSync)(pubKeyPath2, "utf8");
         const valid = verifyBufferSignature(pubKey, sigFile.signature, manifestBytes);
         if (valid) {
           ok(`Ed25519 signature valid (session ${sigFile.session_id.slice(0, 8)})`);
@@ -23827,11 +25131,96 @@ ${BOLD8}Signature${RESET9}
     }
     process.stdout.write("\n");
   } finally {
-    (0, import_fs13.rmSync)(tempDir, { recursive: true, force: true });
+    (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
   }
   process.exit(allOk ? 0 : 1);
 }
+async function runVerifyJournal(pathArg) {
+  const { journalStatus: journalStatus2 } = await Promise.resolve().then(() => (init_writer(), writer_exports));
+  const { join: join18 } = await import("path");
+  const { homedir: homedir14 } = await import("os");
+  const { guardedJournalPath: guardedJournalPath2 } = await Promise.resolve().then(() => (init_config_path(), config_path_exports));
+  const path = guardedJournalPath2(pathArg || process.env.CHRON_JOURNAL_PATH || join18(process.env.CHRON_HOME ?? join18(homedir14(), ".chron"), "capture.jsonl"));
+  process.stdout.write(`
+${BOLD8}Verifying journal${RESET9} ${path}
+
+`);
+  const { journalSegmentPaths: journalSegmentPaths2 } = await Promise.resolve().then(() => (init_runs(), runs_exports));
+  const { verifyJournalSequence: verifyJournalSequence2 } = await Promise.resolve().then(() => (init_verify(), verify_exports));
+  const segments = journalSegmentPaths2(path);
+  const displaced = segments.filter((p) => p !== path);
+  if (displaced.length > 0) {
+    process.stdout.write(`${BOLD8}Segments${RESET9} (${segments.length}, oldest first)
+`);
+    for (const seg of segments) {
+      const here = seg === path;
+      note(`${seg}${here ? "  (active)" : "  (rotated)"}`);
+    }
+    const seq = verifyJournalSequence2(segments);
+    if (seq.status === "corrupt") {
+      fail(`Across segments: ${seq.problem?.reason} in ${seq.problem?.path}`);
+    } else {
+      ok(`${seq.records.length} records verify as one chain across ${segments.length} segments`);
+    }
+    process.stdout.write("\n");
+  }
+  const v = journalStatus2(path);
+  process.stdout.write(`${BOLD8}Chain${RESET9} (${v.records.length} records)
+`);
+  switch (v.status) {
+    case "empty":
+      if (displaced.length > 0) {
+        warn(`The active journal file is empty or absent; ${displaced.length} rotated segment(s) hold the records.`);
+        note("Listed above. This is what a rotation interrupted after the rename looks like.");
+      } else {
+        warn("No journal records \u2014 nothing has been captured through `chron run`");
+      }
+      break;
+    case "ok":
+      ok(`All ${v.records.length} records link and hash correctly`);
+      note("Internal consistency. The chain is unanchored, so this does not establish");
+      note("that the records were never rewritten as a set.");
+      break;
+    case "unterminated_tail":
+      warn(`${v.records.length} records verify; the final line is unterminated`);
+      note("Consistent with an interrupted write, and equally with deliberate truncation.");
+      note(`${v.discardableBytes} byte(s) after the last complete record.`);
+      break;
+    case "corrupt":
+      fail(`Record ${v.problem?.seq ?? "?"} at line ${v.problem?.line}: ${v.problem?.reason}`);
+      note(`${v.records.length} record(s) before the break still verify.`);
+      break;
+  }
+  process.stdout.write(`
+${BOLD8}Scope${RESET9}
+`);
+  if (v.coverage === "whole_chain") {
+    ok("Whole chain \u2014 the records reach a record with no predecessor");
+  } else {
+    warn("Segment only \u2014 the first record names a predecessor that was not checked");
+    if (v.continuesFrom) note(`Claims to continue from ${v.continuesFrom.slice(0, 16)}\u2026`);
+    note("Internal validity is not the whole sequence verified. Verify the earlier files too.");
+  }
+  process.stdout.write(`
+${BOLD8}Durability${RESET9}
+`);
+  note("Not determinable by reading. Terminated records prove the writer emitted whole");
+  note("lines, not that fsync returned. Only the writing process knows that.");
+  const reduced = v.records.filter((r) => r.kind === "run.started" && r.data.scope?.durability === "names_not_durable");
+  if (reduced.length > 0) {
+    warn(`${reduced.length} run(s) recorded reduced durability: contents fsynced, file names not.`);
+    note("Those records can survive a crash without a name to reach them by.");
+    note("They do not carry the guarantee a fully durable run makes.");
+  }
+  process.stdout.write("\n");
+  process.exit(v.status === "corrupt" ? 1 : 0);
+}
 async function runVerify(args2) {
+  const journalFlag = args2.find((a) => a === "--journal" || a.startsWith("--journal="));
+  if (journalFlag) {
+    await runVerifyJournal(journalFlag.includes("=") ? journalFlag.split("=").slice(1).join("=") : void 0);
+    return;
+  }
   const bundleArg = args2.find((a) => a.startsWith("--bundle="))?.split("=").slice(1).join("=");
   if (bundleArg) {
     await runVerifyBundle(bundleArg);
@@ -23840,7 +25229,7 @@ async function runVerify(args2) {
   const prefix = args2.find((a) => !a.startsWith("--"));
   if (!prefix) {
     process.stderr.write(
-      "Usage: chron verify <session-id-prefix>\n       chron verify --bundle=<bundle.chron.tar.gz>\n"
+      "Usage: chron verify <session-id-prefix>\n       chron verify --bundle=<bundle.chron.tar.gz>\n       chron verify --journal[=<path>]\n"
     );
     process.exit(1);
   }
@@ -23875,6 +25264,30 @@ ${BOLD8}Verifying session ${session.id.slice(0, 8)}${RESET9} \u2014 ${session.ti
       ok(`All ${chained.length} hashes valid \u2014 ${chainScopeLabel(sessionMeta)}`);
     }
   }
+  let allOkEnforcement = true;
+  process.stdout.write(`
+${BOLD8}Capture${RESET9}
+`);
+  const { journalBindingOf: journalBindingOf2, verifyEnforcement: verifyEnforcement2 } = await Promise.resolve().then(() => (init_enforcement(), enforcement_exports));
+  const binding = journalBindingOf2(sessionMeta);
+  if (!claimsEnforcement(sessionMeta) && !binding) {
+    note(`Unenforced \u2014 ${describeCaptureMode(sessionMeta)}`);
+  } else if (!binding) {
+    warn(describeEnforcementSupport(sessionMeta));
+  } else {
+    const verdict = await verifyEnforcement2(db, session.id, session.metadata);
+    if (verdict.supported) {
+      ok(`${verdict.mode} \u2014 verified against journal run ${verdict.run_id.slice(0, 8)}`);
+      note(describeCaptureMode(sessionMeta));
+    } else if (verdict.reduced) {
+      warn(verdict.reason);
+      note("Distinguishable by design: the binding records durability, and this run is not");
+      note("eligible for the full guarantee.");
+    } else {
+      fail(`Enforcement claim not supported \u2014 ${verdict.reason}`);
+      allOkEnforcement = false;
+    }
+  }
   const boundary = describeEvidenceBoundary(sessionMeta);
   if (boundary) {
     process.stdout.write(`
@@ -23891,6 +25304,8 @@ ${BOLD8}Clock attestation${RESET9}
     ok(`Clock synchronized via NTP${offset}`);
   } else if (status === "not_synchronized") {
     fail("Clock NOT synchronized with NTP \u2014 timing analysis unreliable");
+  } else if (status === "disabled") {
+    warn("Clock attestation is disabled by configuration \u2014 none was requested.");
   } else if (status === void 0) {
     warn("No clock attestation was recorded for this session.");
   } else {
@@ -23923,17 +25338,17 @@ ${BOLD8}Signature${RESET9}
     }
   }
   process.stdout.write("\n");
-  const allOk = chainOk && (session.signature ? true : true);
+  const allOk = chainOk && allOkEnforcement;
   process.exit(allOk ? 0 : 1);
 }
-var import_fs13, import_crypto11, import_path10, import_os8, import_child_process2, RESET9, BOLD8, GREEN5, RED6, DIM7, YELLOW6;
-var init_verify = __esm({
+var import_fs16, import_crypto12, import_path13, import_os8, import_child_process2, RESET9, BOLD8, GREEN5, RED6, DIM7, YELLOW6;
+var init_verify2 = __esm({
   "src/cli/verify.ts"() {
     "use strict";
     init_drizzle_orm();
-    import_fs13 = require("fs");
-    import_crypto11 = require("crypto");
-    import_path10 = require("path");
+    import_fs16 = require("fs");
+    import_crypto12 = require("crypto");
+    import_path13 = require("path");
     import_os8 = require("os");
     import_child_process2 = require("child_process");
     init_db2();
@@ -23965,9 +25380,9 @@ function checkConfigured(def, home, cwd) {
   const configs = userMcpClientConfigs(home, cwd, (0, import_os9.platform)(), process.env.APPDATA);
   return def.configNames.some((name2) => {
     const c = configs.find((mc) => mc.name === name2);
-    if (!c || !(0, import_fs14.existsSync)(c.path)) return false;
+    if (!c || !(0, import_fs17.existsSync)(c.path)) return false;
     try {
-      const content = (0, import_fs14.readFileSync)(c.path, "utf8");
+      const content = (0, import_fs17.readFileSync)(c.path, "utf8");
       return c.type === "codex-toml" ? hasChronCodexToml(content) : hasChronJsonMcp(content) === true;
     } catch {
       return false;
@@ -24309,11 +25724,11 @@ async function runCoverage(args2) {
   printCoverage(result);
   if (result.evidence_use) printEvidenceUse(result.evidence_use);
 }
-var import_fs14, import_os9, RESET10, BOLD9, DIM8, GREEN6, YELLOW7, CYAN6, RED7, KNOWN_TOOLS, MIN_CARDINALITY_SAMPLE, CONCENTRATION_THRESHOLD, SQLITE_BINDING_BATCH_SIZE;
+var import_fs17, import_os9, RESET10, BOLD9, DIM8, GREEN6, YELLOW7, CYAN6, RED7, KNOWN_TOOLS, MIN_CARDINALITY_SAMPLE, CONCENTRATION_THRESHOLD, SQLITE_BINDING_BATCH_SIZE;
 var init_coverage = __esm({
   "src/cli/coverage.ts"() {
     "use strict";
-    import_fs14 = require("fs");
+    import_fs17 = require("fs");
     import_os9 = require("os");
     init_drizzle_orm();
     init_db2();
@@ -24373,7 +25788,7 @@ ${BOLD10}${title}${RESET11}
 }
 function canWrite(dir) {
   try {
-    (0, import_fs15.accessSync)(dir, import_fs15.constants.W_OK);
+    (0, import_fs18.accessSync)(dir, import_fs18.constants.W_OK);
     return true;
   } catch {
     return false;
@@ -24382,22 +25797,22 @@ function canWrite(dir) {
 function testWriteFile(path) {
   const probe = path + ".chron-probe";
   try {
-    (0, import_fs15.writeFileSync)(probe, "ok");
-    (0, import_fs15.unlinkSync)(probe);
+    (0, import_fs18.writeFileSync)(probe, "ok");
+    (0, import_fs18.unlinkSync)(probe);
     return true;
   } catch {
     return false;
   }
 }
 function dbPath2() {
-  return process.env.CHRON_DB_PATH ?? (0, import_path11.join)((0, import_os10.homedir)(), ".chron", "chron.db");
+  return process.env.CHRON_DB_PATH ?? (0, import_path14.join)((0, import_os10.homedir)(), ".chron", "chron.db");
 }
 function keysDir2() {
-  return (0, import_path11.join)((0, import_os10.homedir)(), ".chron", "keys");
+  return (0, import_path14.join)((0, import_os10.homedir)(), ".chron", "keys");
 }
 function loadConfig2() {
   try {
-    return JSON.parse((0, import_fs15.readFileSync)(configPath(), "utf8"));
+    return JSON.parse((0, import_fs18.readFileSync)(configPath(), "utf8"));
   } catch {
     return {};
   }
@@ -24449,17 +25864,17 @@ function mcpConfigs() {
     let instructionConfigured;
     if (instrPath) {
       try {
-        const content = (0, import_fs15.existsSync)(instrPath) ? (0, import_fs15.readFileSync)(instrPath, "utf8") : "";
+        const content = (0, import_fs18.existsSync)(instrPath) ? (0, import_fs18.readFileSync)(instrPath, "utf8") : "";
         instructionConfigured = content.includes(CHRON_INSTRUCTION_SENTINEL) || content.includes(CHRON_INSTRUCTION_BLOCK_START);
       } catch {
         instructionConfigured = false;
       }
     }
-    if (!(0, import_fs15.existsSync)(c.path)) {
+    if (!(0, import_fs18.existsSync)(c.path)) {
       return { name: c.name, path: c.path, exists: false, chronConfigured: null, connectCommand: c.connectCommand, instructionPath: instrPath, instructionConfigured };
     }
     try {
-      const content = (0, import_fs15.readFileSync)(c.path, "utf8");
+      const content = (0, import_fs18.readFileSync)(c.path, "utf8");
       const configured = c.type === "codex-toml" ? hasChronCodexToml(content) : hasChronJsonMcp(content);
       const launcher = inspectChronLauncher(content, c.type);
       return { name: c.name, path: c.path, exists: true, chronConfigured: configured, launcher, connectCommand: c.connectCommand, instructionPath: instrPath, instructionConfigured };
@@ -24471,9 +25886,9 @@ function mcpConfigs() {
 function fixableMcpConfigs() {
   const configs = userMcpClientConfigs((0, import_os10.homedir)(), process.cwd(), (0, import_os10.platform)(), process.env.APPDATA);
   return configs.filter((c) => {
-    if ((0, import_fs15.existsSync)(c.path)) return true;
+    if ((0, import_fs18.existsSync)(c.path)) return true;
     if (["Claude Code", "Cursor (global)", "Cursor (project)", "Gemini CLI", "Codex (global)"].includes(c.name)) return true;
-    if ((0, import_fs15.existsSync)((0, import_path11.dirname)(c.path))) return true;
+    if ((0, import_fs18.existsSync)((0, import_path14.dirname)(c.path))) return true;
     return false;
   });
 }
@@ -24602,7 +26017,7 @@ ${BOLD10}Verify Chron Logging${RESET11}  ${DIM9}${displayTool}${RESET11}
   process.stdout.write(`
 ${DIM9}Once you've done this, Chron will detect the new session below.${RESET11}
 `);
-  if (!(0, import_fs15.existsSync)(db)) {
+  if (!(0, import_fs18.existsSync)(db)) {
     process.stdout.write(`
 ${RED8}\u2717${RESET11} Chron database not found at ${db}
 `);
@@ -24703,16 +26118,16 @@ ${BOLD10}chron doctor${RESET11}  ${DIM9}v${import_package3.version}${RESET11}${f
   if (!jsonMode) (launcherOk ? ok2 : fail2)(launcherLabel, launcherOk ? "works" : "failed \u2014 run: npm install -g chron-mcp");
   if (!jsonMode) section("Storage");
   const db = dbPath2();
-  const dbDir = (0, import_path11.join)(db, "..");
-  const dbDirExists = (0, import_fs15.existsSync)(dbDir);
+  const dbDir = (0, import_path14.join)(db, "..");
+  const dbDirExists = (0, import_fs18.existsSync)(dbDir);
   if (!dbDirExists) {
     try {
-      (0, import_fs15.mkdirSync)(dbDir, { recursive: true });
+      (0, import_fs18.mkdirSync)(dbDir, { recursive: true });
     } catch {
     }
   }
   const dbWritable = testWriteFile(dbDir);
-  const dbExists = (0, import_fs15.existsSync)(db);
+  const dbExists = (0, import_fs18.existsSync)(db);
   results.push({
     pass: dbWritable,
     label: `DB directory: ${dbDir}`,
@@ -24722,10 +26137,10 @@ ${BOLD10}chron doctor${RESET11}  ${DIM9}v${import_package3.version}${RESET11}${f
   if (!jsonMode) (dbWritable ? ok2 : fail2)(`DB: ${db}`, dbExists ? "found" : "not yet created \u2014 will init on first use");
   if (!dbWritable && !jsonMode) info("fix", `mkdir -p "${dbDir}" && chmod 700 "${dbDir}"`);
   const keys = keysDir2();
-  const keysExist = (0, import_fs15.existsSync)(keys);
+  const keysExist = (0, import_fs18.existsSync)(keys);
   if (!keysExist) {
     try {
-      (0, import_fs15.mkdirSync)(keys, { recursive: true });
+      (0, import_fs18.mkdirSync)(keys, { recursive: true });
     } catch {
     }
   }
@@ -24867,8 +26282,8 @@ ${BOLD10}chron doctor${RESET11}  ${DIM9}v${import_package3.version}${RESET11}${f
     }
   }
   try {
-    const claudePath = (0, import_path11.join)((0, import_os10.homedir)(), ".claude.json");
-    const scopes = (0, import_fs15.existsSync)(claudePath) ? findClaudeChronScopes((0, import_fs15.readFileSync)(claudePath, "utf8"), process.cwd()) : [];
+    const claudePath = (0, import_path14.join)((0, import_os10.homedir)(), ".claude.json");
+    const scopes = (0, import_fs18.existsSync)(claudePath) ? findClaudeChronScopes((0, import_fs18.readFileSync)(claudePath, "utf8"), process.cwd()) : [];
     const endpointCount = new Set(scopes.map((s) => s.endpoint)).size;
     if (scopes.length > 1 && endpointCount > 1) {
       const fixCmds = claudeChronConflictFixes(scopes);
@@ -24991,13 +26406,13 @@ ${BOLD10}chron doctor${RESET11}  ${DIM9}v${import_package3.version}${RESET11}${f
   }
   process.exit(failures.length > 0 ? 1 : 0);
 }
-var import_os10, import_path11, import_fs15, import_child_process3, import_package3, RESET11, BOLD10, DIM9, GREEN7, RED8, YELLOW8, CYAN7, CLAIIM_PREVIEW_URL, INSTRUCTION_PATHS, AI_TOOL_FOR_CLIENT, CAPTURE_FAMILY_LABEL, VERIFY_SLUG;
+var import_os10, import_path14, import_fs18, import_child_process3, import_package3, RESET11, BOLD10, DIM9, GREEN7, RED8, YELLOW8, CYAN7, CLAIIM_PREVIEW_URL, INSTRUCTION_PATHS, AI_TOOL_FOR_CLIENT, CAPTURE_FAMILY_LABEL, VERIFY_SLUG;
 var init_doctor = __esm({
   "src/cli/doctor.ts"() {
     "use strict";
     import_os10 = require("os");
-    import_path11 = require("path");
-    import_fs15 = require("fs");
+    import_path14 = require("path");
+    import_fs18 = require("fs");
     import_child_process3 = require("child_process");
     import_package3 = __toESM(require_package());
     init_mcp_config();
@@ -25013,12 +26428,12 @@ var init_doctor = __esm({
     CYAN7 = "\x1B[36m";
     CLAIIM_PREVIEW_URL = "https://claiim.io/preview";
     INSTRUCTION_PATHS = {
-      "Claude Code": (0, import_path11.join)((0, import_os10.homedir)(), "CLAUDE.md"),
-      "Codex (global)": (0, import_path11.join)((0, import_os10.homedir)(), ".codex", "instructions.md"),
-      "Codex (~/AGENTS.md)": (0, import_path11.join)((0, import_os10.homedir)(), "AGENTS.md"),
-      "Codex (project AGENTS.md)": (0, import_path11.join)(process.cwd(), "AGENTS.md"),
-      "Gemini CLI": (0, import_path11.join)((0, import_os10.homedir)(), ".gemini", "GEMINI.md"),
-      "Cursor (project)": (0, import_path11.join)(process.cwd(), ".cursor", "rules", "chron.mdc")
+      "Claude Code": (0, import_path14.join)((0, import_os10.homedir)(), "CLAUDE.md"),
+      "Codex (global)": (0, import_path14.join)((0, import_os10.homedir)(), ".codex", "instructions.md"),
+      "Codex (~/AGENTS.md)": (0, import_path14.join)((0, import_os10.homedir)(), "AGENTS.md"),
+      "Codex (project AGENTS.md)": (0, import_path14.join)(process.cwd(), "AGENTS.md"),
+      "Gemini CLI": (0, import_path14.join)((0, import_os10.homedir)(), ".gemini", "GEMINI.md"),
+      "Cursor (project)": (0, import_path14.join)(process.cwd(), ".cursor", "rules", "chron.mdc")
     };
     AI_TOOL_FOR_CLIENT = {
       "Claude Code": "claude",
@@ -25042,18 +26457,6 @@ var init_doctor = __esm({
       "Cursor (global)": "cursor",
       "Cursor (project)": "cursor"
     };
-  }
-});
-
-// src/utils/content.ts
-function canonicalContent(content) {
-  return content.replace(UNREPRESENTABLE, "\uFFFD");
-}
-var UNREPRESENTABLE;
-var init_content = __esm({
-  "src/utils/content.ts"() {
-    "use strict";
-    UNREPRESENTABLE = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
   }
 });
 
@@ -25405,7 +26808,7 @@ function summarizeToolResult(raw, opts = {}) {
   const { redacted } = redactSecrets(raw);
   const slice = redacted.slice(0, TOOL_OUTPUT_EXCERPT_BYTES);
   const truncated = redacted.length > slice.length;
-  const hash2 = (0, import_crypto12.createHash)("sha256").update(raw).digest("hex");
+  const hash2 = (0, import_crypto13.createHash)("sha256").update(raw).digest("hex");
   const header = `[tool output not ingested in full \u2014 ${originalBytes} bytes, sha256:${hash2.slice(0, 16)}` + (detected.length ? `, ${detected.length} secret detection(s)` : "") + "]";
   const body = truncated ? `${slice}
 [... truncated, ${originalBytes - Buffer.byteLength(slice, "utf8")} bytes not ingested]` : slice;
@@ -25555,16 +26958,16 @@ function parseTranscript(raw, opts = {}) {
     first_timestamp: first,
     last_timestamp: last,
     out_of_order_timestamps: outOfOrder,
-    content_hash: (0, import_crypto12.createHash)("sha256").update(raw).digest("hex"),
+    content_hash: (0, import_crypto13.createHash)("sha256").update(raw).digest("hex"),
     secrets_found: secrets,
     secret_detections
   };
 }
-var import_crypto12, TOOL_OUTPUT_EXCERPT_BYTES, COMPACTION_BOUNDARY_TEXT;
+var import_crypto13, TOOL_OUTPUT_EXCERPT_BYTES, COMPACTION_BOUNDARY_TEXT;
 var init_claude_code = __esm({
   "src/import/claude-code.ts"() {
     "use strict";
-    import_crypto12 = require("crypto");
+    import_crypto13 = require("crypto");
     init_detect();
     init_redact();
     TOOL_OUTPUT_EXCERPT_BYTES = 400;
@@ -25575,7 +26978,7 @@ var init_claude_code = __esm({
 // src/import/discover.ts
 function transcriptRoot() {
   const override = process.env.CHRON_CLAUDE_PROJECTS_DIR;
-  return override && override.trim() ? override : (0, import_path12.join)((0, import_os11.homedir)(), ".claude", "projects");
+  return override && override.trim() ? override : (0, import_path15.join)((0, import_os11.homedir)(), ".claude", "projects");
 }
 function sessionIdOf(file) {
   if (!file.endsWith(".jsonl")) return null;
@@ -25583,35 +26986,35 @@ function sessionIdOf(file) {
   return id.length > 0 ? id : null;
 }
 function discoverTranscripts(root = transcriptRoot()) {
-  if (!(0, import_fs16.existsSync)(root)) return [];
+  if (!(0, import_fs19.existsSync)(root)) return [];
   const found = [];
   let projects;
   try {
-    projects = (0, import_fs16.readdirSync)(root);
+    projects = (0, import_fs19.readdirSync)(root);
   } catch {
     return [];
   }
   for (const project of projects) {
-    const projectDir = (0, import_path12.join)(root, project);
+    const projectDir = (0, import_path15.join)(root, project);
     let stat;
     try {
-      stat = (0, import_fs16.statSync)(projectDir);
+      stat = (0, import_fs19.statSync)(projectDir);
     } catch {
       continue;
     }
     if (!stat.isDirectory()) continue;
     let entries;
     try {
-      entries = (0, import_fs16.readdirSync)(projectDir);
+      entries = (0, import_fs19.readdirSync)(projectDir);
     } catch {
       continue;
     }
     for (const entry of entries) {
       const sessionId = sessionIdOf(entry);
       if (!sessionId) continue;
-      const path = (0, import_path12.join)(projectDir, entry);
+      const path = (0, import_path15.join)(projectDir, entry);
       try {
-        const s = (0, import_fs16.statSync)(path);
+        const s = (0, import_fs19.statSync)(path);
         if (!s.isFile()) continue;
         found.push({
           path,
@@ -25627,21 +27030,21 @@ function discoverTranscripts(root = transcriptRoot()) {
   return found.sort((a, b) => b.modified_at.localeCompare(a.modified_at));
 }
 function countNestedTranscripts(root = transcriptRoot()) {
-  if (!(0, import_fs16.existsSync)(root)) return 0;
+  if (!(0, import_fs19.existsSync)(root)) return 0;
   let count2 = 0;
   const walk = (dir, depth) => {
     if (depth > 6) return;
     let entries;
     try {
-      entries = (0, import_fs16.readdirSync)(dir);
+      entries = (0, import_fs19.readdirSync)(dir);
     } catch {
       return;
     }
     for (const entry of entries) {
-      const full = (0, import_path12.join)(dir, entry);
+      const full = (0, import_path15.join)(dir, entry);
       let s;
       try {
-        s = (0, import_fs16.statSync)(full);
+        s = (0, import_fs19.statSync)(full);
       } catch {
         continue;
       }
@@ -25651,39 +27054,39 @@ function countNestedTranscripts(root = transcriptRoot()) {
   };
   for (const project of (() => {
     try {
-      return (0, import_fs16.readdirSync)(root);
+      return (0, import_fs19.readdirSync)(root);
     } catch {
       return [];
     }
   })()) {
-    const projectDir = (0, import_path12.join)(root, project);
+    const projectDir = (0, import_path15.join)(root, project);
     try {
-      if (!(0, import_fs16.statSync)(projectDir).isDirectory()) continue;
+      if (!(0, import_fs19.statSync)(projectDir).isDirectory()) continue;
     } catch {
       continue;
     }
     for (const entry of (() => {
       try {
-        return (0, import_fs16.readdirSync)(projectDir);
+        return (0, import_fs19.readdirSync)(projectDir);
       } catch {
         return [];
       }
     })()) {
-      const full = (0, import_path12.join)(projectDir, entry);
+      const full = (0, import_path15.join)(projectDir, entry);
       try {
-        if ((0, import_fs16.statSync)(full).isDirectory()) walk(full, 1);
+        if ((0, import_fs19.statSync)(full).isDirectory()) walk(full, 1);
       } catch {
       }
     }
   }
   return count2;
 }
-var import_fs16, import_path12, import_os11;
+var import_fs19, import_path15, import_os11;
 var init_discover = __esm({
   "src/import/discover.ts"() {
     "use strict";
-    import_fs16 = require("fs");
-    import_path12 = require("path");
+    import_fs19 = require("fs");
+    import_path15 = require("path");
     import_os11 = require("os");
   }
 });
@@ -25716,7 +27119,7 @@ async function buildPreview(db, opts = {}) {
     };
     let raw;
     try {
-      raw = (0, import_fs17.readFileSync)(f.path, "utf8");
+      raw = (0, import_fs20.readFileSync)(f.path, "utf8");
     } catch (e) {
       unreadable++;
       transcripts.push({
@@ -25785,11 +27188,11 @@ function totalExclusions(result) {
   }
   return t;
 }
-var import_fs17;
+var import_fs20;
 var init_claude_code_preview = __esm({
   "src/import/claude-code-preview.ts"() {
     "use strict";
-    import_fs17 = require("fs");
+    import_fs20 = require("fs");
     init_drizzle_orm();
     init_schema();
     init_claude_code();
@@ -25799,7 +27202,7 @@ var init_claude_code_preview = __esm({
 
 // src/import/claude-code-import.ts
 function stableId(...parts) {
-  return (0, import_crypto13.createHash)("sha256").update(parts.join("\0")).digest("hex");
+  return (0, import_crypto14.createHash)("sha256").update(parts.join("\0")).digest("hex");
 }
 function importedMessageId(transcriptSessionId, sourceUuid) {
   return stableId("claude-code", transcriptSessionId, sourceUuid);
@@ -25853,7 +27256,7 @@ function prepareEvents(chronSessionId, transcriptSessionId, events) {
 async function importTranscript(db, file, includeToolOutput) {
   let raw;
   try {
-    raw = (0, import_fs18.readFileSync)(file.path, "utf8");
+    raw = (0, import_fs21.readFileSync)(file.path, "utf8");
   } catch (error) {
     return { session_id: file.session_id, imported_events: 0, skipped_events: 0, secrets_detected: 0, status: "error", error: error instanceof Error ? error.message : String(error) };
   }
@@ -25996,12 +27399,12 @@ async function importClaudeCodeTranscripts(db, opts = {}) {
   }
   return result;
 }
-var import_crypto13, import_fs18, INSERT_BATCH_SIZE;
+var import_crypto14, import_fs21, INSERT_BATCH_SIZE;
 var init_claude_code_import = __esm({
   "src/import/claude-code-import.ts"() {
     "use strict";
-    import_crypto13 = require("crypto");
-    import_fs18 = require("fs");
+    import_crypto14 = require("crypto");
+    import_fs21 = require("fs");
     init_drizzle_orm();
     init_esm();
     init_schema();
@@ -26244,10 +27647,10 @@ function messagesFromConversation(conv) {
   return result;
 }
 function findFile(dir, name2) {
-  for (const entry of (0, import_fs19.readdirSync)(dir)) {
-    const full = (0, import_path13.join)(dir, entry);
+  for (const entry of (0, import_fs22.readdirSync)(dir)) {
+    const full = (0, import_path16.join)(dir, entry);
     try {
-      if ((0, import_fs19.statSync)(full).isDirectory()) {
+      if ((0, import_fs22.statSync)(full).isDirectory()) {
         const found = findFile(full, name2);
         if (found) return found;
       } else if (entry === name2) {
@@ -26355,10 +27758,10 @@ async function importConversations(filePath) {
   const db = await initDb();
   let raw;
   let tempDir = null;
-  const ext = (0, import_path13.extname)(filePath).toLowerCase();
+  const ext = (0, import_path16.extname)(filePath).toLowerCase();
   if (ext === ".zip") {
-    tempDir = (0, import_path13.join)((0, import_os12.tmpdir)(), `chron-import-${Date.now()}`);
-    (0, import_fs19.mkdirSync)(tempDir, { recursive: true });
+    tempDir = (0, import_path16.join)((0, import_os12.tmpdir)(), `chron-import-${Date.now()}`);
+    (0, import_fs22.mkdirSync)(tempDir, { recursive: true });
     try {
       (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "conversations.json", "-d", tempDir], { stdio: "pipe" });
     } catch {
@@ -26367,7 +27770,7 @@ async function importConversations(filePath) {
       } catch {
         process.stderr.write(`Failed to extract ${filePath}. Make sure 'unzip' is installed.
 `);
-        (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
+        (0, import_fs22.rmSync)(tempDir, { recursive: true, force: true });
         process.exit(1);
       }
     }
@@ -26375,12 +27778,12 @@ async function importConversations(filePath) {
     if (!found) {
       process.stderr.write(`conversations.json not found inside the ZIP.
 `);
-      (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
+      (0, import_fs22.rmSync)(tempDir, { recursive: true, force: true });
       process.exit(1);
     }
-    raw = (0, import_fs19.readFileSync)(found, "utf8");
+    raw = (0, import_fs22.readFileSync)(found, "utf8");
   } else if (ext === ".json") {
-    raw = (0, import_fs19.readFileSync)(filePath, "utf8");
+    raw = (0, import_fs22.readFileSync)(filePath, "utf8");
   } else {
     process.stderr.write(`Unsupported file type: ${ext}. Pass a .zip export or a conversations.json file.
 `);
@@ -26393,7 +27796,7 @@ async function importConversations(filePath) {
   } catch {
     process.stderr.write(`Failed to parse conversations JSON.
 `);
-    if (tempDir) (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
+    if (tempDir) (0, import_fs22.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   process.stdout.write(`
@@ -26407,7 +27810,7 @@ ${BOLD12}chron import chatgpt${RESET13}  ${DIM11}${filePath}${RESET13}
     process.stderr.write(`  ${YELLOW10}!${RESET13} Failed to import "${e.title}": ${e.error}
 `);
   }
-  if (tempDir) (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
+  if (tempDir) (0, import_fs22.rmSync)(tempDir, { recursive: true, force: true });
   process.stdout.write("\n");
   process.stdout.write(`${BOLD12}Done.${RESET13}  `);
   process.stdout.write(`${GREEN9}${result.imported} imported${RESET13}`);
@@ -26519,10 +27922,10 @@ async function importClaudeAi(filePath) {
   const db = await initDb();
   let raw;
   let tempDir = null;
-  const ext = (0, import_path13.extname)(filePath).toLowerCase();
+  const ext = (0, import_path16.extname)(filePath).toLowerCase();
   if (ext === ".zip") {
-    tempDir = (0, import_path13.join)((0, import_os12.tmpdir)(), `chron-import-${Date.now()}`);
-    (0, import_fs19.mkdirSync)(tempDir, { recursive: true });
+    tempDir = (0, import_path16.join)((0, import_os12.tmpdir)(), `chron-import-${Date.now()}`);
+    (0, import_fs22.mkdirSync)(tempDir, { recursive: true });
     try {
       (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "conversations.json", "-d", tempDir], { stdio: "pipe" });
     } catch {
@@ -26531,7 +27934,7 @@ async function importClaudeAi(filePath) {
       } catch {
         process.stderr.write(`Failed to extract ${filePath}. Make sure 'unzip' is installed.
 `);
-        if (tempDir) (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
+        if (tempDir) (0, import_fs22.rmSync)(tempDir, { recursive: true, force: true });
         process.exit(1);
       }
     }
@@ -26539,12 +27942,12 @@ async function importClaudeAi(filePath) {
     if (!found) {
       process.stderr.write(`conversations.json not found inside the ZIP.
 `);
-      if (tempDir) (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
+      if (tempDir) (0, import_fs22.rmSync)(tempDir, { recursive: true, force: true });
       process.exit(1);
     }
-    raw = (0, import_fs19.readFileSync)(found, "utf8");
+    raw = (0, import_fs22.readFileSync)(found, "utf8");
   } else if (ext === ".json") {
-    raw = (0, import_fs19.readFileSync)(filePath, "utf8");
+    raw = (0, import_fs22.readFileSync)(filePath, "utf8");
   } else {
     process.stderr.write(`Unsupported file type: ${ext}. Pass the claude-ai-export-*.zip or conversations.json.
 `);
@@ -26557,7 +27960,7 @@ async function importClaudeAi(filePath) {
   } catch {
     process.stderr.write(`Failed to parse conversations JSON.
 `);
-    if (tempDir) (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
+    if (tempDir) (0, import_fs22.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   process.stdout.write(`
@@ -26573,7 +27976,7 @@ ${BOLD12}chron import claude${RESET13}  ${DIM11}${filePath}${RESET13}
     process.stderr.write(`  ${YELLOW10}!${RESET13} Failed to import "${e.title}": ${e.error}
 `);
   }
-  if (tempDir) (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
+  if (tempDir) (0, import_fs22.rmSync)(tempDir, { recursive: true, force: true });
   process.stdout.write("\n");
   process.stdout.write(`${BOLD12}Done.${RESET13}  `);
   process.stdout.write(`${GREEN9}${result.imported} imported${RESET13}`);
@@ -26598,7 +28001,7 @@ async function runImport(args2) {
       process.exit(1);
     }
     const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
-    if (!(0, import_fs19.existsSync)(resolved)) {
+    if (!(0, import_fs22.existsSync)(resolved)) {
       process.stderr.write(`File not found: ${resolved}
 `);
       process.exit(1);
@@ -26614,7 +28017,7 @@ async function runImport(args2) {
       process.exit(1);
     }
     const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
-    if (!(0, import_fs19.existsSync)(resolved)) {
+    if (!(0, import_fs22.existsSync)(resolved)) {
       process.stderr.write(`File not found: ${resolved}
 `);
       process.exit(1);
@@ -26653,12 +28056,12 @@ Available importers: chatgpt, claude
   );
   process.exit(1);
 }
-var import_fs19, import_path13, import_os12, import_child_process4, RESET13, BOLD12, DIM11, GREEN9, YELLOW10, CYAN9;
+var import_fs22, import_path16, import_os12, import_child_process4, RESET13, BOLD12, DIM11, GREEN9, YELLOW10, CYAN9;
 var init_import = __esm({
   "src/cli/import.ts"() {
     "use strict";
-    import_fs19 = require("fs");
-    import_path13 = require("path");
+    import_fs22 = require("fs");
+    import_path16 = require("path");
     import_os12 = require("os");
     import_child_process4 = require("child_process");
     init_drizzle_orm();
@@ -26680,7 +28083,7 @@ var init_import = __esm({
 
 // src/review/workflow.ts
 function findingId(ruleId, sessionId) {
-  return (0, import_crypto14.createHash)("sha256").update(`${ruleId}:${sessionId}`).digest("hex");
+  return (0, import_crypto15.createHash)("sha256").update(`${ruleId}:${sessionId}`).digest("hex");
 }
 async function hydrateFindingStatuses(db, findings) {
   if (findings.length === 0) return findings;
@@ -26706,7 +28109,7 @@ async function hydrateFindingStatuses(db, findings) {
     };
   });
 }
-async function updateFindingStatus(db, idOrPrefix, status, note) {
+async function updateFindingStatus(db, idOrPrefix, status, note2) {
   const client = db.$client;
   const id = await resolveFindingId(client, idOrPrefix);
   const reviewedAt = (/* @__PURE__ */ new Date()).toISOString();
@@ -26714,7 +28117,7 @@ async function updateFindingStatus(db, idOrPrefix, status, note) {
     sql: `UPDATE review_findings
           SET status = ?, note = ?, reviewed_at = ?, updated_at = ?
           WHERE id = ?`,
-    args: [status, note ?? null, reviewedAt, reviewedAt, id]
+    args: [status, note2 ?? null, reviewedAt, reviewedAt, id]
   });
   const rows = await loadFindingStates(client, [id]);
   return rows[0];
@@ -26752,11 +28155,11 @@ async function loadFindingStates(client, ids) {
     reviewed_at: row.reviewed_at == null ? null : String(row.reviewed_at)
   }));
 }
-var import_crypto14;
+var import_crypto15;
 var init_workflow = __esm({
   "src/review/workflow.ts"() {
     "use strict";
-    import_crypto14 = require("crypto");
+    import_crypto15 = require("crypto");
   }
 });
 
@@ -27339,14 +28742,14 @@ async function runReview2(args2) {
       findings,
       coverageMapHtml
     });
-    (0, import_fs20.writeFileSync)(outputArg, html, "utf8");
+    (0, import_fs23.writeFileSync)(outputArg, html, "utf8");
     process.stdout.write(`Review report written to ${outputArg}
 `);
   }
 }
 async function runReviewAction(action, args2) {
   const id = args2.find((a) => !a.startsWith("--"));
-  const note = args2.find((a) => a.startsWith("--note="))?.slice("--note=".length);
+  const note2 = args2.find((a) => a.startsWith("--note="))?.slice("--note=".length);
   if (!id) {
     process.stderr.write(`Usage: chron review ${action} <finding-id> [--note=<text>]
 `);
@@ -27360,9 +28763,9 @@ async function runReviewAction(action, args2) {
   const status = statusByAction[action];
   const db = await initDb();
   try {
-    const row = await updateFindingStatus(db, id, status, note);
+    const row = await updateFindingStatus(db, id, status, note2);
     process.stdout.write(
-      `Finding ${row.id.slice(0, 16)} ${status}${note ? ` with note: ${note}` : ""}
+      `Finding ${row.id.slice(0, 16)} ${status}${note2 ? ` with note: ${note2}` : ""}
 `
     );
   } catch (err) {
@@ -27371,11 +28774,11 @@ async function runReviewAction(action, args2) {
     process.exit(1);
   }
 }
-var import_fs20, import_os13, RESET14, BOLD13, DIM12, RED9, YELLOW11, CYAN10, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
+var import_fs23, import_os13, RESET14, BOLD13, DIM12, RED9, YELLOW11, CYAN10, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
 var init_review = __esm({
   "src/cli/review.ts"() {
     "use strict";
-    import_fs20 = require("fs");
+    import_fs23 = require("fs");
     import_os13 = require("os");
     init_db2();
     init_report();
@@ -27677,6 +29080,8 @@ async function computeTamperStatus(session, msgs) {
         clock_offset_ms = meta.clock_offset_ms;
       } else if (meta.clock_sync_status === "not_synchronized") {
         clock = "not_synced";
+      } else if (meta.clock_sync_status === "disabled") {
+        clock = "disabled";
       }
     } catch {
     }
@@ -27700,7 +29105,7 @@ function buildTamperBar(t) {
   const chainLabel = t.chain === "valid" ? `Hash chain valid (${t.chain_count} msgs)` : t.chain === "broken" ? "Hash chain broken" : "No hash chain";
   const clockCls = t.clock === "synced" ? "tamper-ok" : t.clock === "not_synced" ? "tamper-fail" : "tamper-dim";
   const clockIcon = t.clock === "synced" ? "\u2713" : t.clock === "not_synced" ? "\u2717" : "\u2014";
-  const clockLabel = t.clock === "synced" ? `NTP synced${t.clock_offset_ms !== void 0 ? ` (${t.clock_offset_ms > 0 ? "+" : ""}${t.clock_offset_ms}ms)` : ""}` : t.clock === "not_synced" ? "Clock not synced" : "Clock unknown";
+  const clockLabel = t.clock === "synced" ? `NTP synced${t.clock_offset_ms !== void 0 ? ` (${t.clock_offset_ms > 0 ? "+" : ""}${t.clock_offset_ms}ms)` : ""}` : t.clock === "not_synced" ? "Clock not synced" : t.clock === "disabled" ? "Clock check disabled" : "Clock unknown";
   const sigCls = t.sig === "valid" ? "tamper-ok" : t.sig === "invalid" ? "tamper-fail" : t.sig === "unsigned" ? "tamper-warn" : "tamper-dim";
   const sigIcon = t.sig === "valid" ? "\u2713" : t.sig === "invalid" ? "\u2717" : t.sig === "unsigned" ? "!" : "\u2014";
   const sigLabel = t.sig === "valid" ? "Ed25519 signed" : t.sig === "invalid" ? "Signature invalid" : t.sig === "unsigned" ? "Not yet signed" : "No signing key";
@@ -27960,7 +29365,7 @@ async function runSessionDetail(prefix, outputArg) {
   const html = buildDetailHtml(session, msgs, secretsByMsg, findings, risk, tamper, generatedAt);
   const defaultOut = `chron-session-${session.id.slice(0, 8)}.html`;
   const outFile = outputArg !== "chron-dashboard.html" ? outputArg : defaultOut;
-  (0, import_fs21.writeFileSync)(outFile, html, "utf8");
+  (0, import_fs24.writeFileSync)(outFile, html, "utf8");
   const openCount = findings.filter((f) => f.status === "open").length;
   process.stdout.write(
     `
@@ -27974,11 +29379,11 @@ async function runSessionDetail(prefix, outputArg) {
 `
   );
 }
-var import_fs21, RULE_META3, FW_LABELS3, DETAIL_CSS;
+var import_fs24, RULE_META3, FW_LABELS3, DETAIL_CSS;
 var init_session_detail = __esm({
   "src/cli/session-detail.ts"() {
     "use strict";
-    import_fs21 = require("fs");
+    import_fs24 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_roles();
@@ -28458,7 +29863,7 @@ async function runDashboard(args2) {
     minute: "2-digit"
   });
   const html = buildDashboardHtml(rows, findings, requirements, sessionIds.length, since, sinceArg, generatedAt, now);
-  (0, import_fs22.writeFileSync)(outputArg, html, "utf8");
+  (0, import_fs25.writeFileSync)(outputArg, html, "utf8");
   const criticalCount = rows.filter((r) => r.risk.band === "critical").length;
   const highCount = rows.filter((r) => r.risk.band === "high").length;
   process.stdout.write(
@@ -28472,11 +29877,11 @@ async function runDashboard(args2) {
 `
   );
 }
-var import_fs22, RULE_META4, FW_LABELS4, DASHBOARD_CSS, REASON_LABEL;
+var import_fs25, RULE_META4, FW_LABELS4, DASHBOARD_CSS, REASON_LABEL;
 var init_dashboard = __esm({
   "src/cli/dashboard.ts"() {
     "use strict";
-    import_fs22 = require("fs");
+    import_fs25 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -28699,7 +30104,7 @@ function getSplunkConfig() {
   _splunkCacheExpiry = now + 1e4;
   _splunkCachePath = path;
   try {
-    const cfg = JSON.parse((0, import_fs23.readFileSync)(path, "utf8"));
+    const cfg = JSON.parse((0, import_fs26.readFileSync)(path, "utf8"));
     const s = cfg?.splunk;
     _splunkCache = s?.url && s?.token ? { url: s.url, token: s.token, insecure: s.insecure ?? false } : null;
   } catch {
@@ -28724,7 +30129,7 @@ function getSentinelConfig() {
   _sentinelCacheExpiry = now + 1e4;
   _sentinelCachePath = path;
   try {
-    const cfg = JSON.parse((0, import_fs23.readFileSync)(path, "utf8"));
+    const cfg = JSON.parse((0, import_fs26.readFileSync)(path, "utf8"));
     const s = cfg?.sentinel;
     _sentinelCache = s?.dce && s?.dcrId && s?.stream && s?.tenantId && s?.clientId && s?.clientSecret ? { dce: s.dce, dcrId: s.dcrId, stream: s.stream, tenantId: s.tenantId, clientId: s.clientId, clientSecret: s.clientSecret } : null;
   } catch {
@@ -28771,7 +30176,7 @@ async function getAzureToken(tenantId, clientId, clientSecret) {
 }
 function getMachineId() {
   if (!_machineId) {
-    _machineId = "sha256:" + (0, import_crypto15.createHash)("sha256").update((0, import_os14.hostname)()).digest("hex").slice(0, 16);
+    _machineId = "sha256:" + (0, import_crypto16.createHash)("sha256").update((0, import_os14.hostname)()).digest("hex").slice(0, 16);
   }
   return _machineId;
 }
@@ -29056,12 +30461,12 @@ async function emitRiskEvent(payload) {
   }
   return Promise.all(deliveries);
 }
-var import_fs23, import_crypto15, import_os14, import_package4, _splunkCache, _splunkCacheExpiry, _splunkCachePath, _sentinelCache, _sentinelCacheExpiry, _sentinelCachePath, _azureTokenCache, _machineId;
+var import_fs26, import_crypto16, import_os14, import_package4, _splunkCache, _splunkCacheExpiry, _splunkCachePath, _sentinelCache, _sentinelCacheExpiry, _sentinelCachePath, _azureTokenCache, _machineId;
 var init_relay = __esm({
   "src/utils/relay.ts"() {
     "use strict";
-    import_fs23 = require("fs");
-    import_crypto15 = require("crypto");
+    import_fs26 = require("fs");
+    import_crypto16 = require("crypto");
     import_os14 = require("os");
     import_package4 = __toESM(require_package());
     init_config_path();
@@ -29320,7 +30725,7 @@ __export(evidence_exports, {
   runEvidence: () => runEvidence
 });
 function hash(input) {
-  return (0, import_crypto16.createHash)("sha256").update(input).digest("hex");
+  return (0, import_crypto17.createHash)("sha256").update(input).digest("hex");
 }
 function argValue(args2, name2) {
   const prefix = `--${name2}=`;
@@ -29375,23 +30780,23 @@ async function resolveFindingId2(db, idOrPrefix) {
   if (rows.length > 1) throw new Error(`Finding id prefix is ambiguous: ${prefix}. Use more characters.`);
   return rows[0].id;
 }
-async function createEvidenceLink(db, evidenceId, targetType, targetId, now, note) {
+async function createEvidenceLink(db, evidenceId, targetType, targetId, now, note2) {
   const id = hash(`${evidenceId}:${targetType}:${targetId}`);
   await db.$client.execute({
     sql: `INSERT INTO evidence_links (id, evidence_id, target_type, target_id, note, created_at)
           VALUES (?, ?, ?, ?, ?, ?)
           ON CONFLICT(id) DO UPDATE SET note = excluded.note`,
-    args: [id, evidenceId, targetType, targetId, note ?? null, now]
+    args: [id, evidenceId, targetType, targetId, note2 ?? null, now]
   });
   return id;
 }
 async function importEvidenceDocument(db, params) {
-  const filePath = (0, import_path14.resolve)(params.file);
-  const buf = (0, import_fs24.readFileSync)(filePath);
-  const stat = (0, import_fs24.statSync)(filePath);
+  const filePath = (0, import_path17.resolve)(params.file);
+  const buf = (0, import_fs27.readFileSync)(filePath);
+  const stat = (0, import_fs27.statSync)(filePath);
   const sha256 = hash(buf);
   const now = params.now ?? (/* @__PURE__ */ new Date()).toISOString();
-  const title = (0, import_path14.basename)(filePath);
+  const title = (0, import_path17.basename)(filePath);
   const documentId = sha256;
   const resolvedControl = params.control ? resolveControlTarget(params.control, params.framework) : void 0;
   const linkId = resolvedControl ? hash(`${documentId}:control:${resolvedControl.id}`) : null;
@@ -29552,13 +30957,13 @@ async function runEvidence(args2) {
   }
   throw new Error(`Unknown evidence command: ${subcommand}`);
 }
-var import_crypto16, import_path14, import_fs24, FW_LABELS5;
+var import_crypto17, import_path17, import_fs27, FW_LABELS5;
 var init_evidence2 = __esm({
   "src/cli/evidence.ts"() {
     "use strict";
-    import_crypto16 = require("crypto");
-    import_path14 = require("path");
-    import_fs24 = require("fs");
+    import_crypto17 = require("crypto");
+    import_path17 = require("path");
+    import_fs27 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -29775,9 +31180,9 @@ async function runSetup() {
   const GLOBAL_ONLY = ["Claude Code", "Cursor (global)", "Gemini CLI", "Codex (global)"];
   const fixable = configs.filter((c) => {
     if (c.name === "Codex (project)" || c.name === "Cursor (project)") return false;
-    if ((0, import_fs25.existsSync)(c.path)) return true;
+    if ((0, import_fs28.existsSync)(c.path)) return true;
     if (GLOBAL_ONLY.includes(c.name)) return true;
-    if ((0, import_fs25.existsSync)((0, import_path15.dirname)(c.path))) return true;
+    if ((0, import_fs28.existsSync)((0, import_path18.dirname)(c.path))) return true;
     return false;
   });
   const added = [];
@@ -29803,13 +31208,13 @@ async function runSetup() {
 `);
   }
 }
-var import_os15, import_path15, import_fs25;
+var import_os15, import_path18, import_fs28;
 var init_setup = __esm({
   "src/cli/setup.ts"() {
     "use strict";
     import_os15 = require("os");
-    import_path15 = require("path");
-    import_fs25 = require("fs");
+    import_path18 = require("path");
+    import_fs28 = require("fs");
     init_mcp_config();
     init_connect();
   }
@@ -29821,7 +31226,7 @@ __export(bootstrap_exports, {
   bootstrapProjectLogging: () => bootstrapProjectLogging
 });
 function isRealProject(cwd) {
-  return PROJECT_INDICATORS.some((indicator) => (0, import_fs26.existsSync)((0, import_path16.join)(cwd, indicator)));
+  return PROJECT_INDICATORS.some((indicator) => (0, import_fs29.existsSync)((0, import_path19.join)(cwd, indicator)));
 }
 function bootstrapProjectLogging(cwd = process.cwd()) {
   try {
@@ -29841,13 +31246,13 @@ function bootstrapProjectLogging(cwd = process.cwd()) {
   } catch {
   }
 }
-var import_fs26, import_os16, import_path16, PROJECT_INDICATORS;
+var import_fs29, import_os16, import_path19, PROJECT_INDICATORS;
 var init_bootstrap = __esm({
   "src/bootstrap.ts"() {
     "use strict";
-    import_fs26 = require("fs");
+    import_fs29 = require("fs");
     import_os16 = require("os");
-    import_path16 = require("path");
+    import_path19 = require("path");
     init_connect();
     PROJECT_INDICATORS = [
       ".git",
@@ -29928,7 +31333,7 @@ var init_semconv = __esm({
 
 // src/otel/spans.ts
 function deriveId(input, bytes2) {
-  const hex = (0, import_crypto17.createHash)("sha256").update(input).digest("hex").slice(0, bytes2 * 2);
+  const hex = (0, import_crypto18.createHash)("sha256").update(input).digest("hex").slice(0, bytes2 * 2);
   return /^0+$/.test(hex) ? hex.slice(0, -1) + "1" : hex;
 }
 function traceIdForSession(sessionId) {
@@ -30017,11 +31422,11 @@ function buildSessionTrace(session, messages3, opts = {}) {
     ...messages3.map((m, i) => buildMessageSpan(m, session, messages3[i - 1], opts))
   ];
 }
-var import_crypto17;
+var import_crypto18;
 var init_spans = __esm({
   "src/otel/spans.ts"() {
     "use strict";
-    import_crypto17 = require("crypto");
+    import_crypto18 = require("crypto");
     init_semconv();
   }
 });
@@ -30149,7 +31554,7 @@ async function exportSpans(spans, config, resource, deps = {}) {
     throw new Error("No fetch implementation available \u2014 Node 18 or newer is required.");
   }
   const result = { sent: 0, rejected: 0, failed: 0, unknown: 0, batches: [], complete: false, receiptErrors: [] };
-  const note = (what, e) => result.receiptErrors.push(`${what}: ${e instanceof Error ? e.message : String(e)}`);
+  const note2 = (what, e) => result.receiptErrors.push(`${what}: ${e instanceof Error ? e.message : String(e)}`);
   if (spans.length === 0) {
     result.complete = true;
     return result;
@@ -30162,14 +31567,14 @@ async function exportSpans(spans, config, resource, deps = {}) {
     const remainingBatches = allBatches.slice(index + 1);
     const body = JSON.stringify(toResourceSpans(batch, resource));
     const payload = {
-      payloadDigest: (0, import_crypto18.createHash)("sha256").update(body).digest("hex"),
+      payloadDigest: (0, import_crypto19.createHash)("sha256").update(body).digest("hex"),
       payloadBytes: Buffer.byteLength(body, "utf8")
     };
     if (deps.onBatchStart) {
       try {
         await deps.onBatchStart(index, batch.length, payload.payloadDigest, payload.payloadBytes);
       } catch (e) {
-        note(`batch ${index} start`, e);
+        note2(`batch ${index} start`, e);
         gateHeld = true;
         for (const pending of [batch, ...remainingBatches]) {
           result.batches.push({
@@ -30187,7 +31592,7 @@ async function exportSpans(spans, config, resource, deps = {}) {
       try {
         await deps.onBatchEnd(index, outcome);
       } catch (e) {
-        note(`batch ${index} end`, e);
+        note2(`batch ${index} end`, e);
       }
     }
     result.batches.push(outcome);
@@ -30201,11 +31606,11 @@ async function exportSpans(spans, config, resource, deps = {}) {
   result.complete = !gateHeld && result.sent === spans.length && result.rejected === 0 && result.failed === 0 && result.unknown === 0;
   return result;
 }
-var import_crypto18, CODE_CATEGORIES, ESTABLISHED_NON_DELIVERY2, defaultSleep;
+var import_crypto19, CODE_CATEGORIES, ESTABLISHED_NON_DELIVERY2, defaultSleep;
 var init_exporter = __esm({
   "src/otel/exporter.ts"() {
     "use strict";
-    import_crypto18 = require("crypto");
+    import_crypto19 = require("crypto");
     init_error_codes();
     init_otlp();
     CODE_CATEGORIES = [
@@ -30658,7 +32063,375 @@ var init_otel = __esm({
   }
 });
 
+// src/cli/project.ts
+var project_exports2 = {};
+__export(project_exports2, {
+  runProject: () => runProject
+});
+async function runProject(args2) {
+  const pathArg = args2.find((a) => a.startsWith("--journal="))?.split("=").slice(1).join("=");
+  const path = guardedJournalPath(pathArg || process.env.CHRON_JOURNAL_PATH || (0, import_path20.join)(process.env.CHRON_HOME ?? (0, import_path20.join)((0, import_os17.homedir)(), ".chron"), "capture.jsonl"));
+  const segments = journalSegmentPaths(path);
+  process.stdout.write(`
+${BOLD20}Projecting journal${RESET21} ${path}
+`);
+  if (segments.length > 1) {
+    process.stdout.write(`  ${DIM19}${segments.length} segments, oldest first${RESET21}
+`);
+  }
+  const db = await initDb();
+  const result = await projectJournal(db, path);
+  process.stdout.write("\n");
+  if (result.verdict.status === "corrupt") {
+    process.stdout.write(
+      `  ${RED16}\u2717${RESET21} The journal does not verify: ${result.verdict.problem?.reason}
+    ${DIM19}Records before the break were still projected; records after it were not.${RESET21}
+`
+    );
+  }
+  if (result.projected.length > 0) {
+    process.stdout.write(`  ${GREEN14}\u2713${RESET21} Projected ${result.projected.length} run(s)
+`);
+  }
+  if (result.unchanged.length > 0) {
+    process.stdout.write(`  ${GREEN14}\u2713${RESET21} ${result.unchanged.length} run(s) already projected, left unchanged
+`);
+  }
+  for (const f of result.failed) {
+    process.stdout.write(`  ${YELLOW18}!${RESET21} ${f.run_id.slice(0, 8)}: ${f.reason}
+`);
+  }
+  if (result.projected.length === 0 && result.unchanged.length === 0 && result.failed.length === 0) {
+    process.stdout.write(`  ${DIM19}No runs in the journal.${RESET21}
+`);
+  }
+  process.stdout.write("\n");
+  process.exit(result.verdict.status === "corrupt" ? 1 : 0);
+}
+var import_path20, import_os17, RESET21, BOLD20, GREEN14, RED16, YELLOW18, DIM19;
+var init_project2 = __esm({
+  "src/cli/project.ts"() {
+    "use strict";
+    import_path20 = require("path");
+    import_os17 = require("os");
+    init_db2();
+    init_project();
+    init_runs();
+    init_config_path();
+    RESET21 = "\x1B[0m";
+    BOLD20 = "\x1B[1m";
+    GREEN14 = "\x1B[32m";
+    RED16 = "\x1B[31m";
+    YELLOW18 = "\x1B[33m";
+    DIM19 = "\x1B[2m";
+  }
+});
+
+// src/cli/run.ts
+var run_exports = {};
+__export(run_exports, {
+  CAPTURE_FAILED_EXIT: () => CAPTURE_FAILED_EXIT,
+  runRun: () => runRun,
+  runWrapped: () => runWrapped,
+  splitRunArgs: () => splitRunArgs
+});
+function journalPath() {
+  return guardedJournalPath(process.env.CHRON_JOURNAL_PATH ?? (0, import_path21.join)(process.env.CHRON_HOME ?? (0, import_path21.join)((0, import_os18.homedir)(), ".chron"), "capture.jsonl"));
+}
+async function runWrapped(argv, deps = {}) {
+  const path = deps.journalPath ?? journalPath();
+  const releaseOut = deps.releaseOut ?? ((b) => {
+    process.stdout.write(b);
+  });
+  const releaseErr = deps.releaseErr ?? ((b) => {
+    process.stderr.write(b);
+  });
+  const diagnostic = deps.diagnostic ?? ((s) => {
+    process.stderr.write(s);
+  });
+  const [cmd, ...args2] = argv;
+  if (!cmd) throw new Error("chron run: no command given");
+  const runId = deps.runId ?? (0, import_crypto20.randomUUID)();
+  const writer = JournalWriter.open(path, {
+    flushBytes: deps.flushBytes ?? 1,
+    // Not overridden here. An earlier version passed `minFreeBytes: 0`, which was
+    // a test convenience — injected writes should not trip the free-space floor —
+    // and it disabled that floor in the production wrapper. A real full-disk gate
+    // caught it: the journal's default refuses to append with less than 16MB
+    // free, and `chron run` was instead writing until the disk itself failed.
+    //
+    // Tests that need it gone pass it explicitly.
+    ...deps.minFreeBytes !== void 0 ? { minFreeBytes: deps.minFreeBytes } : {},
+    fs: deps.journalFs,
+    acceptUnsyncedDirectories: deps.acceptUnsyncedDirectories,
+    ...deps.rotateBytes !== void 0 ? { rotateBytes: deps.rotateBytes } : {}
+  });
+  const child = (deps.spawnChild ?? defaultSpawn)(cmd, args2);
+  let captureError = null;
+  const pending = [];
+  const released = { stdout: 0, stderr: 0 };
+  const withheld = { stdout: 0, stderr: 0 };
+  let finished = false;
+  const recordThenRelease = (stream, bytes2) => {
+    if (captureError !== null) {
+      withheld[stream] += bytes2.length;
+      return;
+    }
+    let accounted = false;
+    try {
+      const rec = writer.append("interaction.output", {
+        run_id: runId,
+        stream,
+        byte_count: bytes2.length,
+        bytes_b64: bytes2.toString("base64")
+      });
+      pending.push({ stream, bytes: bytes2, seq: rec.seq });
+      accounted = true;
+      writer.flush();
+      const durable = writer.durableSeq;
+      while (pending.length && durable !== null && pending[0].seq <= durable) {
+        const p = pending.shift();
+        (p.stream === "stdout" ? releaseOut : releaseErr)(p.bytes);
+        released[p.stream] += p.bytes.length;
+      }
+    } catch (e) {
+      if (!accounted) withheld[stream] += bytes2.length;
+      failClosed(e);
+    }
+  };
+  const failClosed = (e) => {
+    if (captureError !== null) return;
+    captureError = e instanceof Error ? e.message : String(e);
+    for (const p of pending) withheld[p.stream] += p.bytes.length;
+    pending.length = 0;
+    try {
+      child.stdin.end();
+    } catch {
+    }
+    try {
+      child.kill("SIGKILL");
+    } catch {
+    }
+    diagnostic(
+      `
+${RED17}chron run: capture failed \u2014 output withheld${RESET22}
+  ${captureError}
+  ${DIM20}The child was terminated. Interaction content that was not made durable
+  has not been printed. Journal: ${path}${RESET22}
+`
+    );
+  };
+  const durability = writer.namesDurable ? "durable" : "names_not_durable";
+  if (durability !== "durable") {
+    diagnostic(
+      `${DIM20}chron run: reduced durability \u2014 record contents are fsynced, their file name is not.
+  A record can survive a crash without a name to reach it by. Recorded in this run's scope.${RESET22}
+`
+    );
+  }
+  try {
+    writer.appendDurable("run.started", {
+      run_id: runId,
+      command: cmd,
+      args: args2,
+      scope: captureScope(durability),
+      pid: process.pid
+    });
+  } catch (e) {
+    failClosed(e);
+    try {
+      writer.close();
+    } catch {
+    }
+    return {
+      childExit: null,
+      exitCode: CAPTURE_FAILED_EXIT,
+      captureFailed: true,
+      captureError: captureError ?? "unknown",
+      released,
+      withheld,
+      journalPath: path,
+      durability,
+      runId
+    };
+  }
+  child.stdout.on("data", (b) => recordThenRelease("stdout", b));
+  child.stderr.on("data", (b) => recordThenRelease("stderr", b));
+  const input = deps.input ?? process.stdin;
+  const onInput = (b) => {
+    if (captureError !== null) return;
+    try {
+      writer.appendDurable("interaction.input", {
+        run_id: runId,
+        byte_count: b.length,
+        bytes_b64: b.toString("base64")
+      });
+      child.stdin.write(b);
+    } catch (e) {
+      failClosed(e);
+    }
+  };
+  const onInputEnd = () => {
+    try {
+      child.stdin.end();
+    } catch {
+    }
+  };
+  input.on("data", onInput);
+  input.on("end", onInputEnd);
+  child.stdin.on("error", (e) => {
+    if (e.code === "EPIPE" || e.code === "ERR_STREAM_DESTROYED") return;
+    diagnostic(
+      `${DIM20}chron run: could not forward input to the child (${e.code ?? e.message}).
+  It was recorded before the attempt, so the journal holds it.${RESET22}
+`
+    );
+  });
+  const childExit = await new Promise((resolve5) => {
+    child.on("close", (code) => {
+      finished = true;
+      resolve5(code);
+    });
+    child.on("error", (e) => {
+      failClosed(e);
+      finished = true;
+      resolve5(null);
+    });
+  });
+  if (captureError === null) {
+    try {
+      writer.appendDurable("run.completed", { run_id: runId, exit_code: childExit });
+      const durable = writer.durableSeq;
+      while (pending.length && durable !== null && pending[0].seq <= durable) {
+        const p = pending.shift();
+        (p.stream === "stdout" ? releaseOut : releaseErr)(p.bytes);
+        released[p.stream] += p.bytes.length;
+      }
+    } catch (e) {
+      failClosed(e);
+    }
+  }
+  input.removeListener("data", onInput);
+  input.removeListener("end", onInputEnd);
+  try {
+    writer.close();
+  } catch {
+  }
+  void finished;
+  const captureFailed = captureError !== null;
+  return {
+    childExit,
+    exitCode: captureFailed ? CAPTURE_FAILED_EXIT : childExit ?? CAPTURE_FAILED_EXIT,
+    captureFailed,
+    captureError: captureError ?? void 0,
+    released,
+    withheld,
+    journalPath: path,
+    durability,
+    runId
+  };
+}
+function defaultSpawn(cmd, args2) {
+  return (0, import_child_process6.spawn)(cmd, args2, { stdio: ["pipe", "pipe", "pipe"] });
+}
+function splitRunArgs(args2) {
+  const sep2 = args2.indexOf("--");
+  if (sep2 !== -1) {
+    return { wrapper: args2.slice(0, sep2), command: args2.slice(sep2 + 1) };
+  }
+  const firstOperand = args2.findIndex((a) => !a.startsWith("--"));
+  if (firstOperand === -1) return { wrapper: args2, command: [] };
+  return { wrapper: args2.slice(0, firstOperand), command: args2.slice(firstOperand) };
+}
+async function runRun(args2) {
+  const { wrapper, command: command2 } = splitRunArgs(args2);
+  if (wrapper.includes("--scope")) {
+    process.stdout.write(
+      `
+${formatCaptureScope(DIRECTORY_SYNC_SUPPORTED ? "durable" : "names_not_durable")}
+Durability is measured per run and recorded in that run's first journal record.
+
+`
+    );
+    process.exit(0);
+  }
+  if (command2.length === 0) {
+    process.stderr.write(
+      "Usage: chron run -- <command> [args...]\n       chron run --scope     Print exactly what this command does and does not establish\n\nRecords each interaction chunk and makes it durable before releasing it.\nA journal write failure stops forwarding, terminates the child, and withholds output.\n"
+    );
+    process.exit(1);
+  }
+  let outcome;
+  try {
+    outcome = await runWrapped(command2);
+  } catch (e) {
+    process.stderr.write(
+      `
+${RED17}chron run: capture could not start \u2014 the command was not run${RESET22}
+  ${e instanceof Error ? e.message : String(e)}
+  ${DIM20}No output was released, because nothing could be recorded.${RESET22}
+`
+    );
+    process.exit(CAPTURE_FAILED_EXIT);
+  }
+  if (outcome.captureFailed) {
+    process.exit(CAPTURE_FAILED_EXIT);
+  }
+  const v = journalStatus(outcome.journalPath);
+  if (v.status !== "ok") {
+    process.stderr.write(
+      `${DIM20}chron run: capture succeeded; the journal reports ${v.status}${v.problem ? ` (${v.problem.reason})` : ""}.
+  Journal evidence is authoritative. Run: chron verify --journal${RESET22}
+`
+    );
+  }
+  try {
+    const { initDb: initDb2 } = await Promise.resolve().then(() => (init_db2(), db_exports));
+    const { projectJournal: projectJournal2 } = await Promise.resolve().then(() => (init_project(), project_exports));
+    const db = await initDb2();
+    const result = await projectJournal2(db, outcome.journalPath);
+    const failed = result.failed.filter((f) => f.run_id === outcome.runId);
+    if (failed.length > 0) {
+      process.stderr.write(
+        `${DIM20}chron run: this run was captured, and projecting it into the database failed.
+  ${failed[0].reason}
+  The journal holds the evidence. Retry with: chron project${RESET22}
+`
+      );
+    }
+  } catch (e) {
+    process.stderr.write(
+      `${DIM20}chron run: this run was captured; projecting it into the database failed.
+  ${e instanceof Error ? e.message : String(e)}
+  The journal holds the evidence. Retry with: chron project${RESET22}
+`
+    );
+  }
+  process.exit(outcome.exitCode);
+}
+var import_child_process6, import_crypto20, import_path21, import_os18, CAPTURE_FAILED_EXIT, RESET22, RED17, DIM20;
+var init_run = __esm({
+  "src/cli/run.ts"() {
+    "use strict";
+    import_child_process6 = require("child_process");
+    import_crypto20 = require("crypto");
+    import_path21 = require("path");
+    import_os18 = require("os");
+    init_writer();
+    init_scope();
+    init_config_path();
+    init_writer();
+    CAPTURE_FAILED_EXIT = 99;
+    RESET22 = "\x1B[0m";
+    RED17 = "\x1B[31m";
+    DIM20 = "\x1B[2m";
+  }
+});
+
 // src/utils/ntp.ts
+function ntpDisabled() {
+  return process.env[NTP_DISABLED_ENV] === "1";
+}
 function queryNtpUdp(server, timeout) {
   return new Promise((resolve5, reject) => {
     const client = (0, import_dgram.createSocket)("udp4");
@@ -30709,21 +32482,26 @@ function queryNtpUdp(server, timeout) {
     });
   });
 }
-async function checkNtpSync(server = "pool.ntp.org", timeout = 2e3) {
+async function checkNtpSync(server, timeout = 2e3) {
+  if (ntpDisabled()) return { clock_sync_status: "disabled" };
+  const target = server ?? process.env[NTP_SERVER_ENV] ?? DEFAULT_NTP_SERVER;
   try {
-    const { offset_ms } = await queryNtpUdp(server, timeout);
+    const { offset_ms } = await queryNtpUdp(target, timeout);
     const status = Math.abs(offset_ms) <= 1e3 ? "synchronized" : "not_synchronized";
-    return { clock_sync_status: status, clock_offset_ms: offset_ms, ntp_server: server };
+    return { clock_sync_status: status, clock_offset_ms: offset_ms, ntp_server: target };
   } catch {
-    return { clock_sync_status: "unknown", ntp_server: server };
+    return { clock_sync_status: "unknown", ntp_server: target };
   }
 }
-var import_dgram, NTP_OFFSET;
+var import_dgram, NTP_OFFSET, NTP_DISABLED_ENV, NTP_SERVER_ENV, DEFAULT_NTP_SERVER;
 var init_ntp = __esm({
   "src/utils/ntp.ts"() {
     "use strict";
     import_dgram = require("dgram");
     NTP_OFFSET = 2208988800;
+    NTP_DISABLED_ENV = "CHRON_DISABLE_NTP";
+    NTP_SERVER_ENV = "CHRON_NTP_SERVER";
+    DEFAULT_NTP_SERVER = "pool.ntp.org";
   }
 });
 
@@ -30775,14 +32553,15 @@ function rejectPlaceholderTool(aiTool) {
 }
 function resolveEvidenceMetadata(attach, metadata) {
   if (attach && !metadata) return liveAttachMetadata();
-  if (!metadata?.source) return attach ? liveAttachMetadata() : null;
-  const source = metadata.source;
+  const asserted = metadata?.source;
+  const source = asserted && CALLER_ASSERTABLE_SOURCES.includes(asserted) ? asserted : void 0;
+  if (!source) return attach ? liveAttachMetadata() : null;
   const resolved = { source };
   if (source !== EVIDENCE_SOURCE.WITNESSED) resolved.partial = true;
   if (source === EVIDENCE_SOURCE.LIVE_ATTACH) {
-    resolved.attach_reason = metadata.attach_reason ?? liveAttachMetadata().attach_reason;
+    resolved.attach_reason = metadata?.attach_reason ?? liveAttachMetadata().attach_reason;
   }
-  if (metadata.client) resolved.client = metadata.client;
+  if (metadata?.client) resolved.client = metadata.client;
   return resolved;
 }
 function initSession(db) {
@@ -30962,47 +32741,47 @@ Tools: ${Object.keys(KNOWN_TOOLS2).join(", ")}
   const { session_id, created, title } = await createAttachSession(db, aiTool, titleArg);
   const short = session_id.slice(0, 8);
   process.stdout.write(`
-${BOLD20}chron attach${RESET21} ${aiTool}
+${BOLD21}chron attach${RESET23} ${aiTool}
 
 `);
   if (created) {
-    process.stdout.write(`  ${GREEN14}\u2713${RESET21} session ${BOLD20}${short}${RESET21} created \u2014 ${title}
+    process.stdout.write(`  ${GREEN15}\u2713${RESET23} session ${BOLD21}${short}${RESET23} created \u2014 ${title}
 `);
   } else {
-    process.stdout.write(`  ${GREEN14}\u2713${RESET21} resumed existing session ${BOLD20}${short}${RESET21} \u2014 ${title}
+    process.stdout.write(`  ${GREEN15}\u2713${RESET23} resumed existing session ${BOLD21}${short}${RESET23} \u2014 ${title}
 `);
   }
-  process.stdout.write(`  ${YELLOW18}!${RESET21} Marked as partial evidence. Chron did not observe this
+  process.stdout.write(`  ${YELLOW19}!${RESET23} Marked as partial evidence. Chron did not observe this
 `);
   process.stdout.write(`    conversation before now, and does not claim to know what came before.
 
 `);
-  process.stdout.write(`${BOLD20}Paste this into the session you want recorded:${RESET21}
+  process.stdout.write(`${BOLD21}Paste this into the session you want recorded:${RESET23}
 
 `);
-  process.stdout.write(`${DIM19}  Log this conversation to Chron from now on using session_id ${session_id}.
+  process.stdout.write(`${DIM21}  Log this conversation to Chron from now on using session_id ${session_id}.
 `);
   process.stdout.write(`  Call log_message for this and every following exchange.
 `);
-  process.stdout.write(`  Do not attempt to reconstruct earlier messages.${RESET21}
+  process.stdout.write(`  Do not attempt to reconstruct earlier messages.${RESET23}
 
 `);
-  process.stdout.write(`${DIM19}  chron history ${short}   chron verify ${short}${RESET21}
+  process.stdout.write(`${DIM21}  chron history ${short}   chron verify ${short}${RESET23}
 
 `);
 }
-var RESET21, BOLD20, DIM19, GREEN14, YELLOW18, KNOWN_TOOLS2;
+var RESET23, BOLD21, DIM21, GREEN15, YELLOW19, KNOWN_TOOLS2;
 var init_attach = __esm({
   "src/cli/attach.ts"() {
     "use strict";
     init_db2();
     init_sessions();
     init_time();
-    RESET21 = "\x1B[0m";
-    BOLD20 = "\x1B[1m";
-    DIM19 = "\x1B[2m";
-    GREEN14 = "\x1B[32m";
-    YELLOW18 = "\x1B[33m";
+    RESET23 = "\x1B[0m";
+    BOLD21 = "\x1B[1m";
+    DIM21 = "\x1B[2m";
+    GREEN15 = "\x1B[32m";
+    YELLOW19 = "\x1B[33m";
     KNOWN_TOOLS2 = {
       claude: "claude",
       "claude-code": "claude",
@@ -31025,13 +32804,13 @@ async function resolveSession(prefix) {
   const all = await db.select({ id: sessions.id, title: sessions.title, signature: sessions.signature }).from(sessions);
   const matches = all.filter((s) => s.id.startsWith(prefix));
   if (matches.length === 0) {
-    process.stderr.write(`${RED16}\u2717${RESET22} No session found matching prefix: ${prefix}
+    process.stderr.write(`${RED18}\u2717${RESET24} No session found matching prefix: ${prefix}
 `);
     process.exit(1);
   }
   if (matches.length > 1) {
     process.stderr.write(
-      `${RED16}\u2717${RESET22} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
+      `${RED18}\u2717${RESET24} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
 `
     );
     process.exit(1);
@@ -31051,8 +32830,8 @@ async function renameSession(args2) {
   const { db, session } = await resolveSession(prefix);
   if (session.signature) {
     process.stderr.write(
-      `${RED16}\u2717${RESET22} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
-  Use ${CYAN16}chron session rename${RESET22} only on unsigned sessions.
+      `${RED18}\u2717${RESET24} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
+  Use ${CYAN16}chron session rename${RESET24} only on unsigned sessions.
 `
     );
     process.exit(1);
@@ -31060,9 +32839,9 @@ async function renameSession(args2) {
   const oldTitle = session.title;
   await db.update(sessions).set({ title: newTitle }).where(eq(sessions.id, session.id));
   process.stdout.write(
-    `${GREEN15}\u2713${RESET22} Session ${CYAN16}${session.id.slice(0, 8)}${RESET22} renamed
-  ${DIM20}before:${RESET22} ${oldTitle}
-  ${DIM20}after: ${RESET22} ${BOLD21}${newTitle}${RESET22}
+    `${GREEN16}\u2713${RESET24} Session ${CYAN16}${session.id.slice(0, 8)}${RESET24} renamed
+  ${DIM22}before:${RESET24} ${oldTitle}
+  ${DIM22}after: ${RESET24} ${BOLD22}${newTitle}${RESET24}
 
 Messages and timestamps are unchanged.
 `
@@ -31085,19 +32864,19 @@ Subcommands:
       if (subcommand) process.exit(1);
   }
 }
-var RESET22, BOLD21, DIM20, CYAN16, GREEN15, RED16;
+var RESET24, BOLD22, DIM22, CYAN16, GREEN16, RED18;
 var init_session3 = __esm({
   "src/cli/session.ts"() {
     "use strict";
     init_drizzle_orm();
     init_db2();
     init_schema();
-    RESET22 = "\x1B[0m";
-    BOLD21 = "\x1B[1m";
-    DIM20 = "\x1B[2m";
+    RESET24 = "\x1B[0m";
+    BOLD22 = "\x1B[1m";
+    DIM22 = "\x1B[2m";
     CYAN16 = "\x1B[36m";
-    GREEN15 = "\x1B[32m";
-    RED16 = "\x1B[31m";
+    GREEN16 = "\x1B[32m";
+    RED18 = "\x1B[31m";
   }
 });
 
@@ -31189,7 +32968,7 @@ async function main() {
       break;
     }
     case "verify": {
-      const { runVerify: runVerify2 } = await Promise.resolve().then(() => (init_verify(), verify_exports));
+      const { runVerify: runVerify2 } = await Promise.resolve().then(() => (init_verify2(), verify_exports2));
       await runVerify2(args);
       break;
     }
@@ -31263,6 +33042,16 @@ async function main() {
       await runOtel2(args);
       break;
     }
+    case "project": {
+      const { runProject: runProject2 } = await Promise.resolve().then(() => (init_project2(), project_exports2));
+      await runProject2(args);
+      break;
+    }
+    case "run": {
+      const { runRun: runRun2 } = await Promise.resolve().then(() => (init_run(), run_exports));
+      await runRun2(args);
+      break;
+    }
     case "attach": {
       const { runAttach: runAttach2 } = await Promise.resolve().then(() => (init_attach(), attach_exports));
       await runAttach2(args);
@@ -31321,6 +33110,8 @@ Commands:
   evidence        Import and link policy/evidence documents to controls or findings
   reviews         Review queue \u2014 flag sessions for human review, track SLA compliance
   update          Update chron to the latest version
+  run             Run a command with fail-closed capture \u2014 output is withheld until recorded
+  project         Replay the capture journal into the database (idempotent)
   attach          Start recording a conversation already in progress (partial evidence)
   otel            Export sessions as OpenTelemetry spans, and show delivery receipts
   version         Print the installed chron-mcp version (also --version, -v)

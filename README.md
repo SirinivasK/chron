@@ -44,6 +44,58 @@ Need runtime policy enforcement for AI agents? CLAIIM adds agent identity, appro
 
 ---
 
+## Fail-closed capture — `chron run`
+
+Chron's MCP logging depends on the AI client calling a tool. `chron run` does not.
+
+```bash
+chron run -- claude
+chron run -- codex
+```
+
+The wrapper records each interaction chunk to a local append-only journal and
+makes it durable before releasing it. No byte reaches your terminal until the
+journal write covering it has been flushed and fsynced. If a journal write
+fails, forwarding stops in both directions, the child is terminated, and
+whatever was being held is **not** printed — the command exits `99` rather than
+showing you output that was never recorded.
+
+```bash
+chron run --scope      # exactly what this does and does not establish
+chron verify --journal # verify the journal chain and see its scope
+chron project          # replay the journal into the database (idempotent)
+```
+
+### What it establishes, and what it does not
+
+`chron run` records the controlled stdin, stdout and stderr channels before
+forwarding or releasing them. That is the whole of the guarantee.
+
+It does **not** enforce that the wrapper is used — running the client directly
+bypasses it, and that requires a control outside Chron, such as a managed
+`PATH`, a restricted shell or an MDM policy. It does **not** capture every side
+effect of the client: files it reads or writes, subprocesses it spawns and
+network requests it makes never pass through the wrapper's pipes.
+
+`chron run --scope` prints the full list, and every run writes that same scope
+into its first journal record, so the claim travels with the evidence.
+
+### Verified enforcement
+
+A run projected into the database carries a binding to the journal records it
+came from. `chron verify <session-id>` follows that binding — the journal
+segments must verify as a chain, the run must still be in it unchanged, and the
+projected messages must match the journal field by field — and only then reports
+`enforced:wrapper`. A claim that does not check out is a verification failure,
+not a footnote.
+
+A journal chain that verifies establishes that its records are internally
+consistent with each other. It does not establish that they were never edited:
+the chain is unanchored, so anyone able to rewrite the whole file can recompute
+every hash. Chron signs sessions and bundles; it does not yet sign journal heads.
+
+---
+
 ## Install
 
 **CLI + MCP server:**
@@ -94,6 +146,8 @@ After `npm install -g chron-mcp`, the `chron` command is available globally:
 Usage: chron <command> [options]
 
 Commands:
+  run             Run a command with fail-closed capture — output is withheld until recorded
+  project         Replay the capture journal into the database (idempotent)
   history         List sessions or show full log for a session
   report          Aggregate audit stats across sessions
   export          Export a session as markdown
@@ -807,7 +861,28 @@ sqlite3 ~/.chron/chron.db \
    ORDER BY m.created_at"
 ```
 
-No cloud, no telemetry, no data leaving your machine. Change the location with `CHRON_DB_PATH`.
+No cloud, no analytics, and no vendor-held copy of your log. Change the location with `CHRON_DB_PATH`.
+
+### What leaves your machine
+
+Chron sends no usage data — there is no analytics endpoint, no account, and no
+phone-home. Two kinds of packet can leave, and this is the whole list:
+
+| What | When | Contains | Switch it off |
+|---|---|---|---|
+| NTP clock check | automatically, when a session is created | a 48-byte NTP request to `pool.ntp.org`. No session data, no identifier. | `CHRON_DISABLE_NTP=1`, or redirect it with `CHRON_NTP_SERVER=your.ntp.host` |
+| SIEM / OTLP export | only after you configure a destination | the events you configured, to the endpoint you chose | nothing to switch off — it is inert until you run `chron connect` |
+
+The clock check is what lets `chron verify` tell you whether a session's
+timestamps were taken against a synchronised clock. It is the only packet Chron
+sends without being asked, which is why it is listed first and why it has a
+switch. Turn it off and `chron verify` says so, rather than reporting a clock it
+never checked:
+
+```
+Clock attestation
+  ! Clock attestation is disabled by configuration — none was requested.
+```
 
 ---
 
