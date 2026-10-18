@@ -38,7 +38,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.62",
+      version: "0.1.63",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -1280,7 +1280,7 @@ var init_sql = __esm({
         return new SQL([new StringChunk(str)]);
       }
       sql22.raw = raw;
-      function join18(chunks, separator) {
+      function join20(chunks, separator) {
         const result = [];
         for (const [i, chunk2] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -1290,7 +1290,7 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql22.join = join18;
+      sql22.join = join20;
       function identifier(value) {
         return new Name(value);
       }
@@ -3121,7 +3121,7 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync17 = (path) => fs.readFileSync(path, "utf-8");
+    var readFileSync18 = (path) => fs.readFileSync(path, "utf-8");
     var readFile = (path) => new Promise((resolve5, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
@@ -3133,7 +3133,7 @@ var require_filesystem = __commonJS({
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync17,
+      readFileSync: readFileSync18,
       readFile
     };
   }
@@ -3145,7 +3145,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync17 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync18 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command2 = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
@@ -3226,7 +3226,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync17(LDD_PATH);
+        const lddContent = readFileSync18(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -3283,7 +3283,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync17(LDD_PATH);
+        const lddContent = readFileSync18(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -6465,7 +6465,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash18 } = require("crypto");
+    var { randomBytes, createHash: createHash20 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -6712,8 +6712,8 @@ var require_websocket = __commonJS({
       close(code, data) {
         if (this.readyState === _WebSocket.CLOSED) return;
         if (this.readyState === _WebSocket.CONNECTING) {
-          const msg = "WebSocket was closed before the connection was established";
-          abortHandshake(this, this._req, msg);
+          const msg2 = "WebSocket was closed before the connection was established";
+          abortHandshake(this, this._req, msg2);
           return;
         }
         if (this.readyState === _WebSocket.CLOSING) {
@@ -6858,8 +6858,8 @@ var require_websocket = __commonJS({
       terminate() {
         if (this.readyState === _WebSocket.CLOSED) return;
         if (this.readyState === _WebSocket.CONNECTING) {
-          const msg = "WebSocket was closed before the connection was established";
-          abortHandshake(this, this._req, msg);
+          const msg2 = "WebSocket was closed before the connection was established";
+          abortHandshake(this, this._req, msg2);
           return;
         }
         if (this._socket) {
@@ -7133,7 +7133,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash18("sha1").update(key + GUID).digest("base64");
+        const digest = createHash20("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -7382,8 +7382,8 @@ var require_stream = __commonJS({
         objectMode: false,
         writableObjectMode: false
       });
-      ws.on("message", function message(msg, isBinary) {
-        const data = !isBinary && duplex._readableState.objectMode ? msg.toString() : msg;
+      ws.on("message", function message(msg2, isBinary) {
+        const data = !isBinary && duplex._readableState.objectMode ? msg2.toString() : msg2;
         if (!duplex.push(data)) ws.pause();
       });
       ws.once("error", function error(err) {
@@ -7502,7 +7502,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash18 } = require("crypto");
+    var { createHash: createHash20 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -7809,7 +7809,7 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest = createHash18("sha1").update(key + GUID).digest("base64");
+        const digest = createHash20("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -9420,61 +9420,61 @@ var init_stream2 = __esm({
 });
 
 // node_modules/@libsql/hrana-client/lib-esm/shared/json_encode.js
-function Stmt2(w, msg) {
-  if (msg.sql !== void 0) {
-    w.string("sql", msg.sql);
+function Stmt2(w, msg2) {
+  if (msg2.sql !== void 0) {
+    w.string("sql", msg2.sql);
   }
-  if (msg.sqlId !== void 0) {
-    w.number("sql_id", msg.sqlId);
+  if (msg2.sqlId !== void 0) {
+    w.number("sql_id", msg2.sqlId);
   }
-  w.arrayObjects("args", msg.args, Value);
-  w.arrayObjects("named_args", msg.namedArgs, NamedArg);
-  w.boolean("want_rows", msg.wantRows);
+  w.arrayObjects("args", msg2.args, Value);
+  w.arrayObjects("named_args", msg2.namedArgs, NamedArg);
+  w.boolean("want_rows", msg2.wantRows);
 }
-function NamedArg(w, msg) {
-  w.string("name", msg.name);
-  w.object("value", msg.value, Value);
+function NamedArg(w, msg2) {
+  w.string("name", msg2.name);
+  w.object("value", msg2.value, Value);
 }
-function Batch2(w, msg) {
-  w.arrayObjects("steps", msg.steps, BatchStep2);
+function Batch2(w, msg2) {
+  w.arrayObjects("steps", msg2.steps, BatchStep2);
 }
-function BatchStep2(w, msg) {
-  if (msg.condition !== void 0) {
-    w.object("condition", msg.condition, BatchCond2);
+function BatchStep2(w, msg2) {
+  if (msg2.condition !== void 0) {
+    w.object("condition", msg2.condition, BatchCond2);
   }
-  w.object("stmt", msg.stmt, Stmt2);
+  w.object("stmt", msg2.stmt, Stmt2);
 }
-function BatchCond2(w, msg) {
-  w.stringRaw("type", msg.type);
-  if (msg.type === "ok" || msg.type === "error") {
-    w.number("step", msg.step);
-  } else if (msg.type === "not") {
-    w.object("cond", msg.cond, BatchCond2);
-  } else if (msg.type === "and" || msg.type === "or") {
-    w.arrayObjects("conds", msg.conds, BatchCond2);
-  } else if (msg.type === "is_autocommit") {
+function BatchCond2(w, msg2) {
+  w.stringRaw("type", msg2.type);
+  if (msg2.type === "ok" || msg2.type === "error") {
+    w.number("step", msg2.step);
+  } else if (msg2.type === "not") {
+    w.object("cond", msg2.cond, BatchCond2);
+  } else if (msg2.type === "and" || msg2.type === "or") {
+    w.arrayObjects("conds", msg2.conds, BatchCond2);
+  } else if (msg2.type === "is_autocommit") {
   } else {
-    throw impossible(msg, "Impossible type of BatchCond");
+    throw impossible(msg2, "Impossible type of BatchCond");
   }
 }
-function Value(w, msg) {
-  if (msg === null) {
+function Value(w, msg2) {
+  if (msg2 === null) {
     w.stringRaw("type", "null");
-  } else if (typeof msg === "bigint") {
+  } else if (typeof msg2 === "bigint") {
     w.stringRaw("type", "integer");
-    w.stringRaw("value", "" + msg);
-  } else if (typeof msg === "number") {
+    w.stringRaw("value", "" + msg2);
+  } else if (typeof msg2 === "number") {
     w.stringRaw("type", "float");
-    w.number("value", msg);
-  } else if (typeof msg === "string") {
+    w.number("value", msg2);
+  } else if (typeof msg2 === "string") {
     w.stringRaw("type", "text");
-    w.string("value", msg);
-  } else if (msg instanceof Uint8Array) {
+    w.string("value", msg2);
+  } else if (msg2 instanceof Uint8Array) {
     w.stringRaw("type", "blob");
-    w.stringRaw("base64", gBase64.fromUint8Array(msg));
-  } else if (msg === void 0) {
+    w.stringRaw("base64", gBase64.fromUint8Array(msg2));
+  } else if (msg2 === void 0) {
   } else {
-    throw impossible(msg, "Impossible type of Value");
+    throw impossible(msg2, "Impossible type of Value");
   }
 }
 var init_json_encode = __esm({
@@ -9485,65 +9485,65 @@ var init_json_encode = __esm({
 });
 
 // node_modules/@libsql/hrana-client/lib-esm/ws/json_encode.js
-function ClientMsg(w, msg) {
-  w.stringRaw("type", msg.type);
-  if (msg.type === "hello") {
-    if (msg.jwt !== void 0) {
-      w.string("jwt", msg.jwt);
+function ClientMsg(w, msg2) {
+  w.stringRaw("type", msg2.type);
+  if (msg2.type === "hello") {
+    if (msg2.jwt !== void 0) {
+      w.string("jwt", msg2.jwt);
     }
-  } else if (msg.type === "request") {
-    w.number("request_id", msg.requestId);
-    w.object("request", msg.request, Request2);
+  } else if (msg2.type === "request") {
+    w.number("request_id", msg2.requestId);
+    w.object("request", msg2.request, Request2);
   } else {
-    throw impossible(msg, "Impossible type of ClientMsg");
+    throw impossible(msg2, "Impossible type of ClientMsg");
   }
 }
-function Request2(w, msg) {
-  w.stringRaw("type", msg.type);
-  if (msg.type === "open_stream") {
-    w.number("stream_id", msg.streamId);
-  } else if (msg.type === "close_stream") {
-    w.number("stream_id", msg.streamId);
-  } else if (msg.type === "execute") {
-    w.number("stream_id", msg.streamId);
-    w.object("stmt", msg.stmt, Stmt2);
-  } else if (msg.type === "batch") {
-    w.number("stream_id", msg.streamId);
-    w.object("batch", msg.batch, Batch2);
-  } else if (msg.type === "open_cursor") {
-    w.number("stream_id", msg.streamId);
-    w.number("cursor_id", msg.cursorId);
-    w.object("batch", msg.batch, Batch2);
-  } else if (msg.type === "close_cursor") {
-    w.number("cursor_id", msg.cursorId);
-  } else if (msg.type === "fetch_cursor") {
-    w.number("cursor_id", msg.cursorId);
-    w.number("max_count", msg.maxCount);
-  } else if (msg.type === "sequence") {
-    w.number("stream_id", msg.streamId);
-    if (msg.sql !== void 0) {
-      w.string("sql", msg.sql);
+function Request2(w, msg2) {
+  w.stringRaw("type", msg2.type);
+  if (msg2.type === "open_stream") {
+    w.number("stream_id", msg2.streamId);
+  } else if (msg2.type === "close_stream") {
+    w.number("stream_id", msg2.streamId);
+  } else if (msg2.type === "execute") {
+    w.number("stream_id", msg2.streamId);
+    w.object("stmt", msg2.stmt, Stmt2);
+  } else if (msg2.type === "batch") {
+    w.number("stream_id", msg2.streamId);
+    w.object("batch", msg2.batch, Batch2);
+  } else if (msg2.type === "open_cursor") {
+    w.number("stream_id", msg2.streamId);
+    w.number("cursor_id", msg2.cursorId);
+    w.object("batch", msg2.batch, Batch2);
+  } else if (msg2.type === "close_cursor") {
+    w.number("cursor_id", msg2.cursorId);
+  } else if (msg2.type === "fetch_cursor") {
+    w.number("cursor_id", msg2.cursorId);
+    w.number("max_count", msg2.maxCount);
+  } else if (msg2.type === "sequence") {
+    w.number("stream_id", msg2.streamId);
+    if (msg2.sql !== void 0) {
+      w.string("sql", msg2.sql);
     }
-    if (msg.sqlId !== void 0) {
-      w.number("sql_id", msg.sqlId);
+    if (msg2.sqlId !== void 0) {
+      w.number("sql_id", msg2.sqlId);
     }
-  } else if (msg.type === "describe") {
-    w.number("stream_id", msg.streamId);
-    if (msg.sql !== void 0) {
-      w.string("sql", msg.sql);
+  } else if (msg2.type === "describe") {
+    w.number("stream_id", msg2.streamId);
+    if (msg2.sql !== void 0) {
+      w.string("sql", msg2.sql);
     }
-    if (msg.sqlId !== void 0) {
-      w.number("sql_id", msg.sqlId);
+    if (msg2.sqlId !== void 0) {
+      w.number("sql_id", msg2.sqlId);
     }
-  } else if (msg.type === "store_sql") {
-    w.number("sql_id", msg.sqlId);
-    w.string("sql", msg.sql);
-  } else if (msg.type === "close_sql") {
-    w.number("sql_id", msg.sqlId);
-  } else if (msg.type === "get_autocommit") {
-    w.number("stream_id", msg.streamId);
+  } else if (msg2.type === "store_sql") {
+    w.number("sql_id", msg2.sqlId);
+    w.string("sql", msg2.sql);
+  } else if (msg2.type === "close_sql") {
+    w.number("sql_id", msg2.sqlId);
+  } else if (msg2.type === "get_autocommit") {
+    w.number("stream_id", msg2.streamId);
   } else {
-    throw impossible(msg, "Impossible type of Request");
+    throw impossible(msg2, "Impossible type of Request");
   }
 }
 var init_json_encode2 = __esm({
@@ -9554,72 +9554,72 @@ var init_json_encode2 = __esm({
 });
 
 // node_modules/@libsql/hrana-client/lib-esm/shared/protobuf_encode.js
-function Stmt3(w, msg) {
-  if (msg.sql !== void 0) {
-    w.string(1, msg.sql);
+function Stmt3(w, msg2) {
+  if (msg2.sql !== void 0) {
+    w.string(1, msg2.sql);
   }
-  if (msg.sqlId !== void 0) {
-    w.int32(2, msg.sqlId);
+  if (msg2.sqlId !== void 0) {
+    w.int32(2, msg2.sqlId);
   }
-  for (const arg of msg.args) {
+  for (const arg of msg2.args) {
     w.message(3, arg, Value2);
   }
-  for (const arg of msg.namedArgs) {
+  for (const arg of msg2.namedArgs) {
     w.message(4, arg, NamedArg2);
   }
-  w.bool(5, msg.wantRows);
+  w.bool(5, msg2.wantRows);
 }
-function NamedArg2(w, msg) {
-  w.string(1, msg.name);
-  w.message(2, msg.value, Value2);
+function NamedArg2(w, msg2) {
+  w.string(1, msg2.name);
+  w.message(2, msg2.value, Value2);
 }
-function Batch3(w, msg) {
-  for (const step of msg.steps) {
+function Batch3(w, msg2) {
+  for (const step of msg2.steps) {
     w.message(1, step, BatchStep3);
   }
 }
-function BatchStep3(w, msg) {
-  if (msg.condition !== void 0) {
-    w.message(1, msg.condition, BatchCond3);
+function BatchStep3(w, msg2) {
+  if (msg2.condition !== void 0) {
+    w.message(1, msg2.condition, BatchCond3);
   }
-  w.message(2, msg.stmt, Stmt3);
+  w.message(2, msg2.stmt, Stmt3);
 }
-function BatchCond3(w, msg) {
-  if (msg.type === "ok") {
-    w.uint32(1, msg.step);
-  } else if (msg.type === "error") {
-    w.uint32(2, msg.step);
-  } else if (msg.type === "not") {
-    w.message(3, msg.cond, BatchCond3);
-  } else if (msg.type === "and") {
-    w.message(4, msg.conds, BatchCondList);
-  } else if (msg.type === "or") {
-    w.message(5, msg.conds, BatchCondList);
-  } else if (msg.type === "is_autocommit") {
+function BatchCond3(w, msg2) {
+  if (msg2.type === "ok") {
+    w.uint32(1, msg2.step);
+  } else if (msg2.type === "error") {
+    w.uint32(2, msg2.step);
+  } else if (msg2.type === "not") {
+    w.message(3, msg2.cond, BatchCond3);
+  } else if (msg2.type === "and") {
+    w.message(4, msg2.conds, BatchCondList);
+  } else if (msg2.type === "or") {
+    w.message(5, msg2.conds, BatchCondList);
+  } else if (msg2.type === "is_autocommit") {
     w.message(6, void 0, Empty);
   } else {
-    throw impossible(msg, "Impossible type of BatchCond");
+    throw impossible(msg2, "Impossible type of BatchCond");
   }
 }
-function BatchCondList(w, msg) {
-  for (const cond of msg) {
+function BatchCondList(w, msg2) {
+  for (const cond of msg2) {
     w.message(1, cond, BatchCond3);
   }
 }
-function Value2(w, msg) {
-  if (msg === null) {
+function Value2(w, msg2) {
+  if (msg2 === null) {
     w.message(1, void 0, Empty);
-  } else if (typeof msg === "bigint") {
-    w.sint64(2, msg);
-  } else if (typeof msg === "number") {
-    w.double(3, msg);
-  } else if (typeof msg === "string") {
-    w.string(4, msg);
-  } else if (msg instanceof Uint8Array) {
-    w.bytes(5, msg);
-  } else if (msg === void 0) {
+  } else if (typeof msg2 === "bigint") {
+    w.sint64(2, msg2);
+  } else if (typeof msg2 === "number") {
+    w.double(3, msg2);
+  } else if (typeof msg2 === "string") {
+    w.string(4, msg2);
+  } else if (msg2 instanceof Uint8Array) {
+    w.bytes(5, msg2);
+  } else if (msg2 === void 0) {
   } else {
-    throw impossible(msg, "Impossible type of Value");
+    throw impossible(msg2, "Impossible type of Value");
   }
 }
 function Empty(_w, _msg) {
@@ -9631,23 +9631,23 @@ var init_protobuf_encode = __esm({
 });
 
 // node_modules/@libsql/hrana-client/lib-esm/ws/protobuf_encode.js
-function ClientMsg2(w, msg) {
-  if (msg.type === "hello") {
-    w.message(1, msg, HelloMsg);
-  } else if (msg.type === "request") {
-    w.message(2, msg, RequestMsg);
+function ClientMsg2(w, msg2) {
+  if (msg2.type === "hello") {
+    w.message(1, msg2, HelloMsg);
+  } else if (msg2.type === "request") {
+    w.message(2, msg2, RequestMsg);
   } else {
-    throw impossible(msg, "Impossible type of ClientMsg");
+    throw impossible(msg2, "Impossible type of ClientMsg");
   }
 }
-function HelloMsg(w, msg) {
-  if (msg.jwt !== void 0) {
-    w.string(1, msg.jwt);
+function HelloMsg(w, msg2) {
+  if (msg2.jwt !== void 0) {
+    w.string(1, msg2.jwt);
   }
 }
-function RequestMsg(w, msg) {
-  w.int32(1, msg.requestId);
-  const request = msg.request;
+function RequestMsg(w, msg2) {
+  w.int32(1, msg2.requestId);
+  const request = msg2.request;
   if (request.type === "open_stream") {
     w.message(2, request, OpenStreamReq);
   } else if (request.type === "close_stream") {
@@ -9676,59 +9676,59 @@ function RequestMsg(w, msg) {
     throw impossible(request, "Impossible type of Request");
   }
 }
-function OpenStreamReq(w, msg) {
-  w.int32(1, msg.streamId);
+function OpenStreamReq(w, msg2) {
+  w.int32(1, msg2.streamId);
 }
-function CloseStreamReq(w, msg) {
-  w.int32(1, msg.streamId);
+function CloseStreamReq(w, msg2) {
+  w.int32(1, msg2.streamId);
 }
-function ExecuteReq(w, msg) {
-  w.int32(1, msg.streamId);
-  w.message(2, msg.stmt, Stmt3);
+function ExecuteReq(w, msg2) {
+  w.int32(1, msg2.streamId);
+  w.message(2, msg2.stmt, Stmt3);
 }
-function BatchReq(w, msg) {
-  w.int32(1, msg.streamId);
-  w.message(2, msg.batch, Batch3);
+function BatchReq(w, msg2) {
+  w.int32(1, msg2.streamId);
+  w.message(2, msg2.batch, Batch3);
 }
-function OpenCursorReq(w, msg) {
-  w.int32(1, msg.streamId);
-  w.int32(2, msg.cursorId);
-  w.message(3, msg.batch, Batch3);
+function OpenCursorReq(w, msg2) {
+  w.int32(1, msg2.streamId);
+  w.int32(2, msg2.cursorId);
+  w.message(3, msg2.batch, Batch3);
 }
-function CloseCursorReq(w, msg) {
-  w.int32(1, msg.cursorId);
+function CloseCursorReq(w, msg2) {
+  w.int32(1, msg2.cursorId);
 }
-function FetchCursorReq(w, msg) {
-  w.int32(1, msg.cursorId);
-  w.uint32(2, msg.maxCount);
+function FetchCursorReq(w, msg2) {
+  w.int32(1, msg2.cursorId);
+  w.uint32(2, msg2.maxCount);
 }
-function SequenceReq(w, msg) {
-  w.int32(1, msg.streamId);
-  if (msg.sql !== void 0) {
-    w.string(2, msg.sql);
+function SequenceReq(w, msg2) {
+  w.int32(1, msg2.streamId);
+  if (msg2.sql !== void 0) {
+    w.string(2, msg2.sql);
   }
-  if (msg.sqlId !== void 0) {
-    w.int32(3, msg.sqlId);
-  }
-}
-function DescribeReq(w, msg) {
-  w.int32(1, msg.streamId);
-  if (msg.sql !== void 0) {
-    w.string(2, msg.sql);
-  }
-  if (msg.sqlId !== void 0) {
-    w.int32(3, msg.sqlId);
+  if (msg2.sqlId !== void 0) {
+    w.int32(3, msg2.sqlId);
   }
 }
-function StoreSqlReq(w, msg) {
-  w.int32(1, msg.sqlId);
-  w.string(2, msg.sql);
+function DescribeReq(w, msg2) {
+  w.int32(1, msg2.streamId);
+  if (msg2.sql !== void 0) {
+    w.string(2, msg2.sql);
+  }
+  if (msg2.sqlId !== void 0) {
+    w.int32(3, msg2.sqlId);
+  }
 }
-function CloseSqlReq(w, msg) {
-  w.int32(1, msg.sqlId);
+function StoreSqlReq(w, msg2) {
+  w.int32(1, msg2.sqlId);
+  w.string(2, msg2.sql);
 }
-function GetAutocommitReq(w, msg) {
-  w.int32(1, msg.streamId);
+function CloseSqlReq(w, msg2) {
+  w.int32(1, msg2.sqlId);
+}
+function GetAutocommitReq(w, msg2) {
+  w.int32(1, msg2.streamId);
 }
 var init_protobuf_encode2 = __esm({
   "node_modules/@libsql/hrana-client/lib-esm/ws/protobuf_encode.js"() {
@@ -9909,11 +9909,11 @@ var init_protobuf_decode = __esm({
       default() {
         return { message: "", code: void 0 };
       },
-      1(r, msg) {
-        msg.message = r.string();
+      1(r, msg2) {
+        msg2.message = r.string();
       },
-      2(r, msg) {
-        msg.code = r.string();
+      2(r, msg2) {
+        msg2.code = r.string();
       }
     };
     StmtResult2 = {
@@ -9925,71 +9925,71 @@ var init_protobuf_decode = __esm({
           lastInsertRowid: void 0
         };
       },
-      1(r, msg) {
-        msg.cols.push(r.message(Col2));
+      1(r, msg2) {
+        msg2.cols.push(r.message(Col2));
       },
-      2(r, msg) {
-        msg.rows.push(r.message(Row));
+      2(r, msg2) {
+        msg2.rows.push(r.message(Row));
       },
-      3(r, msg) {
-        msg.affectedRowCount = Number(r.uint64());
+      3(r, msg2) {
+        msg2.affectedRowCount = Number(r.uint64());
       },
-      4(r, msg) {
-        msg.lastInsertRowid = r.sint64();
+      4(r, msg2) {
+        msg2.lastInsertRowid = r.sint64();
       }
     };
     Col2 = {
       default() {
         return { name: void 0, decltype: void 0 };
       },
-      1(r, msg) {
-        msg.name = r.string();
+      1(r, msg2) {
+        msg2.name = r.string();
       },
-      2(r, msg) {
-        msg.decltype = r.string();
+      2(r, msg2) {
+        msg2.decltype = r.string();
       }
     };
     Row = {
       default() {
         return [];
       },
-      1(r, msg) {
-        msg.push(r.message(Value4));
+      1(r, msg2) {
+        msg2.push(r.message(Value4));
       }
     };
     BatchResult2 = {
       default() {
         return { stepResults: /* @__PURE__ */ new Map(), stepErrors: /* @__PURE__ */ new Map() };
       },
-      1(r, msg) {
+      1(r, msg2) {
         const [key, value] = r.message(BatchResultStepResult);
-        msg.stepResults.set(key, value);
+        msg2.stepResults.set(key, value);
       },
-      2(r, msg) {
+      2(r, msg2) {
         const [key, value] = r.message(BatchResultStepError);
-        msg.stepErrors.set(key, value);
+        msg2.stepErrors.set(key, value);
       }
     };
     BatchResultStepResult = {
       default() {
         return [0, StmtResult2.default()];
       },
-      1(r, msg) {
-        msg[0] = r.uint32();
+      1(r, msg2) {
+        msg2[0] = r.uint32();
       },
-      2(r, msg) {
-        msg[1] = r.message(StmtResult2);
+      2(r, msg2) {
+        msg2[1] = r.message(StmtResult2);
       }
     };
     BatchResultStepError = {
       default() {
         return [0, Error3.default()];
       },
-      1(r, msg) {
-        msg[0] = r.uint32();
+      1(r, msg2) {
+        msg2[0] = r.uint32();
       },
-      2(r, msg) {
-        msg[1] = r.message(Error3);
+      2(r, msg2) {
+        msg2[1] = r.message(Error3);
       }
     };
     CursorEntry2 = {
@@ -10016,11 +10016,11 @@ var init_protobuf_decode = __esm({
       default() {
         return { type: "step_begin", step: 0, cols: [] };
       },
-      1(r, msg) {
-        msg.step = r.uint32();
+      1(r, msg2) {
+        msg2.step = r.uint32();
       },
-      2(r, msg) {
-        msg.cols.push(r.message(Col2));
+      2(r, msg2) {
+        msg2.cols.push(r.message(Col2));
       }
     };
     StepEndEntry = {
@@ -10031,11 +10031,11 @@ var init_protobuf_decode = __esm({
           lastInsertRowid: void 0
         };
       },
-      1(r, msg) {
-        msg.affectedRowCount = r.uint32();
+      1(r, msg2) {
+        msg2.affectedRowCount = r.uint32();
       },
-      2(r, msg) {
-        msg.lastInsertRowid = r.uint64();
+      2(r, msg2) {
+        msg2.lastInsertRowid = r.uint64();
       }
     };
     StepErrorEntry = {
@@ -10046,11 +10046,11 @@ var init_protobuf_decode = __esm({
           error: Error3.default()
         };
       },
-      1(r, msg) {
-        msg.step = r.uint32();
+      1(r, msg2) {
+        msg2.step = r.uint32();
       },
-      2(r, msg) {
-        msg.error = r.message(Error3);
+      2(r, msg2) {
+        msg2.error = r.message(Error3);
       }
     };
     DescribeResult2 = {
@@ -10062,36 +10062,36 @@ var init_protobuf_decode = __esm({
           isReadonly: false
         };
       },
-      1(r, msg) {
-        msg.params.push(r.message(DescribeParam2));
+      1(r, msg2) {
+        msg2.params.push(r.message(DescribeParam2));
       },
-      2(r, msg) {
-        msg.cols.push(r.message(DescribeCol2));
+      2(r, msg2) {
+        msg2.cols.push(r.message(DescribeCol2));
       },
-      3(r, msg) {
-        msg.isExplain = r.bool();
+      3(r, msg2) {
+        msg2.isExplain = r.bool();
       },
-      4(r, msg) {
-        msg.isReadonly = r.bool();
+      4(r, msg2) {
+        msg2.isReadonly = r.bool();
       }
     };
     DescribeParam2 = {
       default() {
         return { name: void 0 };
       },
-      1(r, msg) {
-        msg.name = r.string();
+      1(r, msg2) {
+        msg2.name = r.string();
       }
     };
     DescribeCol2 = {
       default() {
         return { name: "", decltype: void 0 };
       },
-      1(r, msg) {
-        msg.name = r.string();
+      1(r, msg2) {
+        msg2.name = r.string();
       },
-      2(r, msg) {
-        msg.decltype = r.string();
+      2(r, msg2) {
+        msg2.decltype = r.string();
       }
     };
     Value4 = {
@@ -10143,19 +10143,19 @@ var init_protobuf_decode2 = __esm({
       default() {
         return { type: "hello_error", error: Error3.default() };
       },
-      1(r, msg) {
-        msg.error = r.message(Error3);
+      1(r, msg2) {
+        msg2.error = r.message(Error3);
       }
     };
     ResponseErrorMsg = {
       default() {
         return { type: "response_error", requestId: 0, error: Error3.default() };
       },
-      1(r, msg) {
-        msg.requestId = r.int32();
+      1(r, msg2) {
+        msg2.requestId = r.int32();
       },
-      2(r, msg) {
-        msg.error = r.message(Error3);
+      2(r, msg2) {
+        msg2.error = r.message(Error3);
       }
     };
     ResponseOkMsg = {
@@ -10166,87 +10166,87 @@ var init_protobuf_decode2 = __esm({
           response: { type: "none" }
         };
       },
-      1(r, msg) {
-        msg.requestId = r.int32();
+      1(r, msg2) {
+        msg2.requestId = r.int32();
       },
-      2(r, msg) {
-        msg.response = { type: "open_stream" };
+      2(r, msg2) {
+        msg2.response = { type: "open_stream" };
       },
-      3(r, msg) {
-        msg.response = { type: "close_stream" };
+      3(r, msg2) {
+        msg2.response = { type: "close_stream" };
       },
-      4(r, msg) {
-        msg.response = r.message(ExecuteResp);
+      4(r, msg2) {
+        msg2.response = r.message(ExecuteResp);
       },
-      5(r, msg) {
-        msg.response = r.message(BatchResp);
+      5(r, msg2) {
+        msg2.response = r.message(BatchResp);
       },
-      6(r, msg) {
-        msg.response = { type: "open_cursor" };
+      6(r, msg2) {
+        msg2.response = { type: "open_cursor" };
       },
-      7(r, msg) {
-        msg.response = { type: "close_cursor" };
+      7(r, msg2) {
+        msg2.response = { type: "close_cursor" };
       },
-      8(r, msg) {
-        msg.response = r.message(FetchCursorResp);
+      8(r, msg2) {
+        msg2.response = r.message(FetchCursorResp);
       },
-      9(r, msg) {
-        msg.response = { type: "sequence" };
+      9(r, msg2) {
+        msg2.response = { type: "sequence" };
       },
-      10(r, msg) {
-        msg.response = r.message(DescribeResp);
+      10(r, msg2) {
+        msg2.response = r.message(DescribeResp);
       },
-      11(r, msg) {
-        msg.response = { type: "store_sql" };
+      11(r, msg2) {
+        msg2.response = { type: "store_sql" };
       },
-      12(r, msg) {
-        msg.response = { type: "close_sql" };
+      12(r, msg2) {
+        msg2.response = { type: "close_sql" };
       },
-      13(r, msg) {
-        msg.response = r.message(GetAutocommitResp);
+      13(r, msg2) {
+        msg2.response = r.message(GetAutocommitResp);
       }
     };
     ExecuteResp = {
       default() {
         return { type: "execute", result: StmtResult2.default() };
       },
-      1(r, msg) {
-        msg.result = r.message(StmtResult2);
+      1(r, msg2) {
+        msg2.result = r.message(StmtResult2);
       }
     };
     BatchResp = {
       default() {
         return { type: "batch", result: BatchResult2.default() };
       },
-      1(r, msg) {
-        msg.result = r.message(BatchResult2);
+      1(r, msg2) {
+        msg2.result = r.message(BatchResult2);
       }
     };
     FetchCursorResp = {
       default() {
         return { type: "fetch_cursor", entries: [], done: false };
       },
-      1(r, msg) {
-        msg.entries.push(r.message(CursorEntry2));
+      1(r, msg2) {
+        msg2.entries.push(r.message(CursorEntry2));
       },
-      2(r, msg) {
-        msg.done = r.bool();
+      2(r, msg2) {
+        msg2.done = r.bool();
       }
     };
     DescribeResp = {
       default() {
         return { type: "describe", result: DescribeResult2.default() };
       },
-      1(r, msg) {
-        msg.result = r.message(DescribeResult2);
+      1(r, msg2) {
+        msg2.result = r.message(DescribeResult2);
       }
     };
     GetAutocommitResp = {
       default() {
         return { type: "get_autocommit", isAutocommit: false };
       },
-      1(r, msg) {
-        msg.isAutocommit = r.bool();
+      1(r, msg2) {
+        msg2.isAutocommit = r.bool();
       }
     };
   }
@@ -10330,14 +10330,14 @@ var init_client2 = __esm({
         this.#send({ type: "hello", jwt });
       }
       // Send (or enqueue to send) a message to the server.
-      #send(msg) {
+      #send(msg2) {
         if (this.#closed !== void 0) {
           throw new InternalError("Trying to send a message on a closed client");
         }
         if (this.#opened) {
-          this.#sendToSocket(msg);
+          this.#sendToSocket(msg2);
         } else {
-          const openCallback = () => this.#sendToSocket(msg);
+          const openCallback = () => this.#sendToSocket(msg2);
           const errorCallback = () => void 0;
           this.#openCallbacks.push({ openCallback, errorCallback });
         }
@@ -10363,13 +10363,13 @@ var init_client2 = __esm({
         this.#openCallbacks.length = 0;
         this.#opened = true;
       }
-      #sendToSocket(msg) {
+      #sendToSocket(msg2) {
         const encoding = this.#subprotocol.encoding;
         if (encoding === "json") {
-          const jsonMsg = writeJsonObject(msg, ClientMsg);
+          const jsonMsg = writeJsonObject(msg2, ClientMsg);
           this.#socket.send(jsonMsg);
         } else if (encoding === "protobuf") {
-          const protobufMsg = writeProtobufMessage(msg, ClientMsg2);
+          const protobufMsg = writeProtobufMessage(msg2, ClientMsg2);
           this.#socket.send(protobufMsg);
         } else {
           throw impossible(encoding, "Impossible encoding");
@@ -10446,7 +10446,7 @@ var init_client2 = __esm({
           return;
         }
         try {
-          let msg;
+          let msg2;
           const encoding = this.#subprotocol.encoding;
           if (encoding === "json") {
             if (typeof event.data !== "string") {
@@ -10454,41 +10454,41 @@ var init_client2 = __esm({
               this.#setClosed(new ProtoError("Received non-text message from server with JSON encoding"));
               return;
             }
-            msg = readJsonObject(JSON.parse(event.data), ServerMsg);
+            msg2 = readJsonObject(JSON.parse(event.data), ServerMsg);
           } else if (encoding === "protobuf") {
             if (!(event.data instanceof ArrayBuffer)) {
               this.#socket.close(3003, "Only binary messages are accepted with Protobuf encoding");
               this.#setClosed(new ProtoError("Received non-binary message from server with Protobuf encoding"));
               return;
             }
-            msg = readProtobufMessage(new Uint8Array(event.data), ServerMsg2);
+            msg2 = readProtobufMessage(new Uint8Array(event.data), ServerMsg2);
           } else {
             throw impossible(encoding, "Impossible encoding");
           }
-          this.#handleMsg(msg);
+          this.#handleMsg(msg2);
         } catch (e) {
           this.#socket.close(3007, "Could not handle message");
           this.#setClosed(e);
         }
       }
       // Handle a message from the server.
-      #handleMsg(msg) {
-        if (msg.type === "none") {
+      #handleMsg(msg2) {
+        if (msg2.type === "none") {
           throw new ProtoError("Received an unrecognized ServerMsg");
-        } else if (msg.type === "hello_ok" || msg.type === "hello_error") {
+        } else if (msg2.type === "hello_ok" || msg2.type === "hello_error") {
           if (this.#recvdHello) {
             throw new ProtoError("Received a duplicated hello response");
           }
           this.#recvdHello = true;
-          if (msg.type === "hello_error") {
-            throw errorFromProto(msg.error);
+          if (msg2.type === "hello_error") {
+            throw errorFromProto(msg2.error);
           }
           return;
         } else if (!this.#recvdHello) {
           throw new ProtoError("Received a non-hello message before a hello response");
         }
-        if (msg.type === "response_ok") {
-          const requestId = msg.requestId;
+        if (msg2.type === "response_ok") {
+          const requestId = msg2.requestId;
           const responseState = this.#responseMap.get(requestId);
           this.#responseMap.delete(requestId);
           if (responseState === void 0) {
@@ -10496,26 +10496,26 @@ var init_client2 = __esm({
           }
           this.#requestIdAlloc.free(requestId);
           try {
-            if (responseState.type !== msg.response.type) {
-              console.dir({ responseState, msg });
+            if (responseState.type !== msg2.response.type) {
+              console.dir({ responseState, msg: msg2 });
               throw new ProtoError("Received unexpected type of response");
             }
-            responseState.responseCallback(msg.response);
+            responseState.responseCallback(msg2.response);
           } catch (e) {
             responseState.errorCallback(e);
             throw e;
           }
-        } else if (msg.type === "response_error") {
-          const requestId = msg.requestId;
+        } else if (msg2.type === "response_error") {
+          const requestId = msg2.requestId;
           const responseState = this.#responseMap.get(requestId);
           this.#responseMap.delete(requestId);
           if (responseState === void 0) {
             throw new ProtoError("Received unexpected error response");
           }
           this.#requestIdAlloc.free(requestId);
-          responseState.errorCallback(errorFromProto(msg.error));
+          responseState.errorCallback(errorFromProto(msg2.error));
         } else {
-          throw impossible(msg, "Impossible ServerMsg type");
+          throw impossible(msg2, "Impossible ServerMsg type");
         }
       }
       /** Open a {@link WsStream}, a stream for executing SQL statements. */
@@ -10687,14 +10687,14 @@ var init_protobuf_decode3 = __esm({
       default() {
         return { baton: void 0, baseUrl: void 0, results: [] };
       },
-      1(r, msg) {
-        msg.baton = r.string();
+      1(r, msg2) {
+        msg2.baton = r.string();
       },
-      2(r, msg) {
-        msg.baseUrl = r.string();
+      2(r, msg2) {
+        msg2.baseUrl = r.string();
       },
-      3(r, msg) {
-        msg.results.push(r.message(StreamResult2));
+      3(r, msg2) {
+        msg2.results.push(r.message(StreamResult2));
       }
     };
     StreamResult2 = {
@@ -10741,43 +10741,43 @@ var init_protobuf_decode3 = __esm({
       default() {
         return { type: "execute", result: StmtResult2.default() };
       },
-      1(r, msg) {
-        msg.result = r.message(StmtResult2);
+      1(r, msg2) {
+        msg2.result = r.message(StmtResult2);
       }
     };
     BatchStreamResp = {
       default() {
         return { type: "batch", result: BatchResult2.default() };
       },
-      1(r, msg) {
-        msg.result = r.message(BatchResult2);
+      1(r, msg2) {
+        msg2.result = r.message(BatchResult2);
       }
     };
     DescribeStreamResp = {
       default() {
         return { type: "describe", result: DescribeResult2.default() };
       },
-      1(r, msg) {
-        msg.result = r.message(DescribeResult2);
+      1(r, msg2) {
+        msg2.result = r.message(DescribeResult2);
       }
     };
     GetAutocommitStreamResp = {
       default() {
         return { type: "get_autocommit", isAutocommit: false };
       },
-      1(r, msg) {
-        msg.isAutocommit = r.bool();
+      1(r, msg2) {
+        msg2.isAutocommit = r.bool();
       }
     };
     CursorRespBody2 = {
       default() {
         return { baton: void 0, baseUrl: void 0 };
       },
-      1(r, msg) {
-        msg.baton = r.string();
+      1(r, msg2) {
+        msg2.baton = r.string();
       },
-      2(r, msg) {
-        msg.baseUrl = r.string();
+      2(r, msg2) {
+        msg2.baseUrl = r.string();
       }
     };
   }
@@ -10921,48 +10921,48 @@ var init_cursor3 = __esm({
 });
 
 // node_modules/@libsql/hrana-client/lib-esm/http/json_encode.js
-function PipelineReqBody(w, msg) {
-  if (msg.baton !== void 0) {
-    w.string("baton", msg.baton);
+function PipelineReqBody(w, msg2) {
+  if (msg2.baton !== void 0) {
+    w.string("baton", msg2.baton);
   }
-  w.arrayObjects("requests", msg.requests, StreamRequest);
+  w.arrayObjects("requests", msg2.requests, StreamRequest);
 }
-function StreamRequest(w, msg) {
-  w.stringRaw("type", msg.type);
-  if (msg.type === "close") {
-  } else if (msg.type === "execute") {
-    w.object("stmt", msg.stmt, Stmt2);
-  } else if (msg.type === "batch") {
-    w.object("batch", msg.batch, Batch2);
-  } else if (msg.type === "sequence") {
-    if (msg.sql !== void 0) {
-      w.string("sql", msg.sql);
+function StreamRequest(w, msg2) {
+  w.stringRaw("type", msg2.type);
+  if (msg2.type === "close") {
+  } else if (msg2.type === "execute") {
+    w.object("stmt", msg2.stmt, Stmt2);
+  } else if (msg2.type === "batch") {
+    w.object("batch", msg2.batch, Batch2);
+  } else if (msg2.type === "sequence") {
+    if (msg2.sql !== void 0) {
+      w.string("sql", msg2.sql);
     }
-    if (msg.sqlId !== void 0) {
-      w.number("sql_id", msg.sqlId);
+    if (msg2.sqlId !== void 0) {
+      w.number("sql_id", msg2.sqlId);
     }
-  } else if (msg.type === "describe") {
-    if (msg.sql !== void 0) {
-      w.string("sql", msg.sql);
+  } else if (msg2.type === "describe") {
+    if (msg2.sql !== void 0) {
+      w.string("sql", msg2.sql);
     }
-    if (msg.sqlId !== void 0) {
-      w.number("sql_id", msg.sqlId);
+    if (msg2.sqlId !== void 0) {
+      w.number("sql_id", msg2.sqlId);
     }
-  } else if (msg.type === "store_sql") {
-    w.number("sql_id", msg.sqlId);
-    w.string("sql", msg.sql);
-  } else if (msg.type === "close_sql") {
-    w.number("sql_id", msg.sqlId);
-  } else if (msg.type === "get_autocommit") {
+  } else if (msg2.type === "store_sql") {
+    w.number("sql_id", msg2.sqlId);
+    w.string("sql", msg2.sql);
+  } else if (msg2.type === "close_sql") {
+    w.number("sql_id", msg2.sqlId);
+  } else if (msg2.type === "get_autocommit") {
   } else {
-    throw impossible(msg, "Impossible type of StreamRequest");
+    throw impossible(msg2, "Impossible type of StreamRequest");
   }
 }
-function CursorReqBody(w, msg) {
-  if (msg.baton !== void 0) {
-    w.string("baton", msg.baton);
+function CursorReqBody(w, msg2) {
+  if (msg2.baton !== void 0) {
+    w.string("baton", msg2.baton);
   }
-  w.object("batch", msg.batch, Batch2);
+  w.object("batch", msg2.batch, Batch2);
 }
 var init_json_encode3 = __esm({
   "node_modules/@libsql/hrana-client/lib-esm/http/json_encode.js"() {
@@ -10972,73 +10972,73 @@ var init_json_encode3 = __esm({
 });
 
 // node_modules/@libsql/hrana-client/lib-esm/http/protobuf_encode.js
-function PipelineReqBody2(w, msg) {
-  if (msg.baton !== void 0) {
-    w.string(1, msg.baton);
+function PipelineReqBody2(w, msg2) {
+  if (msg2.baton !== void 0) {
+    w.string(1, msg2.baton);
   }
-  for (const req of msg.requests) {
+  for (const req of msg2.requests) {
     w.message(2, req, StreamRequest2);
   }
 }
-function StreamRequest2(w, msg) {
-  if (msg.type === "close") {
-    w.message(1, msg, CloseStreamReq2);
-  } else if (msg.type === "execute") {
-    w.message(2, msg, ExecuteStreamReq);
-  } else if (msg.type === "batch") {
-    w.message(3, msg, BatchStreamReq);
-  } else if (msg.type === "sequence") {
-    w.message(4, msg, SequenceStreamReq);
-  } else if (msg.type === "describe") {
-    w.message(5, msg, DescribeStreamReq);
-  } else if (msg.type === "store_sql") {
-    w.message(6, msg, StoreSqlStreamReq);
-  } else if (msg.type === "close_sql") {
-    w.message(7, msg, CloseSqlStreamReq);
-  } else if (msg.type === "get_autocommit") {
-    w.message(8, msg, GetAutocommitStreamReq);
+function StreamRequest2(w, msg2) {
+  if (msg2.type === "close") {
+    w.message(1, msg2, CloseStreamReq2);
+  } else if (msg2.type === "execute") {
+    w.message(2, msg2, ExecuteStreamReq);
+  } else if (msg2.type === "batch") {
+    w.message(3, msg2, BatchStreamReq);
+  } else if (msg2.type === "sequence") {
+    w.message(4, msg2, SequenceStreamReq);
+  } else if (msg2.type === "describe") {
+    w.message(5, msg2, DescribeStreamReq);
+  } else if (msg2.type === "store_sql") {
+    w.message(6, msg2, StoreSqlStreamReq);
+  } else if (msg2.type === "close_sql") {
+    w.message(7, msg2, CloseSqlStreamReq);
+  } else if (msg2.type === "get_autocommit") {
+    w.message(8, msg2, GetAutocommitStreamReq);
   } else {
-    throw impossible(msg, "Impossible type of StreamRequest");
+    throw impossible(msg2, "Impossible type of StreamRequest");
   }
 }
 function CloseStreamReq2(_w, _msg) {
 }
-function ExecuteStreamReq(w, msg) {
-  w.message(1, msg.stmt, Stmt3);
+function ExecuteStreamReq(w, msg2) {
+  w.message(1, msg2.stmt, Stmt3);
 }
-function BatchStreamReq(w, msg) {
-  w.message(1, msg.batch, Batch3);
+function BatchStreamReq(w, msg2) {
+  w.message(1, msg2.batch, Batch3);
 }
-function SequenceStreamReq(w, msg) {
-  if (msg.sql !== void 0) {
-    w.string(1, msg.sql);
+function SequenceStreamReq(w, msg2) {
+  if (msg2.sql !== void 0) {
+    w.string(1, msg2.sql);
   }
-  if (msg.sqlId !== void 0) {
-    w.int32(2, msg.sqlId);
-  }
-}
-function DescribeStreamReq(w, msg) {
-  if (msg.sql !== void 0) {
-    w.string(1, msg.sql);
-  }
-  if (msg.sqlId !== void 0) {
-    w.int32(2, msg.sqlId);
+  if (msg2.sqlId !== void 0) {
+    w.int32(2, msg2.sqlId);
   }
 }
-function StoreSqlStreamReq(w, msg) {
-  w.int32(1, msg.sqlId);
-  w.string(2, msg.sql);
+function DescribeStreamReq(w, msg2) {
+  if (msg2.sql !== void 0) {
+    w.string(1, msg2.sql);
+  }
+  if (msg2.sqlId !== void 0) {
+    w.int32(2, msg2.sqlId);
+  }
 }
-function CloseSqlStreamReq(w, msg) {
-  w.int32(1, msg.sqlId);
+function StoreSqlStreamReq(w, msg2) {
+  w.int32(1, msg2.sqlId);
+  w.string(2, msg2.sql);
+}
+function CloseSqlStreamReq(w, msg2) {
+  w.int32(1, msg2.sqlId);
 }
 function GetAutocommitStreamReq(_w, _msg) {
 }
-function CursorReqBody2(w, msg) {
-  if (msg.baton !== void 0) {
-    w.string(1, msg.baton);
+function CursorReqBody2(w, msg2) {
+  if (msg2.baton !== void 0) {
+    w.string(1, msg2.baton);
   }
-  w.message(2, msg.batch, Batch3);
+  w.message(2, msg2.batch, Batch3);
 }
 var init_protobuf_encode3 = __esm({
   "node_modules/@libsql/hrana-client/lib-esm/http/protobuf_encode.js"() {
@@ -14523,7 +14523,7 @@ var init_select2 = __esm({
           const baseTableName = this.tableName;
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table)) this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join18) => join18.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join20) => join20.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -15409,7 +15409,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join18) => join18.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join20) => join20.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -18067,9 +18067,9 @@ async function printList(limit, refFilter) {
     rows = rows.slice(0, limit);
   }
   if (rows.length === 0) {
-    const msg = refFilter ? `No sessions linked to ref: ${refFilter}
+    const msg2 = refFilter ? `No sessions linked to ref: ${refFilter}
 ` : "No sessions found.\n";
-    process.stdout.write(msg);
+    process.stdout.write(msg2);
     return;
   }
   const scores = await scoreSessionsBatch(db, rows.map((r) => r.id));
@@ -18110,11 +18110,11 @@ async function printDetail(prefix) {
 ${BOLD}${session.title}${RESET}
 
 `);
-  for (const msg of msgs) {
-    const ts = fmtTimestamp(msg.created_at);
-    if (msg.event_type === "code_change") {
+  for (const msg2 of msgs) {
+    const ts = fmtTimestamp(msg2.created_at);
+    if (msg2.event_type === "code_change") {
       try {
-        const payload = JSON.parse(msg.content);
+        const payload = JSON.parse(msg2.content);
         const opColor = payload.operation === "delete" ? YELLOW : payload.operation === "create" ? GREEN : CYAN;
         process.stdout.write(`${DIM}[${ts}]${RESET} ${BOLD}${MAGENTA}code_change${RESET}  ${opColor}${payload.operation ?? ""}${RESET}  ${payload.file_path ?? ""}
 `);
@@ -18132,35 +18132,35 @@ ${BOLD}${session.title}${RESET}
         process.stdout.write("\n");
       } catch {
         process.stdout.write(`${DIM}[${ts}]${RESET} ${BOLD}${MAGENTA}code_change${RESET}
-${msg.content}
+${msg2.content}
 
 `);
       }
-    } else if (msg.event_type === "tool_call" || msg.event_type === "tool_result") {
+    } else if (msg2.event_type === "tool_call" || msg2.event_type === "tool_result") {
       try {
-        const payload = JSON.parse(msg.content);
-        const label = msg.event_type === "tool_call" ? `${BOLD}${CYAN}tool_call${RESET}  ${payload.tool_name ?? ""}` : `${BOLD}${DIM}tool_result${RESET}  id:${payload.tool_call_id?.slice(0, 8) ?? ""}`;
+        const payload = JSON.parse(msg2.content);
+        const label = msg2.event_type === "tool_call" ? `${BOLD}${CYAN}tool_call${RESET}  ${payload.tool_name ?? ""}` : `${BOLD}${DIM}tool_result${RESET}  id:${payload.tool_call_id?.slice(0, 8) ?? ""}`;
         process.stdout.write(`${DIM}[${ts}]${RESET} ${label}
 
 `);
       } catch {
-        process.stdout.write(`${DIM}[${ts}]${RESET} ${BOLD}${CYAN}${msg.event_type}${RESET}
-${msg.content}
+        process.stdout.write(`${DIM}[${ts}]${RESET} ${BOLD}${CYAN}${msg2.event_type}${RESET}
+${msg2.content}
 
 `);
       }
     } else {
-      if (isSystemRole(msg.role)) {
-        process.stdout.write(`${DIM}[${ts}]${RESET} ${DIM}\u2500\u2500 ${roleLabel(msg.role)} \u2500\u2500${RESET}
+      if (isSystemRole(msg2.role)) {
+        process.stdout.write(`${DIM}[${ts}]${RESET} ${DIM}\u2500\u2500 ${roleLabel(msg2.role)} \u2500\u2500${RESET}
 `);
-        process.stdout.write(`${DIM}${msg.content}${RESET}
+        process.stdout.write(`${DIM}${msg2.content}${RESET}
 
 `);
       } else {
-        const roleColor = msg.role === "user" ? YELLOW : CYAN;
-        process.stdout.write(`${DIM}[${ts}]${RESET} ${BOLD}${roleColor}${msg.role}${RESET}
+        const roleColor = msg2.role === "user" ? YELLOW : CYAN;
+        process.stdout.write(`${DIM}[${ts}]${RESET} ${BOLD}${roleColor}${msg2.role}${RESET}
 `);
-        process.stdout.write(`${msg.content}
+        process.stdout.write(`${msg2.content}
 
 `);
       }
@@ -18346,7 +18346,7 @@ function severityBadge(type) {
   return `<span style="background:${color};color:#fff;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600">${level}</span>`;
 }
 function buildHtml(params) {
-  const { host, fingerprint, overview, toolUsage, detections, inventory, integrity, generatedAt } = params;
+  const { host, fingerprint: fingerprint2, overview, toolUsage, detections, inventory, integrity, generatedAt } = params;
   const periodStart = fmtDate2(overview.period_start) || "\u2014";
   const periodEnd = fmtDate2(overview.period_end) || "\u2014";
   const integrityStatus = integrity.broken === 0 ? `<span class="ok">&#10003; All ${integrity.intact} chained session(s) intact</span>` : `<span class="fail">&#9888; ${integrity.broken} session(s) with broken chain</span>`;
@@ -18380,7 +18380,7 @@ function buildHtml(params) {
 <table style="width:auto;margin-bottom:0">
   <tr><th>Reporting Period</th><td>${periodStart} \u2013 ${periodEnd}</td></tr>
   <tr><th>Generated</th><td>${generatedAt}</td></tr>
-  <tr><th>Evidence DB Fingerprint</th><td><span class="fingerprint">${fingerprint}</span></td></tr>
+  <tr><th>Evidence DB Fingerprint</th><td><span class="fingerprint">${fingerprint2}</span></td></tr>
   <tr><th>Total Sessions</th><td>${overview.total_sessions}</td></tr>
   <tr><th>Total Messages</th><td>${overview.total_messages}</td></tr>
 </table>
@@ -18496,7 +18496,7 @@ ${brokenList}
   <li>The chain integrity check in this report is a linkage check. Re-run <code>chron verify</code> per session for full content-hash verification.</li>
 </ul>
 
-<p style="margin-top:12px;font-size:11px;color:#9ca3af">Generated by chron-mcp &nbsp;|&nbsp; Evidence DB fingerprint: <span class="fingerprint">${fingerprint}</span> &nbsp;|&nbsp; ${generatedAt}</p>
+<p style="margin-top:12px;font-size:11px;color:#9ca3af">Generated by chron-mcp &nbsp;|&nbsp; Evidence DB fingerprint: <span class="fingerprint">${fingerprint2}</span> &nbsp;|&nbsp; ${generatedAt}</p>
 </div>
 
 </div>
@@ -18506,7 +18506,7 @@ ${brokenList}
 async function buildSoc2Report(outputPath) {
   const db = await initDb();
   const generatedAt = (/* @__PURE__ */ new Date()).toISOString().replace("T", " ").slice(0, 19) + " UTC";
-  const [overview, toolUsage, detections, inventory, integrity, fingerprint] = await Promise.all([
+  const [overview, toolUsage, detections, inventory, integrity, fingerprint2] = await Promise.all([
     queryOverview(db),
     queryToolUsage(db),
     queryDetectionsByType(db),
@@ -18516,7 +18516,7 @@ async function buildSoc2Report(outputPath) {
   ]);
   const html = buildHtml({
     host: (0, import_os3.hostname)(),
-    fingerprint,
+    fingerprint: fingerprint2,
     overview,
     toolUsage,
     detections,
@@ -23531,10 +23531,10 @@ async function runPrune(args2) {
 `
       );
     } catch (e) {
-      const msg = e instanceof BackupError2 ? e.message : e instanceof Error ? e.message : String(e);
+      const msg2 = e instanceof BackupError2 ? e.message : e instanceof Error ? e.message : String(e);
       process.stderr.write(`
 Refusing to delete: the backup failed.
-  ${msg}
+  ${msg2}
 
 `);
       process.exit(1);
@@ -23772,9 +23772,9 @@ var init_evidence = __esm({
     };
     EVIDENCE_SOURCES = Object.values(EVIDENCE_SOURCE);
     CAPTURE_MODE = {
-      /** Nothing prevented this interaction from occurring unrecorded. The default, and today the only reachable value. */
+      /** Nothing prevented this interaction from occurring unrecorded. The default, and what every MCP-logged session is. */
       UNENFORCED: "unenforced",
-      /** Chron's wrapper recorded the interaction durably before releasing the output. Not built. */
+      /** Chron's wrapper recorded the interaction durably before releasing the output. Reachable via `chron run` since v0.1.62. */
       ENFORCED_WRAPPER: "enforced:wrapper",
       /** A control outside Chron's command path prevented bypass of the wrapper. Not built. */
       ENFORCED_POLICY: "enforced:policy"
@@ -25033,20 +25033,20 @@ var verify_exports2 = {};
 __export(verify_exports2, {
   runVerify: () => runVerify
 });
-function ok(msg) {
-  process.stdout.write(`  ${GREEN5}\u2713${RESET9} ${msg}
+function ok(msg2) {
+  process.stdout.write(`  ${GREEN5}\u2713${RESET9} ${msg2}
 `);
 }
-function fail(msg) {
-  process.stdout.write(`  ${RED6}\u2717${RESET9} ${msg}
+function fail(msg2) {
+  process.stdout.write(`  ${RED6}\u2717${RESET9} ${msg2}
 `);
 }
-function warn(msg) {
-  process.stdout.write(`  ${YELLOW6}!${RESET9} ${msg}
+function warn(msg2) {
+  process.stdout.write(`  ${YELLOW6}!${RESET9} ${msg2}
 `);
 }
-function note(msg) {
-  process.stdout.write(`  ${DIM7}\xB7${RESET9} ${msg}
+function note(msg2) {
+  process.stdout.write(`  ${DIM7}\xB7${RESET9} ${msg2}
 `);
 }
 async function runVerifyBundle(bundlePath) {
@@ -25137,10 +25137,10 @@ ${BOLD8}Signature${RESET9}
 }
 async function runVerifyJournal(pathArg) {
   const { journalStatus: journalStatus2 } = await Promise.resolve().then(() => (init_writer(), writer_exports));
-  const { join: join18 } = await import("path");
-  const { homedir: homedir14 } = await import("os");
+  const { join: join20 } = await import("path");
+  const { homedir: homedir15 } = await import("os");
   const { guardedJournalPath: guardedJournalPath2 } = await Promise.resolve().then(() => (init_config_path(), config_path_exports));
-  const path = guardedJournalPath2(pathArg || process.env.CHRON_JOURNAL_PATH || join18(process.env.CHRON_HOME ?? join18(homedir14(), ".chron"), "capture.jsonl"));
+  const path = guardedJournalPath2(pathArg || process.env.CHRON_JOURNAL_PATH || join20(process.env.CHRON_HOME ?? join20(homedir15(), ".chron"), "capture.jsonl"));
   process.stdout.write(`
 ${BOLD8}Verifying journal${RESET9} ${path}
 
@@ -26827,6 +26827,7 @@ function parseTranscript(raw, opts = {}) {
   let sessionId = "";
   let seq = 0;
   let maxSeen = null;
+  let malformedLines = 0;
   let outOfOrder = 0;
   let first = null;
   let last = null;
@@ -26838,6 +26839,7 @@ function parseTranscript(raw, opts = {}) {
     try {
       d = JSON.parse(line);
     } catch {
+      malformedLines++;
       continue;
     }
     if (!sessionId && typeof d.sessionId === "string") sessionId = d.sessionId;
@@ -26861,13 +26863,13 @@ function parseTranscript(raw, opts = {}) {
       exclusions.meta_lines++;
       continue;
     }
-    const msg = d.message ?? {};
+    const msg2 = d.message ?? {};
     const role = d.type === "user" ? "user" : "assistant";
     const lineIdentity = typeof d.uuid === "string" && d.uuid ? d.uuid : `line:${lineIndex}`;
     const sourceLine = `${lineIndex}:${lineIdentity}`;
     const at = ts ?? "";
     if (d.isCompactSummary) {
-      const body = textOf(msg.content);
+      const body = textOf(msg2.content);
       exclusions.compaction_summaries.count++;
       exclusions.compaction_summaries.bytes += Buffer.byteLength(body, "utf8");
       events.push({
@@ -26884,9 +26886,9 @@ function parseTranscript(raw, opts = {}) {
       });
       continue;
     }
-    const blocks = Array.isArray(msg.content) ? msg.content : null;
+    const blocks = Array.isArray(msg2.content) ? msg2.content : null;
     if (!blocks) {
-      const body = textOf(msg.content);
+      const body = textOf(msg2.content);
       if (body) {
         const found = scanForSecrets(body);
         secrets += found.length;
@@ -26959,6 +26961,7 @@ function parseTranscript(raw, opts = {}) {
     last_timestamp: last,
     out_of_order_timestamps: outOfOrder,
     content_hash: (0, import_crypto13.createHash)("sha256").update(raw).digest("hex"),
+    malformed_lines: malformedLines,
     secrets_found: secrets,
     secret_detections
   };
@@ -27636,13 +27639,13 @@ function messagesFromConversation(conv) {
   const nodes = linearize(conv.mapping);
   const result = [];
   for (const node of nodes) {
-    const msg = node.message;
-    if (!msg) continue;
-    const role = msg.author.role;
+    const msg2 = node.message;
+    if (!msg2) continue;
+    const role = msg2.author.role;
     if (role !== "user" && role !== "assistant") continue;
-    const text2 = extractText(msg.content);
+    const text2 = extractText(msg2.content);
     if (!text2) continue;
-    result.push({ role, content: text2, ts: unixToIso(msg.create_time) });
+    result.push({ role, content: text2, ts: unixToIso(msg2.create_time) });
   }
   return result;
 }
@@ -29115,14 +29118,14 @@ function buildTamperBar(t) {
     <span class="tamper-badge ${sigCls}">${sigIcon} ${esc4(sigLabel)}</span>
   </div>`;
 }
-function buildTimelineEntry(msg, secrets) {
-  const ts = fmtTs(msg.created_at);
-  const eventType = msg.event_type ?? "message";
+function buildTimelineEntry(msg2, secrets) {
+  const ts = fmtTs(msg2.created_at);
+  const eventType = msg2.event_type ?? "message";
   if (eventType === "code_change") {
     let label = "code_change";
     let body2 = "";
     try {
-      const p = JSON.parse(msg.content);
+      const p = JSON.parse(msg2.content);
       const op = p.operation ?? "";
       label = `${op} \xB7 ${p.file_path ?? ""}`;
       if (p.diff) {
@@ -29137,7 +29140,7 @@ function buildTimelineEntry(msg, secrets) {
       }
     } catch {
       label = "code_change";
-      body2 = esc4(msg.content.slice(0, 200));
+      body2 = esc4(msg2.content.slice(0, 200));
     }
     return `<div class="tl-entry code_change">
       <div class="tl-header">
@@ -29151,7 +29154,7 @@ function buildTimelineEntry(msg, secrets) {
   if (eventType === "tool_call") {
     let toolName = "tool_call";
     try {
-      toolName = JSON.parse(msg.content).tool_name ?? "tool_call";
+      toolName = JSON.parse(msg2.content).tool_name ?? "tool_call";
     } catch {
     }
     return `<div class="tl-entry tool_call">
@@ -29171,15 +29174,15 @@ function buildTimelineEntry(msg, secrets) {
       <div class="tl-label dim">result received</div>
     </div>`;
   }
-  if (isSystemRole(msg.role)) {
+  if (isSystemRole(msg2.role)) {
     return `
     <div class="tl-entry boundary" style="border-left:3px solid #94a3b8; opacity:.8;">
-      <div class="tl-header"><span class="tl-role">${esc4(roleLabel(msg.role))}</span><span class="tl-time">${esc4(ts)}</span></div>
-      <div class="tl-body"><em>${esc4(msg.content)}</em></div>
+      <div class="tl-header"><span class="tl-role">${esc4(roleLabel(msg2.role))}</span><span class="tl-time">${esc4(ts)}</span></div>
+      <div class="tl-body"><em>${esc4(msg2.content)}</em></div>
     </div>`;
   }
-  const role = msg.role === "user" ? "user" : "assistant";
-  const content = msg.content;
+  const role = msg2.role === "user" ? "user" : "assistant";
+  const content = msg2.content;
   const truncated = content.length > 400;
   const body = esc4(truncated ? content.slice(0, 400) : content);
   const more = truncated ? `<div class="tl-more">\u2026 ${content.length - 400} more characters</div>` : "";
@@ -31005,8 +31008,8 @@ function selectRequirements(reqs, now, opts) {
 function printReviewList(reqs, now, overdueOnly) {
   const visible = selectRequirements(reqs, now, { showAll: false, overdueOnly });
   if (visible.length === 0) {
-    const msg = overdueOnly ? "No overdue reviews." : "No pending reviews.";
-    process.stdout.write(`${DIM16}${msg}${RESET18}
+    const msg2 = overdueOnly ? "No overdue reviews." : "No pending reviews.";
+    process.stdout.write(`${DIM16}${msg2}${RESET18}
 
 `);
     return;
@@ -32063,6 +32066,925 @@ var init_otel = __esm({
   }
 });
 
+// src/stream/transcript-reader.ts
+async function readTranscript(path, onLine, opts = {}) {
+  const maxLineChars = opts.maxLineChars ?? DEFAULT_MAX_LINE_CHARS;
+  const recordTypes = new Set(opts.recordTypes ?? CLAUDE_CODE_RECORD_TYPES);
+  const metadataTypes = new Set(opts.metadataTypes ?? CLAUDE_CODE_METADATA_TYPES);
+  const hash2 = (0, import_crypto20.createHash)("sha256");
+  const decoder = new import_string_decoder.StringDecoder("utf8");
+  const counts = {
+    bytes: 0,
+    lines: 0,
+    empty: 0,
+    malformed_json: 0,
+    not_an_object: 0,
+    unknown_type: 0,
+    metadata: 0,
+    oversized: 0,
+    records: 0
+  };
+  let pending = "";
+  let skippingOversized = false;
+  let readError;
+  const classify = (raw) => {
+    if (raw.length === 0) return "empty";
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return "malformed_json";
+    }
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return "not_an_object";
+    }
+    const value = parsed;
+    const type = typeof value.type === "string" ? value.type : "";
+    if (metadataTypes.has(type)) return { value, kind: "metadata" };
+    if (recordTypes.has(type)) return { value, kind: "record" };
+    return "unknown_type";
+  };
+  const emit = async (raw) => {
+    const index = counts.lines;
+    counts.lines++;
+    const verdict = classify(raw);
+    if (typeof verdict === "string") {
+      switch (verdict) {
+        case "empty":
+          counts.empty++;
+          break;
+        case "malformed_json":
+          counts.malformed_json++;
+          break;
+        case "not_an_object":
+          counts.not_an_object++;
+          break;
+        case "unknown_type":
+          counts.unknown_type++;
+          break;
+        default:
+          break;
+      }
+      await onLine({ index, classification: verdict });
+      return;
+    }
+    if (verdict.kind === "metadata") counts.metadata++;
+    else counts.records++;
+    await onLine({ index, classification: verdict.kind, value: verdict.value });
+  };
+  const reportOversized = async () => {
+    counts.lines++;
+    counts.oversized++;
+    await onLine({ index: counts.lines - 1, classification: "oversized" });
+  };
+  const emitLine = async (line) => {
+    if (line.length > maxLineChars) {
+      await reportOversized();
+      return;
+    }
+    await emit(line.endsWith("\r") ? line.slice(0, -1) : line);
+  };
+  const flushLines = async () => {
+    for (; ; ) {
+      const nl = pending.indexOf("\n");
+      if (nl === -1) break;
+      const line = pending.slice(0, nl);
+      pending = pending.slice(nl + 1);
+      if (skippingOversized) {
+        skippingOversized = false;
+        continue;
+      }
+      await emitLine(line);
+    }
+    if (skippingOversized) {
+      pending = "";
+      return;
+    }
+    if (pending.length > maxLineChars) {
+      pending = "";
+      skippingOversized = true;
+      await reportOversized();
+    }
+  };
+  let before = null;
+  try {
+    const st = (0, import_fs30.statSync)(path);
+    before = { size: st.size, mtimeMs: st.mtimeMs, ino: st.ino };
+  } catch {
+  }
+  try {
+    const stream = (0, import_fs30.createReadStream)(path, { highWaterMark: opts.chunkSize ?? DEFAULT_CHUNK });
+    for await (const chunk2 of stream) {
+      hash2.update(chunk2);
+      counts.bytes += chunk2.length;
+      pending += decoder.write(chunk2);
+      await flushLines();
+    }
+  } catch (e) {
+    readError = e instanceof Error ? e.message : String(e);
+  }
+  const tail = decoder.end();
+  const truncated = tail.includes("\uFFFD");
+  if (tail.length > 0) pending += tail;
+  if (!skippingOversized && pending.length > 0) {
+    await emitLine(pending);
+  }
+  pending = "";
+  let changed = null;
+  if (before !== null) {
+    try {
+      const st = (0, import_fs30.statSync)(path);
+      changed = st.size !== before.size || st.mtimeMs !== before.mtimeMs || st.ino !== before.ino;
+    } catch {
+      changed = true;
+    }
+  }
+  return {
+    sha256: hash2.digest("hex"),
+    counts,
+    truncated_character_at_eof: truncated,
+    changed_while_reading: changed,
+    ...readError === void 0 ? {} : { read_error: readError }
+  };
+}
+var import_fs30, import_crypto20, import_string_decoder, DEFAULT_MAX_LINE_CHARS, DEFAULT_CHUNK, CLAUDE_CODE_RECORD_TYPES, CLAUDE_CODE_METADATA_TYPES;
+var init_transcript_reader = __esm({
+  "src/stream/transcript-reader.ts"() {
+    "use strict";
+    import_fs30 = require("fs");
+    import_crypto20 = require("crypto");
+    import_string_decoder = require("string_decoder");
+    DEFAULT_MAX_LINE_CHARS = 4 * 1024 * 1024;
+    DEFAULT_CHUNK = 256 * 1024;
+    CLAUDE_CODE_RECORD_TYPES = ["user", "assistant", "system"];
+    CLAUDE_CODE_METADATA_TYPES = ["summary", "file-history-snapshot"];
+  }
+});
+
+// src/stream/claude-code-messages.ts
+function turnsOf(line) {
+  if (line.classification !== "record" || !line.value) return [];
+  const type = line.value.type;
+  if (type !== "user" && type !== "assistant") return [];
+  if (line.value.isCompactSummary) return [];
+  const message = line.value.message;
+  if (!message || typeof message !== "object" || Array.isArray(message)) return [];
+  const role = message.role;
+  if (role !== "user" && role !== "assistant") return [];
+  const content = message.content;
+  if (!Array.isArray(content)) {
+    const body = textOf(content);
+    return body.length > 0 ? [{ role, text: body }] : [];
+  }
+  const turns = [];
+  for (const block of content) {
+    if (!block || typeof block !== "object") continue;
+    const b = block;
+    if (b.type !== "text") continue;
+    const body = String(b.text ?? "").trim();
+    if (body.length === 0) continue;
+    turns.push({ role, text: body });
+  }
+  return turns;
+}
+var init_claude_code_messages = __esm({
+  "src/stream/claude-code-messages.ts"() {
+    "use strict";
+    init_claude_code();
+  }
+});
+
+// src/reconcile/discover.ts
+function discoverWithFailures(root) {
+  const files = [];
+  const failures = [];
+  if (!(0, import_fs31.existsSync)(root)) {
+    return { root, root_exists: false, files, failures };
+  }
+  let projects;
+  try {
+    projects = (0, import_fs31.readdirSync)(root);
+  } catch (e) {
+    failures.push({ path: root, reason: `could not list the transcript root: ${msg(e)}` });
+    return { root, root_exists: true, files, failures };
+  }
+  for (const project of projects) {
+    const projectDir = (0, import_path20.join)(root, project);
+    let stat;
+    try {
+      stat = (0, import_fs31.statSync)(projectDir);
+    } catch (e) {
+      failures.push({ path: projectDir, reason: `could not stat: ${msg(e)}` });
+      continue;
+    }
+    if (!stat.isDirectory()) continue;
+    let entries;
+    try {
+      entries = (0, import_fs31.readdirSync)(projectDir);
+    } catch (e) {
+      failures.push({ path: projectDir, reason: `could not list this project: ${msg(e)}` });
+      continue;
+    }
+    for (const entry of entries) {
+      const sessionId = sessionIdOf(entry);
+      if (!sessionId) continue;
+      const path = (0, import_path20.join)(projectDir, entry);
+      try {
+        const s = (0, import_fs31.statSync)(path);
+        if (!s.isFile()) continue;
+        files.push({
+          path,
+          session_id: sessionId,
+          project,
+          size_bytes: s.size,
+          modified_at: s.mtime.toISOString()
+        });
+      } catch (e) {
+        failures.push({ path, reason: `could not stat: ${msg(e)}` });
+      }
+    }
+  }
+  return { root, root_exists: true, files, failures };
+}
+function msg(e) {
+  return e instanceof Error ? e.message : String(e);
+}
+var import_fs31, import_path20;
+var init_discover2 = __esm({
+  "src/reconcile/discover.ts"() {
+    "use strict";
+    import_fs31 = require("fs");
+    import_path20 = require("path");
+    init_discover();
+  }
+});
+
+// src/reconcile/reconcile.ts
+function fingerprint(normalised) {
+  return (0, import_crypto21.createHash)("sha256").update(normalised).digest("hex").slice(0, 32);
+}
+function comparable(text2) {
+  return canonicalContent(text2).replace(/\s+/g, " ").trim().toLowerCase();
+}
+function orderedPrints(needles, haystack) {
+  const index = /* @__PURE__ */ new Map();
+  for (let i = 0; i < haystack.length; i++) {
+    const at = index.get(haystack[i]);
+    if (at) at.push(i);
+    else index.set(haystack[i], [i]);
+  }
+  let from = -1;
+  let matched = 0;
+  for (const n of needles) {
+    const positions = index.get(n);
+    if (!positions) continue;
+    const next = positions.find((p) => p > from);
+    if (next === void 0) continue;
+    from = next;
+    matched++;
+  }
+  return matched;
+}
+function inspectionOf(counts, truncated, changedWhileReading) {
+  const reasons = [];
+  if (counts.malformed_json > 0) {
+    reasons.push(`${counts.malformed_json} line(s) were not valid JSON and were skipped`);
+  }
+  if (counts.not_an_object > 0) {
+    reasons.push(`${counts.not_an_object} line(s) were valid JSON but not a record`);
+  }
+  if (counts.unknown_type > 0) {
+    reasons.push(`${counts.unknown_type} line(s) had an unrecognised record type`);
+  }
+  if (counts.oversized > 0) {
+    reasons.push(`${counts.oversized} line(s) exceeded the line limit and were skipped`);
+  }
+  if (truncated) reasons.push("the file ends inside a multibyte character");
+  if (changedWhileReading === true) {
+    reasons.push("the file changed while it was being read, so its digest is of the bytes read rather than of a settled file");
+  }
+  return {
+    complete: reasons.length === 0,
+    changed_while_reading: changedWhileReading,
+    malformed_lines: counts.malformed_json,
+    counts: {
+      lines: counts.lines,
+      records: counts.records,
+      metadata: counts.metadata,
+      empty: counts.empty,
+      not_an_object: counts.not_an_object,
+      unknown_type: counts.unknown_type,
+      oversized: counts.oversized
+    },
+    truncated_character_at_eof: truncated,
+    reasons
+  };
+}
+function coverageOf(basis, transcriptComparable, compared, accounted, comparedIndices, notes = []) {
+  return {
+    basis,
+    transcript_comparable: transcriptComparable,
+    compared,
+    accounted_for: accounted,
+    compared_indices: comparedIndices,
+    complete: transcriptComparable > 0 && compared === transcriptComparable && accounted === transcriptComparable,
+    notes
+  };
+}
+function directionOf(record) {
+  if (record.kind === INTERACTION_INPUT) return "user";
+  const stream = record.data.stream;
+  return stream === "stdin" ? "user" : "assistant";
+}
+function capturedSegments(run) {
+  const decoders = /* @__PURE__ */ new Map();
+  const segments = [];
+  for (const r of run.interactions) {
+    const b64 = r.data.bytes_b64;
+    if (typeof b64 !== "string") continue;
+    const streamKey = typeof r.data.stream === "string" ? r.data.stream : r.kind;
+    let decoder = decoders.get(streamKey);
+    if (!decoder) {
+      decoder = new import_string_decoder2.StringDecoder("utf8");
+      decoders.set(streamKey, decoder);
+    }
+    const text2 = decoder.write(Buffer.from(b64, "base64"));
+    if (text2.length === 0) continue;
+    const direction = directionOf(r);
+    const last = segments[segments.length - 1];
+    if (last && last.direction === direction && last.stream === streamKey) last.text += text2;
+    else segments.push({ direction, stream: streamKey, text: text2 });
+  }
+  for (const [key, decoder] of decoders) {
+    const tail = decoder.end();
+    if (tail.length === 0) continue;
+    const direction = key === "stdin" || key === INTERACTION_INPUT ? "user" : "assistant";
+    let appended = false;
+    for (let i = segments.length - 1; i >= 0; i--) {
+      if (segments[i].stream === key) {
+        segments[i].text += tail;
+        appended = true;
+        break;
+      }
+    }
+    if (!appended) segments.push({ direction, stream: key, text: tail });
+  }
+  return segments.map((s) => ({ direction: s.direction, stream: s.stream, text: comparable(s.text) }));
+}
+function orderedInSegments(needles, segments) {
+  let segIndex = 0;
+  let offset = 0;
+  let matched = 0;
+  for (const needle of needles) {
+    let i = segIndex;
+    let searchFrom = offset;
+    let found = false;
+    while (i < segments.length) {
+      const seg = segments[i];
+      if (seg.direction === needle.role) {
+        const at = seg.text.indexOf(needle.text, searchFrom);
+        if (at !== -1) {
+          segIndex = i;
+          offset = at + needle.text.length;
+          matched++;
+          found = true;
+          break;
+        }
+      }
+      i++;
+      searchFrom = 0;
+    }
+    void found;
+  }
+  return matched;
+}
+async function reconcileClaudeCode(opts = {}) {
+  const now = opts.now ?? localISOString;
+  const reconciled_at = now();
+  const toleranceMs = opts.toleranceMs ?? null;
+  const maxBytes = opts.maxTranscriptBytes === void 0 ? DEFAULT_MAX_TRANSCRIPT_BYTES : opts.maxTranscriptBytes;
+  const maxLineChars = opts.maxLineChars ?? DEFAULT_MAX_LINE_CHARS2;
+  const root = opts.transcriptRoot ?? transcriptRoot();
+  const chronHome = process.env.CHRON_HOME ?? (0, import_path21.join)((0, import_os17.homedir)(), ".chron");
+  const dbPath3 = opts.databasePath ?? process.env.CHRON_DB_PATH ?? (0, import_path21.join)((0, import_os17.homedir)(), ".chron", "chron.db");
+  const journalPath2 = opts.journalPath ?? process.env.CHRON_JOURNAL_PATH ?? (0, import_path21.join)(chronHome, "capture.jsonl");
+  const discovery = discoverWithFailures(root);
+  const sources = [];
+  const unreadable = [];
+  const notInspected = [];
+  let sessions2 = [];
+  const sessionPrints = /* @__PURE__ */ new Map();
+  let dbReadable = false;
+  if (dbPath3 && (0, import_fs32.existsSync)(dbPath3)) {
+    const handle = openUntouched(dbPath3);
+    if (handle) {
+      try {
+        const rows = await handle.db.all(sql.raw(
+          "SELECT id, external_ref, metadata, ai_tool, created_at FROM sessions"
+        ));
+        sessions2 = rows;
+        const msgs = await handle.db.all(sql.raw(
+          "SELECT session_id, content, role, event_type FROM messages ORDER BY session_id, COALESCE(source_sequence, 0), created_at, id"
+        ));
+        for (const m of msgs) {
+          if (m.event_type !== null && m.event_type !== "message") continue;
+          if (m.role !== "user" && m.role !== "assistant") continue;
+          const norm = comparable(m.content);
+          if (norm.length < MIN_MESSAGE_CHARS) continue;
+          let list = sessionPrints.get(m.session_id);
+          if (!list) {
+            list = [];
+            sessionPrints.set(m.session_id, list);
+          }
+          list.push(fingerprint(`${m.role}|${norm}`));
+        }
+        dbReadable = true;
+        sources.push(
+          `database ${dbPath3} (${rows.length} sessions, ${msgs.length} messages, read from a copy)`
+        );
+      } catch {
+        sources.push(`database ${dbPath3} (unreadable)`);
+      } finally {
+        handle.close();
+      }
+    } else {
+      sources.push(`database ${dbPath3} (could not be copied for reading)`);
+    }
+  } else {
+    sources.push(dbPath3 ? `database ${dbPath3} (absent)` : "database (no path configured)");
+  }
+  let runs = [];
+  let journalStatus2 = "not_read";
+  if (journalPath2) {
+    const verdict = verifyJournalSequence(journalSegmentPaths(journalPath2));
+    journalStatus2 = verdict.status;
+    runs = collectRuns(verdict.records);
+    sources.push(`journal ${journalPath2} (${verdict.status}, ${runs.length} runs)`);
+  } else {
+    sources.push("journal (no path configured)");
+  }
+  const runSegments = /* @__PURE__ */ new Map();
+  for (const run of runs) runSegments.set(run.run_id, capturedSegments(run));
+  const scope = {
+    reconciled_at,
+    transcript_root: discovery.root,
+    transcript_root_exists: discovery.root_exists,
+    limits: {
+      min_message_chars: MIN_MESSAGE_CHARS,
+      max_compared_messages: MAX_COMPARED,
+      probe_prefilter: false,
+      max_transcript_bytes: maxBytes,
+      max_line_chars: maxLineChars
+    },
+    sources,
+    journal_path: journalPath2,
+    journal_status: journalStatus2,
+    journal_runs_considered: runs.length,
+    database_path: dbPath3,
+    sessions_considered: sessions2.length
+  };
+  const chronEvidenceUsable = dbReadable && journalStatus2 !== "corrupt";
+  const unusableReason = !dbReadable ? "Chron's database could not be read, so no comparison was possible" : "the capture journal does not verify, so no comparison was possible";
+  const byRef = /* @__PURE__ */ new Map();
+  for (const s of sessions2) {
+    if (!s.external_ref?.startsWith(CLAUDE_CODE_REF)) continue;
+    const key = s.external_ref.slice(CLAUDE_CODE_REF.length);
+    const list = byRef.get(key);
+    if (list) list.push(s);
+    else byRef.set(key, [s]);
+  }
+  const files = discovery.files;
+  const associations = [];
+  let skippedForSize = 0;
+  for (const file of files) {
+    if (maxBytes !== null && file.size_bytes > maxBytes) {
+      skippedForSize++;
+      notInspected.push({
+        path: file.path,
+        reason: `not inspected: ${(file.size_bytes / 1048576).toFixed(1)}MB exceeds the ${(maxBytes / 1048576).toFixed(0)}MB limit for this command`
+      });
+      continue;
+    }
+    let eventCount = 0;
+    let comparableCount = 0;
+    let stride = 1;
+    const kept = [];
+    let sessionIdInFile = null;
+    const streamed = await readTranscript(file.path, (line) => {
+      if (sessionIdInFile === null && line.value && typeof line.value.sessionId === "string") {
+        sessionIdInFile = line.value.sessionId;
+      }
+      for (const t of turnsOf(line)) {
+        const index = eventCount++;
+        const text2 = comparable(t.text);
+        if (text2.length < MIN_MESSAGE_CHARS) continue;
+        const ordinal = comparableCount++;
+        if (ordinal % stride !== 0) continue;
+        kept.push({ role: t.role, text: text2, index });
+        if (kept.length > MAX_COMPARED) {
+          let w = 0;
+          for (let i = 0; i < kept.length; i += 2) kept[w++] = kept[i];
+          kept.length = w;
+          stride *= 2;
+        }
+      }
+    }, { maxLineChars });
+    if (streamed.read_error !== void 0) {
+      unreadable.push({ path: file.path, reason: streamed.read_error });
+      continue;
+    }
+    const parsed = {
+      session_id: sessionIdInFile ?? file.session_id,
+      session_id_source: sessionIdInFile !== null ? "record" : "filename",
+      content_hash: streamed.sha256,
+      event_count: eventCount,
+      malformed_lines: streamed.counts.malformed_json,
+      counts: streamed.counts,
+      truncated: streamed.truncated_character_at_eof,
+      changed_while_reading: streamed.changed_while_reading
+    };
+    if (!parsed.session_id || parsed.event_count === 0) {
+      unreadable.push({
+        path: file.path,
+        reason: parsed.event_count === 0 ? "no valid interaction records" : "no session id in the transcript"
+      });
+      continue;
+    }
+    const transcript = {
+      path: file.path,
+      client_session_id: parsed.session_id,
+      client_session_id_source: parsed.session_id_source,
+      source: "claude-code",
+      sha256: parsed.content_hash,
+      event_count: parsed.event_count,
+      // The file's completeness travels with the transcript, so no finding about
+      // it can be read without it. It is not filed under "not inspected": the
+      // file *was* read, in part, and its valid records are evidence.
+      inspection: inspectionOf(parsed.counts, parsed.truncated, parsed.changed_while_reading),
+      // The streaming path does not collect timestamps: time is not used in any
+      // comparison (tolerance is null), so reading them would be collecting a
+      // field nothing consults.
+      first_timestamp: null,
+      last_timestamp: null
+    };
+    const needles = kept;
+    const comparedIndices = needles.map((n) => n.index);
+    const sampled = stride > 1;
+    const sampleNote = sampled ? [`compared ${needles.length} of ${comparableCount} comparable messages, evenly spaced (every ${stride}${stride === 2 ? "nd" : stride === 3 ? "rd" : "th"})`] : [];
+    const shortNote = parsed.event_count > comparableCount ? [`${parsed.event_count - comparableCount} turn(s) were not comparable: shorter than ${MIN_MESSAGE_CHARS} characters once normalised`] : [];
+    const needlePrints = needles.map((n) => fingerprint(`${n.role}|${n.text}`));
+    const boundSessions = byRef.get(parsed.session_id);
+    if (boundSessions && boundSessions.length > 0) {
+      const identities = boundSessions.map((b) => {
+        let recorded;
+        try {
+          recorded = JSON.parse(b.metadata ?? "{}").source_transcript_sha256;
+        } catch {
+          recorded = void 0;
+        }
+        return {
+          chron_session_id: b.id,
+          via: "external_ref",
+          digest_matches: recorded === void 0 ? "unrecorded" : recorded === parsed.content_hash
+        };
+      });
+      const content = boundSessions.map((b) => {
+        const prints = sessionPrints.get(b.id) ?? [];
+        const matched = orderedPrints(needlePrints, prints);
+        const notes = [...sampleNote, ...shortNote];
+        if (prints.length === 0) {
+          notes.push("this session holds no comparable messages, so the binding identifies it and nothing in it was accounted for");
+        }
+        const ident = identities.find((i) => i.chron_session_id === b.id);
+        if (ident && ident.digest_matches === false) {
+          notes.push("the transcript has changed since it was imported; the binding still identifies the session");
+        }
+        return {
+          chron_session_id: b.id,
+          coverage: coverageOf(
+            "normalised_record_equality",
+            comparableCount,
+            needles.length,
+            matched,
+            comparedIndices,
+            notes
+          )
+        };
+      });
+      associations.push({ outcome: "verified", transcript, identities, content, scope });
+      continue;
+    }
+    if (!chronEvidenceUsable) {
+      associations.push({ outcome: "indeterminate", transcript, reason: unusableReason, scope });
+      continue;
+    }
+    const candidates = [];
+    if (needles.length > 0) {
+      for (const run of runs) {
+        const segments = runSegments.get(run.run_id) ?? [];
+        if (segments.length === 0) continue;
+        const matched = orderedInSegments(needles, segments);
+        if (matched === 0) continue;
+        candidates.push({
+          source: "journal_run",
+          chron_session_id: null,
+          journal_run_id: run.run_id,
+          why: `${matched} of ${needles.length} compared transcript messages appear in order, in a matching direction, in the bytes this run captured`,
+          coverage: coverageOf("normalised_substring", comparableCount, needles.length, matched, comparedIndices, [
+            "content correspondence is not a binding; nothing in the journal records this client session id, so this requires human confirmation",
+            "normalised substring comparison, which is weaker than record equality: whitespace and case were collapsed and the journal holds rendered bytes rather than messages",
+            ...sampleNote,
+            ...shortNote
+          ])
+        });
+      }
+      const needlePrints2 = needles.map((n) => fingerprint(`${n.role}|${n.text}`));
+      for (const session of sessions2) {
+        const prints = sessionPrints.get(session.id);
+        if (prints === void 0) continue;
+        const matched = orderedPrints(needlePrints2, prints);
+        if (matched === 0) continue;
+        candidates.push({
+          source: "database_session",
+          chron_session_id: session.id,
+          journal_run_id: null,
+          why: `${matched} of ${needles.length} compared transcript messages appear in order in session ${session.id.slice(0, 8)}${session.ai_tool ? ` (${session.ai_tool})` : ""}`,
+          coverage: coverageOf("normalised_record_equality", comparableCount, needles.length, matched, comparedIndices, [
+            "content correspondence is not a binding; this session carries no transcript identity, so it requires human confirmation",
+            "normalised record equality on role and message text, which is stronger than substring similarity and still not identity",
+            ...sampleNote,
+            ...shortNote
+          ])
+        });
+      }
+    }
+    if (candidates.length > 0) {
+      associations.push({ outcome: "candidate", transcript, candidates, tolerance_ms: toleranceMs, scope });
+      continue;
+    }
+    associations.push({
+      outcome: "unmatched",
+      transcript,
+      comparison: {
+        compared: needles.length,
+        transcript_comparable: comparableCount,
+        compared_indices: comparedIndices,
+        sampled,
+        // Anything that reduced what was compared, including lines the parser
+        // could not read at all.
+        narrowed: sampled || comparableCount < parsed.event_count || parsed.malformed_lines > 0
+      },
+      scope
+    });
+  }
+  if (discovery.failures.length > 0) {
+    scope.sources.push(
+      `${discovery.failures.length} part(s) of the transcript tree could not be examined`
+    );
+  }
+  if (skippedForSize > 0 && maxBytes !== null) {
+    scope.sources.push(
+      `${skippedForSize} transcript(s) not inspected because they exceed ${(maxBytes / 1048576).toFixed(0)}MB`
+    );
+  }
+  scope.sources.push(
+    maxBytes === null ? `no transcript size limit; each transcript is compared at up to ${MAX_COMPARED} of its messages` : `transcripts up to ${(maxBytes / 1048576).toFixed(0)}MB, each compared at up to ${MAX_COMPARED} of its messages`
+  );
+  return {
+    scope,
+    associations,
+    unreadable,
+    not_inspected: notInspected,
+    discovery_failures: discovery.failures
+  };
+}
+var import_fs32, import_crypto21, import_string_decoder2, import_os17, import_path21, DEFAULT_MAX_TRANSCRIPT_BYTES, DEFAULT_MAX_LINE_CHARS2, CLAUDE_CODE_REF, MAX_COMPARED, MIN_MESSAGE_CHARS;
+var init_reconcile = __esm({
+  "src/reconcile/reconcile.ts"() {
+    "use strict";
+    import_fs32 = require("fs");
+    import_crypto21 = require("crypto");
+    import_string_decoder2 = require("string_decoder");
+    init_drizzle_orm();
+    init_transcript_reader();
+    init_claude_code_messages();
+    import_os17 = require("os");
+    import_path21 = require("path");
+    init_discover();
+    init_discover2();
+    init_readonly();
+    init_runs();
+    init_verify();
+    init_time();
+    init_content();
+    DEFAULT_MAX_TRANSCRIPT_BYTES = null;
+    DEFAULT_MAX_LINE_CHARS2 = 4 * 1024 * 1024;
+    CLAUDE_CODE_REF = "claude-code:";
+    MAX_COMPARED = 200;
+    MIN_MESSAGE_CHARS = 24;
+  }
+});
+
+// src/reconcile/types.ts
+function describeUnmatched(a) {
+  const { compared, transcript_comparable, narrowed } = a.comparison;
+  const what = narrowed || compared < transcript_comparable ? `No correspondence found in the compared sample (${compared} of ${transcript_comparable} comparable messages)` : "No matching Chron record found in the inspected evidence";
+  const partly = a.transcript.inspection.complete ? "" : ` This file was only partly read: ${a.transcript.inspection.reasons.join("; ")}.`;
+  const derived = a.transcript.client_session_id_source === "filename" ? " The id is taken from the filename; no record in the file carries one." : "";
+  return `${what} for ${a.transcript.source}:${a.transcript.client_session_id} (sha256 ${a.transcript.sha256.slice(0, 12)}\u2026). Inspected ${a.scope.sources.join(", ")} at ${a.scope.reconciled_at}.${partly}${derived}`;
+}
+var init_types = __esm({
+  "src/reconcile/types.ts"() {
+    "use strict";
+  }
+});
+
+// src/cli/reconcile.ts
+var reconcile_exports = {};
+__export(reconcile_exports, {
+  runReconcile: () => runReconcile
+});
+async function runReconcile(args2) {
+  const json = args2.includes("--json");
+  const report = await reconcileClaudeCode();
+  if (json) {
+    process.stdout.write(JSON.stringify(report, null, 2) + "\n");
+    process.exit(0);
+  }
+  const verified = report.associations.filter((a) => a.outcome === "verified");
+  const candidates = report.associations.filter((a) => a.outcome === "candidate");
+  const unmatched = report.associations.filter((a) => a.outcome === "unmatched");
+  const indeterminate = report.associations.filter((a) => a.outcome === "indeterminate");
+  const partlyRead = report.associations.filter((a) => !a.transcript.inspection.complete);
+  process.stdout.write(`
+${BOLD20}Reconciling Claude Code transcripts${RESET21}
+
+`);
+  process.stdout.write(`${BOLD20}Inspected${RESET21}
+`);
+  process.stdout.write(`  ${DIM19}\xB7${RESET21} transcripts under ${report.scope.transcript_root}${report.scope.transcript_root_exists ? "" : " (which does not exist)"}
+`);
+  for (const s of report.scope.sources) process.stdout.write(`  ${DIM19}\xB7${RESET21} ${s}
+`);
+  process.stdout.write(`  ${DIM19}\xB7${RESET21} at ${report.scope.reconciled_at}
+
+`);
+  if (verified.length > 0) {
+    process.stdout.write(`${BOLD20}Recorded identity${RESET21} (${verified.length})
+`);
+    for (const a of verified) {
+      if (a.outcome !== "verified") continue;
+      for (const id of a.identities) {
+        process.stdout.write(
+          `  ${GREEN14}\u2713${RESET21} ${a.transcript.client_session_id.slice(0, 8)} \u2192 session ${id.chron_session_id.slice(0, 8)} ${DIM19}(bound by external_ref)${RESET21}
+`
+        );
+        if (id.digest_matches === false) {
+          process.stdout.write(`      ${YELLOW18}!${RESET21} the transcript has changed since it was imported
+`);
+        }
+        if (id.digest_matches === "unrecorded") {
+          process.stdout.write(`      ${DIM19}the import recorded no transcript digest${RESET21}
+`);
+        }
+      }
+      if (a.identities.length > 1) {
+        process.stdout.write(`      ${YELLOW18}!${RESET21} ${a.identities.length} sessions share this reference
+`);
+      }
+      for (const c of a.content) {
+        const v = c.coverage;
+        process.stdout.write(
+          `      ${DIM19}content: ${v.accounted_for} of ${v.compared} compared (${v.transcript_comparable} comparable in the transcript)${v.complete ? ", complete" : ", not complete"}${RESET21}
+`
+        );
+        for (const n of v.notes) process.stdout.write(`      ${DIM19}note: ${n}${RESET21}
+`);
+      }
+    }
+    process.stdout.write("\n");
+  }
+  if (candidates.length > 0) {
+    process.stdout.write(`${BOLD20}Candidate associations${RESET21} (${candidates.length}) ${DIM19}\u2014 need confirmation${RESET21}
+`);
+    for (const a of candidates) {
+      if (a.outcome !== "candidate") continue;
+      process.stdout.write(`  ${YELLOW18}?${RESET21} ${a.transcript.client_session_id.slice(0, 8)}
+`);
+      for (const c of a.candidates) {
+        const where = c.source === "journal_run" ? `journal run ${(c.journal_run_id ?? "").slice(0, 8)}` : `database session ${(c.chron_session_id ?? "").slice(0, 8)}`;
+        process.stdout.write(`      ${DIM19}\u2192 ${where}: ${c.why}${RESET21}
+`);
+        process.stdout.write(
+          `        ${DIM19}covers ${c.coverage.accounted_for} of ${c.coverage.compared} compared (${c.coverage.transcript_comparable} comparable in the transcript)${RESET21}
+`
+        );
+      }
+      if (a.candidates.length > 1) {
+        process.stdout.write(`      ${DIM19}more than one candidate; this is ambiguous, not a choice to make automatically${RESET21}
+`);
+      }
+    }
+    process.stdout.write("\n");
+  }
+  if (unmatched.length > 0) {
+    process.stdout.write(`${BOLD20}Unmatched in the inspected evidence${RESET21} (${unmatched.length})
+`);
+    for (const a of unmatched) {
+      if (a.outcome !== "unmatched") continue;
+      process.stdout.write(`  ${YELLOW18}\xB7${RESET21} ${describeUnmatched(a)}
+`);
+    }
+    process.stdout.write(
+      `
+  ${DIM19}This is a statement about a search, not about what happened. A transcript
+  cannot establish that a model call occurred, that the file originated here,
+  or that anyone bypassed Chron. See architecture.md \xA711.${RESET21}
+
+`
+    );
+  }
+  if (indeterminate.length > 0) {
+    process.stdout.write(`${BOLD20}Indeterminate${RESET21} (${indeterminate.length})
+`);
+    for (const a of indeterminate) {
+      if (a.outcome !== "indeterminate") continue;
+      process.stdout.write(`  ${YELLOW18}!${RESET21} ${a.transcript.client_session_id.slice(0, 8)}: ${a.reason}
+`);
+    }
+    process.stdout.write(`  ${DIM19}Could not look, which is not the same as looked and found nothing.${RESET21}
+
+`);
+  }
+  if (partlyRead.length > 0) {
+    process.stdout.write(`${BOLD20}Partly read${RESET21} (${partlyRead.length})
+`);
+    for (const a of partlyRead) {
+      process.stdout.write(
+        `  ${YELLOW18}!${RESET21} ${a.transcript.client_session_id.slice(0, 8)}: ${a.transcript.inspection.reasons.join("; ")}
+`
+      );
+    }
+    process.stdout.write(
+      `  ${DIM19}Findings above cover only the records that parsed.${RESET21}
+
+`
+    );
+  }
+  if (report.discovery_failures.length > 0) {
+    process.stdout.write(`${BOLD20}Could not be examined${RESET21} (${report.discovery_failures.length})
+`);
+    for (const f of report.discovery_failures) {
+      process.stdout.write(`  ${YELLOW18}!${RESET21} ${f.path}: ${f.reason}
+`);
+    }
+    process.stdout.write(`  ${DIM19}No finding above covers these.${RESET21}
+
+`);
+  }
+  if (report.not_inspected.length > 0) {
+    process.stdout.write(`${BOLD20}Not inspected at all${RESET21} (${report.not_inspected.length})
+`);
+    for (const n of report.not_inspected) {
+      process.stdout.write(`  ${DIM19}\xB7${RESET21} ${n.path}: ${n.reason}
+`);
+    }
+    process.stdout.write(
+      `  ${DIM19}Nothing above covers these. They were not read.${RESET21}
+
+`
+    );
+  }
+  if (report.unreadable.length > 0) {
+    process.stdout.write(`${BOLD20}Artefacts that are not evidence${RESET21} (${report.unreadable.length})
+`);
+    for (const u of report.unreadable) {
+      process.stdout.write(`  ${DIM19}\xB7${RESET21} ${u.path}: ${u.reason}
+`);
+    }
+    process.stdout.write("\n");
+  }
+  if (report.associations.length === 0 && report.unreadable.length === 0 && report.not_inspected.length === 0 && report.discovery_failures.length === 0) {
+    process.stdout.write(`${DIM19}No Claude Code transcripts found.${RESET21}
+
+`);
+  }
+  process.exit(0);
+}
+var RESET21, BOLD20, GREEN14, YELLOW18, DIM19;
+var init_reconcile2 = __esm({
+  "src/cli/reconcile.ts"() {
+    "use strict";
+    init_reconcile();
+    init_types();
+    RESET21 = "\x1B[0m";
+    BOLD20 = "\x1B[1m";
+    GREEN14 = "\x1B[32m";
+    YELLOW18 = "\x1B[33m";
+    DIM19 = "\x1B[2m";
+  }
+});
+
 // src/cli/project.ts
 var project_exports2 = {};
 __export(project_exports2, {
@@ -32070,13 +32992,13 @@ __export(project_exports2, {
 });
 async function runProject(args2) {
   const pathArg = args2.find((a) => a.startsWith("--journal="))?.split("=").slice(1).join("=");
-  const path = guardedJournalPath(pathArg || process.env.CHRON_JOURNAL_PATH || (0, import_path20.join)(process.env.CHRON_HOME ?? (0, import_path20.join)((0, import_os17.homedir)(), ".chron"), "capture.jsonl"));
+  const path = guardedJournalPath(pathArg || process.env.CHRON_JOURNAL_PATH || (0, import_path22.join)(process.env.CHRON_HOME ?? (0, import_path22.join)((0, import_os18.homedir)(), ".chron"), "capture.jsonl"));
   const segments = journalSegmentPaths(path);
   process.stdout.write(`
-${BOLD20}Projecting journal${RESET21} ${path}
+${BOLD21}Projecting journal${RESET22} ${path}
 `);
   if (segments.length > 1) {
-    process.stdout.write(`  ${DIM19}${segments.length} segments, oldest first${RESET21}
+    process.stdout.write(`  ${DIM20}${segments.length} segments, oldest first${RESET22}
 `);
   }
   const db = await initDb();
@@ -32084,46 +33006,46 @@ ${BOLD20}Projecting journal${RESET21} ${path}
   process.stdout.write("\n");
   if (result.verdict.status === "corrupt") {
     process.stdout.write(
-      `  ${RED16}\u2717${RESET21} The journal does not verify: ${result.verdict.problem?.reason}
-    ${DIM19}Records before the break were still projected; records after it were not.${RESET21}
+      `  ${RED16}\u2717${RESET22} The journal does not verify: ${result.verdict.problem?.reason}
+    ${DIM20}Records before the break were still projected; records after it were not.${RESET22}
 `
     );
   }
   if (result.projected.length > 0) {
-    process.stdout.write(`  ${GREEN14}\u2713${RESET21} Projected ${result.projected.length} run(s)
+    process.stdout.write(`  ${GREEN15}\u2713${RESET22} Projected ${result.projected.length} run(s)
 `);
   }
   if (result.unchanged.length > 0) {
-    process.stdout.write(`  ${GREEN14}\u2713${RESET21} ${result.unchanged.length} run(s) already projected, left unchanged
+    process.stdout.write(`  ${GREEN15}\u2713${RESET22} ${result.unchanged.length} run(s) already projected, left unchanged
 `);
   }
   for (const f of result.failed) {
-    process.stdout.write(`  ${YELLOW18}!${RESET21} ${f.run_id.slice(0, 8)}: ${f.reason}
+    process.stdout.write(`  ${YELLOW19}!${RESET22} ${f.run_id.slice(0, 8)}: ${f.reason}
 `);
   }
   if (result.projected.length === 0 && result.unchanged.length === 0 && result.failed.length === 0) {
-    process.stdout.write(`  ${DIM19}No runs in the journal.${RESET21}
+    process.stdout.write(`  ${DIM20}No runs in the journal.${RESET22}
 `);
   }
   process.stdout.write("\n");
   process.exit(result.verdict.status === "corrupt" ? 1 : 0);
 }
-var import_path20, import_os17, RESET21, BOLD20, GREEN14, RED16, YELLOW18, DIM19;
+var import_path22, import_os18, RESET22, BOLD21, GREEN15, RED16, YELLOW19, DIM20;
 var init_project2 = __esm({
   "src/cli/project.ts"() {
     "use strict";
-    import_path20 = require("path");
-    import_os17 = require("os");
+    import_path22 = require("path");
+    import_os18 = require("os");
     init_db2();
     init_project();
     init_runs();
     init_config_path();
-    RESET21 = "\x1B[0m";
-    BOLD20 = "\x1B[1m";
-    GREEN14 = "\x1B[32m";
+    RESET22 = "\x1B[0m";
+    BOLD21 = "\x1B[1m";
+    GREEN15 = "\x1B[32m";
     RED16 = "\x1B[31m";
-    YELLOW18 = "\x1B[33m";
-    DIM19 = "\x1B[2m";
+    YELLOW19 = "\x1B[33m";
+    DIM20 = "\x1B[2m";
   }
 });
 
@@ -32136,7 +33058,7 @@ __export(run_exports, {
   splitRunArgs: () => splitRunArgs
 });
 function journalPath() {
-  return guardedJournalPath(process.env.CHRON_JOURNAL_PATH ?? (0, import_path21.join)(process.env.CHRON_HOME ?? (0, import_path21.join)((0, import_os18.homedir)(), ".chron"), "capture.jsonl"));
+  return guardedJournalPath(process.env.CHRON_JOURNAL_PATH ?? (0, import_path23.join)(process.env.CHRON_HOME ?? (0, import_path23.join)((0, import_os19.homedir)(), ".chron"), "capture.jsonl"));
 }
 async function runWrapped(argv, deps = {}) {
   const path = deps.journalPath ?? journalPath();
@@ -32151,7 +33073,7 @@ async function runWrapped(argv, deps = {}) {
   });
   const [cmd, ...args2] = argv;
   if (!cmd) throw new Error("chron run: no command given");
-  const runId = deps.runId ?? (0, import_crypto20.randomUUID)();
+  const runId = deps.runId ?? (0, import_crypto22.randomUUID)();
   const writer = JournalWriter.open(path, {
     flushBytes: deps.flushBytes ?? 1,
     // Not overridden here. An earlier version passed `minFreeBytes: 0`, which was
@@ -32214,18 +33136,18 @@ async function runWrapped(argv, deps = {}) {
     }
     diagnostic(
       `
-${RED17}chron run: capture failed \u2014 output withheld${RESET22}
+${RED17}chron run: capture failed \u2014 output withheld${RESET23}
   ${captureError}
-  ${DIM20}The child was terminated. Interaction content that was not made durable
-  has not been printed. Journal: ${path}${RESET22}
+  ${DIM21}The child was terminated. Interaction content that was not made durable
+  has not been printed. Journal: ${path}${RESET23}
 `
     );
   };
   const durability = writer.namesDurable ? "durable" : "names_not_durable";
   if (durability !== "durable") {
     diagnostic(
-      `${DIM20}chron run: reduced durability \u2014 record contents are fsynced, their file name is not.
-  A record can survive a crash without a name to reach it by. Recorded in this run's scope.${RESET22}
+      `${DIM21}chron run: reduced durability \u2014 record contents are fsynced, their file name is not.
+  A record can survive a crash without a name to reach it by. Recorded in this run's scope.${RESET23}
 `
     );
   }
@@ -32282,8 +33204,8 @@ ${RED17}chron run: capture failed \u2014 output withheld${RESET22}
   child.stdin.on("error", (e) => {
     if (e.code === "EPIPE" || e.code === "ERR_STREAM_DESTROYED") return;
     diagnostic(
-      `${DIM20}chron run: could not forward input to the child (${e.code ?? e.message}).
-  It was recorded before the attempt, so the journal holds it.${RESET22}
+      `${DIM21}chron run: could not forward input to the child (${e.code ?? e.message}).
+  It was recorded before the attempt, so the journal holds it.${RESET23}
 `
     );
   });
@@ -32367,9 +33289,9 @@ Durability is measured per run and recorded in that run's first journal record.
   } catch (e) {
     process.stderr.write(
       `
-${RED17}chron run: capture could not start \u2014 the command was not run${RESET22}
+${RED17}chron run: capture could not start \u2014 the command was not run${RESET23}
   ${e instanceof Error ? e.message : String(e)}
-  ${DIM20}No output was released, because nothing could be recorded.${RESET22}
+  ${DIM21}No output was released, because nothing could be recorded.${RESET23}
 `
     );
     process.exit(CAPTURE_FAILED_EXIT);
@@ -32380,8 +33302,8 @@ ${RED17}chron run: capture could not start \u2014 the command was not run${RESET
   const v = journalStatus(outcome.journalPath);
   if (v.status !== "ok") {
     process.stderr.write(
-      `${DIM20}chron run: capture succeeded; the journal reports ${v.status}${v.problem ? ` (${v.problem.reason})` : ""}.
-  Journal evidence is authoritative. Run: chron verify --journal${RESET22}
+      `${DIM21}chron run: capture succeeded; the journal reports ${v.status}${v.problem ? ` (${v.problem.reason})` : ""}.
+  Journal evidence is authoritative. Run: chron verify --journal${RESET23}
 `
     );
   }
@@ -32393,38 +33315,38 @@ ${RED17}chron run: capture could not start \u2014 the command was not run${RESET
     const failed = result.failed.filter((f) => f.run_id === outcome.runId);
     if (failed.length > 0) {
       process.stderr.write(
-        `${DIM20}chron run: this run was captured, and projecting it into the database failed.
+        `${DIM21}chron run: this run was captured, and projecting it into the database failed.
   ${failed[0].reason}
-  The journal holds the evidence. Retry with: chron project${RESET22}
+  The journal holds the evidence. Retry with: chron project${RESET23}
 `
       );
     }
   } catch (e) {
     process.stderr.write(
-      `${DIM20}chron run: this run was captured; projecting it into the database failed.
+      `${DIM21}chron run: this run was captured; projecting it into the database failed.
   ${e instanceof Error ? e.message : String(e)}
-  The journal holds the evidence. Retry with: chron project${RESET22}
+  The journal holds the evidence. Retry with: chron project${RESET23}
 `
     );
   }
   process.exit(outcome.exitCode);
 }
-var import_child_process6, import_crypto20, import_path21, import_os18, CAPTURE_FAILED_EXIT, RESET22, RED17, DIM20;
+var import_child_process6, import_crypto22, import_path23, import_os19, CAPTURE_FAILED_EXIT, RESET23, RED17, DIM21;
 var init_run = __esm({
   "src/cli/run.ts"() {
     "use strict";
     import_child_process6 = require("child_process");
-    import_crypto20 = require("crypto");
-    import_path21 = require("path");
-    import_os18 = require("os");
+    import_crypto22 = require("crypto");
+    import_path23 = require("path");
+    import_os19 = require("os");
     init_writer();
     init_scope();
     init_config_path();
     init_writer();
     CAPTURE_FAILED_EXIT = 99;
-    RESET22 = "\x1B[0m";
+    RESET23 = "\x1B[0m";
     RED17 = "\x1B[31m";
-    DIM20 = "\x1B[2m";
+    DIM21 = "\x1B[2m";
   }
 });
 
@@ -32445,19 +33367,19 @@ function queryNtpUdp(server, timeout) {
     const t1 = Date.now();
     const packet = Buffer.alloc(48, 0);
     packet[0] = 27;
-    client.once("message", (msg) => {
+    client.once("message", (msg2) => {
       clearTimeout(timer);
       try {
         client.close();
       } catch {
       }
-      if (msg.length < 48) {
+      if (msg2.length < 48) {
         reject(new Error("Short NTP response"));
         return;
       }
       const t4 = Date.now();
-      const secs = msg.readUInt32BE(40);
-      const frac = msg.readUInt32BE(44);
+      const secs = msg2.readUInt32BE(40);
+      const frac = msg2.readUInt32BE(44);
       const t3 = (secs - NTP_OFFSET) * 1e3 + frac / 4294967296 * 1e3;
       const offset_ms = Math.round(t3 - (t1 + t4) / 2);
       resolve5({ offset_ms });
@@ -32741,47 +33663,47 @@ Tools: ${Object.keys(KNOWN_TOOLS2).join(", ")}
   const { session_id, created, title } = await createAttachSession(db, aiTool, titleArg);
   const short = session_id.slice(0, 8);
   process.stdout.write(`
-${BOLD21}chron attach${RESET23} ${aiTool}
+${BOLD22}chron attach${RESET24} ${aiTool}
 
 `);
   if (created) {
-    process.stdout.write(`  ${GREEN15}\u2713${RESET23} session ${BOLD21}${short}${RESET23} created \u2014 ${title}
+    process.stdout.write(`  ${GREEN16}\u2713${RESET24} session ${BOLD22}${short}${RESET24} created \u2014 ${title}
 `);
   } else {
-    process.stdout.write(`  ${GREEN15}\u2713${RESET23} resumed existing session ${BOLD21}${short}${RESET23} \u2014 ${title}
+    process.stdout.write(`  ${GREEN16}\u2713${RESET24} resumed existing session ${BOLD22}${short}${RESET24} \u2014 ${title}
 `);
   }
-  process.stdout.write(`  ${YELLOW19}!${RESET23} Marked as partial evidence. Chron did not observe this
+  process.stdout.write(`  ${YELLOW20}!${RESET24} Marked as partial evidence. Chron did not observe this
 `);
   process.stdout.write(`    conversation before now, and does not claim to know what came before.
 
 `);
-  process.stdout.write(`${BOLD21}Paste this into the session you want recorded:${RESET23}
+  process.stdout.write(`${BOLD22}Paste this into the session you want recorded:${RESET24}
 
 `);
-  process.stdout.write(`${DIM21}  Log this conversation to Chron from now on using session_id ${session_id}.
+  process.stdout.write(`${DIM22}  Log this conversation to Chron from now on using session_id ${session_id}.
 `);
   process.stdout.write(`  Call log_message for this and every following exchange.
 `);
-  process.stdout.write(`  Do not attempt to reconstruct earlier messages.${RESET23}
+  process.stdout.write(`  Do not attempt to reconstruct earlier messages.${RESET24}
 
 `);
-  process.stdout.write(`${DIM21}  chron history ${short}   chron verify ${short}${RESET23}
+  process.stdout.write(`${DIM22}  chron history ${short}   chron verify ${short}${RESET24}
 
 `);
 }
-var RESET23, BOLD21, DIM21, GREEN15, YELLOW19, KNOWN_TOOLS2;
+var RESET24, BOLD22, DIM22, GREEN16, YELLOW20, KNOWN_TOOLS2;
 var init_attach = __esm({
   "src/cli/attach.ts"() {
     "use strict";
     init_db2();
     init_sessions();
     init_time();
-    RESET23 = "\x1B[0m";
-    BOLD21 = "\x1B[1m";
-    DIM21 = "\x1B[2m";
-    GREEN15 = "\x1B[32m";
-    YELLOW19 = "\x1B[33m";
+    RESET24 = "\x1B[0m";
+    BOLD22 = "\x1B[1m";
+    DIM22 = "\x1B[2m";
+    GREEN16 = "\x1B[32m";
+    YELLOW20 = "\x1B[33m";
     KNOWN_TOOLS2 = {
       claude: "claude",
       "claude-code": "claude",
@@ -32804,13 +33726,13 @@ async function resolveSession(prefix) {
   const all = await db.select({ id: sessions.id, title: sessions.title, signature: sessions.signature }).from(sessions);
   const matches = all.filter((s) => s.id.startsWith(prefix));
   if (matches.length === 0) {
-    process.stderr.write(`${RED18}\u2717${RESET24} No session found matching prefix: ${prefix}
+    process.stderr.write(`${RED18}\u2717${RESET25} No session found matching prefix: ${prefix}
 `);
     process.exit(1);
   }
   if (matches.length > 1) {
     process.stderr.write(
-      `${RED18}\u2717${RESET24} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
+      `${RED18}\u2717${RESET25} Ambiguous prefix "${prefix}" matches ${matches.length} sessions \u2014 use more characters
 `
     );
     process.exit(1);
@@ -32830,8 +33752,8 @@ async function renameSession(args2) {
   const { db, session } = await resolveSession(prefix);
   if (session.signature) {
     process.stderr.write(
-      `${RED18}\u2717${RESET24} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
-  Use ${CYAN16}chron session rename${RESET24} only on unsigned sessions.
+      `${RED18}\u2717${RESET25} Session ${session.id.slice(0, 8)} is signed \u2014 rename would invalidate the signature.
+  Use ${CYAN16}chron session rename${RESET25} only on unsigned sessions.
 `
     );
     process.exit(1);
@@ -32839,9 +33761,9 @@ async function renameSession(args2) {
   const oldTitle = session.title;
   await db.update(sessions).set({ title: newTitle }).where(eq(sessions.id, session.id));
   process.stdout.write(
-    `${GREEN16}\u2713${RESET24} Session ${CYAN16}${session.id.slice(0, 8)}${RESET24} renamed
-  ${DIM22}before:${RESET24} ${oldTitle}
-  ${DIM22}after: ${RESET24} ${BOLD22}${newTitle}${RESET24}
+    `${GREEN17}\u2713${RESET25} Session ${CYAN16}${session.id.slice(0, 8)}${RESET25} renamed
+  ${DIM23}before:${RESET25} ${oldTitle}
+  ${DIM23}after: ${RESET25} ${BOLD23}${newTitle}${RESET25}
 
 Messages and timestamps are unchanged.
 `
@@ -32864,18 +33786,18 @@ Subcommands:
       if (subcommand) process.exit(1);
   }
 }
-var RESET24, BOLD22, DIM22, CYAN16, GREEN16, RED18;
+var RESET25, BOLD23, DIM23, CYAN16, GREEN17, RED18;
 var init_session3 = __esm({
   "src/cli/session.ts"() {
     "use strict";
     init_drizzle_orm();
     init_db2();
     init_schema();
-    RESET24 = "\x1B[0m";
-    BOLD22 = "\x1B[1m";
-    DIM22 = "\x1B[2m";
+    RESET25 = "\x1B[0m";
+    BOLD23 = "\x1B[1m";
+    DIM23 = "\x1B[2m";
     CYAN16 = "\x1B[36m";
-    GREEN16 = "\x1B[32m";
+    GREEN17 = "\x1B[32m";
     RED18 = "\x1B[31m";
   }
 });
@@ -33042,6 +33964,11 @@ async function main() {
       await runOtel2(args);
       break;
     }
+    case "reconcile": {
+      const { runReconcile: runReconcile2 } = await Promise.resolve().then(() => (init_reconcile2(), reconcile_exports));
+      await runReconcile2(args);
+      break;
+    }
     case "project": {
       const { runProject: runProject2 } = await Promise.resolve().then(() => (init_project2(), project_exports2));
       await runProject2(args);
@@ -33112,6 +34039,7 @@ Commands:
   update          Update chron to the latest version
   run             Run a command with fail-closed capture \u2014 output is withheld until recorded
   project         Replay the capture journal into the database (idempotent)
+  reconcile       Read-only: what your client records that Chron cannot account for
   attach          Start recording a conversation already in progress (partial evidence)
   otel            Export sessions as OpenTelemetry spans, and show delivery receipts
   version         Print the installed chron-mcp version (also --version, -v)

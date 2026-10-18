@@ -148,6 +148,7 @@ Usage: chron <command> [options]
 Commands:
   run             Run a command with fail-closed capture — output is withheld until recorded
   project         Replay the capture journal into the database (idempotent)
+  reconcile       Read-only: what your client records that Chron cannot account for
   history         List sessions or show full log for a session
   report          Aggregate audit stats across sessions
   export          Export a session as markdown
@@ -181,6 +182,9 @@ Options (export):
   --since=<range>   Filter bundle by date: 7d, 30d, or YYYY-MM-DD
   --output=<file>   Output path (default: bundle.chron.tar.gz)
 
+Options (reconcile):
+  --json            Machine-readable JSON output, including the compared message indices
+
 Options (verify):
   <id-prefix>       Verify a session's hash chain + Ed25519 signature
   --bundle=<file>   Verify a signed bundle offline (no DB needed)
@@ -205,6 +209,60 @@ Options (review):
   dismiss <id>        Mark a finding as dismissed; supports --note=<text>
   resolve <id>        Mark a finding as resolved; supports --note=<text>
 ```
+
+---
+
+## Reconciliation — `chron reconcile`
+
+Your AI client keeps its own transcripts. Chron keeps evidence. `chron reconcile`
+reads both and reports what the client recorded that Chron cannot account for.
+
+```bash
+chron reconcile          # human-readable
+chron reconcile --json   # includes the compared message indices
+```
+
+It is read-only. It opens the database through a copy, never writes a row, and
+touches neither the capture journal nor the transcripts it reads.
+
+### What it establishes, and what it does not
+
+Three outcomes, kept apart on purpose:
+
+- **Recorded identity** — an imported session is bound to a transcript by
+  `external_ref`. That says which session an import created. It does not say
+  that the session's messages correspond to the transcript's, so content is
+  reported separately and in its own terms.
+- **Candidate association** — the messages correspond, but nothing binds them.
+  It needs confirmation; it is not a conclusion.
+- **No association found** — within the search that was actually performed.
+
+**A transcript with no match does not establish that a session was bypassed.**
+Chron cannot see what it did not record, so an absence is a statement about the
+search, not about the user. Every absence carries the scope that produced it: the
+sources inspected, the time, how many messages were compared out of how many
+were comparable, and — in `--json` — the exact transcript ordinals compared, so
+a sampled result can be reproduced rather than taken on trust.
+
+### The limits, stated separately
+
+There is **no transcript size limit**: transcripts are streamed, and a 480MB
+file is inspected completely. Each transcript is compared at **up to 200 of its
+messages**, evenly spaced. These are independent — more files are inspectable
+than before, and none is compared more deeply.
+
+Messages shorter than 24 characters once normalised are not compared, because a
+match on "ok" means little and a false correspondence is worse than a missed
+one. Lines past 4MB are skipped and reported. Timestamps are not compared at
+all: clock tolerance is `null`, so no finding rests on two clocks agreeing.
+
+A transcript that is only partly readable says so, and its completeness travels
+with every finding about it — including whether the file changed while it was
+being read, in which case its digest is the digest of the bytes read and not of
+a settled file.
+
+Claude Code only, for now. Codex and Cursor reuse the same contract once their
+formats are validated against real samples.
 
 ---
 

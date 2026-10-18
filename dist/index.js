@@ -38796,7 +38796,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.62",
+      version: "0.1.63",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -39393,9 +39393,9 @@ var init_evidence = __esm({
     };
     EVIDENCE_SOURCES = Object.values(EVIDENCE_SOURCE);
     CAPTURE_MODE = {
-      /** Nothing prevented this interaction from occurring unrecorded. The default, and today the only reachable value. */
+      /** Nothing prevented this interaction from occurring unrecorded. The default, and what every MCP-logged session is. */
       UNENFORCED: "unenforced",
-      /** Chron's wrapper recorded the interaction durably before releasing the output. Not built. */
+      /** Chron's wrapper recorded the interaction durably before releasing the output. Reachable via `chron run` since v0.1.62. */
       ENFORCED_WRAPPER: "enforced:wrapper",
       /** A control outside Chron's command path prevented bypass of the wrapper. Not built. */
       ENFORCED_POLICY: "enforced:policy"
