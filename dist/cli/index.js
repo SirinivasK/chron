@@ -38,7 +38,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.63",
+      version: "0.1.64",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -20662,6 +20662,139 @@ var init_report = __esm({
   }
 });
 
+// src/utils/evidence.ts
+function parseSessionMetadata(raw) {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+function mergeSessionMetadata(existing, patch) {
+  return JSON.stringify({ ...parseSessionMetadata(existing), ...patch });
+}
+function evidenceSourceOf(meta) {
+  const source = meta.source;
+  return source && EVIDENCE_SOURCES.includes(source) ? source : EVIDENCE_SOURCE.WITNESSED;
+}
+function recordedCaptureMode(meta) {
+  const mode = meta.capture_mode;
+  return mode && CAPTURE_MODES.includes(mode) ? mode : CAPTURE_MODE.UNENFORCED;
+}
+function claimsEnforcement(meta) {
+  return recordedCaptureMode(meta) !== CAPTURE_MODE.UNENFORCED;
+}
+function enforcementSupport(_meta) {
+  return "none";
+}
+function describeEnforcementSupport(meta) {
+  if (!claimsEnforcement(meta)) return null;
+  if (enforcementSupport(meta) === "none") {
+    return `Recorded as '${recordedCaptureMode(meta)}', but nothing supports that claim. Session metadata is not covered by the hash chain or the signature, so this value could have been written by anything with access to the database.`;
+  }
+  return describeCaptureMode(meta);
+}
+function describeCaptureMode(meta) {
+  switch (recordedCaptureMode(meta)) {
+    case CAPTURE_MODE.ENFORCED_WRAPPER:
+      return "Recorded durably before the output was released on this path. Running the client outside the wrapper bypasses it, which this value does not speak to.";
+    case CAPTURE_MODE.ENFORCED_POLICY:
+      return "A managed control outside Chron prevented bypass of the wrapper for this interaction.";
+    case CAPTURE_MODE.UNENFORCED:
+    default:
+      return "Nothing required this interaction to be recorded. Capture depended on the client calling Chron.";
+  }
+}
+function liveAttachMetadata() {
+  return {
+    source: EVIDENCE_SOURCE.LIVE_ATTACH,
+    partial: true,
+    attach_reason: ATTACH_REASON_MID_SESSION
+  };
+}
+function chainScopeLabel(meta) {
+  switch (evidenceSourceOf(meta)) {
+    case EVIDENCE_SOURCE.LIVE_ATTACH:
+      return "Hash chain valid from attach point";
+    case EVIDENCE_SOURCE.TRANSCRIPT_BACKFILL:
+      return "Hash chain covers Chron's imported representation of this client transcript. Chron did not witness the original events.";
+    case EVIDENCE_SOURCE.IMPORTED:
+      return "Hash chain covers Chron's imported representation of this vendor export. Chron did not witness the original events.";
+    case EVIDENCE_SOURCE.WITNESSED:
+    default:
+      return meta.partial === true ? "Hash chain covers the records Chron holds for this session" : "Hash chain covers complete session";
+  }
+}
+function describeEvidenceBoundary(meta) {
+  switch (evidenceSourceOf(meta)) {
+    case EVIDENCE_SOURCE.LIVE_ATTACH:
+      return "Chron began recording after this conversation had already started. Evidence is valid from the attach point forward; earlier turns are outside the evidence boundary.";
+    case EVIDENCE_SOURCE.IMPORTED:
+      return "Imported from a vendor export. Tool calls, file access, and environment state are not captured by the export.";
+    case EVIDENCE_SOURCE.TRANSCRIPT_BACKFILL:
+      return "Recovered from a local client transcript. Chron ingested this record rather than observing it directly.";
+    case EVIDENCE_SOURCE.WITNESSED:
+    default:
+      return null;
+  }
+}
+function journalBindingOf(meta) {
+  const j = meta.journal;
+  return j && typeof j === "object" && !Array.isArray(j) ? j : null;
+}
+function missingPublicKey(meta) {
+  const fact = "No public key is recorded for this session, so it cannot be signature-verified.";
+  if (journalBindingOf(meta) !== null) {
+    return {
+      fact,
+      cause: "This session records a binding to a capture journal, which projection writes, and projected runs are not signed. The binding itself is unverified metadata; what checks it is below.",
+      next: [
+        "Its integrity evidence is the journal, not a signature: 'chron verify --journal' checks the chain, and 'chron verify <id>' follows this session's binding and compares it against the journal records field by field.",
+        "Export it without --signed."
+      ]
+    };
+  }
+  return {
+    fact,
+    cause: null,
+    next: [
+      "Chron does not record why a key is absent. A session created before signing support has none, and neither does one created by a path that does not sign.",
+      "Export it without --signed."
+    ]
+  };
+}
+var EVIDENCE_SOURCE, EVIDENCE_SOURCES, CAPTURE_MODE, CAPTURE_MODES, CALLER_ASSERTABLE_SOURCES, ATTACH_REASON_MID_SESSION, OVERLAP_DISCLOSURE;
+var init_evidence = __esm({
+  "src/utils/evidence.ts"() {
+    "use strict";
+    EVIDENCE_SOURCE = {
+      /** Chron was called as the conversation happened. The default, and the strongest. */
+      WITNESSED: "witnessed",
+      /** The user imported a vendor export after the fact. */
+      IMPORTED: "imported",
+      /** Chron started recording partway through a conversation already in progress. */
+      LIVE_ATTACH: "live_attach",
+      /** Recovered from a local transcript the AI client wrote. Reserved; not yet implemented. */
+      TRANSCRIPT_BACKFILL: "transcript_backfill"
+    };
+    EVIDENCE_SOURCES = Object.values(EVIDENCE_SOURCE);
+    CAPTURE_MODE = {
+      /** Nothing prevented this interaction from occurring unrecorded. The default, and what every MCP-logged session is. */
+      UNENFORCED: "unenforced",
+      /** Chron's wrapper recorded the interaction durably before releasing the output. Reachable via `chron run` since v0.1.62. */
+      ENFORCED_WRAPPER: "enforced:wrapper",
+      /** A control outside Chron's command path prevented bypass of the wrapper. Not built. */
+      ENFORCED_POLICY: "enforced:policy"
+    };
+    CAPTURE_MODES = Object.values(CAPTURE_MODE);
+    CALLER_ASSERTABLE_SOURCES = EVIDENCE_SOURCES;
+    ATTACH_REASON_MID_SESSION = "chron_available_mid_session";
+    OVERLAP_DISCLOSURE = "Transcript backfills may overlap conversations already witnessed by Chron. Both evidence records are retained; Chron does not infer that they are the same conversation.";
+  }
+});
+
 // src/utils/signing.ts
 function keysDir() {
   const override = process.env.CHRON_KEYS_DIR;
@@ -20831,9 +20964,11 @@ async function runExportBundle(args2) {
     }
     const only = filtered[0];
     if (!only.public_key) {
+      const absent = missingPublicKey(parseSessionMetadata(only.metadata));
       throw new BundleError(
-        `Session ${only.id.slice(0, 8)} has no public key, so it pre-dates signing support.
-  Export it without --signed, or sign a session created by a newer version.`
+        `Session ${only.id.slice(0, 8)}: ${absent.fact}
+` + (absent.cause !== null ? `  ${absent.cause}
+` : "") + absent.next.map((l) => `  ${l}`).join("\n")
       );
     }
     if (!(0, import_fs5.existsSync)(privKeyPath(only.id))) {
@@ -20883,6 +21018,7 @@ var init_export_bundle = __esm({
   "src/cli/export-bundle.ts"() {
     "use strict";
     import_fs5 = require("fs");
+    init_evidence();
     import_path4 = require("path");
     import_os5 = require("os");
     import_crypto4 = require("crypto");
@@ -23607,7 +23743,12 @@ async function runSign(args2) {
     process.exit(1);
   }
   if (!session.public_key) {
-    process.stderr.write(`Session ${session.id.slice(0, 8)} has no public key \u2014 was it created before v0.1.19?
+    const absent = missingPublicKey(parseSessionMetadata(session.metadata));
+    process.stderr.write(`Session ${session.id.slice(0, 8)}: ${absent.fact}
+`);
+    if (absent.cause !== null) process.stderr.write(`  ${absent.cause}
+`);
+    for (const line of absent.next) process.stderr.write(`  ${line}
 `);
     process.exit(1);
   }
@@ -23668,6 +23809,7 @@ var init_sign = __esm({
   "src/cli/sign.ts"() {
     "use strict";
     init_drizzle_orm();
+    init_evidence();
     import_fs11 = require("fs");
     import_path9 = require("path");
     init_db2();
@@ -23675,114 +23817,6 @@ var init_sign = __esm({
     init_signing();
     import_fs12 = require("fs");
     init_message_order();
-  }
-});
-
-// src/utils/evidence.ts
-function parseSessionMetadata(raw) {
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-function mergeSessionMetadata(existing, patch) {
-  return JSON.stringify({ ...parseSessionMetadata(existing), ...patch });
-}
-function evidenceSourceOf(meta) {
-  const source = meta.source;
-  return source && EVIDENCE_SOURCES.includes(source) ? source : EVIDENCE_SOURCE.WITNESSED;
-}
-function recordedCaptureMode(meta) {
-  const mode = meta.capture_mode;
-  return mode && CAPTURE_MODES.includes(mode) ? mode : CAPTURE_MODE.UNENFORCED;
-}
-function claimsEnforcement(meta) {
-  return recordedCaptureMode(meta) !== CAPTURE_MODE.UNENFORCED;
-}
-function enforcementSupport(_meta) {
-  return "none";
-}
-function describeEnforcementSupport(meta) {
-  if (!claimsEnforcement(meta)) return null;
-  if (enforcementSupport(meta) === "none") {
-    return `Recorded as '${recordedCaptureMode(meta)}', but nothing supports that claim. Session metadata is not covered by the hash chain or the signature, so this value could have been written by anything with access to the database.`;
-  }
-  return describeCaptureMode(meta);
-}
-function describeCaptureMode(meta) {
-  switch (recordedCaptureMode(meta)) {
-    case CAPTURE_MODE.ENFORCED_WRAPPER:
-      return "Recorded durably before the output was released on this path. Running the client outside the wrapper bypasses it, which this value does not speak to.";
-    case CAPTURE_MODE.ENFORCED_POLICY:
-      return "A managed control outside Chron prevented bypass of the wrapper for this interaction.";
-    case CAPTURE_MODE.UNENFORCED:
-    default:
-      return "Nothing required this interaction to be recorded. Capture depended on the client calling Chron.";
-  }
-}
-function liveAttachMetadata() {
-  return {
-    source: EVIDENCE_SOURCE.LIVE_ATTACH,
-    partial: true,
-    attach_reason: ATTACH_REASON_MID_SESSION
-  };
-}
-function chainScopeLabel(meta) {
-  switch (evidenceSourceOf(meta)) {
-    case EVIDENCE_SOURCE.LIVE_ATTACH:
-      return "Hash chain valid from attach point";
-    case EVIDENCE_SOURCE.TRANSCRIPT_BACKFILL:
-      return "Hash chain covers Chron's imported representation of this client transcript. Chron did not witness the original events.";
-    case EVIDENCE_SOURCE.IMPORTED:
-      return "Hash chain covers Chron's imported representation of this vendor export. Chron did not witness the original events.";
-    case EVIDENCE_SOURCE.WITNESSED:
-    default:
-      return meta.partial === true ? "Hash chain covers the records Chron holds for this session" : "Hash chain covers complete session";
-  }
-}
-function describeEvidenceBoundary(meta) {
-  switch (evidenceSourceOf(meta)) {
-    case EVIDENCE_SOURCE.LIVE_ATTACH:
-      return "Chron began recording after this conversation had already started. Evidence is valid from the attach point forward; earlier turns are outside the evidence boundary.";
-    case EVIDENCE_SOURCE.IMPORTED:
-      return "Imported from a vendor export. Tool calls, file access, and environment state are not captured by the export.";
-    case EVIDENCE_SOURCE.TRANSCRIPT_BACKFILL:
-      return "Recovered from a local client transcript. Chron ingested this record rather than observing it directly.";
-    case EVIDENCE_SOURCE.WITNESSED:
-    default:
-      return null;
-  }
-}
-var EVIDENCE_SOURCE, EVIDENCE_SOURCES, CAPTURE_MODE, CAPTURE_MODES, CALLER_ASSERTABLE_SOURCES, ATTACH_REASON_MID_SESSION, OVERLAP_DISCLOSURE;
-var init_evidence = __esm({
-  "src/utils/evidence.ts"() {
-    "use strict";
-    EVIDENCE_SOURCE = {
-      /** Chron was called as the conversation happened. The default, and the strongest. */
-      WITNESSED: "witnessed",
-      /** The user imported a vendor export after the fact. */
-      IMPORTED: "imported",
-      /** Chron started recording partway through a conversation already in progress. */
-      LIVE_ATTACH: "live_attach",
-      /** Recovered from a local transcript the AI client wrote. Reserved; not yet implemented. */
-      TRANSCRIPT_BACKFILL: "transcript_backfill"
-    };
-    EVIDENCE_SOURCES = Object.values(EVIDENCE_SOURCE);
-    CAPTURE_MODE = {
-      /** Nothing prevented this interaction from occurring unrecorded. The default, and what every MCP-logged session is. */
-      UNENFORCED: "unenforced",
-      /** Chron's wrapper recorded the interaction durably before releasing the output. Reachable via `chron run` since v0.1.62. */
-      ENFORCED_WRAPPER: "enforced:wrapper",
-      /** A control outside Chron's command path prevented bypass of the wrapper. Not built. */
-      ENFORCED_POLICY: "enforced:policy"
-    };
-    CAPTURE_MODES = Object.values(CAPTURE_MODE);
-    CALLER_ASSERTABLE_SOURCES = EVIDENCE_SOURCES;
-    ATTACH_REASON_MID_SESSION = "chron_available_mid_session";
-    OVERLAP_DISCLOSURE = "Transcript backfills may overlap conversations already witnessed by Chron. Both evidence records are retained; Chron does not infer that they are the same conversation.";
   }
 });
 
@@ -24572,9 +24606,24 @@ function captureScope(durability) {
         "the durability guarantee a fully durable run makes. A run recorded under this capability must not be classified as `enforced:wrapper` on the same terms."
       ]
     ],
+    // Version 2 of this list said there was no database projection and that no
+    // session could be marked `enforced:wrapper`. Both were true when written
+    // and both became false when v0.1.62 shipped projection and the
+    // enforcement verifier — and this text is written into the journal as the
+    // run's first record, so every wrapped run since has carried limitations
+    // its own build had already lifted, contradicting what `chron verify`
+    // reported for that same run.
+    //
+    // Records already written are left exactly as they are. A journal states
+    // what was claimed when it was written, and editing that to be more
+    // flattering would destroy the one property the journal exists for. The
+    // version is bumped instead, so a reader can tell which vocabulary a
+    // record carries, and version 2 stays readable.
     known_limitations: [
-      "there is no database projection yet: a wrapped run reaches the journal and nothing else, so it does not appear in `chron history` or `chron verify <session-id>`. Inspect it with `chron verify --journal`.",
-      "no session is marked `enforced:wrapper` on the strength of a wrapped run. That needs journal evidence bound to a session and verified on read; the binding does not exist, so `enforcementSupport()` still returns `none` for every session.",
+      "`chron run` attempts projection itself when the run completes, so a successful run normally appears in `chron history` and `chron verify <session-id>` without a further command. Before that attempt, and if it fails, the run exists in the journal alone \u2014 inspect it with `chron verify --journal`.",
+      "projection is a separate step that can fail independently of capture, and a failure there changes nothing about what was captured. `chron project` is the retry: it replays the journal and is idempotent, so running it again after a failure or at any later time is safe.",
+      "`enforced:wrapper` is reported for a projected run only when `chron verify <session-id>` has followed its binding to the journal records and compared them field by field. The claim is checked on read, never taken from the session row.",
+      "nothing here establishes that the wrapper was used for any other invocation. Running the client directly bypasses it, and preventing that needs a control outside Chron (`enforced:policy`).",
       "one client shape is supported: a child that speaks through inherited stdio pipes."
     ]
   };
@@ -24599,7 +24648,10 @@ function formatCaptureScope(durability = "durable") {
     "What it does not establish:",
     ...scope.does_not_establish.map(bullet),
     "",
-    "Not built yet:",
+    // Was 'Not built yet:'. The list below now includes things that are built
+    // — projection, and enforcement checked on read — so the heading denied
+    // what its own items described.
+    "Limitations and what they need:",
     ...scope.known_limitations.map(bullet),
     ""
   ].join("\n");
@@ -24608,7 +24660,7 @@ var CAPTURE_SCOPE_VERSION, CAPTURE_SCOPE;
 var init_scope = __esm({
   "src/journal/scope.ts"() {
     "use strict";
-    CAPTURE_SCOPE_VERSION = 2;
+    CAPTURE_SCOPE_VERSION = 3;
     CAPTURE_SCOPE = captureScope("durable");
   }
 });
@@ -24721,7 +24773,7 @@ var init_runs = __esm({
     RUN_COMPLETED = "run.completed";
     INTERACTION_INPUT = "interaction.input";
     INTERACTION_OUTPUT = "interaction.output";
-    SUPPORTED_SCOPE_VERSIONS = [CAPTURE_SCOPE_VERSION];
+    SUPPORTED_SCOPE_VERSIONS = [CAPTURE_SCOPE_VERSION, 2];
   }
 });
 
@@ -24896,10 +24948,10 @@ var init_project = __esm({
 // src/projection/enforcement.ts
 var enforcement_exports = {};
 __export(enforcement_exports, {
-  journalBindingOf: () => journalBindingOf,
+  journalBindingOf: () => journalBindingOf2,
   verifyEnforcement: () => verifyEnforcement
 });
-function journalBindingOf(meta) {
+function journalBindingOf2(meta) {
   const raw = meta.journal;
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const b = raw;
@@ -24916,7 +24968,7 @@ function journalBindingOf(meta) {
 }
 async function verifyEnforcement(db, sessionId, metadataRaw, journalPathOverride) {
   const meta = parseSessionMetadata(metadataRaw);
-  const binding = journalBindingOf(meta);
+  const binding = journalBindingOf2(meta);
   if (!binding) {
     return {
       supported: false,
@@ -25268,8 +25320,8 @@ ${BOLD8}Verifying session ${session.id.slice(0, 8)}${RESET9} \u2014 ${session.ti
   process.stdout.write(`
 ${BOLD8}Capture${RESET9}
 `);
-  const { journalBindingOf: journalBindingOf2, verifyEnforcement: verifyEnforcement2 } = await Promise.resolve().then(() => (init_enforcement(), enforcement_exports));
-  const binding = journalBindingOf2(sessionMeta);
+  const { journalBindingOf: journalBindingOf3, verifyEnforcement: verifyEnforcement2 } = await Promise.resolve().then(() => (init_enforcement(), enforcement_exports));
+  const binding = journalBindingOf3(sessionMeta);
   if (!claimsEnforcement(sessionMeta) && !binding) {
     note(`Unenforced \u2014 ${describeCaptureMode(sessionMeta)}`);
   } else if (!binding) {
@@ -25315,7 +25367,12 @@ ${BOLD8}Clock attestation${RESET9}
 ${BOLD8}Signature${RESET9}
 `);
   if (!session.public_key) {
-    warn("No public key \u2014 session was created before signing support (v0.1.19)");
+    const absent = missingPublicKey(sessionMeta);
+    warn(absent.fact);
+    if (absent.cause !== null) process.stdout.write(`  ${DIM7}${absent.cause}${RESET9}
+`);
+    for (const line of absent.next) process.stdout.write(`  ${DIM7}${line}${RESET9}
+`);
   } else if (!session.signature) {
     warn("Not yet signed \u2014 run: chron sign " + session.id.slice(0, 8));
   } else {
@@ -26492,6 +26549,9 @@ function contextMatches(kw, input, idx) {
   const hi = Math.min(input.length, idx + CONTEXT_WINDOW);
   return kw.test(input.slice(lo, hi));
 }
+function emailRegex() {
+  return new RegExp(EMAIL_SOURCE, "g");
+}
 function annotate(s) {
   return {
     ...s,
@@ -26601,7 +26661,7 @@ function deduplicateOverlaps(secrets) {
   }
   return kept;
 }
-var CONTEXT_WINDOW, DOB_KEYWORDS, PASS_KEYWORDS, SSN_KEYWORDS, PATTERNS, SEVERITY2, CATEGORY, EMAIL_RE, PAIR_WINDOW, POSSIBLE_SECRET_RE;
+var CONTEXT_WINDOW, DOB_KEYWORDS, PASS_KEYWORDS, SSN_KEYWORDS, EMAIL_SOURCE, PATTERNS, SEVERITY2, CATEGORY, EMAIL_RE, PAIR_WINDOW, POSSIBLE_SECRET_RE, MAX_MATCH_CHARS, OWNED_CHARS;
 var init_detect = __esm({
   "src/utils/detect.ts"() {
     "use strict";
@@ -26609,26 +26669,35 @@ var init_detect = __esm({
     DOB_KEYWORDS = /\b(?:dob|date\s+of\s+birth|birth\s+date|born\s+on|birthday)\b/i;
     PASS_KEYWORDS = /\b(?:passport|travel\s+document|document\s+no(?:\.|\b))\b/i;
     SSN_KEYWORDS = /\b(?:ssn|social\s+security|tin\b)\b/i;
+    EMAIL_SOURCE = "[a-zA-Z0-9._%+\\-]{1,64}@[a-zA-Z0-9.\\-]{1,255}\\.[a-zA-Z]{2,24}";
     PATTERNS = [
       // Private key blocks (must come first — multiline, unambiguous)
-      { type: "private_key", regex: /-----BEGIN [A-Z ]+ PRIVATE KEY-----[\s\S]+?-----END [A-Z ]+ PRIVATE KEY-----/g },
+      // Bounded so the longest possible match is a known number, which the
+      // windowed scan below needs in order to size its overlap. A PEM private key
+      // is a few KiB even at RSA-16384, so 16KiB is generous.
+      { type: "private_key", regex: /-----BEGIN [A-Z ]+ PRIVATE KEY-----[\s\S]{1,65536}?-----END [A-Z ]+ PRIVATE KEY-----/g },
       // Cloud / AI provider keys
       { type: "aws_access_key", regex: /AKIA[0-9A-Z]{16}/g },
-      { type: "anthropic_api_key", regex: /sk-ant-api\d{2}-[a-zA-Z0-9\-_]{40,}/g },
-      { type: "openai_api_key", regex: /sk-proj-[a-zA-Z0-9\-_]{20,}/g },
+      { type: "anthropic_api_key", regex: /sk-ant-api\d{2}-[a-zA-Z0-9\-_]{40,512}/g },
+      { type: "openai_api_key", regex: /sk-proj-[a-zA-Z0-9\-_]{20,512}/g },
       { type: "google_api_key", regex: /AIza[0-9A-Za-z\-_]{35}/g },
       // SaaS API keys
-      { type: "github_token", regex: /gh[pousr]_[a-zA-Z0-9]{30,}/g },
-      { type: "slack_token", regex: /xox[bpas]-[0-9]{8,13}-[0-9]{8,13}-[a-zA-Z0-9]{20,}/g },
-      { type: "stripe_key", regex: /sk_(live|test)_[a-zA-Z0-9]{24,}/g },
-      { type: "sendgrid_key", regex: /SG\.[a-zA-Z0-9\-_]{22,}\.[a-zA-Z0-9\-_]{22,}/g },
-      { type: "huggingface_token", regex: /hf_[a-zA-Z0-9]{30,}/g },
+      { type: "github_token", regex: /gh[pousr]_[a-zA-Z0-9]{30,512}/g },
+      { type: "slack_token", regex: /xox[bpas]-[0-9]{8,13}-[0-9]{8,13}-[a-zA-Z0-9]{20,512}/g },
+      { type: "stripe_key", regex: /sk_(live|test)_[a-zA-Z0-9]{24,512}/g },
+      { type: "sendgrid_key", regex: /SG\.[a-zA-Z0-9\-_]{22,512}\.[a-zA-Z0-9\-_]{22,512}/g },
+      { type: "huggingface_token", regex: /hf_[a-zA-Z0-9]{30,512}/g },
       // Auth / session tokens
-      { type: "jwt", regex: /eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+/g },
+      // Bounded for the same reason as `private_key`. A JWT past 8KiB per segment
+      // is not a credential anybody is pasting.
+      { type: "jwt", regex: /eyJ[A-Za-z0-9\-_]{1,8192}\.[A-Za-z0-9\-_]{1,8192}\.[A-Za-z0-9\-_]{1,8192}/g },
       // Credentials in URLs (before env_value so it wins on connection strings)
-      { type: "url_credentials", regex: /\w+:\/\/[^:@\s\/]{1,64}:[^@\s]{4,}@[^\s]/g },
+      // Same shape as `email` above: `\w+` before the required `://` was 12.7s on
+      // 128KiB. No scheme is 32 characters, and a password field past 256 is not
+      // one.
+      { type: "url_credentials", regex: /\w{1,32}:\/\/[^:@\s\/]{1,64}:[^@\s]{4,256}@[^\s]/g },
       // Passwords in key=value and JSON
-      { type: "password", regex: /(?:password|passwd|pwd)["']?\s*[=:]\s*["']?([^\s"',]{6,})/gi },
+      { type: "password", regex: /(?:password|passwd|pwd)["']?\s*[=:]\s*["']?([^\s"',]{6,512})/gi },
       // PII — financial
       {
         type: "credit_card",
@@ -26662,7 +26731,13 @@ var init_detect = __esm({
         validate: (_v, input, idx) => contextMatches(PASS_KEYWORDS, input, idx)
       },
       // PII — contact
-      { type: "email", regex: /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g },
+      // Quantifiers bounded, not decorative. `[class]+` before a required literal
+      // re-scans from every start position, which is quadratic: measured at 15.6
+      // SECONDS for this pattern alone on 128KiB of one repeated character, and
+      // ~256x that at 2MiB — the stall that held the 0.1.64 candidate. RFC 5321
+      // caps a local part at 64 characters and a domain at 255, so the bounds cost
+      // no real address.
+      { type: "email", regex: emailRegex() },
       {
         type: "phone_us",
         // Requires area code starting 2-9 (excludes version numbers, dates, plain 7-digit numbers)
@@ -26679,7 +26754,7 @@ var init_detect = __esm({
         regex: /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b/g
       },
       // Generic env assignment (lowest priority — catches remaining secrets)
-      { type: "env_value", regex: /\b[A-Z][A-Z0-9_]{2,}=[^\s]{8,}/g }
+      { type: "env_value", regex: /\b[A-Z][A-Z0-9_]{2,128}=[^\s]{8,8192}/g }
     ];
     SEVERITY2 = {
       private_key: "critical",
@@ -26735,9 +26810,11 @@ var init_detect = __esm({
       internal_ip: "network",
       env_value: "credential"
     };
-    EMAIL_RE = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
+    EMAIL_RE = emailRegex();
     PAIR_WINDOW = 100;
     POSSIBLE_SECRET_RE = /\b(?:api[_\s-]?key|access[_\s-]?key|secret|token|credential|password)\b\s*(?:is\s*:?|[=:])?\s*["']?([A-Za-z0-9][A-Za-z0-9._\-]{11,127})["']?/gi;
+    MAX_MATCH_CHARS = 72 * 1024;
+    OWNED_CHARS = 128 * 1024;
   }
 });
 
@@ -31849,6 +31926,7 @@ var init_otel_receipts = __esm({
 // src/cli/otel.ts
 var otel_exports = {};
 __export(otel_exports, {
+  formatDeliveryProblems: () => formatDeliveryProblems,
   runOtel: () => runOtel
 });
 function usage2() {
@@ -32010,12 +32088,7 @@ ${DIM18}no endpoint configured \u2014 dry run does not need one${RESET20}
 `);
   }
   process.stderr.write("\n");
-  if (result.rejected > 0 || result.failed > 0) {
-    process.stderr.write(`${RED15}Not delivered.${RESET20} ${result.rejected + result.failed} span(s) did not reach the collector.
-`);
-    process.stderr.write(`  Check the endpoint, credentials and configuration, then export again.
-`);
-  }
+  process.stderr.write(formatDeliveryProblems(result));
   if (result.unknown > 0) {
     process.stderr.write(`${YELLOW17}Delivery unknown.${RESET20} ${result.unknown} span(s) may or may not have reached the collector;
 `);
@@ -32040,6 +32113,37 @@ ${DIM18}no endpoint configured \u2014 dry run does not need one${RESET20}
   }
   process.stderr.write("\n");
   process.exit(1);
+}
+function formatDeliveryProblems(result) {
+  const gateHeldSpans = result.batches.filter((b) => b.errorCategory === "audit_gate_failed").reduce((n, b) => n + b.spans, 0);
+  const transportFailedSpans = result.failed - gateHeldSpans;
+  const out = [];
+  if (transportFailedSpans > 0) {
+    out.push(
+      `${RED15}Not delivered.${RESET20} ${transportFailedSpans} span(s) did not reach the collector.`,
+      "  The connection was refused or never established, so the collector cannot have",
+      "  received them. Check the endpoint and connectivity, then export again."
+    );
+  }
+  if (gateHeldSpans > 0) {
+    out.push(
+      `${RED15}Never sent.${RESET20} ${gateHeldSpans} span(s) were not transmitted at all.`,
+      "  The audit record of this export could not be written, so Chron stopped before",
+      "  sending rather than deliver evidence it could not record delivering. Nothing",
+      "  was attempted over the network, so this is not a connectivity problem.",
+      "  Check the audit database and its storage \u2014 space, permissions, and whether",
+      `  ${process.env.CHRON_DB_PATH ?? "~/.chron/chron.db"} is writable \u2014 then export again.`
+    );
+  }
+  if (result.rejected > 0) {
+    out.push(
+      `${RED15}Rejected.${RESET20} ${result.rejected} span(s) reached the collector, which refused them.`,
+      "  The endpoint is reachable and answering, so this is not a connectivity",
+      "  problem. Check credentials, headers and whether the collector accepts this",
+      "  payload, then export again."
+    );
+  }
+  return out.length === 0 ? "" : out.join("\n") + "\n";
 }
 var import_package5, RESET20, BOLD19, DIM18, GREEN13, RED15, YELLOW17;
 var init_otel = __esm({

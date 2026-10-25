@@ -38796,7 +38796,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.63",
+      version: "0.1.64",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -39710,7 +39710,10 @@ var init_content = __esm({
 // src/utils/detect.ts
 var detect_exports = {};
 __export(detect_exports, {
-  scanForSecrets: () => scanForSecrets
+  MAX_MATCH_CHARS: () => MAX_MATCH_CHARS,
+  OWNED_CHARS: () => OWNED_CHARS,
+  scanForSecrets: () => scanForSecrets,
+  scanForSecretsWithoutBlocking: () => scanForSecretsWithoutBlocking
 });
 function luhnCheck(value) {
   const digits = value.replace(/\D/g, "");
@@ -39742,6 +39745,9 @@ function contextMatches(kw, input, idx) {
   const lo = Math.max(0, idx - CONTEXT_WINDOW);
   const hi = Math.min(input.length, idx + CONTEXT_WINDOW);
   return kw.test(input.slice(lo, hi));
+}
+function emailRegex2() {
+  return new RegExp(EMAIL_SOURCE, "g");
 }
 function annotate(s) {
   return {
@@ -39852,7 +39858,24 @@ function deduplicateOverlaps(secrets) {
   }
   return kept;
 }
-var CONTEXT_WINDOW, DOB_KEYWORDS, PASS_KEYWORDS, SSN_KEYWORDS, PATTERNS, SEVERITY, CATEGORY, EMAIL_RE, PAIR_WINDOW, POSSIBLE_SECRET_RE;
+async function scanForSecretsWithoutBlocking(input, yieldNow = () => new Promise((resolve2) => setImmediate(resolve2))) {
+  if (input.length <= OWNED_CHARS) return scanForSecrets(input);
+  const byStart = /* @__PURE__ */ new Map();
+  for (let owned = 0; owned < input.length; owned += OWNED_CHARS) {
+    const ownedEnd = Math.min(owned + OWNED_CHARS, input.length);
+    const from = Math.max(0, owned - CONTEXT_CHARS);
+    const to = Math.min(input.length, ownedEnd + CONTEXT_CHARS);
+    const slice = input.slice(from, to);
+    for (const found of scanForSecrets(slice)) {
+      const start = found.start + from;
+      if (start < owned || start >= ownedEnd) continue;
+      byStart.set(`${found.type}:${start}`, { ...found, start, end: found.end + from });
+    }
+    if (ownedEnd < input.length) await yieldNow();
+  }
+  return [...byStart.values()].sort((a, b) => a.start - b.start);
+}
+var CONTEXT_WINDOW, DOB_KEYWORDS, PASS_KEYWORDS, SSN_KEYWORDS, EMAIL_SOURCE, PATTERNS, SEVERITY, CATEGORY, EMAIL_RE, PAIR_WINDOW, POSSIBLE_SECRET_RE, MAX_MATCH_CHARS, CONTEXT_CHARS, OWNED_CHARS;
 var init_detect = __esm({
   "src/utils/detect.ts"() {
     "use strict";
@@ -39860,26 +39883,35 @@ var init_detect = __esm({
     DOB_KEYWORDS = /\b(?:dob|date\s+of\s+birth|birth\s+date|born\s+on|birthday)\b/i;
     PASS_KEYWORDS = /\b(?:passport|travel\s+document|document\s+no(?:\.|\b))\b/i;
     SSN_KEYWORDS = /\b(?:ssn|social\s+security|tin\b)\b/i;
+    EMAIL_SOURCE = "[a-zA-Z0-9._%+\\-]{1,64}@[a-zA-Z0-9.\\-]{1,255}\\.[a-zA-Z]{2,24}";
     PATTERNS = [
       // Private key blocks (must come first — multiline, unambiguous)
-      { type: "private_key", regex: /-----BEGIN [A-Z ]+ PRIVATE KEY-----[\s\S]+?-----END [A-Z ]+ PRIVATE KEY-----/g },
+      // Bounded so the longest possible match is a known number, which the
+      // windowed scan below needs in order to size its overlap. A PEM private key
+      // is a few KiB even at RSA-16384, so 16KiB is generous.
+      { type: "private_key", regex: /-----BEGIN [A-Z ]+ PRIVATE KEY-----[\s\S]{1,65536}?-----END [A-Z ]+ PRIVATE KEY-----/g },
       // Cloud / AI provider keys
       { type: "aws_access_key", regex: /AKIA[0-9A-Z]{16}/g },
-      { type: "anthropic_api_key", regex: /sk-ant-api\d{2}-[a-zA-Z0-9\-_]{40,}/g },
-      { type: "openai_api_key", regex: /sk-proj-[a-zA-Z0-9\-_]{20,}/g },
+      { type: "anthropic_api_key", regex: /sk-ant-api\d{2}-[a-zA-Z0-9\-_]{40,512}/g },
+      { type: "openai_api_key", regex: /sk-proj-[a-zA-Z0-9\-_]{20,512}/g },
       { type: "google_api_key", regex: /AIza[0-9A-Za-z\-_]{35}/g },
       // SaaS API keys
-      { type: "github_token", regex: /gh[pousr]_[a-zA-Z0-9]{30,}/g },
-      { type: "slack_token", regex: /xox[bpas]-[0-9]{8,13}-[0-9]{8,13}-[a-zA-Z0-9]{20,}/g },
-      { type: "stripe_key", regex: /sk_(live|test)_[a-zA-Z0-9]{24,}/g },
-      { type: "sendgrid_key", regex: /SG\.[a-zA-Z0-9\-_]{22,}\.[a-zA-Z0-9\-_]{22,}/g },
-      { type: "huggingface_token", regex: /hf_[a-zA-Z0-9]{30,}/g },
+      { type: "github_token", regex: /gh[pousr]_[a-zA-Z0-9]{30,512}/g },
+      { type: "slack_token", regex: /xox[bpas]-[0-9]{8,13}-[0-9]{8,13}-[a-zA-Z0-9]{20,512}/g },
+      { type: "stripe_key", regex: /sk_(live|test)_[a-zA-Z0-9]{24,512}/g },
+      { type: "sendgrid_key", regex: /SG\.[a-zA-Z0-9\-_]{22,512}\.[a-zA-Z0-9\-_]{22,512}/g },
+      { type: "huggingface_token", regex: /hf_[a-zA-Z0-9]{30,512}/g },
       // Auth / session tokens
-      { type: "jwt", regex: /eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+/g },
+      // Bounded for the same reason as `private_key`. A JWT past 8KiB per segment
+      // is not a credential anybody is pasting.
+      { type: "jwt", regex: /eyJ[A-Za-z0-9\-_]{1,8192}\.[A-Za-z0-9\-_]{1,8192}\.[A-Za-z0-9\-_]{1,8192}/g },
       // Credentials in URLs (before env_value so it wins on connection strings)
-      { type: "url_credentials", regex: /\w+:\/\/[^:@\s\/]{1,64}:[^@\s]{4,}@[^\s]/g },
+      // Same shape as `email` above: `\w+` before the required `://` was 12.7s on
+      // 128KiB. No scheme is 32 characters, and a password field past 256 is not
+      // one.
+      { type: "url_credentials", regex: /\w{1,32}:\/\/[^:@\s\/]{1,64}:[^@\s]{4,256}@[^\s]/g },
       // Passwords in key=value and JSON
-      { type: "password", regex: /(?:password|passwd|pwd)["']?\s*[=:]\s*["']?([^\s"',]{6,})/gi },
+      { type: "password", regex: /(?:password|passwd|pwd)["']?\s*[=:]\s*["']?([^\s"',]{6,512})/gi },
       // PII — financial
       {
         type: "credit_card",
@@ -39913,7 +39945,13 @@ var init_detect = __esm({
         validate: (_v, input, idx) => contextMatches(PASS_KEYWORDS, input, idx)
       },
       // PII — contact
-      { type: "email", regex: /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g },
+      // Quantifiers bounded, not decorative. `[class]+` before a required literal
+      // re-scans from every start position, which is quadratic: measured at 15.6
+      // SECONDS for this pattern alone on 128KiB of one repeated character, and
+      // ~256x that at 2MiB — the stall that held the 0.1.64 candidate. RFC 5321
+      // caps a local part at 64 characters and a domain at 255, so the bounds cost
+      // no real address.
+      { type: "email", regex: emailRegex2() },
       {
         type: "phone_us",
         // Requires area code starting 2-9 (excludes version numbers, dates, plain 7-digit numbers)
@@ -39930,7 +39968,7 @@ var init_detect = __esm({
         regex: /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b/g
       },
       // Generic env assignment (lowest priority — catches remaining secrets)
-      { type: "env_value", regex: /\b[A-Z][A-Z0-9_]{2,}=[^\s]{8,}/g }
+      { type: "env_value", regex: /\b[A-Z][A-Z0-9_]{2,128}=[^\s]{8,8192}/g }
     ];
     SEVERITY = {
       private_key: "critical",
@@ -39986,9 +40024,84 @@ var init_detect = __esm({
       internal_ip: "network",
       env_value: "credential"
     };
-    EMAIL_RE = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
+    EMAIL_RE = emailRegex2();
     PAIR_WINDOW = 100;
     POSSIBLE_SECRET_RE = /\b(?:api[_\s-]?key|access[_\s-]?key|secret|token|credential|password)\b\s*(?:is\s*:?|[=:])?\s*["']?([A-Za-z0-9][A-Za-z0-9._\-]{11,127})["']?/gi;
+    MAX_MATCH_CHARS = 72 * 1024;
+    CONTEXT_CHARS = MAX_MATCH_CHARS;
+    OWNED_CHARS = 128 * 1024;
+  }
+});
+
+// src/utils/redact.ts
+function redactSecrets(input) {
+  const detected = scanForSecrets(input);
+  if (detected.length === 0) {
+    return { redacted: input, secrets: [] };
+  }
+  const counters = {};
+  const secrets = [];
+  for (const s of detected) {
+    counters[s.type] = (counters[s.type] ?? 0) + 1;
+    secrets.push({
+      type: s.type,
+      value: s.value,
+      token: `$CHRON_${s.type.toUpperCase()}_${counters[s.type]}`
+    });
+  }
+  const sorted = detected.map((s, i) => ({ ...s, token: secrets[i].token })).sort((a, b) => b.start - a.start);
+  let redacted = input;
+  for (const s of sorted) {
+    redacted = redacted.slice(0, s.start) + s.token + redacted.slice(s.end);
+  }
+  return { redacted, secrets };
+}
+function rehydrateSecrets(text2, secrets) {
+  let result = text2;
+  for (const s of secrets) {
+    result = result.replaceAll(s.token, s.value);
+  }
+  return result;
+}
+var init_redact = __esm({
+  "src/utils/redact.ts"() {
+    "use strict";
+    init_detect();
+  }
+});
+
+// src/utils/failure.ts
+function describesTheStatement(message) {
+  return /^Failed query:/i.test(message) || /\bparams:\s/i.test(message) || /^\s*(?:insert|update|delete|select)\s+into\b/i.test(message) || /\bvalues\s*\((?:\s*\?\s*,){3,}/i.test(message);
+}
+function causeChain(error2) {
+  const messages2 = [];
+  let current = error2;
+  for (let depth = 0; depth < MAX_CAUSE_DEPTH && current !== null && current !== void 0; depth++) {
+    const message = current instanceof Error ? current.message : typeof current === "string" ? current : null;
+    if (typeof message === "string" && message.trim().length > 0) messages2.push(message);
+    const next = current?.cause;
+    if (next === current) break;
+    current = next;
+  }
+  return messages2.reverse();
+}
+function describeWriteFailure(error2) {
+  const candidates = causeChain(error2).filter((m) => !describesTheStatement(m));
+  const chosen = candidates[0];
+  if (chosen === void 0) {
+    return "the driver reported no cause (its message described the statement, which is not printed)";
+  }
+  const safe = redactSecrets(chosen).redacted.replace(/\s+/g, " ").trim();
+  return safe.length > MAX_FAILURE_CHARS ? `${safe.slice(0, MAX_FAILURE_CHARS)}\u2026 (truncated from ${safe.length} characters)` : safe;
+}
+var MAX_FAILURE_CHARS, MAX_CAUSE_DEPTH;
+var init_failure = __esm({
+  "src/utils/failure.ts"() {
+    "use strict";
+    init_redact();
+    MAX_FAILURE_CHARS = 300;
+    MAX_CAUSE_DEPTH = 8;
   }
 });
 
@@ -39997,7 +40110,7 @@ function maskValue(v) {
   return v.length > 8 ? v.slice(0, 4) + "****" + v.slice(-4) : "****";
 }
 async function writeDetections(db, session_id, message_id, content) {
-  const found = scanForSecrets(content);
+  const found = await scanForSecretsWithoutBlocking(content);
   if (found.length === 0) return;
   const now = localISOString();
   const rows = found.map((s) => ({
@@ -40008,7 +40121,10 @@ async function writeDetections(db, session_id, message_id, content) {
     masked_value: maskValue(s.value),
     detected_at: now
   }));
-  await db.insert(secrets_detected).values(rows);
+  const INSERT_BATCH = 500;
+  for (let i = 0; i < rows.length; i += INSERT_BATCH) {
+    await db.insert(secrets_detected).values(rows.slice(i, i + INSERT_BATCH));
+  }
   const sessionIdPrefix = session_id.slice(0, 8);
   for (const row of rows) {
     emitEvent({ event_type: "secret_detected", timestamp: now, session: { id_prefix: sessionIdPrefix, ai_tool: null }, detection: { type: row.type, masked_value: row.masked_value } });
@@ -40070,7 +40186,19 @@ function logMessage(db) {
     }
     emitEvent({ event_type: "message_logged", timestamp: now, session: { id_prefix: args.session_id.slice(0, 8), ai_tool: sessionAiTool }, message: { role: args.role } });
     if (args.role === "user" && eventType === "message") {
-      setImmediate(() => writeDetections(db, args.session_id, id, args.content).catch(() => void 0));
+      setImmediate(() => writeDetections(db, args.session_id, id, args.content).catch((e) => {
+        const reason = describeWriteFailure(e);
+        terminalAudit(
+          `secret scan FAILED for message ${id.slice(0, 8)} in session ${args.session_id.slice(0, 8)}: ${reason}`
+        );
+        emitEvent({
+          event_type: "secret_scan_failed",
+          timestamp: now,
+          session: { id_prefix: args.session_id.slice(0, 8), ai_tool: sessionAiTool },
+          message: { role: args.role, id_prefix: id.slice(0, 8) },
+          reason
+        });
+      }));
     }
     return {
       content: [{ type: "text", text: JSON.stringify({ message_id: id, created_at: now, content_hash: contentHash }) }]
@@ -40211,6 +40339,7 @@ var init_messages = __esm({
     init_hash();
     init_content();
     init_detect();
+    init_failure();
     init_relay();
     init_terminal();
   }
@@ -40350,43 +40479,6 @@ var init_verify = __esm({
     init_message_order();
     init_signing();
     init_evidence();
-  }
-});
-
-// src/utils/redact.ts
-function redactSecrets(input) {
-  const detected = scanForSecrets(input);
-  if (detected.length === 0) {
-    return { redacted: input, secrets: [] };
-  }
-  const counters = {};
-  const secrets = [];
-  for (const s of detected) {
-    counters[s.type] = (counters[s.type] ?? 0) + 1;
-    secrets.push({
-      type: s.type,
-      value: s.value,
-      token: `$CHRON_${s.type.toUpperCase()}_${counters[s.type]}`
-    });
-  }
-  const sorted = detected.map((s, i) => ({ ...s, token: secrets[i].token })).sort((a, b) => b.start - a.start);
-  let redacted = input;
-  for (const s of sorted) {
-    redacted = redacted.slice(0, s.start) + s.token + redacted.slice(s.end);
-  }
-  return { redacted, secrets };
-}
-function rehydrateSecrets(text2, secrets) {
-  let result = text2;
-  for (const s of secrets) {
-    result = result.replaceAll(s.token, s.value);
-  }
-  return result;
-}
-var init_redact = __esm({
-  "src/utils/redact.ts"() {
-    "use strict";
-    init_detect();
   }
 });
 
@@ -69208,20 +69300,123 @@ data: ${JSON.stringify(message)}
   }
 });
 
+// src/http/config.ts
+function isLoopbackHost(host) {
+  return LOOPBACK.has(host.trim().toLowerCase());
+}
+function resolveHttpConfig(env) {
+  const apiKey = (env.CHRON_API_KEY ?? "").trim();
+  if (apiKey.length === 0) {
+    throw new HttpConfigError(
+      "CHRON_TRANSPORT=http serves the MCP tools, which read your sessions and messages.\n  It will not start without authentication.\n\n  Set CHRON_API_KEY to a secret of at least " + MIN_API_KEY_LENGTH + ' characters and start again:\n    CHRON_API_KEY="$(openssl rand -hex 32)" CHRON_TRANSPORT=http chron-mcp\n\n  Clients then send it as: Authorization: Bearer <key>\n  The stdio transport needs no key and is unaffected \u2014 unset CHRON_TRANSPORT to use it.'
+    );
+  }
+  if (apiKey.length < MIN_API_KEY_LENGTH) {
+    throw new HttpConfigError(
+      `CHRON_API_KEY is ${apiKey.length} characters; at least ${MIN_API_KEY_LENGTH} are required.
+  This endpoint serves audit evidence, and a key short enough to guess is not
+  authentication. Generate one with: openssl rand -hex 32`
+    );
+  }
+  const host = (env.CHRON_HTTP_HOST ?? "127.0.0.1").trim() || "127.0.0.1";
+  const remote = !isLoopbackHost(host);
+  if (remote && (env.CHRON_HTTP_ALLOW_REMOTE ?? "") !== "1") {
+    throw new HttpConfigError(
+      `CHRON_HTTP_HOST=${host} would expose this endpoint beyond this machine.
+  Binding off loopback has to be deliberate, so it needs a second variable:
+    CHRON_HTTP_ALLOW_REMOTE=1
+
+  Before setting it: the key is the only thing between the network and your
+  evidence, this transport has no TLS of its own, and it is intended to sit
+  behind a reverse proxy that terminates TLS. Leave CHRON_HTTP_HOST unset to
+  bind 127.0.0.1 only.`
+    );
+  }
+  const port = Number.parseInt(env.PORT ?? "3001", 10);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new HttpConfigError(`Invalid PORT value: ${String(env.PORT)}`);
+  }
+  const extra = (env.CHRON_HTTP_ALLOWED_HOSTS ?? "").split(",").map((h) => h.trim().toLowerCase()).filter((h) => h.length > 0);
+  const allowedHosts = [.../* @__PURE__ */ new Set([
+    ...remote ? [host.toLowerCase()] : [...LOOPBACK],
+    ...extra
+  ])];
+  return { host, port, apiKey, allowedHosts, remote };
+}
+var HttpConfigError, MIN_API_KEY_LENGTH, LOOPBACK;
+var init_config2 = __esm({
+  "src/http/config.ts"() {
+    "use strict";
+    HttpConfigError = class extends Error {
+      constructor(message) {
+        super(message);
+        this.name = "HttpConfigError";
+      }
+    };
+    MIN_API_KEY_LENGTH = 16;
+    LOOPBACK = /* @__PURE__ */ new Set(["127.0.0.1", "::1", "localhost", "[::1]"]);
+  }
+});
+
 // src/http/middleware.ts
 function apiKeyMiddleware(apiKey) {
+  const expected = Buffer.from(`Bearer ${apiKey}`, "utf8");
   return (req, res, next) => {
     const header = req.headers.authorization;
-    if (!header || header !== `Bearer ${apiKey}`) {
+    if (typeof header !== "string") {
+      res.setHeader("WWW-Authenticate", "Bearer");
+      res.status(401).end();
+      return;
+    }
+    const given = Buffer.from(header, "utf8");
+    const ok = given.length === expected.length && (0, import_crypto6.timingSafeEqual)(given, expected);
+    if (!ok) {
+      res.setHeader("WWW-Authenticate", "Bearer");
       res.status(401).end();
       return;
     }
     next();
   };
 }
+function hostGuardMiddleware(allowedHosts, port) {
+  const allowed = new Set(allowedHosts.map((h) => h.toLowerCase()));
+  const permitted = (hostHeader) => {
+    const host = hostHeader.toLowerCase();
+    const withoutPort = host.replace(/:\d+$/, "");
+    const bracketed = withoutPort.startsWith("[") && withoutPort.endsWith("]") ? withoutPort.slice(1, -1) : withoutPort;
+    if (!allowed.has(withoutPort) && !allowed.has(bracketed)) return false;
+    const givenPort = /:(\d+)$/.exec(host)?.[1];
+    return givenPort === void 0 || Number(givenPort) === port;
+  };
+  return (req, res, next) => {
+    const hostHeader = req.headers.host;
+    if (typeof hostHeader !== "string" || !permitted(hostHeader)) {
+      res.status(403).json({ error: "host_not_allowed" });
+      return;
+    }
+    const origin = req.headers.origin;
+    if (typeof origin === "string" && origin.length > 0 && origin !== "null") {
+      let originHost;
+      try {
+        originHost = new URL(origin).hostname.toLowerCase();
+      } catch {
+        res.status(403).json({ error: "origin_not_allowed" });
+        return;
+      }
+      if (!allowed.has(originHost) && !(allowed.has("localhost") && isLoopbackHost(originHost))) {
+        res.status(403).json({ error: "origin_not_allowed" });
+        return;
+      }
+    }
+    next();
+  };
+}
+var import_crypto6;
 var init_middleware = __esm({
   "src/http/middleware.ts"() {
     "use strict";
+    import_crypto6 = require("crypto");
+    init_config2();
   }
 });
 
@@ -69231,15 +69426,13 @@ __export(server_exports, {
   startHttpServer: () => startHttpServer
 });
 async function startHttpServer(server, db) {
+  const config2 = resolveHttpConfig(process.env);
   const app = (0, import_express.default)();
-  app.use(import_express.default.json({ limit: "1mb" }));
   app.get("/health", (_req, res) => {
-    res.json({ status: "ok", version: import_package3.version });
+    res.json({ status: "ok" });
   });
-  const apiKey = process.env.CHRON_API_KEY;
-  if (apiKey) {
-    app.use(apiKeyMiddleware(apiKey));
-  }
+  app.use(hostGuardMiddleware(config2.allowedHosts, config2.port));
+  app.use(apiKeyMiddleware(config2.apiKey));
   const transports = /* @__PURE__ */ new Map();
   app.get("/sse", async (req, res) => {
     try {
@@ -69269,11 +69462,16 @@ async function startHttpServer(server, db) {
       if (!res.headersSent) res.status(500).json({ error: "Internal server error" });
     }
   });
-  const port = parseInt(process.env.PORT ?? "3001", 10);
-  if (isNaN(port)) throw new Error(`Invalid PORT value: ${process.env.PORT}`);
-  await new Promise((resolve2) => app.listen(port, resolve2));
-  process.stderr.write(`Chron HTTP server listening on port ${port}
-`);
+  await new Promise((resolve2) => app.listen(config2.port, config2.host, () => resolve2()));
+  process.stderr.write(
+    `Chron HTTP server listening on ${config2.host}:${config2.port} (v${import_package3.version}), authentication required
+`
+  );
+  if (config2.remote) {
+    process.stderr.write(
+      "Chron HTTP server: bound off loopback by CHRON_HTTP_ALLOW_REMOTE=1. This transport has no TLS of its own; terminate TLS in front of it.\n"
+    );
+  }
 }
 var import_express, import_package3;
 var init_server4 = __esm({
@@ -69282,6 +69480,7 @@ var init_server4 = __esm({
     import_express = __toESM(require_express2());
     init_sse();
     init_middleware();
+    init_config2();
     init_server3();
     import_package3 = __toESM(require_package());
   }
