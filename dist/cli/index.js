@@ -38,7 +38,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.64",
+      version: "0.1.65",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -92,11 +92,11 @@ var require_package = __commonJS({
       license: "SEE LICENSE IN LICENSE",
       dependencies: {
         "@libsql/client": "^0.17.3",
-        "@modelcontextprotocol/sdk": "^1.30.0",
+        "@modelcontextprotocol/sdk": "^1.32.0",
         "drizzle-orm": "^0.45.2",
         express: "^4.22.2",
         uuid: "^11.1.1",
-        zod: "^3.22.4"
+        zod: "^4.6.6"
       },
       devDependencies: {
         "@types/express": "^4.17.21",
