@@ -41037,7 +41037,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.65",
+      version: "0.1.66",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -42371,6 +42371,21 @@ async function writeDetections(db, session_id, message_id, content) {
     emitEvent({ event_type: "secret_detected", timestamp: now, session: { id_prefix: sessionIdPrefix, ai_tool: null }, detection: { type: row.type, masked_value: row.masked_value } });
   }
 }
+function reportDetectionFailure(e, at) {
+  const reason = describeWriteFailure(e);
+  const sessionIdPrefix = at.session_id.slice(0, 8);
+  const messageIdPrefix = at.message_id.slice(0, 8);
+  terminalAudit(
+    `secret scan FAILED for message ${messageIdPrefix} in session ${sessionIdPrefix}: ${reason}`
+  );
+  emitEvent({
+    event_type: "secret_scan_failed",
+    timestamp: at.timestamp,
+    session: { id_prefix: sessionIdPrefix, ai_tool: at.ai_tool },
+    message: { role: at.role, id_prefix: messageIdPrefix },
+    reason
+  });
+}
 function isFkError(e) {
   return e?.message?.includes("FOREIGN KEY constraint failed") || e?.code === "SQLITE_CONSTRAINT_FOREIGNKEY" || e?.cause?.message?.includes("FOREIGN KEY constraint failed") || e?.cause?.extendedCode === "SQLITE_CONSTRAINT_FOREIGNKEY";
 }
@@ -42427,19 +42442,15 @@ function logMessage(db) {
     }
     emitEvent({ event_type: "message_logged", timestamp: now, session: { id_prefix: args.session_id.slice(0, 8), ai_tool: sessionAiTool }, message: { role: args.role } });
     if (args.role === "user" && eventType === "message") {
-      setImmediate(() => writeDetections(db, args.session_id, id, args.content).catch((e) => {
-        const reason = describeWriteFailure(e);
-        terminalAudit(
-          `secret scan FAILED for message ${id.slice(0, 8)} in session ${args.session_id.slice(0, 8)}: ${reason}`
-        );
-        emitEvent({
-          event_type: "secret_scan_failed",
-          timestamp: now,
-          session: { id_prefix: args.session_id.slice(0, 8), ai_tool: sessionAiTool },
-          message: { role: args.role, id_prefix: id.slice(0, 8) },
-          reason
-        });
-      }));
+      setImmediate(() => writeDetections(db, args.session_id, id, args.content).catch(
+        (e) => reportDetectionFailure(e, {
+          session_id: args.session_id,
+          message_id: id,
+          role: args.role,
+          ai_tool: sessionAiTool,
+          timestamp: now
+        })
+      ));
     }
     return {
       content: [{ type: "text", text: JSON.stringify({ message_id: id, created_at: now, content_hash: contentHash }) }]
@@ -42537,7 +42548,15 @@ function logExchange(db) {
     const idPrefix = args.session_id.slice(0, 8);
     emitEvent({ event_type: "message_logged", timestamp: userNow, session: { id_prefix: idPrefix, ai_tool: sessionAiTool }, message: { role: "user" } });
     emitEvent({ event_type: "message_logged", timestamp: assistantNow, session: { id_prefix: idPrefix, ai_tool: sessionAiTool }, message: { role: "assistant" } });
-    setImmediate(() => writeDetections(db, args.session_id, userId, args.user_content).catch(() => void 0));
+    setImmediate(() => writeDetections(db, args.session_id, userId, args.user_content).catch(
+      (e) => reportDetectionFailure(e, {
+        session_id: args.session_id,
+        message_id: userId,
+        role: "user",
+        ai_tool: sessionAiTool,
+        timestamp: userNow
+      })
+    ));
     return {
       content: [{
         type: "text",
