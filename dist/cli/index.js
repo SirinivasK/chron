@@ -38,7 +38,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.66",
+      version: "0.1.67",
       mcpName: "io.github.sirinivask/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -57,7 +57,8 @@ var require_package = __commonJS({
       },
       bin: {
         "chron-mcp": "dist/index.js",
-        chron: "dist/cli/index.js"
+        chron: "dist/cli/index.js",
+        "chron-hook": "dist/hook/index.js"
       },
       files: [
         "dist",
@@ -71,15 +72,15 @@ var require_package = __commonJS({
         node: ">=18"
       },
       scripts: {
-        build: "npx esbuild src/index.ts --bundle --format=cjs --outfile=dist/index.js --platform=node && chmod +x dist/index.js && npx esbuild src/cli/index.ts --bundle --format=cjs --outfile=dist/cli/index.js --platform=node && chmod +x dist/cli/index.js",
-        "build:cli": "npx esbuild src/cli/index.ts --bundle --format=cjs --outfile=dist/cli/index.js --platform=node && chmod +x dist/cli/index.js",
+        build: "npx esbuild src/index.ts --bundle --format=cjs --outfile=dist/index.js --platform=node && chmod +x dist/index.js && npx esbuild src/cli/index.ts --bundle --format=cjs --outfile=dist/cli/index.js --platform=node && chmod +x dist/cli/index.js && npx esbuild src/hook/index.ts --bundle --format=cjs --outfile=dist/hook/index.js --platform=node && chmod +x dist/hook/index.js",
+        "build:cli": "npx esbuild src/cli/index.ts --bundle --format=cjs --outfile=dist/cli/index.js --platform=node && chmod +x dist/cli/index.js && npx esbuild src/hook/index.ts --bundle --format=cjs --outfile=dist/hook/index.js --platform=node && chmod +x dist/hook/index.js",
         typecheck: "tsc --noEmit",
         dev: "tsc --watch",
         start: "node dist/index.js",
         test: "vitest run",
         "test:watch": "vitest",
-        postinstall: "node dist/cli/index.js setup 2>/dev/null || true",
-        prepublishOnly: "npm run typecheck && npm test && npm run build"
+        prepublishOnly: "npm run typecheck && npm test && npm run build",
+        "build:hook": "npx esbuild src/hook/index.ts --bundle --format=cjs --outfile=dist/hook/index.js --platform=node && chmod +x dist/hook/index.js"
       },
       keywords: [
         "mcp",
@@ -1276,11 +1277,11 @@ var init_sql = __esm({
         return new SQL(list);
       }
       sql22.fromList = fromList;
-      function raw(str) {
-        return new SQL([new StringChunk(str)]);
+      function raw(str3) {
+        return new SQL([new StringChunk(str3)]);
       }
       sql22.raw = raw;
-      function join20(chunks, separator) {
+      function join22(chunks, separator) {
         const result = [];
         for (const [i, chunk2] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -1290,7 +1291,7 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql22.join = join20;
+      sql22.join = join22;
       function identifier(value) {
         return new Name(value);
       }
@@ -3091,8 +3092,8 @@ var require_dist = __commonJS({
       const header = report.header;
       return typeof header === "object" && !!header && "glibcVersionRuntime" in header;
     }
-    function load(dirname9) {
-      const m = path.join(dirname9, "index.node");
+    function load(dirname11) {
+      const m = path.join(dirname11, "index.node");
       return fs.existsSync(m) ? require(m) : null;
     }
     exports2.load = load;
@@ -3121,19 +3122,19 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync18 = (path) => fs.readFileSync(path, "utf-8");
-    var readFile = (path) => new Promise((resolve5, reject) => {
+    var readFileSync20 = (path) => fs.readFileSync(path, "utf-8");
+    var readFile = (path) => new Promise((resolve6, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
           reject(err);
         } else {
-          resolve5(data);
+          resolve6(data);
         }
       });
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync18,
+      readFileSync: readFileSync20,
       readFile
     };
   }
@@ -3145,17 +3146,17 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync18 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync20 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command2 = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
     var commandOut = "";
     var safeCommand = () => {
       if (!commandOut) {
-        return new Promise((resolve5) => {
+        return new Promise((resolve6) => {
           childProcess.exec(command2, (err, out) => {
             commandOut = err ? " " : out;
-            resolve5(commandOut);
+            resolve6(commandOut);
           });
         });
       }
@@ -3226,7 +3227,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync18(LDD_PATH);
+        const lddContent = readFileSync20(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -3283,7 +3284,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync18(LDD_PATH);
+        const lddContent = readFileSync20(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -6465,7 +6466,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash20 } = require("crypto");
+    var { randomBytes, createHash: createHash21 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -7004,7 +7005,7 @@ var require_websocket = __commonJS({
       }
       const defaultPort = isSecure ? 443 : 80;
       const key = randomBytes(16).toString("base64");
-      const request = isSecure ? https.request : http.request;
+      const request2 = isSecure ? https.request : http.request;
       const protocolSet = /* @__PURE__ */ new Set();
       let perMessageDeflate;
       opts.createConnection = opts.createConnection || (isSecure ? tlsConnect : netConnect);
@@ -7081,12 +7082,12 @@ var require_websocket = __commonJS({
         if (opts.auth && !options.headers.authorization) {
           options.headers.authorization = "Basic " + Buffer.from(opts.auth).toString("base64");
         }
-        req = websocket._req = request(opts);
+        req = websocket._req = request2(opts);
         if (websocket._redirects) {
           websocket.emit("redirect", websocket.url, req);
         }
       } else {
-        req = websocket._req = request(opts);
+        req = websocket._req = request2(opts);
       }
       if (opts.timeout) {
         req.on("timeout", () => {
@@ -7133,7 +7134,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash20("sha1").update(key + GUID).digest("base64");
+        const digest = createHash21("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -7502,7 +7503,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash20 } = require("crypto");
+    var { createHash: createHash21 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -7809,7 +7810,7 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest = createHash20("sha1").update(key + GUID).digest("base64");
+        const digest = createHash21("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -9229,8 +9230,8 @@ var init_stream2 = __esm({
         const stream = new _WsStream(client, streamId);
         const responseCallback = () => void 0;
         const errorCallback = (e) => stream.#setClosed(e);
-        const request = { type: "open_stream", streamId };
-        client._sendRequest(request, { responseCallback, errorCallback });
+        const request2 = { type: "open_stream", streamId };
+        client._sendRequest(request2, { responseCallback, errorCallback });
         return stream;
       }
       /** @private */
@@ -9307,9 +9308,9 @@ var init_stream2 = __esm({
           return response.isAutocommit;
         });
       }
-      #sendStreamRequest(request) {
+      #sendStreamRequest(request2) {
         return new Promise((responseCallback, errorCallback) => {
-          this.#pushToQueue({ type: "request", request, responseCallback, errorCallback });
+          this.#pushToQueue({ type: "request", request: request2, responseCallback, errorCallback });
         });
       }
       /** @private */
@@ -9320,7 +9321,7 @@ var init_stream2 = __esm({
         });
       }
       /** @private */
-      _sendCursorRequest(cursor, request) {
+      _sendCursorRequest(cursor, request2) {
         if (cursor !== this.#cursor) {
           throw new InternalError("Cursor not associated with the stream attempted to execute a request");
         }
@@ -9328,7 +9329,7 @@ var init_stream2 = __esm({
           if (this.#closed !== void 0) {
             errorCallback(new ClosedError("Stream is closed", this.#closed));
           } else {
-            this.#client._sendRequest(request, { responseCallback, errorCallback });
+            this.#client._sendRequest(request2, { responseCallback, errorCallback });
           }
         });
       }
@@ -9357,15 +9358,15 @@ var init_stream2 = __esm({
             this.#setClosed(new ClientError("Stream was gracefully closed"));
             break;
           } else if (entry?.type === "request" && this.#cursor === void 0) {
-            const { request, responseCallback, errorCallback } = entry;
+            const { request: request2, responseCallback, errorCallback } = entry;
             this.#queue.shift();
-            this.#client._sendRequest(request, { responseCallback, errorCallback });
+            this.#client._sendRequest(request2, { responseCallback, errorCallback });
           } else if (entry?.type === "cursor" && this.#cursor === void 0) {
             const { batch, cursorCallback } = entry;
             this.#queue.shift();
             const cursorId = this.#client._cursorIdAlloc.alloc();
             const cursor = new WsCursor(this.#client, this, cursorId);
-            const request = {
+            const request2 = {
               type: "open_cursor",
               streamId: this.#streamId,
               cursorId,
@@ -9373,7 +9374,7 @@ var init_stream2 = __esm({
             };
             const responseCallback = () => void 0;
             const errorCallback = (e) => cursor._setClosed(e);
-            this.#client._sendRequest(request, { responseCallback, errorCallback });
+            this.#client._sendRequest(request2, { responseCallback, errorCallback });
             this.#cursor = cursor;
             cursorCallback(cursor);
           } else {
@@ -9397,10 +9398,10 @@ var init_stream2 = __esm({
             break;
           }
         }
-        const request = { type: "close_stream", streamId: this.#streamId };
+        const request2 = { type: "close_stream", streamId: this.#streamId };
         const responseCallback = () => this.#client._streamIdAlloc.free(this.#streamId);
         const errorCallback = () => void 0;
-        this.#client._sendRequest(request, { responseCallback, errorCallback });
+        this.#client._sendRequest(request2, { responseCallback, errorCallback });
       }
       /** Immediately close the stream. */
       close() {
@@ -9647,33 +9648,33 @@ function HelloMsg(w, msg2) {
 }
 function RequestMsg(w, msg2) {
   w.int32(1, msg2.requestId);
-  const request = msg2.request;
-  if (request.type === "open_stream") {
-    w.message(2, request, OpenStreamReq);
-  } else if (request.type === "close_stream") {
-    w.message(3, request, CloseStreamReq);
-  } else if (request.type === "execute") {
-    w.message(4, request, ExecuteReq);
-  } else if (request.type === "batch") {
-    w.message(5, request, BatchReq);
-  } else if (request.type === "open_cursor") {
-    w.message(6, request, OpenCursorReq);
-  } else if (request.type === "close_cursor") {
-    w.message(7, request, CloseCursorReq);
-  } else if (request.type === "fetch_cursor") {
-    w.message(8, request, FetchCursorReq);
-  } else if (request.type === "sequence") {
-    w.message(9, request, SequenceReq);
-  } else if (request.type === "describe") {
-    w.message(10, request, DescribeReq);
-  } else if (request.type === "store_sql") {
-    w.message(11, request, StoreSqlReq);
-  } else if (request.type === "close_sql") {
-    w.message(12, request, CloseSqlReq);
-  } else if (request.type === "get_autocommit") {
-    w.message(13, request, GetAutocommitReq);
+  const request2 = msg2.request;
+  if (request2.type === "open_stream") {
+    w.message(2, request2, OpenStreamReq);
+  } else if (request2.type === "close_stream") {
+    w.message(3, request2, CloseStreamReq);
+  } else if (request2.type === "execute") {
+    w.message(4, request2, ExecuteReq);
+  } else if (request2.type === "batch") {
+    w.message(5, request2, BatchReq);
+  } else if (request2.type === "open_cursor") {
+    w.message(6, request2, OpenCursorReq);
+  } else if (request2.type === "close_cursor") {
+    w.message(7, request2, CloseCursorReq);
+  } else if (request2.type === "fetch_cursor") {
+    w.message(8, request2, FetchCursorReq);
+  } else if (request2.type === "sequence") {
+    w.message(9, request2, SequenceReq);
+  } else if (request2.type === "describe") {
+    w.message(10, request2, DescribeReq);
+  } else if (request2.type === "store_sql") {
+    w.message(11, request2, StoreSqlReq);
+  } else if (request2.type === "close_sql") {
+    w.message(12, request2, CloseSqlReq);
+  } else if (request2.type === "get_autocommit") {
+    w.message(13, request2, GetAutocommitReq);
   } else {
-    throw impossible(request, "Impossible type of Request");
+    throw impossible(request2, "Impossible type of Request");
   }
 }
 function OpenStreamReq(w, msg2) {
@@ -9847,7 +9848,7 @@ function ServerMsg(obj) {
     return { type: "hello_error", error };
   } else if (type === "response_ok") {
     const requestId = number(obj["request_id"]);
-    const response = Response(object(obj["response"]));
+    const response = Response2(object(obj["response"]));
     return { type: "response_ok", requestId, response };
   } else if (type === "response_error") {
     const requestId = number(obj["request_id"]);
@@ -9857,7 +9858,7 @@ function ServerMsg(obj) {
     throw new ProtoError("Unexpected type of ServerMsg");
   }
 }
-function Response(obj) {
+function Response2(obj) {
   const type = string(obj["type"]);
   if (type === "open_stream") {
     return { type: "open_stream" };
@@ -10400,14 +10401,14 @@ var init_client2 = __esm({
       }
       // Send a request to the server and invoke a callback when we get the response.
       /** @private */
-      _sendRequest(request, callbacks) {
+      _sendRequest(request2, callbacks) {
         if (this.#closed !== void 0) {
           callbacks.errorCallback(new ClosedError("Client is closed", this.#closed));
           return;
         }
         const requestId = this.#requestIdAlloc.alloc();
-        this.#responseMap.set(requestId, { ...callbacks, type: request.type });
-        this.#send({ type: "request", requestId, request });
+        this.#responseMap.set(requestId, { ...callbacks, type: request2.type });
+        this.#send({ type: "request", requestId, request: request2 });
       }
       // The socket encountered an error.
       #onSocketError(event) {
@@ -10529,8 +10530,8 @@ var init_client2 = __esm({
         const sqlObj = new Sql(this, sqlId);
         const responseCallback = () => void 0;
         const errorCallback = (e) => sqlObj._setClosed(e);
-        const request = { type: "store_sql", sqlId, sql: sql9 };
-        this._sendRequest(request, { responseCallback, errorCallback });
+        const request2 = { type: "store_sql", sqlId, sql: sql9 };
+        this._sendRequest(request2, { responseCallback, errorCallback });
         return sqlObj;
       }
       /** @private */
@@ -10540,8 +10541,8 @@ var init_client2 = __esm({
         }
         const responseCallback = () => this.#sqlIdAlloc.free(sqlId);
         const errorCallback = (e) => this.#setClosed(e);
-        const request = { type: "close_sql", sqlId };
-        this._sendRequest(request, { responseCallback, errorCallback });
+        const request2 = { type: "close_sql", sqlId };
+        this._sendRequest(request2, { responseCallback, errorCallback });
       }
       /** Close the client and the WebSocket. */
       close() {
@@ -11214,9 +11215,9 @@ var init_stream3 = __esm({
           return response.isAutocommit;
         });
       }
-      #sendStreamRequest(request) {
+      #sendStreamRequest(request2) {
         return new Promise((responseCallback, errorCallback) => {
-          this.#pushToQueue({ type: "pipeline", request, responseCallback, errorCallback });
+          this.#pushToQueue({ type: "pipeline", request: request2, responseCallback, errorCallback });
         });
       }
       /** @private */
@@ -11339,9 +11340,9 @@ var init_stream3 = __esm({
       #flush(createRequest, decodeResponse, getBaton, getBaseUrl, handleResponse, handleError) {
         let promise;
         try {
-          const request = createRequest();
+          const request2 = createRequest();
           const fetch2 = this.#fetch;
-          promise = fetch2(request);
+          promise = fetch2(request2);
         } catch (error) {
           promise = Promise.reject(error);
         }
@@ -11411,8 +11412,8 @@ async function findEndpoint(customFetch, clientUrl) {
   const fetch2 = customFetch;
   for (const endpoint of checkEndpoints) {
     const url = new URL(endpoint.versionPath, clientUrl);
-    const request = new Request(url.toString(), { method: "GET" });
-    const response = await fetch2(request);
+    const request2 = new Request(url.toString(), { method: "GET" });
+    const response = await fetch2(request2);
     await response.arrayBuffer();
     if (response.ok) {
       return endpoint;
@@ -11962,8 +11963,8 @@ var require_promise_limit = __commonJS({
         }
       }
       function queue(fn) {
-        return new Promise(function(resolve5, reject) {
-          jobs.push({ fn, resolve: resolve5, reject });
+        return new Promise(function(resolve6, reject) {
+          jobs.push({ fn, resolve: resolve6, reject });
           semaphore.queue = jobs.length;
         });
       }
@@ -13716,8 +13717,8 @@ var init_dialect = __esm({
       escapeParam(_num) {
         return "?";
       }
-      escapeString(str) {
-        return `'${str.replace(/'/g, "''")}'`;
+      escapeString(str3) {
+        return `'${str3.replace(/'/g, "''")}'`;
       }
       buildWithCTE(queries) {
         if (!queries?.length) return void 0;
@@ -14523,7 +14524,7 @@ var init_select2 = __esm({
           const baseTableName = this.tableName;
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table)) this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join20) => join20.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join22) => join22.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -15409,7 +15410,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join20) => join20.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join22) => join22.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -20722,6 +20723,8 @@ function chainScopeLabel(meta) {
       return "Hash chain covers Chron's imported representation of this client transcript. Chron did not witness the original events.";
     case EVIDENCE_SOURCE.IMPORTED:
       return "Hash chain covers Chron's imported representation of this vendor export. Chron did not witness the original events.";
+    case EVIDENCE_SOURCE.NATIVE_HOOK:
+      return "Hash chain covers the hook events Chron recorded for this conversation. A turn where no hook ran is not in the chain.";
     case EVIDENCE_SOURCE.WITNESSED:
     default:
       return meta.partial === true ? "Hash chain covers the records Chron holds for this session" : "Hash chain covers complete session";
@@ -20735,6 +20738,8 @@ function describeEvidenceBoundary(meta) {
       return "Imported from a vendor export. Tool calls, file access, and environment state are not captured by the export.";
     case EVIDENCE_SOURCE.TRANSCRIPT_BACKFILL:
       return "Recovered from a local client transcript. Chron ingested this record rather than observing it directly.";
+    case EVIDENCE_SOURCE.NATIVE_HOOK:
+      return "Recorded from the client's own hook events, one record per event Chron was configured for. Turns taken while no hook was configured are outside the evidence boundary, and nothing marks where they would have been. Nothing required these events to be recorded.";
     case EVIDENCE_SOURCE.WITNESSED:
     default:
       return null;
@@ -20777,7 +20782,22 @@ var init_evidence = __esm({
       /** Chron started recording partway through a conversation already in progress. */
       LIVE_ATTACH: "live_attach",
       /** Recovered from a local transcript the AI client wrote. Reserved; not yet implemented. */
-      TRANSCRIPT_BACKFILL: "transcript_backfill"
+      TRANSCRIPT_BACKFILL: "transcript_backfill",
+      /**
+       * The client invoked a hook Chron is configured into, once per event, and
+       * Chron recorded the event as it was handed over.
+       *
+       * Separate from `witnessed` because the mechanism is different, not because
+       * the coverage is weaker — an MCP-logged `witnessed` session has no
+       * completeness guarantee either. A hook event arrives because the client's
+       * configuration names this command, so capture does not depend on a model
+       * deciding to call a tool; and it arrives per configured event, so a turn
+       * taken with no hook configured leaves nothing at all, which is why these
+       * sessions are partial.
+       *
+       * Never assertable by a caller. See `CALLER_ASSERTABLE_SOURCES`.
+       */
+      NATIVE_HOOK: "native_hook"
     };
     EVIDENCE_SOURCES = Object.values(EVIDENCE_SOURCE);
     CAPTURE_MODE = {
@@ -20789,7 +20809,12 @@ var init_evidence = __esm({
       ENFORCED_POLICY: "enforced:policy"
     };
     CAPTURE_MODES = Object.values(CAPTURE_MODE);
-    CALLER_ASSERTABLE_SOURCES = EVIDENCE_SOURCES;
+    CALLER_ASSERTABLE_SOURCES = [
+      EVIDENCE_SOURCE.WITNESSED,
+      EVIDENCE_SOURCE.IMPORTED,
+      EVIDENCE_SOURCE.LIVE_ATTACH,
+      EVIDENCE_SOURCE.TRANSCRIPT_BACKFILL
+    ];
     ATTACH_REASON_MID_SESSION = "chron_available_mid_session";
     OVERLAP_DISCLOSURE = "Transcript backfills may overlap conversations already witnessed by Chron. Both evidence records are retained; Chron does not infer that they are the same conversation.";
   }
@@ -20922,14 +20947,14 @@ async function runExportBundle(args2) {
       const msgs = await db.select().from(messages).where(eq(messages.session_id, sid)).orderBy(...messageOrderAsc());
       for (const m of msgs) msgsStream.write(JSON.stringify(m) + "\n");
     }
-    await new Promise((resolve5) => msgsStream.end(resolve5));
+    await new Promise((resolve6) => msgsStream.end(resolve6));
     const secretsPath = (0, import_path4.join)(tempDir, "secrets.jsonl");
     const secretsStream = (0, import_fs5.createWriteStream)(secretsPath);
     for (const sid of sessionIds) {
       const secs = await db.select().from(secrets_detected).where(eq(secrets_detected.session_id, sid));
       for (const s of secs) secretsStream.write(JSON.stringify(s) + "\n");
     }
-    await new Promise((resolve5) => secretsStream.end(resolve5));
+    await new Promise((resolve6) => secretsStream.end(resolve6));
     for (const s of filtered) {
       if (s.public_key) {
         (0, import_fs5.writeFileSync)((0, import_path4.join)(pubkeysDir, `${s.id}.pub`), s.public_key);
@@ -21262,15 +21287,117 @@ var init_secrets = __esm({
   }
 });
 
-// src/cli/mcp-config.ts
-function executableNames(platform4) {
-  return platform4 === "win32" ? ["chron-mcp.cmd", "chron-mcp.exe", "chron-mcp"] : ["chron-mcp"];
+// src/utils/splunk-request.ts
+async function splunkRequest(url, init, insecure = false) {
+  const target = new URL(url);
+  if (!["http:", "https:"].includes(target.protocol)) throw new Error("Splunk requires HTTP or HTTPS");
+  if (!insecure || target.protocol !== "https:") return fetch(url, { ...init, redirect: "error" });
+  if (init.signal?.aborted) throw init.signal.reason ?? new Error("Splunk request aborted");
+  if (typeof init.body !== "string") throw new Error("Splunk request body must be a string");
+  const headers = Object.fromEntries(new Headers(init.headers).entries());
+  const agent = new import_https.Agent({ rejectUnauthorized: false, keepAlive: false });
+  return new Promise((resolve6, reject) => {
+    const req = (0, import_https.request)(target, { method: init.method ?? "POST", headers, agent }, (res) => {
+      const chunks = [];
+      let size = 0;
+      res.on("data", (chunk2) => {
+        size += chunk2.length;
+        if (size > 1024 * 1024) {
+          req.destroy(new Error("Splunk response exceeded 1 MiB"));
+          return;
+        }
+        chunks.push(Buffer.from(chunk2));
+      });
+      res.on("error", (e) => {
+        cleanup();
+        reject(e);
+      });
+      res.on("end", () => {
+        cleanup();
+        const responseHeaders = new Headers();
+        for (const [name2, value] of Object.entries(res.headers)) {
+          if (value !== void 0) responseHeaders.set(name2, Array.isArray(value) ? value.join(", ") : value);
+        }
+        try {
+          const status = res.statusCode ?? 500;
+          resolve6(new Response([204, 205, 304].includes(status) ? null : Buffer.concat(chunks), { status, headers: responseHeaders }));
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+    const abort = () => req.destroy(init.signal?.reason instanceof Error ? init.signal.reason : new Error("Splunk request aborted"));
+    const timer = setTimeout(() => req.destroy(new Error("Splunk request timed out")), 1e4);
+    const cleanup = () => {
+      clearTimeout(timer);
+      init.signal?.removeEventListener("abort", abort);
+      agent.destroy();
+    };
+    req.on("error", (e) => {
+      cleanup();
+      reject(e);
+    });
+    req.on("close", cleanup);
+    init.signal?.addEventListener("abort", abort, { once: true });
+    req.end(init.body);
+  });
 }
-function resolveChronMcpServer(pathValue = process.env.PATH ?? "", platform4 = process.platform) {
+var import_https;
+var init_splunk_request = __esm({
+  "src/utils/splunk-request.ts"() {
+    "use strict";
+    import_https = require("https");
+  }
+});
+
+// src/instructions.ts
+function buildChronInstructions(aiTool) {
+  return `${CHRON_SKILL_SENTINEL}
+## Chron Audit Logging \u2014 Required Every Turn
+
+**Every response you output must be logged.** Before writing any reply:
+
+1. If this is the first turn, call \`init_session\` once:
+   \`init_session(title="<3-6 word task summary>", ai_tool="${aiTool}")\`
+   Save the returned \`session_id\` \u2014 you need it for every subsequent call.
+
+2. Log the user's message:
+   \`log_message(session_id, role="user", content=<exact user text>)\`
+
+3. Log your response **before** outputting it:
+   \`log_message(session_id, role="assistant", content=<exact response text>)\`
+
+4. Then output your response.
+
+Repeat steps 2-4 for every exchange. Do not skip turns.
+
+For compaction recovery (prior \`session_id\` lost), call \`init_session\` with \`resume_latest=true\` and title \`COMPACTED \u2014 lost session id\`.
+
+If Chron MCP is unavailable, state it once and continue normally.
+`;
+}
+var CHRON_SKILL_SENTINEL, CHRON_BLOCK_START, CHRON_BLOCK_END, MCP_LOGGING_INSTRUCTIONS;
+var init_instructions = __esm({
+  "src/instructions.ts"() {
+    "use strict";
+    CHRON_SKILL_SENTINEL = "<!-- chron-skill -->";
+    CHRON_BLOCK_START = "<!-- chron-skill-start -->";
+    CHRON_BLOCK_END = "<!-- chron-skill-end -->";
+    MCP_LOGGING_INSTRUCTIONS = buildChronInstructions(
+      "the identifier of this client, for example claude, codex, cursor, gemini or windsurf \u2014 never a placeholder"
+    );
+  }
+});
+
+// src/cli/mcp-config.ts
+function executableNames(platform3) {
+  return platform3 === "win32" ? ["chron-mcp.cmd", "chron-mcp.exe", "chron-mcp"] : ["chron-mcp"];
+}
+function resolveChronMcpServer(pathValue = process.env.PATH ?? "", platform3 = process.platform) {
   const override = process.env.CHRON_MCP_COMMAND?.trim();
   if (override) return { command: override, args: [] };
   for (const dir of pathValue.split(import_path6.delimiter).filter(Boolean)) {
-    for (const name2 of executableNames(platform4)) {
+    for (const name2 of executableNames(platform3)) {
       const candidate = (0, import_path6.join)(dir, name2);
       if ((0, import_fs6.existsSync)(candidate)) return { command: candidate, args: [] };
     }
@@ -21300,8 +21427,8 @@ command = ${tomlString(server.command)}
 args = [${server.args.map(tomlString).join(", ")}]
 `;
 }
-function userMcpClientConfigs(home, cwd, platform4, appData) {
-  const claudeDesktop = platform4 === "win32" ? (0, import_path6.join)(appData ?? (0, import_path6.join)(home, "AppData", "Roaming"), "Claude", "claude_desktop_config.json") : (0, import_path6.join)(home, "Library", "Application Support", "Claude", "claude_desktop_config.json");
+function userMcpClientConfigs(home, cwd, platform3, appData) {
+  const claudeDesktop = platform3 === "win32" ? (0, import_path6.join)(appData ?? (0, import_path6.join)(home, "AppData", "Roaming"), "Claude", "claude_desktop_config.json") : (0, import_path6.join)(home, "Library", "Application Support", "Claude", "claude_desktop_config.json");
   return [
     { name: "Claude Desktop", path: claudeDesktop, type: "json", connectCommand: "chron doctor --fix" },
     { name: "Claude Code", path: (0, import_path6.join)(home, ".claude.json"), type: "json", connectCommand: "chron doctor --fix" },
@@ -21374,35 +21501,6 @@ ${argsLine}
 ` : "") + codexMcpBlock(server);
   return { content: updated, changed: true };
 }
-function ensureChronJsonMcpConfig(path) {
-  try {
-    const existing = (0, import_fs6.existsSync)(path) ? (0, import_fs6.readFileSync)(path, "utf8") : "{}";
-    const updated = upsertChronJsonMcp(existing);
-    (0, import_fs6.mkdirSync)((0, import_path6.dirname)(path), { recursive: true });
-    if (updated.changed || !(0, import_fs6.existsSync)(path)) {
-      (0, import_fs6.writeFileSync)(path, updated.content, "utf8");
-    }
-    return { status: updated.changed ? "added" : "already", path };
-  } catch (err) {
-    return { status: "error", path, error: err.message };
-  }
-}
-function ensureChronCodexTomlConfig(path) {
-  try {
-    const existing = (0, import_fs6.existsSync)(path) ? (0, import_fs6.readFileSync)(path, "utf8") : "";
-    const updated = upsertChronCodexToml(existing);
-    (0, import_fs6.mkdirSync)((0, import_path6.dirname)(path), { recursive: true });
-    if (updated.changed || !(0, import_fs6.existsSync)(path)) {
-      (0, import_fs6.writeFileSync)(path, updated.content, "utf8");
-    }
-    return { status: updated.changed ? "added" : "already", path };
-  } catch (err) {
-    return { status: "error", path, error: err.message };
-  }
-}
-function ensureChronMcpConfig(config) {
-  return config.type === "codex-toml" ? ensureChronCodexTomlConfig(config.path) : ensureChronJsonMcpConfig(config.path);
-}
 function commandExists(command2, pathValue = process.env.PATH ?? "") {
   if (!command2) return false;
   if (command2.includes("/") || command2.includes("\\")) return (0, import_fs6.existsSync)(command2);
@@ -21463,42 +21561,353 @@ var init_mcp_config = __esm({
   }
 });
 
-// src/instructions.ts
-function buildChronInstructions(aiTool) {
-  return `${CHRON_SKILL_SENTINEL}
-## Chron Audit Logging \u2014 Required Every Turn
-
-**Every response you output must be logged.** Before writing any reply:
-
-1. If this is the first turn, call \`init_session\` once:
-   \`init_session(title="<3-6 word task summary>", ai_tool="${aiTool}")\`
-   Save the returned \`session_id\` \u2014 you need it for every subsequent call.
-
-2. Log the user's message:
-   \`log_message(session_id, role="user", content=<exact user text>)\`
-
-3. Log your response **before** outputting it:
-   \`log_message(session_id, role="assistant", content=<exact response text>)\`
-
-4. Then output your response.
-
-Repeat steps 2-4 for every exchange. Do not skip turns.
-
-For compaction recovery (prior \`session_id\` lost), call \`init_session\` with \`resume_latest=true\` and title \`COMPACTED \u2014 lost session id\`.
-
-If Chron MCP is unavailable, state it once and continue normally.
-`;
+// src/cli/configuration.ts
+var configuration_exports = {};
+__export(configuration_exports, {
+  configurationPlan: () => configurationPlan,
+  runConfiguration: () => runConfiguration
+});
+function safePath(path) {
+  path = (0, import_path7.resolve)(path);
+  const root = process.env.CHRON_TEST_ROOT;
+  if (root) {
+    const rel = (0, import_path7.relative)((0, import_path7.resolve)(root), path);
+    if ((0, import_path7.isAbsolute)(rel) || rel === ".." || rel.startsWith(`..${import_path7.sep}`)) throw new Error("Configuration path is outside CHRON_TEST_ROOT");
+  }
+  const anchors = [(0, import_os7.homedir)(), process.cwd(), ...process.env.APPDATA ? [process.env.APPDATA] : []].map((p) => (0, import_path7.resolve)(p)).filter((p) => path === p || path.startsWith(p + import_path7.sep)).sort((a, b) => b.length - a.length);
+  if (!anchors.length) throw new Error("Configuration target is outside the selected home/project roots");
+  for (let p = path; ; p = (0, import_path7.dirname)(p)) {
+    try {
+      if ((0, import_fs7.lstatSync)(p).isSymbolicLink()) throw new Error(`Refusing symbolic link: ${p}`);
+    } catch (e) {
+      if (e.code !== "ENOENT") throw e;
+    }
+    if (p === anchors[0]) break;
+  }
+  return path;
 }
-var CHRON_SKILL_SENTINEL, CHRON_BLOCK_START, CHRON_BLOCK_END, MCP_LOGGING_INSTRUCTIONS;
-var init_instructions = __esm({
-  "src/instructions.ts"() {
+function read(path) {
+  safePath(path);
+  try {
+    const bytes2 = (0, import_fs7.readFileSync)(path), text2 = bytes2.toString("utf8");
+    if (!Buffer.from(text2, "utf8").equals(bytes2)) throw new Error(`Refusing non-UTF-8 configuration: ${path}`);
+    return text2;
+  } catch (e) {
+    if (e.code === "ENOENT") return null;
+    throw e;
+  }
+}
+function parseJson(text2, what) {
+  try {
+    return JSON.parse(text2);
+  } catch {
+    throw new Error(`${what} could not be parsed; contents are not repeated`);
+  }
+}
+function spliceBlock(text2, start, end, block) {
+  const a = text2.indexOf(start), b = text2.indexOf(end);
+  if (a < 0 && b < 0) return block === null ? text2 : text2 + (text2 && !text2.endsWith("\n") ? "\n" : "") + (text2 ? "\n" : "") + block + "\n";
+  if (a < 0 || b < a || text2.indexOf(start, a + start.length) >= 0 || text2.indexOf(end, b + end.length) >= 0)
+    throw new Error("Malformed or repeated Chron block; inspect manually");
+  return text2.slice(0, a) + (block ?? "") + text2.slice(b + end.length);
+}
+function instruction(text2, tool) {
+  if (text2.includes(CHRON_SKILL_SENTINEL) && !text2.includes(CHRON_BLOCK_START))
+    throw new Error("Unbounded legacy Chron instructions; inspect manually instead of replacing");
+  if (text2.includes(CHRON_BLOCK_START)) {
+    const block = text2.slice(text2.indexOf(CHRON_BLOCK_START), text2.indexOf(CHRON_BLOCK_END) + CHRON_BLOCK_END.length);
+    if (block !== `${CHRON_BLOCK_START}
+${buildChronInstructions(tool)}
+${CHRON_BLOCK_END}`)
+      throw new Error("Edited Chron instructions; preserving them instead of overwriting");
+  }
+  return spliceBlock(
+    text2,
+    CHRON_BLOCK_START,
+    CHRON_BLOCK_END,
+    `${CHRON_BLOCK_START}
+${buildChronInstructions(tool)}
+${CHRON_BLOCK_END}`
+  );
+}
+function knownServer(server) {
+  if (!server || typeof server.command !== "string" || !Array.isArray(server.args)) return false;
+  return server.command === CHRON_MCP_SERVER.command && JSON.stringify(server.args) === JSON.stringify(CHRON_MCP_SERVER.args) || ["chron-mcp", "chron-mcp.cmd", "chron-mcp.exe"].includes((0, import_path7.basename)(server.command)) && server.args.length === 0 || /[/\\]node_modules[/\\]chron-mcp[/\\]dist[/\\]index\.js$/.test(server.command) && server.args.length === 0 || ["npx", "npx.cmd"].includes((0, import_path7.basename)(server.command)) && JSON.stringify(server.args) === '["-y","chron-mcp"]';
+}
+function configureMcp(text2, type) {
+  if (type === "json") {
+    const doc = text2.trim() ? parseJson(text2, "MCP configuration") : {};
+    if (!doc || Array.isArray(doc) || typeof doc !== "object") throw new Error("MCP config must be an object");
+    const servers = doc.mcpServers ?? {};
+    if (!servers || Array.isArray(servers) || typeof servers !== "object") throw new Error("MCP servers must be an object");
+    for (const [key, value] of Object.entries(servers)) {
+      if ((key === "chron" || key === "chron-mcp" || JSON.stringify(value).includes("chron")) && !knownServer(value)) {
+        if (key === "chron" || key === "chron-mcp" || JSON.stringify(value?.command ?? "").includes("chron") || JSON.stringify(value?.args ?? []).includes("chron-mcp"))
+          throw new Error(`Unrecognized existing MCP server ${key}; preserving it`);
+      }
+    }
+    return upsertChronJsonMcp(text2).content;
+  }
+  if (/\[mcp_servers\.chron\]/.test(text2)) {
+    const section2 = text2.match(/\[mcp_servers\.chron\]([\s\S]*?)(?=\n\[|$)/)[1];
+    let server;
+    try {
+      server = { command: JSON.parse(section2.match(/^command\s*=\s*(.+)$/m)[1]), args: JSON.parse(section2.match(/^args\s*=\s*(.+)$/m)[1]) };
+    } catch {
+      throw new Error("Unrecognized Codex entry; preserving it");
+    }
+    if (!knownServer(server)) throw new Error("Unrecognized Codex launcher; preserving it");
+  }
+  return upsertChronCodexToml(text2).content;
+}
+function change(path, description, transform) {
+  path = safePath(path);
+  const before = read(path), after = transform(before ?? "");
+  return before === after ? null : {
+    path,
+    before,
+    after,
+    description,
+    mode: before === null ? 384 : (0, import_fs7.lstatSync)(path).mode & 511
+  };
+}
+function allowedPaths(cwd) {
+  return /* @__PURE__ */ new Set([
+    ...userMcpClientConfigs((0, import_os7.homedir)(), cwd, process.platform, process.env.APPDATA).map((c) => (0, import_path7.resolve)(c.path)),
+    ...["CLAUDE.md", "AGENTS.md", ".codex/instructions.md", ".gemini/GEMINI.md", ".zshrc", ".bashrc"].map((p) => (0, import_path7.resolve)((0, import_os7.homedir)(), p)),
+    (0, import_path7.resolve)((0, import_os7.homedir)(), ".claude/settings.json"),
+    (0, import_path7.resolve)(cwd, "AGENTS.md"),
+    (0, import_path7.resolve)(cwd, ".cursor/rules/chron.mdc")
+  ]);
+}
+function configurationPlan(args2, cwd = process.cwd()) {
+  const client = args2.find((a) => a.startsWith("--client="))?.slice(9) ?? "all";
+  if (!["all", "claude", "codex", "cursor", "gemini", "project"].includes(client)) throw new Error("Unknown setup client");
+  const changes = [];
+  const add = (p, label, transform) => {
+    const c = change(p, label, transform);
+    if (c) changes.push(c);
+  };
+  if (client !== "project") {
+    for (const c of userMcpClientConfigs((0, import_os7.homedir)(), cwd, process.platform, process.env.APPDATA)) {
+      if (c.name.includes("(project)")) continue;
+      const selected = client === "all" || { claude: ["Claude Code", "Claude Desktop"], codex: ["Codex (global)"], cursor: ["Cursor (global)"], gemini: ["Gemini CLI"] }[client]?.includes(c.name);
+      if (!selected) continue;
+      if (!["Claude Code", "Codex (global)", "Cursor (global)", "Gemini CLI"].includes(c.name) && !(0, import_fs7.existsSync)(c.path) && !(0, import_fs7.existsSync)((0, import_path7.dirname)(c.path))) continue;
+      add(c.path, `${c.name} MCP server entry`, (text2) => configureMcp(text2, c.type));
+    }
+    for (const [name2, path, tool] of [
+      ["claude", "CLAUDE.md", "claude"],
+      ["codex", ".codex/instructions.md", "codex"],
+      ["codex", "AGENTS.md", "codex"],
+      ["gemini", ".gemini/GEMINI.md", "gemini"]
+    ]) if (client === "all" || client === name2) add((0, import_path7.join)((0, import_os7.homedir)(), path), `${tool} logging instructions`, (text2) => instruction(text2, tool));
+  }
+  if (args2.includes("--project") || client === "project") {
+    add((0, import_path7.join)(cwd, "AGENTS.md"), "project logging instructions", (text2) => instruction(text2, "codex"));
+    const rule = `---
+description: Chron AI audit logging for Cursor agent sessions
+alwaysApply: true
+---
+
+${buildChronInstructions("cursor")}`;
+    add((0, import_path7.join)(cwd, ".cursor/rules/chron.mdc"), "Cursor project rule", (text2) => {
+      if (text2 && text2 !== rule) throw new Error("Existing Cursor rule is not the exact Chron-generated rule; preserving it");
+      return rule;
+    });
+  }
+  if (args2.includes("--shell-wrapper")) {
+    if (!["all", "codex"].includes(client)) throw new Error("Shell wrapper requires --client=codex or all");
+    for (const name2 of [".zshrc", ".bashrc"]) add((0, import_path7.join)((0, import_os7.homedir)(), name2), "optional Codex shell wrapper (bootstrap is preview-only)", (text2) => {
+      if (text2.includes(SHELL_START) && !text2.includes(shellBlock)) throw new Error("Edited shell wrapper; preserving it");
+      return spliceBlock(text2, SHELL_START, SHELL_END, shellBlock);
+    });
+  }
+  return changes;
+}
+function atomicWrite(path, value, mode) {
+  safePath(path);
+  (0, import_fs7.mkdirSync)((0, import_path7.dirname)(path), { recursive: true, mode: 448 });
+  safePath(path);
+  const temp = `${path}.chron-${(0, import_crypto5.randomUUID)()}`;
+  const fd = (0, import_fs7.openSync)(temp, import_fs7.constants.O_CREAT | import_fs7.constants.O_EXCL | import_fs7.constants.O_WRONLY | import_fs7.constants.O_NOFOLLOW, 384);
+  try {
+    (0, import_fs7.writeFileSync)(fd, value);
+    (0, import_fs7.fsyncSync)(fd);
+    (0, import_fs7.fchmodSync)(fd, mode);
+  } finally {
+    (0, import_fs7.closeSync)(fd);
+  }
+  try {
+    (0, import_fs7.renameSync)(temp, path);
+  } finally {
+    if ((0, import_fs7.existsSync)(temp)) (0, import_fs7.unlinkSync)(temp);
+  }
+}
+function stateDir() {
+  return safePath((0, import_path7.join)((0, import_os7.homedir)(), ".chron", "configuration-receipts"));
+}
+function show(changes, action) {
+  process.stdout.write(`${action}: ${changes.length} file change(s). No file contents or credentials printed.
+`);
+  for (const c of changes) process.stdout.write(`  ${c.after === null ? "remove" : c.before === null ? "create" : "update"} ${c.path} \u2014 ${c.description}
+`);
+}
+function validateArgs(args2) {
+  for (const a of args2) if (!["--apply", "--project", "--shell-wrapper", "--legacy", "--help"].includes(a) && !a.startsWith("--client=")) throw new Error(`Unknown configuration argument: ${a}`);
+}
+async function runConfiguration(args2, undo = false) {
+  validateArgs(args2);
+  if (["preinstall", "install", "postinstall"].includes(process.env.npm_lifecycle_event ?? ""))
+    throw new Error("Package installation cannot authorize configuration; run chron setup separately");
+  if (args2.includes("--help")) {
+    process.stdout.write("chron setup [--client=claude|codex|cursor|gemini|all] [--project] [--shell-wrapper] [--apply]\nchron unsetup [--legacy] [--apply]\nPreview is the default. --apply explicitly authorizes the displayed file changes.\nUndo restores the most recent setup; modified files are refused. Use --legacy to preview removal of exact recognized old blocks.\n");
+    return;
+  }
+  const dir = stateDir(), cwd = process.cwd();
+  let receiptPath, changes;
+  if (undo && !args2.includes("--legacy")) {
+    const files = (0, import_fs7.existsSync)(dir) ? (0, import_fs7.readdirSync)(dir).filter((x) => /^\d+-[0-9a-f-]+\.json$/.test(x)).sort() : [];
+    receiptPath = files.length ? (0, import_path7.join)(dir, files[files.length - 1]) : void 0;
+    if (!receiptPath) {
+      process.stdout.write("No tracked setup to undo. To inspect older installations: chron unsetup --legacy\n");
+      return;
+    }
+    const receipt = parseJson(read(receiptPath), "Configuration receipt");
+    const allowed = allowedPaths(cwd);
+    if (receipt.schema !== 1 || !Array.isArray(receipt.changes) || receipt.cwd !== cwd) throw new Error("Undo must run from the original setup directory");
+    changes = receipt.changes.flatMap((c) => {
+      if (!allowed.has(c.path) || typeof c.after !== "string" || !(c.before === null || typeof c.before === "string") || !Number.isInteger(c.mode) || c.mode < 0 || c.mode > 511) throw new Error("Invalid configuration receipt");
+      const current = read(c.path);
+      if (current === c.before) return [];
+      if (current !== c.after || ((0, import_fs7.lstatSync)(c.path).mode & 511) !== c.mode) throw new Error(`Modified since setup; preserving ${c.path}`);
+      return [{ ...c, before: c.after, after: c.before, description: "restore state before tracked setup" }];
+    });
+  } else changes = undo ? legacyRemoval(cwd) : configurationPlan(args2, cwd);
+  show(changes, undo ? "Undo preview" : "Setup preview");
+  if (!args2.includes("--apply")) {
+    process.stdout.write("No files changed. Repeat with --apply to authorize these changes.\n");
+    return;
+  }
+  if (!changes.length) {
+    if (receiptPath) (0, import_fs7.renameSync)(receiptPath, receiptPath + ".undone");
+    return;
+  }
+  (0, import_fs7.mkdirSync)(dir, { recursive: true, mode: 448 });
+  safePath(dir);
+  const lock = (0, import_path7.join)(dir, ".lock");
+  const fd = (0, import_fs7.openSync)(lock, import_fs7.constants.O_CREAT | import_fs7.constants.O_EXCL | import_fs7.constants.O_WRONLY | import_fs7.constants.O_NOFOLLOW, 384);
+  try {
+    for (const c of changes) if (read(c.path) !== c.before) throw new Error(`Changed during preview; preserving ${c.path}`);
+    if (!undo) {
+      const receipt = { schema: 1, id: (0, import_crypto5.randomUUID)(), cwd, changes };
+      const prior = (0, import_fs7.readdirSync)(dir).map((n) => Number(n.match(/^(\d+)-/)?.[1] ?? 0));
+      const sequence = Math.max(Date.now(), ...prior.map((n) => n + 1));
+      atomicWrite((0, import_path7.join)(dir, `${sequence}-${receipt.id}.json`), JSON.stringify(receipt), 384);
+    }
+    for (const c of changes) {
+      if (c.after === null) (0, import_fs7.unlinkSync)(safePath(c.path));
+      else atomicWrite(c.path, c.after, c.mode);
+    }
+    if (receiptPath) (0, import_fs7.renameSync)(receiptPath, receiptPath + ".undone");
+    process.stdout.write("Applied the listed changes. Restart the configured client to load changes.\n");
+  } finally {
+    (0, import_fs7.closeSync)(fd);
+    (0, import_fs7.unlinkSync)(lock);
+  }
+}
+function legacyRemoval(cwd) {
+  const changes = [];
+  const configs = userMcpClientConfigs((0, import_os7.homedir)(), cwd, process.platform, process.env.APPDATA);
+  for (const path of allowedPaths(cwd)) {
+    const text2 = read(path);
+    if (text2 === null) continue;
+    let after = text2;
+    if ([".zshrc", ".bashrc"].some((n) => path === (0, import_path7.join)((0, import_os7.homedir)(), n))) {
+      if (text2.includes(SHELL_START) && !text2.includes(shellBlock)) throw new Error(`Modified legacy shell wrapper; preserving ${path}`);
+      after = spliceBlock(text2, SHELL_START, SHELL_END, null);
+    } else if (path === (0, import_path7.resolve)((0, import_os7.homedir)(), ".claude/settings.json")) {
+      const doc = parseJson(text2, "Claude settings"), hooks = doc.hooks?.SessionStart;
+      if (Array.isArray(hooks)) {
+        const recognized = (entry) => Array.isArray(entry?.hooks) && entry.hooks.some((h) => h?.command === "cat ~/.chron/chron.skill.md");
+        for (const entry of hooks.filter(recognized)) {
+          if (Object.keys(entry).some((k) => k !== "hooks") || entry.hooks.length !== 1 || Object.keys(entry.hooks[0]).some((k) => !["type", "command"].includes(k)) || entry.hooks[0].type !== "command")
+            throw new Error(`Customized legacy session hook; preserving ${path}`);
+        }
+        const remaining = hooks.filter((entry) => !recognized(entry));
+        if (remaining.length !== hooks.length) {
+          doc.hooks.SessionStart = remaining;
+          after = JSON.stringify(doc, null, 2) + "\n";
+        }
+      }
+    } else if (path === (0, import_path7.resolve)(cwd, ".cursor/rules/chron.mdc")) {
+      const rule = `---
+description: Chron AI audit logging for Cursor agent sessions
+alwaysApply: true
+---
+
+${buildChronInstructions("cursor")}`;
+      if (text2 !== rule) throw new Error(`Unrecognized Cursor rule; preserving ${path}`);
+      after = "";
+    } else if (text2.includes(CHRON_BLOCK_START)) {
+      const start = text2.indexOf(CHRON_BLOCK_START), end = text2.indexOf(CHRON_BLOCK_END);
+      const block = text2.slice(start, end + CHRON_BLOCK_END.length);
+      if (!["claude", "codex", "gemini", "cursor"].some((tool) => block === `${CHRON_BLOCK_START}
+${buildChronInstructions(tool)}
+${CHRON_BLOCK_END}`))
+        throw new Error(`Unrecognized or edited legacy instructions; preserving ${path}`);
+      after = spliceBlock(text2, CHRON_BLOCK_START, CHRON_BLOCK_END, null);
+    } else if (text2.includes(CHRON_SKILL_SENTINEL)) {
+      throw new Error(`Unbounded legacy instructions; preserving ${path}`);
+    } else if (configs.some((c) => (0, import_path7.resolve)(c.path) === path)) {
+      const config = configs.find((c) => (0, import_path7.resolve)(c.path) === path);
+      if (config.type === "json") {
+        const doc = parseJson(text2, "MCP configuration"), servers = doc.mcpServers;
+        if (servers && typeof servers === "object") {
+          for (const [key, server] of Object.entries(servers)) {
+            if (key !== "chron" && key !== "chron-mcp" && !knownServer(server)) continue;
+            if (!knownServer(server) || Object.keys(server).some((k) => !["command", "args"].includes(k)))
+              throw new Error(`MCP entry has custom fields or unrecognized launcher; preserving ${path}`);
+            delete servers[key];
+          }
+          if (JSON.stringify(doc) !== JSON.stringify(parseJson(text2, "MCP configuration"))) after = JSON.stringify(doc, null, 2) + "\n";
+        }
+      } else if (/\[mcp_servers\.chron\]/.test(text2)) {
+        const section2 = text2.match(/\[mcp_servers\.chron\]([\s\S]*?)(?=\n\[|$)/);
+        let server;
+        try {
+          server = { command: JSON.parse(section2[1].match(/^command\s*=\s*(.+)$/m)[1]), args: JSON.parse(section2[1].match(/^args\s*=\s*(.+)$/m)[1]) };
+        } catch {
+          throw new Error(`Unrecognized legacy Codex config; preserving ${path}`);
+        }
+        const rest = section2[1].replace(/^command\s*=.*$/m, "").replace(/^args\s*=.*$/m, "");
+        if (!knownServer(server) || rest.trim() || /\[mcp_servers\.chron\./.test(text2)) throw new Error(`Custom Codex fields; preserving ${path}`);
+        after = text2.replace(section2[0], "");
+      }
+    }
+    if (after !== text2) changes.push({ path, before: text2, after, mode: (0, import_fs7.lstatSync)(path).mode & 511, description: "remove exact recognized legacy Chron block; keep surrounding content" });
+  }
+  return changes;
+}
+var import_fs7, import_crypto5, import_os7, import_path7, SHELL_START, SHELL_END, shellBlock;
+var init_configuration = __esm({
+  "src/cli/configuration.ts"() {
     "use strict";
-    CHRON_SKILL_SENTINEL = "<!-- chron-skill -->";
-    CHRON_BLOCK_START = "<!-- chron-skill-start -->";
-    CHRON_BLOCK_END = "<!-- chron-skill-end -->";
-    MCP_LOGGING_INSTRUCTIONS = buildChronInstructions(
-      "the identifier of this client, for example claude, codex, cursor, gemini or windsurf \u2014 never a placeholder"
-    );
+    import_fs7 = require("fs");
+    import_crypto5 = require("crypto");
+    import_os7 = require("os");
+    import_path7 = require("path");
+    init_instructions();
+    init_mcp_config();
+    SHELL_START = "# chron-codex-wrapper-start";
+    SHELL_END = "# chron-codex-wrapper-end";
+    shellBlock = `${SHELL_START}
+# Chron: write project logging instructions before Codex reads AGENTS.md
+codex() {
+  command chron bootstrap 2>/dev/null
+  command codex "$@"
+}
+${SHELL_END}`;
   }
 });
 
@@ -21507,164 +21916,25 @@ var connect_exports = {};
 __export(connect_exports, {
   CHRON_INSTRUCTION_BLOCK_START: () => CHRON_INSTRUCTION_BLOCK_START,
   CHRON_INSTRUCTION_SENTINEL: () => CHRON_INSTRUCTION_SENTINEL,
-  ensureClaudeCodeInstructions: () => ensureClaudeCodeInstructions,
-  ensureCodexGlobalAgentsMd: () => ensureCodexGlobalAgentsMd,
-  ensureCodexInstructions: () => ensureCodexInstructions,
-  ensureCodexProjectInstructions: () => ensureCodexProjectInstructions,
-  ensureCodexShellWrapper: () => ensureCodexShellWrapper,
-  ensureCursorProjectInstructions: () => ensureCursorProjectInstructions,
-  ensureGeminiInstructions: () => ensureGeminiInstructions,
   runConnect: () => runConnect
 });
-function buildCursorRule(instructions) {
-  return `---
-description: Chron AI audit logging for Cursor agent sessions
-alwaysApply: true
----
-
-${instructions}`;
-}
-function writeInstructionFile(filePath, content) {
-  const block = `${CHRON_BLOCK_START}
-${content}
-${CHRON_BLOCK_END}`;
-  try {
-    (0, import_fs7.mkdirSync)((0, import_path7.dirname)(filePath), { recursive: true });
-    if ((0, import_fs7.existsSync)(filePath)) {
-      const existing = (0, import_fs7.readFileSync)(filePath, "utf8");
-      const startIdx = existing.indexOf(CHRON_BLOCK_START);
-      const endIdx = existing.indexOf(CHRON_BLOCK_END);
-      if (startIdx !== -1 && endIdx > startIdx) {
-        const before = existing.slice(0, startIdx);
-        const after = existing.slice(endIdx + CHRON_BLOCK_END.length);
-        (0, import_fs7.writeFileSync)(filePath, before + block + after, "utf8");
-        return { status: "added" };
-      }
-      if (existing.includes(CHRON_SKILL_SENTINEL)) return { status: "already" };
-      (0, import_fs7.writeFileSync)(filePath, existing.trimEnd() + "\n\n" + block, "utf8");
-    } else {
-      (0, import_fs7.writeFileSync)(filePath, block, "utf8");
-    }
-    return { status: "added" };
-  } catch (err) {
-    return { status: "error", error: String(err.message) };
-  }
-}
-function ensureClaudeCodeInstructions() {
-  return writeInstructionFile(
-    (0, import_path7.join)((0, import_os7.homedir)(), "CLAUDE.md"),
-    buildChronInstructions("claude")
-  );
-}
-function ensureCodexInstructions() {
-  return writeInstructionFile(
-    (0, import_path7.join)((0, import_os7.homedir)(), ".codex", "instructions.md"),
-    buildChronInstructions("codex")
-  );
-}
-function ensureCodexGlobalAgentsMd() {
-  return writeInstructionFile(
-    (0, import_path7.join)((0, import_os7.homedir)(), "AGENTS.md"),
-    buildChronInstructions("codex")
-  );
-}
-function ensureCodexProjectInstructions(cwd = process.cwd()) {
-  return writeInstructionFile(
-    (0, import_path7.join)(cwd, "AGENTS.md"),
-    buildChronInstructions("codex")
-  );
-}
-function ensureGeminiInstructions() {
-  return writeInstructionFile(
-    (0, import_path7.join)((0, import_os7.homedir)(), ".gemini", "GEMINI.md"),
-    buildChronInstructions("gemini")
-  );
-}
-function ensureCursorProjectInstructions(cwd = process.cwd()) {
-  const filePath = (0, import_path7.join)(cwd, ".cursor", "rules", "chron.mdc");
-  try {
-    (0, import_fs7.mkdirSync)((0, import_path7.dirname)(filePath), { recursive: true });
-    (0, import_fs7.writeFileSync)(filePath, buildCursorRule(buildChronInstructions("cursor")), "utf8");
-    return { status: "added" };
-  } catch (err) {
-    return { status: "error", error: String(err.message) };
-  }
-}
-function buildCodexShellWrapper() {
-  return `${SHELL_WRAPPER_START}
-# Chron: write project logging instructions before Codex reads AGENTS.md
-codex() {
-  command chron bootstrap 2>/dev/null
-  command codex "$@"
-}
-${SHELL_WRAPPER_END}`;
-}
-function writeShellWrapper(rcFile) {
-  try {
-    (0, import_fs7.mkdirSync)((0, import_path7.dirname)(rcFile), { recursive: true });
-    const wrapper = buildCodexShellWrapper();
-    if ((0, import_fs7.existsSync)(rcFile)) {
-      const existing = (0, import_fs7.readFileSync)(rcFile, "utf8");
-      if (existing.includes(SHELL_WRAPPER_START)) {
-        const startIdx = existing.indexOf(SHELL_WRAPPER_START);
-        const endIdx = existing.indexOf(SHELL_WRAPPER_END);
-        if (endIdx > startIdx) {
-          const newContent = existing.slice(0, startIdx) + wrapper + existing.slice(endIdx + SHELL_WRAPPER_END.length);
-          (0, import_fs7.writeFileSync)(rcFile, newContent, "utf8");
-          return { status: "added" };
-        }
-        return { status: "already" };
-      }
-      (0, import_fs7.writeFileSync)(rcFile, existing.trimEnd() + "\n\n" + wrapper + "\n", "utf8");
-    } else {
-      (0, import_fs7.writeFileSync)(rcFile, wrapper + "\n", "utf8");
-    }
-    return { status: "added" };
-  } catch (err) {
-    return { status: "error", error: String(err.message) };
-  }
-}
-function ensureCodexShellWrapper() {
-  const home = (0, import_os7.homedir)();
-  const zshResult = writeShellWrapper((0, import_path7.join)(home, ".zshrc"));
-  const bashResult = writeShellWrapper((0, import_path7.join)(home, ".bashrc"));
-  return { zsh: zshResult.status, bash: bashResult.status };
-}
 function prompt(rl, question) {
-  return new Promise((resolve5) => rl.question(question, resolve5));
+  return new Promise((resolve6) => rl.question(question, resolve6));
 }
 function configPath2() {
   return configPath();
 }
 function loadConfig() {
   try {
-    return JSON.parse((0, import_fs7.readFileSync)(configPath2(), "utf8"));
+    return JSON.parse((0, import_fs8.readFileSync)(configPath2(), "utf8"));
   } catch {
     return {};
   }
 }
 function saveConfig(data) {
-  const dir = (0, import_path7.join)((0, import_os7.homedir)(), ".chron");
-  (0, import_fs7.mkdirSync)(dir, { recursive: true });
-  (0, import_fs7.writeFileSync)(configPath2(), JSON.stringify(data, null, 2), "utf8");
-}
-function patchClaudeJson(vars) {
-  const path = (0, import_path7.join)((0, import_os7.homedir)(), ".claude.json");
-  if (!(0, import_fs7.existsSync)(path)) return false;
-  try {
-    const raw = (0, import_fs7.readFileSync)(path, "utf8");
-    const doc = JSON.parse(raw);
-    const servers = doc.mcpServers ?? {};
-    const chron = servers.chron ?? {};
-    if (!chron.command) return false;
-    chron.env = { ...chron.env ?? {}, ...vars };
-    servers.chron = chron;
-    doc.mcpServers = servers;
-    (0, import_fs7.writeFileSync)(path, JSON.stringify(doc, null, 2), "utf8");
-    return true;
-  } catch {
-    return false;
-  }
+  const dir = (0, import_path8.join)((0, import_os8.homedir)(), ".chron");
+  (0, import_fs8.mkdirSync)(dir, { recursive: true });
+  (0, import_fs8.writeFileSync)(configPath2(), JSON.stringify(data, null, 2), "utf8");
 }
 async function connectCrowdStrike() {
   process.stdout.write(`
@@ -21776,10 +22046,10 @@ ${DIM4}Sending test event...${RESET6} `);
 
 `);
 }
-function isLocalhost(url) {
-  return url.includes("localhost") || url.includes("127.0.0.1") || url.includes("::1");
-}
-async function connectSplunk() {
+async function connectSplunk(options) {
+  for (const option of options) if (option !== "--insecure") throw new Error("Unknown Splunk option");
+  const insecure = options.includes("--insecure");
+  if (insecure) process.stdout.write("TLS certificate verification is disabled only for the selected Splunk endpoint. Redirects are refused.\n");
   process.stdout.write(`
 ${BOLD5}Connect Chron \u2192 Splunk${RESET6}
 
@@ -21796,7 +22066,7 @@ ${BOLD5}Connect Chron \u2192 Splunk${RESET6}
 `);
   process.stdout.write(`${DIM4}Note: Splunk 9.x Docker uses HTTPS on port 8088 with a self-signed cert.
 `);
-  process.stdout.write(`Use https://localhost:8088 \u2014 certificate verification is skipped for localhost.${RESET6}
+  process.stdout.write(`Use https://localhost:8088 with a trusted certificate, or explicitly select --insecure for this destination only.${RESET6}
 
 `);
   const rl = (0, import_readline.createInterface)({ input: process.stdin, output: process.stdout });
@@ -21822,9 +22092,6 @@ ${RED3}HEC token cannot be empty${RESET6}
 `);
     process.exit(1);
   }
-  if (isLocalhost(url)) {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-  }
   process.stdout.write(`
 ${DIM4}Sending test event...${RESET6} `);
   const hecUrl = `${url.replace(/\/$/, "")}/services/collector/event`;
@@ -21841,14 +22108,15 @@ ${DIM4}Sending test event...${RESET6} `);
     }
   });
   try {
-    const res = await fetch(hecUrl, {
+    const res = await splunkRequest(hecUrl, {
       method: "POST",
       headers: {
         "Authorization": `Splunk ${token}`,
         "Content-Type": "application/json"
       },
-      body: testPayload
-    });
+      body: testPayload,
+      signal: AbortSignal.timeout(1e4)
+    }, insecure);
     if (!res.ok) {
       const err = await res.text();
       process.stdout.write(`${RED3}failed (HTTP ${res.status})${RESET6}
@@ -21870,11 +22138,8 @@ ${DIM4}Sending test event...${RESET6} `);
     process.exit(1);
   }
   const config = loadConfig();
-  config.splunk = { url, token, insecure: isLocalhost(url), connected_at: (/* @__PURE__ */ new Date()).toISOString() };
+  config.splunk = { url, token, insecure, connected_at: (/* @__PURE__ */ new Date()).toISOString() };
   saveConfig(config);
-  const splunkVars = { CHRON_SPLUNK_URL: url, CHRON_SPLUNK_TOKEN: token };
-  if (isLocalhost(url)) splunkVars.CHRON_SPLUNK_INSECURE = "1";
-  patchClaudeJson(splunkVars);
   process.stdout.write(`${GREEN2}${BOLD5}Connected!${RESET6} Splunk is receiving chron events.
 
 `);
@@ -22020,214 +22285,12 @@ ${DIM4}Authenticating with Azure AD...${RESET6} `);
   const config = loadConfig();
   config.sentinel = { dce, dcrId, stream, tenantId, clientId, clientSecret, connected_at: (/* @__PURE__ */ new Date()).toISOString() };
   saveConfig(config);
-  patchClaudeJson({
-    CHRON_SENTINEL_TENANT_ID: tenantId,
-    CHRON_SENTINEL_CLIENT_ID: clientId,
-    CHRON_SENTINEL_CLIENT_SECRET: clientSecret,
-    CHRON_SENTINEL_DCE: dce,
-    CHRON_SENTINEL_DCR_ID: dcrId,
-    CHRON_SENTINEL_STREAM: stream
-  });
   process.stdout.write(`${GREEN2}${BOLD5}Connected!${RESET6} Test event sent to Sentinel workspace.
 
 `);
   process.stdout.write(`${DIM4}Config saved to ~/.chron/config.json \u2014 events will flow immediately in all running sessions.${RESET6}
 
 `);
-}
-function codexGlobalConfigPath() {
-  return (0, import_path7.join)((0, import_os7.homedir)(), ".codex", "config.toml");
-}
-async function connectCodex() {
-  process.stdout.write(`
-${BOLD5}Connect Chron \u2192 Codex${RESET6}
-
-`);
-  const globalPath = codexGlobalConfigPath();
-  if (!(0, import_fs7.existsSync)(globalPath)) {
-    process.stdout.write(`${YELLOW3}!${RESET6} Codex config not found. Creating ${globalPath}
-
-`);
-  }
-  const configResult = ensureChronCodexTomlConfig(globalPath);
-  if (configResult.status === "error") {
-    process.stdout.write(`${RED3}\u2717${RESET6} Could not configure ${globalPath}: ${configResult.error}
-`);
-    process.exit(1);
-  } else if (configResult.status === "already") {
-    process.stdout.write(`${GREEN2}\u2713${RESET6} Chron MCP already configured in ${globalPath}
-`);
-  } else {
-    process.stdout.write(`${GREEN2}\u2713${RESET6} Configured Chron MCP in ${globalPath}
-`);
-  }
-  const ir = ensureCodexInstructions();
-  if (ir.status === "added") {
-    process.stdout.write(`${GREEN2}\u2713${RESET6} Chron logging instructions written to ~/.codex/instructions.md
-`);
-  } else if (ir.status === "already") {
-    process.stdout.write(`${GREEN2}\u2713${RESET6} Chron logging instructions already present
-`);
-  } else {
-    process.stdout.write(`${YELLOW3}!${RESET6} Could not write logging instructions: ${ir.error}
-`);
-  }
-  const pr = ensureCodexProjectInstructions();
-  if (pr.status === "added") {
-    process.stdout.write(`${GREEN2}\u2713${RESET6} Chron logging instructions written to ./AGENTS.md
-`);
-  } else if (pr.status === "already") {
-    process.stdout.write(`${GREEN2}\u2713${RESET6} Chron logging instructions already present in ./AGENTS.md
-`);
-  } else {
-    process.stdout.write(`${YELLOW3}!${RESET6} Could not write ./AGENTS.md: ${pr.error}
-`);
-  }
-  const gr = ensureCodexGlobalAgentsMd();
-  if (gr.status === "added") {
-    process.stdout.write(`${GREEN2}\u2713${RESET6} Chron logging instructions written to ~/AGENTS.md (global fallback for Codex desktop)
-`);
-  } else if (gr.status === "already") {
-    process.stdout.write(`${GREEN2}\u2713${RESET6} ~/AGENTS.md already has Chron instructions
-`);
-  }
-  const wr = ensureCodexShellWrapper();
-  if (wr.zsh === "added" || wr.bash === "added") {
-    process.stdout.write(`${GREEN2}\u2713${RESET6} Shell wrapper added \u2014 codex will auto-bootstrap AGENTS.md on every launch
-`);
-  }
-  process.stdout.write("\n");
-  _printCodexNextSteps();
-}
-function _printCodexNextSteps() {
-  process.stdout.write(`${BOLD5}Next steps:${RESET6}
-
-`);
-  process.stdout.write(`  Restart Codex, then run ${CYAN4}chron doctor --verify-logging codex${RESET6}
-
-`);
-  process.stdout.write(`${DIM4}Logging instructions written to ~/.codex/instructions.md and ./AGENTS.md.
-`);
-  process.stdout.write(`Full setup check: chron doctor${RESET6}
-
-`);
-}
-function connectJsonClient(name2, path, promptLine, ensureInstructions, verifyTool) {
-  process.stdout.write(`
-${BOLD5}Connect Chron \u2192 ${name2}${RESET6}
-
-`);
-  const result = ensureChronJsonMcpConfig(path);
-  if (result.status === "error") {
-    process.stdout.write(`${RED3}\u2717${RESET6} Could not write ${path}: ${result.error}
-`);
-    process.exit(1);
-  }
-  if (result.status === "already") {
-    process.stdout.write(`${GREEN2}\u2713${RESET6} Chron MCP already configured in ${path}
-`);
-  } else {
-    process.stdout.write(`${GREEN2}\u2713${RESET6} Added Chron MCP to ${path}
-`);
-  }
-  if (ensureInstructions) {
-    const ir = ensureInstructions();
-    if (ir.status === "added") {
-      process.stdout.write(`${GREEN2}\u2713${RESET6} Chron logging instructions written
-`);
-    } else if (ir.status === "already") {
-      process.stdout.write(`${GREEN2}\u2713${RESET6} Chron logging instructions already present
-`);
-    } else {
-      process.stdout.write(`${YELLOW3}!${RESET6} Could not write logging instructions: ${ir.error}
-`);
-    }
-  }
-  process.stdout.write(`
-${BOLD5}Next steps:${RESET6}
-
-`);
-  process.stdout.write(`  1. Restart ${name2} to load the new MCP server.
-`);
-  if (ensureInstructions && verifyTool) {
-    process.stdout.write(`  2. Verify Chron logging end-to-end:
-`);
-    process.stdout.write(`     ${CYAN4}chron doctor --verify-logging ${verifyTool}${RESET6}
-`);
-    process.stdout.write(`     ${DIM4}(generates a test token, guides you through a real session, confirms DB)${RESET6}
-`);
-  } else {
-    process.stdout.write(`  2. Start a new chat and ask:
-`);
-    process.stdout.write(`     ${DIM4}"${promptLine}"${RESET6}
-`);
-  }
-  process.stdout.write(`  3. Full setup check: ${CYAN4}chron doctor${RESET6}
-
-`);
-}
-function connectCursor() {
-  process.stdout.write(`
-${BOLD5}Connect Chron \u2192 Cursor${RESET6}
-
-`);
-  const targets = [
-    { label: "Cursor global MCP", path: (0, import_path7.join)((0, import_os7.homedir)(), ".cursor", "mcp.json") },
-    { label: "Cursor project MCP", path: (0, import_path7.join)(process.cwd(), ".cursor", "mcp.json") }
-  ];
-  for (const target of targets) {
-    const result = ensureChronJsonMcpConfig(target.path);
-    if (result.status === "error") {
-      process.stdout.write(`${RED3}\u2717${RESET6} Could not write ${target.path}: ${result.error}
-`);
-      process.exit(1);
-    }
-    if (result.status === "already") {
-      process.stdout.write(`${GREEN2}\u2713${RESET6} ${target.label} already configured at ${target.path}
-`);
-    } else {
-      process.stdout.write(`${GREEN2}\u2713${RESET6} Added Chron to ${target.label} at ${target.path}
-`);
-    }
-  }
-  const instructionTargets = [
-    { label: "Cursor project rule", result: ensureCursorProjectInstructions(), file: (0, import_path7.join)(process.cwd(), ".cursor", "rules", "chron.mdc") }
-  ];
-  for (const target of instructionTargets) {
-    if (target.result.status === "error") {
-      process.stdout.write(`${YELLOW3}!${RESET6} Could not write ${target.label}: ${target.result.error}
-`);
-    } else {
-      process.stdout.write(`${GREEN2}\u2713${RESET6} ${target.label} written to ${target.file}
-`);
-    }
-  }
-  process.stdout.write(`
-${BOLD5}Next steps:${RESET6}
-
-`);
-  process.stdout.write(`  1. Restart Cursor / Cursor Agent so it reloads MCP and rules.
-`);
-  process.stdout.write(`  2. Use Cursor Agent mode. Chron also sends its logging contract through MCP.
-`);
-  process.stdout.write(`  3. Verify Chron logging end-to-end:
-`);
-  process.stdout.write(`     ${CYAN4}chron doctor --verify-logging cursor${RESET6}
-`);
-  process.stdout.write(`     ${DIM4}(generates a token, watches the DB, and proves Cursor created a Chron session)${RESET6}
-`);
-  process.stdout.write(`  4. Full setup check: ${CYAN4}chron doctor${RESET6}
-
-`);
-}
-function connectGemini() {
-  connectJsonClient(
-    "Gemini CLI",
-    (0, import_path7.join)((0, import_os7.homedir)(), ".gemini", "settings.json"),
-    "Use Chron to start an audit session for this work.",
-    ensureGeminiInstructions,
-    "gemini"
-  );
 }
 async function runConnect(args2) {
   const [subcommand] = args2;
@@ -22239,16 +22302,16 @@ async function runConnect(args2) {
       await connectSentinel();
       break;
     case "splunk":
-      await connectSplunk();
+      await connectSplunk(args2.slice(1));
       break;
     case "codex":
-      await connectCodex();
+      await (await Promise.resolve().then(() => (init_configuration(), configuration_exports))).runConfiguration(["--client=codex", ...args2.slice(1)]);
       break;
     case "cursor":
-      connectCursor();
+      await (await Promise.resolve().then(() => (init_configuration(), configuration_exports))).runConfiguration(["--client=cursor", "--project", ...args2.slice(1)]);
       break;
     case "gemini":
-      connectGemini();
+      await (await Promise.resolve().then(() => (init_configuration(), configuration_exports))).runConfiguration(["--client=gemini", ...args2.slice(1)]);
       break;
     default: {
       const name2 = subcommand ? `Unknown integration: ${subcommand}
@@ -22270,16 +22333,16 @@ Integrations:
     }
   }
 }
-var import_readline, import_os7, import_path7, import_fs7, RESET6, BOLD5, DIM4, CYAN4, GREEN2, RED3, YELLOW3, SHELL_WRAPPER_START, SHELL_WRAPPER_END, CHRON_INSTRUCTION_SENTINEL, CHRON_INSTRUCTION_BLOCK_START;
+var import_readline, import_os8, import_path8, import_fs8, RESET6, BOLD5, DIM4, CYAN4, GREEN2, RED3, YELLOW3, CHRON_INSTRUCTION_SENTINEL, CHRON_INSTRUCTION_BLOCK_START;
 var init_connect = __esm({
   "src/cli/connect.ts"() {
     "use strict";
     import_readline = require("readline");
-    import_os7 = require("os");
-    import_path7 = require("path");
-    import_fs7 = require("fs");
+    import_os8 = require("os");
+    import_path8 = require("path");
+    import_fs8 = require("fs");
     init_config_path();
-    init_mcp_config();
+    init_splunk_request();
     init_instructions();
     RESET6 = "\x1B[0m";
     BOLD5 = "\x1B[1m";
@@ -22288,8 +22351,6 @@ var init_connect = __esm({
     GREEN2 = "\x1B[32m";
     RED3 = "\x1B[31m";
     YELLOW3 = "\x1B[33m";
-    SHELL_WRAPPER_START = "# chron-codex-wrapper-start";
-    SHELL_WRAPPER_END = "# chron-codex-wrapper-end";
     CHRON_INSTRUCTION_SENTINEL = CHRON_SKILL_SENTINEL;
     CHRON_INSTRUCTION_BLOCK_START = CHRON_BLOCK_START;
   }
@@ -22466,7 +22527,7 @@ var init_summary = __esm({
 
 // src/db/readonly.ts
 function openReadOnly(path) {
-  if (!path.startsWith(":") && !(0, import_fs8.existsSync)(path)) return null;
+  if (!path.startsWith(":") && !(0, import_fs9.existsSync)(path)) return null;
   const client = createClient({ url: path.startsWith(":") ? path : `file:${path}` });
   return {
     db: drizzle(client, { schema: schema_exports }),
@@ -22482,14 +22543,14 @@ async function enforceReadOnly(handle) {
   await handle.db.run(sql.raw("PRAGMA query_only = ON"));
 }
 function openUntouched(path) {
-  if (!(0, import_fs8.existsSync)(path)) return null;
+  if (!(0, import_fs9.existsSync)(path)) return null;
   const scratch = `${path}.read-copy-${process.pid}-${Date.now()}`;
   const discard = () => {
-    for (const s of ["", ...SIDECARS]) (0, import_fs8.rmSync)(`${scratch}${s}`, { force: true });
+    for (const s of ["", ...SIDECARS]) (0, import_fs9.rmSync)(`${scratch}${s}`, { force: true });
   };
   try {
-    (0, import_fs8.copyFileSync)(path, scratch);
-    if ((0, import_fs8.existsSync)(`${path}-wal`)) (0, import_fs8.copyFileSync)(`${path}-wal`, `${scratch}-wal`);
+    (0, import_fs9.copyFileSync)(path, scratch);
+    if ((0, import_fs9.existsSync)(`${path}-wal`)) (0, import_fs9.copyFileSync)(`${path}-wal`, `${scratch}-wal`);
   } catch {
     discard();
     return null;
@@ -22504,14 +22565,14 @@ function openUntouched(path) {
     discard();
   } };
 }
-var import_fs8, SIDECARS;
+var import_fs9, SIDECARS;
 var init_readonly = __esm({
   "src/db/readonly.ts"() {
     "use strict";
     init_node2();
     init_drizzle_orm();
     init_libsql();
-    import_fs8 = require("fs");
+    import_fs9 = require("fs");
     init_schema();
     SIDECARS = ["-wal", "-shm"];
   }
@@ -22544,13 +22605,13 @@ var init_time = __esm({
 function computeContentHash(sessionId, role, content, createdAt, prevHash, eventType) {
   const base = `${sessionId}|${role}|${content}|${createdAt}|${prevHash ?? ""}`;
   const input = eventType != null ? `${base}|${eventType}` : base;
-  return (0, import_crypto5.createHash)("sha256").update(input).digest("hex");
+  return (0, import_crypto6.createHash)("sha256").update(input).digest("hex");
 }
-var import_crypto5;
+var import_crypto6;
 var init_hash = __esm({
   "src/utils/hash.ts"() {
     "use strict";
-    import_crypto5 = require("crypto");
+    import_crypto6 = require("crypto");
   }
 });
 
@@ -22606,26 +22667,26 @@ var init_stringify = __esm({
 // node_modules/uuid/dist/esm/rng.js
 function rng() {
   if (poolPtr > rnds8Pool.length - 16) {
-    (0, import_crypto6.randomFillSync)(rnds8Pool);
+    (0, import_crypto7.randomFillSync)(rnds8Pool);
     poolPtr = 0;
   }
   return rnds8Pool.slice(poolPtr, poolPtr += 16);
 }
-var import_crypto6, rnds8Pool, poolPtr;
+var import_crypto7, rnds8Pool, poolPtr;
 var init_rng = __esm({
   "node_modules/uuid/dist/esm/rng.js"() {
-    import_crypto6 = require("crypto");
+    import_crypto7 = require("crypto");
     rnds8Pool = new Uint8Array(256);
     poolPtr = rnds8Pool.length;
   }
 });
 
 // node_modules/uuid/dist/esm/native.js
-var import_crypto7, native_default;
+var import_crypto8, native_default;
 var init_native = __esm({
   "node_modules/uuid/dist/esm/native.js"() {
-    import_crypto7 = require("crypto");
-    native_default = { randomUUID: import_crypto7.randomUUID };
+    import_crypto8 = require("crypto");
+    native_default = { randomUUID: import_crypto8.randomUUID };
   }
 });
 
@@ -22688,13 +22749,13 @@ function sanitizeEndpoint(endpoint) {
 }
 function fingerprintDestination(endpoint) {
   const label = sanitizeEndpoint(endpoint);
-  return { label, digest: (0, import_crypto8.createHash)("sha256").update(label).digest("hex") };
+  return { label, digest: (0, import_crypto9.createHash)("sha256").update(label).digest("hex") };
 }
-var import_crypto8, UNPARSEABLE, REDACTED_PATH, SAFE_PATH_SEGMENTS;
+var import_crypto9, UNPARSEABLE, REDACTED_PATH, SAFE_PATH_SEGMENTS;
 var init_destination = __esm({
   "src/otel/destination.ts"() {
     "use strict";
-    import_crypto8 = require("crypto");
+    import_crypto9 = require("crypto");
     UNPARSEABLE = "<unparseable endpoint>";
     REDACTED_PATH = "/<redacted path>";
     SAFE_PATH_SEGMENTS = /* @__PURE__ */ new Set([
@@ -22720,10 +22781,10 @@ function canonicalJson(value) {
   return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`).join(",")}}`;
 }
 function computeHeaderHash(header) {
-  return (0, import_crypto9.createHash)("sha256").update(canonicalJson(header)).digest("hex");
+  return (0, import_crypto10.createHash)("sha256").update(canonicalJson(header)).digest("hex");
 }
 function computeEventHash(receiptId, sequence, eventType, logicalKey, createdAt, canonicalPayload, prevHash) {
-  return (0, import_crypto9.createHash)("sha256").update([receiptId, sequence, eventType, logicalKey, createdAt, canonicalPayload, prevHash ?? ""].join("|")).digest("hex");
+  return (0, import_crypto10.createHash)("sha256").update([receiptId, sequence, eventType, logicalKey, createdAt, canonicalPayload, prevHash ?? ""].join("|")).digest("hex");
 }
 async function appendEventTx(tx, receiptId, event) {
   const existing = await tx.select().from(export_receipt_events).where(and(eq(export_receipt_events.receipt_id, receiptId), eq(export_receipt_events.logical_key, event.logicalKey))).limit(1);
@@ -23043,12 +23104,12 @@ async function listReceipts(db, limit) {
   }
   return readings;
 }
-var import_crypto9, BATCH_STATUSES, RECEIPT_STATES, isInt, isDigest;
+var import_crypto10, BATCH_STATUSES, RECEIPT_STATES, isInt, isDigest;
 var init_receipts = __esm({
   "src/otel/receipts.ts"() {
     "use strict";
     init_drizzle_orm();
-    import_crypto9 = require("crypto");
+    import_crypto10 = require("crypto");
     init_esm();
     init_schema();
     init_time();
@@ -23155,7 +23216,7 @@ function manifestPathFor(snapshot) {
   return `${snapshot}${MANIFEST_SUFFIX}`;
 }
 function sha256File(path) {
-  return (0, import_crypto10.createHash)("sha256").update((0, import_fs9.readFileSync)(path)).digest("hex");
+  return (0, import_crypto11.createHash)("sha256").update((0, import_fs10.readFileSync)(path)).digest("hex");
 }
 async function countEvidence(dbFile) {
   const client = createClient({ url: `file:${dbFile}` });
@@ -23175,18 +23236,18 @@ async function countEvidence(dbFile) {
   };
 }
 async function createBackup(sourceDb, output) {
-  if (!(0, import_fs9.existsSync)(sourceDb)) {
+  if (!(0, import_fs10.existsSync)(sourceDb)) {
     throw new BackupError(`No database at ${sourceDb}. Nothing to back up.`);
   }
-  (0, import_fs9.mkdirSync)((0, import_path8.dirname)((0, import_path8.resolve)(output)), { recursive: true });
-  if ((0, import_fs9.existsSync)(output)) {
+  (0, import_fs10.mkdirSync)((0, import_path9.dirname)((0, import_path9.resolve)(output)), { recursive: true });
+  if ((0, import_fs10.existsSync)(output)) {
     throw new BackupError(`${output} already exists. Choose another path rather than overwriting a backup.`);
   }
-  if ((0, import_fs9.existsSync)(manifestPathFor(output))) {
+  if ((0, import_fs10.existsSync)(manifestPathFor(output))) {
     throw new BackupError(`${manifestPathFor(output)} already exists. Choose another path rather than overwriting a backup manifest.`);
   }
   const client = createClient({ url: `file:${sourceDb}` });
-  await client.execute({ sql: "VACUUM INTO ?", args: [(0, import_path8.resolve)(output)] });
+  await client.execute({ sql: "VACUUM INTO ?", args: [(0, import_path9.resolve)(output)] });
   const counts = await countEvidence(output);
   const manifest = {
     chron_backup: "v1",
@@ -23194,7 +23255,7 @@ async function createBackup(sourceDb, output) {
     chron_version: import_package2.version,
     schema_version: counts.schema_version,
     snapshot_sha256: sha256File(output),
-    snapshot_bytes: (0, import_fs9.statSync)(output).size,
+    snapshot_bytes: (0, import_fs10.statSync)(output).size,
     evidence: {
       sessions: counts.sessions,
       messages: counts.messages,
@@ -23202,7 +23263,7 @@ async function createBackup(sourceDb, output) {
       secrets: counts.secrets
     }
   };
-  (0, import_fs9.writeFileSync)(manifestPathFor(output), JSON.stringify(manifest, null, 2) + "\n");
+  (0, import_fs10.writeFileSync)(manifestPathFor(output), JSON.stringify(manifest, null, 2) + "\n");
   return manifest;
 }
 async function verifyBackup(snapshot, manifest) {
@@ -23212,7 +23273,7 @@ async function verifyBackup(snapshot, manifest) {
     problems.push("snapshot does not match the digest in its manifest \u2014 the file changed after the backup was taken");
   }
   let manifestFieldsMatch = true;
-  const actualBytes = (0, import_fs9.statSync)(snapshot).size;
+  const actualBytes = (0, import_fs10.statSync)(snapshot).size;
   if (actualBytes !== manifest.snapshot_bytes) {
     manifestFieldsMatch = false;
     problems.push(`snapshot is ${actualBytes} bytes, manifest says ${manifest.snapshot_bytes}`);
@@ -23264,8 +23325,8 @@ async function verifyBackup(snapshot, manifest) {
 }
 async function restoreBackup(snapshot, target, opts, deps = {}) {
   const manifestPath = manifestPathFor(snapshot);
-  if (!(0, import_fs9.existsSync)(snapshot)) throw new BackupError(`No backup at ${snapshot}.`);
-  if (!(0, import_fs9.existsSync)(manifestPath)) {
+  if (!(0, import_fs10.existsSync)(snapshot)) throw new BackupError(`No backup at ${snapshot}.`);
+  if (!(0, import_fs10.existsSync)(manifestPath)) {
     throw new BackupError(
       `No manifest beside the snapshot (expected ${manifestPath}).
   Without it there is nothing binding this file to a backup Chron took.`
@@ -23273,7 +23334,7 @@ async function restoreBackup(snapshot, target, opts, deps = {}) {
   }
   let manifest;
   try {
-    manifest = JSON.parse((0, import_fs9.readFileSync)(manifestPath, "utf8"));
+    manifest = JSON.parse((0, import_fs10.readFileSync)(manifestPath, "utf8"));
   } catch (e) {
     throw new BackupError(`Manifest is not readable JSON: ${e instanceof Error ? e.message : String(e)}`);
   }
@@ -23290,11 +23351,11 @@ async function restoreBackup(snapshot, target, opts, deps = {}) {
     );
   }
   const staged = `${target}.restore-staged`;
-  (0, import_fs9.rmSync)(staged, { force: true });
+  (0, import_fs10.rmSync)(staged, { force: true });
   (deps.stageFile ?? defaultStage)(snapshot, staged);
   const stagedDigest = sha256File(staged);
   if (stagedDigest !== manifest.snapshot_sha256) {
-    (0, import_fs9.rmSync)(staged, { force: true });
+    (0, import_fs10.rmSync)(staged, { force: true });
     throw new BackupError(
       `The staged copy does not match the backup it came from.
   expected ${manifest.snapshot_sha256}
@@ -23309,7 +23370,7 @@ async function restoreBackup(snapshot, target, opts, deps = {}) {
     const restored = [];
     for (const { from, to } of [...moved].reverse()) {
       try {
-        (0, import_fs9.renameSync)(to, from);
+        (0, import_fs10.renameSync)(to, from);
         restored.push(from);
       } catch (e) {
         failure ??= e instanceof Error ? e.message : String(e);
@@ -23320,9 +23381,9 @@ async function restoreBackup(snapshot, target, opts, deps = {}) {
   try {
     for (const suffix of ["", ...SIDECARS2]) {
       const from = `${target}${suffix}`;
-      if (!(0, import_fs9.existsSync)(from)) continue;
+      if (!(0, import_fs10.existsSync)(from)) continue;
       const to = `${displacedPrefix}${suffix}`;
-      (0, import_fs9.renameSync)(from, to);
+      (0, import_fs10.renameSync)(from, to);
       moved.push({ from, to });
     }
     (deps.promote ?? defaultPromote)(staged, target);
@@ -23330,7 +23391,7 @@ async function restoreBackup(snapshot, target, opts, deps = {}) {
     const cause = e instanceof Error ? e.message : String(e);
     const { failure } = undo();
     if (failure === null) {
-      (0, import_fs9.rmSync)(staged, { force: true });
+      (0, import_fs10.rmSync)(staged, { force: true });
       throw new BackupError(
         `Could not complete the restore: ${cause}
 ` + (moved.length === 0 ? `  Nothing had been displaced yet, so the configured path is as it was.
@@ -23370,7 +23431,7 @@ function inventoryAfterFailedUndo(target, displacedPrefix, staged) {
   const add = (path, what, where) => {
     let st;
     try {
-      st = (0, import_fs9.lstatSync)(path);
+      st = (0, import_fs10.lstatSync)(path);
     } catch {
       return;
     }
@@ -23414,7 +23475,7 @@ async function measureGap(liveDb, snapshot, manifest) {
   };
 }
 async function sessionIdsIn(file) {
-  if (!(0, import_fs9.existsSync)(file)) return /* @__PURE__ */ new Set();
+  if (!(0, import_fs10.existsSync)(file)) return /* @__PURE__ */ new Set();
   const handle = openReadOnly(file);
   if (!handle) return /* @__PURE__ */ new Set();
   try {
@@ -23428,7 +23489,7 @@ async function sessionIdsIn(file) {
   }
 }
 async function sessionIdsOfLive(file) {
-  if (!(0, import_fs9.existsSync)(file)) return /* @__PURE__ */ new Set();
+  if (!(0, import_fs10.existsSync)(file)) return /* @__PURE__ */ new Set();
   const handle = openUntouched(file);
   if (!handle) return null;
   try {
@@ -23567,14 +23628,14 @@ ${BOLD7}What this backup does not contain${RESET8}
 `);
   }
 }
-var import_crypto10, import_fs9, import_path8, import_package2, RESET8, BOLD7, DIM6, GREEN4, RED5, YELLOW5, MANIFEST_SUFFIX, BackupError, REQUIRED_TABLES, defaultStage, defaultPromote, SIDECARS2;
+var import_crypto11, import_fs10, import_path9, import_package2, RESET8, BOLD7, DIM6, GREEN4, RED5, YELLOW5, MANIFEST_SUFFIX, BackupError, REQUIRED_TABLES, defaultStage, defaultPromote, SIDECARS2;
 var init_backup = __esm({
   "src/cli/backup.ts"() {
     "use strict";
-    import_crypto10 = require("crypto");
+    import_crypto11 = require("crypto");
     init_node2();
-    import_fs9 = require("fs");
-    import_path8 = require("path");
+    import_fs10 = require("fs");
+    import_path9 = require("path");
     init_drizzle_orm();
     init_db2();
     init_readonly();
@@ -23590,8 +23651,8 @@ var init_backup = __esm({
     BackupError = class extends Error {
     };
     REQUIRED_TABLES = ["sessions", "messages"];
-    defaultStage = (source, staged) => (0, import_fs9.writeFileSync)(staged, (0, import_fs9.readFileSync)(source));
-    defaultPromote = (staged, target) => (0, import_fs9.renameSync)(staged, target);
+    defaultStage = (source, staged) => (0, import_fs10.writeFileSync)(staged, (0, import_fs10.readFileSync)(source));
+    defaultPromote = (staged, target) => (0, import_fs10.renameSync)(staged, target);
     SIDECARS2 = ["-wal", "-shm"];
   }
 });
@@ -23603,9 +23664,9 @@ __export(prune_exports, {
 });
 function configRetentionDays() {
   const path = configPath();
-  if (!(0, import_fs10.existsSync)(path)) return null;
+  if (!(0, import_fs11.existsSync)(path)) return null;
   try {
-    const cfg = JSON.parse((0, import_fs10.readFileSync)(path, "utf8"));
+    const cfg = JSON.parse((0, import_fs11.readFileSync)(path, "utf8"));
     const v = Number(cfg.retention_days);
     return isNaN(v) ? null : v;
   } catch {
@@ -23711,12 +23772,12 @@ Sessions to prune (last active before ${cutoff}):
   process.stdout.write(`Pruned ${stale.length} session(s) and ${totalMsgs} message(s).
 `);
 }
-var import_fs10;
+var import_fs11;
 var init_prune = __esm({
   "src/cli/prune.ts"() {
     "use strict";
     init_drizzle_orm();
-    import_fs10 = require("fs");
+    import_fs11 = require("fs");
     init_db2();
     init_schema();
     init_config_path();
@@ -23752,7 +23813,7 @@ async function runSign(args2) {
 `);
     process.exit(1);
   }
-  if (!(0, import_fs12.existsSync)(privKeyPath(session.id))) {
+  if (!(0, import_fs13.existsSync)(privKeyPath(session.id))) {
     process.stderr.write(`Private key not found: ${privKeyPath(session.id)}
 `);
     process.stderr.write("The key is stored on the machine where the session was created.\n");
@@ -23793,8 +23854,8 @@ async function runSign(args2) {
     signature,
     signed_at: (/* @__PURE__ */ new Date()).toISOString()
   };
-  const sigFile = (0, import_path9.join)(process.cwd(), `${session.id.slice(0, 8)}.chron.sig`);
-  (0, import_fs11.writeFileSync)(sigFile, JSON.stringify(sigData, null, 2));
+  const sigFile = (0, import_path10.join)(process.cwd(), `${session.id.slice(0, 8)}.chron.sig`);
+  (0, import_fs12.writeFileSync)(sigFile, JSON.stringify(sigData, null, 2));
   process.stdout.write(`Signed session ${session.id.slice(0, 8)}
 `);
   process.stdout.write(`  messages : ${messageCount}
@@ -23804,18 +23865,18 @@ async function runSign(args2) {
   process.stdout.write(`  sig file : ${sigFile}
 `);
 }
-var import_fs11, import_path9, import_fs12;
+var import_fs12, import_path10, import_fs13;
 var init_sign = __esm({
   "src/cli/sign.ts"() {
     "use strict";
     init_drizzle_orm();
     init_evidence();
-    import_fs11 = require("fs");
-    import_path9 = require("path");
+    import_fs12 = require("fs");
+    import_path10 = require("path");
     init_db2();
     init_schema();
     init_signing();
-    import_fs12 = require("fs");
+    import_fs13 = require("fs");
     init_message_order();
   }
 });
@@ -23858,7 +23919,7 @@ function journalRecordHash(r) {
     canonicalJson2(r.data),
     r.prev ?? ""
   ].join("|");
-  return (0, import_crypto11.createHash)("sha256").update(input, "utf8").digest("hex");
+  return (0, import_crypto12.createHash)("sha256").update(input, "utf8").digest("hex");
 }
 function serializeRecord(r) {
   return `{"v":${r.v},"seq":${r.seq},"at":${JSON.stringify(canonicalContent(r.at))},"kind":${JSON.stringify(canonicalContent(r.kind))},"data":${canonicalJson2(r.data)},"prev":${r.prev === null ? "null" : JSON.stringify(r.prev)},"hash":${JSON.stringify(r.hash)}}
@@ -23873,11 +23934,11 @@ function isRecordShaped(x) {
   const r = x;
   return typeof r.v === "number" && typeof r.seq === "number" && typeof r.at === "string" && typeof r.kind === "string" && typeof r.data === "object" && r.data !== null && !Array.isArray(r.data) && (r.prev === null || typeof r.prev === "string") && typeof r.hash === "string";
 }
-var import_crypto11, JOURNAL_FORMAT_VERSION, CONTINUATION_KIND;
+var import_crypto12, JOURNAL_FORMAT_VERSION, CONTINUATION_KIND;
 var init_format = __esm({
   "src/journal/format.ts"() {
     "use strict";
-    import_crypto11 = require("crypto");
+    import_crypto12 = require("crypto");
     init_content();
     JOURNAL_FORMAT_VERSION = 1;
     CONTINUATION_KIND = "journal.continued";
@@ -23984,7 +24045,7 @@ function verifyJournalBytes(bytes2, expectedFirstPrev = null) {
   };
 }
 function verifyJournalFile(path, expectedFirstPrev = null) {
-  if (!(0, import_fs13.existsSync)(path)) {
+  if (!(0, import_fs14.existsSync)(path)) {
     return {
       status: "empty",
       records: [],
@@ -23993,7 +24054,7 @@ function verifyJournalFile(path, expectedFirstPrev = null) {
       coverage: expectedFirstPrev === null ? "whole_chain" : "segment"
     };
   }
-  return verifyJournalBytes((0, import_fs13.readFileSync)(path), expectedFirstPrev);
+  return verifyJournalBytes((0, import_fs14.readFileSync)(path), expectedFirstPrev);
 }
 function verifyJournalSequence(paths) {
   const files = [];
@@ -24026,12 +24087,218 @@ function verifyJournalSequence(paths) {
 function lastHashOf(verdict) {
   return verdict.records.length ? verdict.records[verdict.records.length - 1].hash : null;
 }
-var import_fs13;
+var import_fs14;
 var init_verify = __esm({
   "src/journal/verify.ts"() {
     "use strict";
-    import_fs13 = require("fs");
+    import_fs14 = require("fs");
     init_format();
+  }
+});
+
+// src/journal/scope.ts
+function captureScope(durability) {
+  const durableNames = durability === "durable";
+  return {
+    scope_version: CAPTURE_SCOPE_VERSION,
+    durability,
+    covered: [
+      "bytes written by the operator to this process stdin, recorded before being forwarded to the child",
+      "bytes written by the child to stdout, recorded and made durable before being released to the terminal",
+      "bytes written by the child to stderr, on the same terms as stdout, because stderr can carry interaction content",
+      "the child command line, its exit status, and the time each of those was recorded"
+    ],
+    not_covered: [
+      "files the child reads or writes",
+      "subprocesses the child spawns, and anything those do",
+      "network requests the child makes, including the model API call itself",
+      "any terminal the child opens directly rather than through the inherited pipes",
+      "side effects already committed before the wrapper observed the output describing them"
+    ],
+    establishes: [
+      durableNames ? "no byte was released to the terminal before the journal write covering it was flushed and fsynced" : "no byte was released to the terminal before the journal write covering it was flushed and fsynced \u2014 but see durability below: the file holding those records does not have a durable name",
+      "the order of releases within a single stream matches the order in which they were recorded",
+      "a journal write failure stopped forwarding in both directions and terminated the child"
+    ],
+    does_not_establish: [
+      "that the child performed no work that went unrecorded",
+      "that a person read what was released",
+      "that the interleaving of stdout and stderr matches what an unwrapped run would have produced",
+      "that the wrapper was used at all for any other invocation \u2014 that needs a control outside Chron (enforced:policy)",
+      ...durableNames ? [] : [
+        "that a released record still exists after a system crash. Its contents were fsynced; its file name was not, because this platform cannot sync a directory entry and an operator accepted that trade-off. The record can survive without a name to reach it by.",
+        "the durability guarantee a fully durable run makes. A run recorded under this capability must not be classified as `enforced:wrapper` on the same terms."
+      ]
+    ],
+    // Version 2 of this list said there was no database projection and that no
+    // session could be marked `enforced:wrapper`. Both were true when written
+    // and both became false when v0.1.62 shipped projection and the
+    // enforcement verifier — and this text is written into the journal as the
+    // run's first record, so every wrapped run since has carried limitations
+    // its own build had already lifted, contradicting what `chron verify`
+    // reported for that same run.
+    //
+    // Records already written are left exactly as they are. A journal states
+    // what was claimed when it was written, and editing that to be more
+    // flattering would destroy the one property the journal exists for. The
+    // version is bumped instead, so a reader can tell which vocabulary a
+    // record carries, and version 2 stays readable.
+    known_limitations: [
+      "`chron run` attempts projection itself when the run completes, so a successful run normally appears in `chron history` and `chron verify <session-id>` without a further command. Before that attempt, and if it fails, the run exists in the journal alone \u2014 inspect it with `chron verify --journal`.",
+      "projection is a separate step that can fail independently of capture, and a failure there changes nothing about what was captured. `chron project` is the retry: it replays the journal and is idempotent, so running it again after a failure or at any later time is safe.",
+      "`enforced:wrapper` is reported for a projected run only when `chron verify <session-id>` has followed its binding to the journal records and compared them field by field. The claim is checked on read, never taken from the session row.",
+      "nothing here establishes that the wrapper was used for any other invocation. Running the client directly bypasses it, and preventing that needs a control outside Chron (`enforced:policy`).",
+      "one client shape is supported: a child that speaks through inherited stdio pipes."
+    ]
+  };
+}
+function formatCaptureScope(durability = "durable") {
+  const scope = captureScope(durability);
+  const bullet = (s) => `  - ${s}`;
+  return [
+    "chron run \u2014 capture scope",
+    "",
+    `Storage durability: ${durability === "durable" ? "record contents and file names both survive a crash" : "contents are fsynced; file names are NOT \u2014 a record can outlive the name that reaches it"}`,
+    "",
+    "Covered, and therefore withheld until durable:",
+    ...scope.covered.map(bullet),
+    "",
+    "Not covered. The wrapper never sees these:",
+    ...scope.not_covered.map(bullet),
+    "",
+    "What a completed run establishes:",
+    ...scope.establishes.map(bullet),
+    "",
+    "What it does not establish:",
+    ...scope.does_not_establish.map(bullet),
+    "",
+    // Was 'Not built yet:'. The list below now includes things that are built
+    // — projection, and enforcement checked on read — so the heading denied
+    // what its own items described.
+    "Limitations and what they need:",
+    ...scope.known_limitations.map(bullet),
+    ""
+  ].join("\n");
+}
+var CAPTURE_SCOPE_VERSION, CAPTURE_SCOPE;
+var init_scope = __esm({
+  "src/journal/scope.ts"() {
+    "use strict";
+    CAPTURE_SCOPE_VERSION = 3;
+    CAPTURE_SCOPE = captureScope("durable");
+  }
+});
+
+// src/journal/runs.ts
+var runs_exports = {};
+__export(runs_exports, {
+  INTERACTION_INPUT: () => INTERACTION_INPUT,
+  INTERACTION_OUTPUT: () => INTERACTION_OUTPUT,
+  RUN_COMPLETED: () => RUN_COMPLETED,
+  RUN_STARTED: () => RUN_STARTED,
+  SUPPORTED_SCOPE_VERSIONS: () => SUPPORTED_SCOPE_VERSIONS,
+  collectRuns: () => collectRuns,
+  journalSegmentPaths: () => journalSegmentPaths
+});
+function runIdOf(r) {
+  const id = r.data.run_id;
+  return typeof id === "string" && id.length > 0 ? id : null;
+}
+function collectRuns(records) {
+  const byRun = /* @__PURE__ */ new Map();
+  for (const r of records) {
+    const id = runIdOf(r);
+    if (!id) continue;
+    const list = byRun.get(id);
+    if (list) list.push(r);
+    else byRun.set(id, [r]);
+  }
+  const runs = [];
+  for (const [run_id, rs] of byRun) {
+    const starts = rs.filter((r) => r.kind === RUN_STARTED);
+    const completions = rs.filter((r) => r.kind === RUN_COMPLETED);
+    const started = starts[0];
+    if (!started) continue;
+    const problems = [];
+    if (starts.length !== 1) problems.push(`${starts.length} start records; a run has exactly one`);
+    if (completions.length > 1) {
+      problems.push(`${completions.length} completion records; a run has at most one`);
+    }
+    const completed = completions[0] ?? null;
+    const interactions = rs.filter((r) => r.kind === INTERACTION_INPUT || r.kind === INTERACTION_OUTPUT);
+    for (const i of interactions) {
+      if (i.seq <= started.seq) {
+        problems.push(`interaction at seq ${i.seq} precedes the run's start at ${started.seq}`);
+      }
+      if (completed && i.seq >= completed.seq) {
+        problems.push(`interaction at seq ${i.seq} follows the run's completion at ${completed.seq}`);
+      }
+    }
+    if (completed && completed.seq <= started.seq) {
+      problems.push("the completion record precedes the start record");
+    }
+    const scope = started.data.scope;
+    let durability = "unknown";
+    if (!scope || typeof scope !== "object") {
+      problems.push("the start record carries no capture scope");
+    } else if (typeof scope.scope_version !== "number" || !SUPPORTED_SCOPE_VERSIONS.includes(scope.scope_version)) {
+      problems.push(`unsupported capture scope version ${String(scope.scope_version)}`);
+    } else if (scope.durability === "durable" || scope.durability === "names_not_durable") {
+      durability = scope.durability;
+    } else {
+      problems.push(`unrecognised durability ${JSON.stringify(scope.durability)}`);
+    }
+    runs.push({
+      run_id,
+      command: String(started.data.command ?? ""),
+      args: Array.isArray(started.data.args) ? started.data.args.map(String) : [],
+      durability,
+      started,
+      completed,
+      interactions,
+      records: rs,
+      last_record_hash: rs[rs.length - 1].hash,
+      record_count: rs.length,
+      problems
+    });
+  }
+  runs.sort((a, b) => a.started.seq - b.started.seq);
+  return runs;
+}
+function journalSegmentPaths(activePath, options = {}) {
+  const dir = (0, import_path11.dirname)(activePath);
+  const name2 = (0, import_path11.basename)(activePath);
+  let entries;
+  try {
+    entries = (0, import_fs15.readdirSync)(dir);
+  } catch (e) {
+    if (options.strict) throw e;
+    return [activePath];
+  }
+  const rotated = [];
+  for (const e of entries) {
+    if (!e.startsWith(`${name2}.`)) continue;
+    if (e.endsWith(".lock")) continue;
+    if (e.slice(name2.length + 1).startsWith("unterminated-")) continue;
+    const m = /\.(\d+)$/.exec(e);
+    if (!m) continue;
+    rotated.push({ path: (0, import_path11.join)(dir, e), seq: Number(m[1]) });
+  }
+  rotated.sort((a, b) => a.seq - b.seq);
+  return [...rotated.map((r) => r.path), activePath];
+}
+var import_fs15, import_path11, RUN_STARTED, RUN_COMPLETED, INTERACTION_INPUT, INTERACTION_OUTPUT, SUPPORTED_SCOPE_VERSIONS;
+var init_runs = __esm({
+  "src/journal/runs.ts"() {
+    "use strict";
+    import_fs15 = require("fs");
+    import_path11 = require("path");
+    init_scope();
+    RUN_STARTED = "run.started";
+    RUN_COMPLETED = "run.completed";
+    INTERACTION_INPUT = "interaction.input";
+    INTERACTION_OUTPUT = "interaction.output";
+    SUPPORTED_SCOPE_VERSIONS = [CAPTURE_SCOPE_VERSION, 2];
   }
 });
 
@@ -24057,11 +24324,11 @@ function configuredRotateBytes() {
 }
 function fsyncDirDefault(dir) {
   if (!DIRECTORY_SYNC_SUPPORTED) return false;
-  const fd = (0, import_fs14.openSync)(dir, "r");
+  const fd = (0, import_fs16.openSync)(dir, "r");
   try {
-    (0, import_fs14.fsyncSync)(fd);
+    (0, import_fs16.fsyncSync)(fd);
   } finally {
-    (0, import_fs14.closeSync)(fd);
+    (0, import_fs16.closeSync)(fd);
   }
   return true;
 }
@@ -24079,20 +24346,20 @@ function acquireJournalLock(lockPath, now) {
     path: lockPath,
     release: () => {
       try {
-        (0, import_fs14.unlinkSync)(lockPath);
+        (0, import_fs16.unlinkSync)(lockPath);
       } catch {
       }
     }
   };
   try {
-    (0, import_fs14.writeFileSync)(lockPath, mine, { flag: "wx" });
+    (0, import_fs16.writeFileSync)(lockPath, mine, { flag: "wx" });
     return lock;
   } catch (e) {
     if (e.code !== "EEXIST") throw e;
   }
   let holder = {};
   try {
-    holder = JSON.parse((0, import_fs14.readFileSync)(lockPath, "utf8"));
+    holder = JSON.parse((0, import_fs16.readFileSync)(lockPath, "utf8"));
   } catch {
     throw new JournalBrokenError(`journal lock ${lockPath} is unreadable; not stealing it`);
   }
@@ -24111,15 +24378,15 @@ function acquireJournalLock(lockPath, now) {
       throw new JournalBrokenError(`journal is locked by process ${holder.pid}`);
     }
   }
-  (0, import_fs14.unlinkSync)(lockPath);
-  (0, import_fs14.writeFileSync)(lockPath, mine, { flag: "wx" });
+  (0, import_fs16.unlinkSync)(lockPath);
+  (0, import_fs16.writeFileSync)(lockPath, mine, { flag: "wx" });
   return lock;
 }
 function freeBytesFor(path) {
   const fs = require("fs");
   if (typeof fs.statfsSync !== "function") return null;
   try {
-    const s = fs.statfsSync((0, import_path10.dirname)(path));
+    const s = fs.statfsSync((0, import_path12.dirname)(path));
     return s.bsize * s.bavail;
   } catch {
     return null;
@@ -24129,7 +24396,7 @@ function recoverUnterminatedTail(path, opts = {}) {
   const now = opts.now ?? localISOString;
   const ops = { ...defaultFsOps, ...opts.fs };
   requireDirectorySyncCapability(opts);
-  (0, import_fs14.mkdirSync)((0, import_path10.dirname)(path), { recursive: true });
+  (0, import_fs16.mkdirSync)((0, import_path12.dirname)(path), { recursive: true });
   const lock = acquireJournalLock(`${path}.lock`, now);
   let lockHandedOver = false;
   try {
@@ -24153,9 +24420,9 @@ function recoverUnterminatedTail(path, opts = {}) {
     }
     const setAside = verdict.discardableBytes;
     const preservedTailPath = `${path}.unterminated-${now().replace(/[:.]/g, "-")}`;
-    const whole = (0, import_fs14.readFileSync)(path);
+    const whole = (0, import_fs16.readFileSync)(path);
     const tail = whole.subarray(verdict.validPrefixBytes);
-    const fd = (0, import_fs14.openSync)(preservedTailPath, "wx");
+    const fd = (0, import_fs16.openSync)(preservedTailPath, "wx");
     try {
       let off = 0;
       while (off < tail.length) {
@@ -24169,11 +24436,11 @@ function recoverUnterminatedTail(path, opts = {}) {
       }
       ops.fsyncSync(fd);
     } finally {
-      (0, import_fs14.closeSync)(fd);
+      (0, import_fs16.closeSync)(fd);
     }
     let tailNameDurable;
     try {
-      tailNameDurable = ops.fsyncDirSync((0, import_path10.dirname)(preservedTailPath));
+      tailNameDurable = ops.fsyncDirSync((0, import_path12.dirname)(preservedTailPath));
     } catch (e) {
       return {
         recovered: false,
@@ -24192,7 +24459,7 @@ function recoverUnterminatedTail(path, opts = {}) {
         reason: "this platform cannot make the preserved tail reachable after a crash; the journal was left unchanged"
       };
     }
-    (0, import_fs14.truncateSync)(path, verdict.validPrefixBytes);
+    (0, import_fs16.truncateSync)(path, verdict.validPrefixBytes);
     const w = JournalWriter.open(path, opts, lock);
     lockHandedOver = true;
     try {
@@ -24217,25 +24484,26 @@ function recoverUnterminatedTail(path, opts = {}) {
 function journalStatus(path) {
   return verifyJournalFile(path);
 }
-var import_fs14, import_path10, DIRECTORY_SYNC_SUPPORTED, ACCEPT_UNSYNCED_DIRECTORIES_ENV, ROTATE_BYTES_ENV, defaultFsOps, JournalBrokenError, DEFAULT_FLUSH_BYTES, DEFAULT_ROTATE_BYTES, DEFAULT_MIN_FREE_BYTES, JournalWriter, __internals;
+var import_fs16, import_path12, DIRECTORY_SYNC_SUPPORTED, ACCEPT_UNSYNCED_DIRECTORIES_ENV, ROTATE_BYTES_ENV, defaultFsOps, JournalBrokenError, DEFAULT_FLUSH_BYTES, DEFAULT_ROTATE_BYTES, DEFAULT_MIN_FREE_BYTES, JournalWriter, __internals;
 var init_writer = __esm({
   "src/journal/writer.ts"() {
     "use strict";
-    import_fs14 = require("fs");
-    import_path10 = require("path");
+    import_fs16 = require("fs");
+    import_path12 = require("path");
     init_time();
     init_format();
     init_verify();
+    init_runs();
     DIRECTORY_SYNC_SUPPORTED = process.platform !== "win32";
     ACCEPT_UNSYNCED_DIRECTORIES_ENV = "CHRON_ACCEPT_UNSYNCED_DIRECTORIES";
     ROTATE_BYTES_ENV = "CHRON_JOURNAL_ROTATE_BYTES";
     defaultFsOps = {
-      openSync: import_fs14.openSync,
-      writeSync: (fd, data) => (0, import_fs14.writeSync)(fd, data),
-      fsyncSync: import_fs14.fsyncSync,
-      closeSync: import_fs14.closeSync,
+      openSync: import_fs16.openSync,
+      writeSync: (fd, data) => (0, import_fs16.writeSync)(fd, data),
+      fsyncSync: import_fs16.fsyncSync,
+      closeSync: import_fs16.closeSync,
       fsyncDirSync: fsyncDirDefault,
-      renameSync: import_fs14.renameSync
+      renameSync: import_fs16.renameSync
     };
     JournalBrokenError = class extends Error {
       constructor(message, cause) {
@@ -24252,7 +24520,13 @@ var init_writer = __esm({
         this.path = path;
         this.ops = { ...defaultFsOps, ...opts.fs };
         this.flushBytes = opts.flushBytes ?? DEFAULT_FLUSH_BYTES;
-        this.rotateBytes = opts.rotateBytes ?? configuredRotateBytes() ?? DEFAULT_ROTATE_BYTES;
+        if (opts.rotateBytesCeiling !== void 0 && (!Number.isSafeInteger(opts.rotateBytesCeiling) || opts.rotateBytesCeiling <= 0)) {
+          throw new RangeError("journal rotation ceiling must be a positive safe integer");
+        }
+        this.rotateBytes = Math.min(
+          opts.rotateBytes ?? configuredRotateBytes() ?? DEFAULT_ROTATE_BYTES,
+          opts.rotateBytesCeiling ?? Infinity
+        );
         this.minFreeBytes = opts.minFreeBytes ?? DEFAULT_MIN_FREE_BYTES;
         this.now = opts.now ?? localISOString;
         this.acceptUnsynced = opts.acceptUnsyncedDirectories === true || process.env[ACCEPT_UNSYNCED_DIRECTORIES_ENV] === "1";
@@ -24290,7 +24564,7 @@ var init_writer = __esm({
        */
       static open(path, opts = {}, heldLock) {
         const w = new _JournalWriter(path, opts);
-        (0, import_fs14.mkdirSync)((0, import_path10.dirname)(path), { recursive: true });
+        (0, import_fs16.mkdirSync)((0, import_path12.dirname)(path), { recursive: true });
         requireDirectorySyncCapability(opts);
         if (heldLock) w.lock = heldLock;
         else w.acquireLock();
@@ -24306,11 +24580,17 @@ var init_writer = __esm({
               "journal ends with an unterminated record; recover it before appending"
             );
           }
+          if (verdict.status === "empty" && journalSegmentPaths(path, { strict: true }).length > 1) {
+            throw new JournalBrokenError(
+              "journal active file is empty or absent beside rotated history; recover the interrupted rotation before appending"
+            );
+          }
           w.seq = verdict.records.length ? verdict.records[verdict.records.length - 1].seq + 1 : 0;
           w.prev = lastHashOf(verdict);
           w.bytesOnDisk = verdict.validPrefixBytes;
           w.fd = w.ops.openSync(path, "a");
-          w.established = w.syncDirOrStop((0, import_path10.dirname)(path));
+          w.established = w.syncDirOrStop((0, import_path12.dirname)(path));
+          opts.inspectVerifiedPrefix?.(verdict.records);
           return w;
         } catch (e) {
           if (w.fd !== null) {
@@ -24520,20 +24800,20 @@ var init_writer = __esm({
         const stamp = this.now().replace(/[:.]/g, "-");
         const rotated = `${this.path}.${stamp}.${this.seq}`;
         this.ops.fsyncSync(this.fd);
-        this.syncDirOrStop((0, import_path10.dirname)(this.path));
+        this.syncDirOrStop((0, import_path12.dirname)(this.path));
         this.ops.closeSync(this.fd);
         this.fd = null;
         this.ops.renameSync(this.path, rotated);
         this.fd = this.ops.openSync(this.path, "a");
         this.bytesOnDisk = 0;
-        this.syncDirOrStop((0, import_path10.dirname)(this.path));
+        this.syncDirOrStop((0, import_path12.dirname)(this.path));
         const marker = makeRecord(this.seq, this.now(), CONTINUATION_KIND, { rotated_to: rotated }, this.prev);
         this.seq++;
         this.prev = marker.hash;
         const line = Buffer.from(serializeRecord(marker), "utf8");
         this.writeAll(this.fd, line);
         this.ops.fsyncSync(this.fd);
-        this.syncDirOrStop((0, import_path10.dirname)(this.path));
+        this.syncDirOrStop((0, import_path12.dirname)(this.path));
         this.bytesOnDisk += line.length;
       }
       /**
@@ -24568,212 +24848,7 @@ var init_writer = __esm({
         if (pendingError !== void 0) throw pendingError;
       }
     };
-    __internals = { freeBytesFor, statSync: import_fs14.statSync };
-  }
-});
-
-// src/journal/scope.ts
-function captureScope(durability) {
-  const durableNames = durability === "durable";
-  return {
-    scope_version: CAPTURE_SCOPE_VERSION,
-    durability,
-    covered: [
-      "bytes written by the operator to this process stdin, recorded before being forwarded to the child",
-      "bytes written by the child to stdout, recorded and made durable before being released to the terminal",
-      "bytes written by the child to stderr, on the same terms as stdout, because stderr can carry interaction content",
-      "the child command line, its exit status, and the time each of those was recorded"
-    ],
-    not_covered: [
-      "files the child reads or writes",
-      "subprocesses the child spawns, and anything those do",
-      "network requests the child makes, including the model API call itself",
-      "any terminal the child opens directly rather than through the inherited pipes",
-      "side effects already committed before the wrapper observed the output describing them"
-    ],
-    establishes: [
-      durableNames ? "no byte was released to the terminal before the journal write covering it was flushed and fsynced" : "no byte was released to the terminal before the journal write covering it was flushed and fsynced \u2014 but see durability below: the file holding those records does not have a durable name",
-      "the order of releases within a single stream matches the order in which they were recorded",
-      "a journal write failure stopped forwarding in both directions and terminated the child"
-    ],
-    does_not_establish: [
-      "that the child performed no work that went unrecorded",
-      "that a person read what was released",
-      "that the interleaving of stdout and stderr matches what an unwrapped run would have produced",
-      "that the wrapper was used at all for any other invocation \u2014 that needs a control outside Chron (enforced:policy)",
-      ...durableNames ? [] : [
-        "that a released record still exists after a system crash. Its contents were fsynced; its file name was not, because this platform cannot sync a directory entry and an operator accepted that trade-off. The record can survive without a name to reach it by.",
-        "the durability guarantee a fully durable run makes. A run recorded under this capability must not be classified as `enforced:wrapper` on the same terms."
-      ]
-    ],
-    // Version 2 of this list said there was no database projection and that no
-    // session could be marked `enforced:wrapper`. Both were true when written
-    // and both became false when v0.1.62 shipped projection and the
-    // enforcement verifier — and this text is written into the journal as the
-    // run's first record, so every wrapped run since has carried limitations
-    // its own build had already lifted, contradicting what `chron verify`
-    // reported for that same run.
-    //
-    // Records already written are left exactly as they are. A journal states
-    // what was claimed when it was written, and editing that to be more
-    // flattering would destroy the one property the journal exists for. The
-    // version is bumped instead, so a reader can tell which vocabulary a
-    // record carries, and version 2 stays readable.
-    known_limitations: [
-      "`chron run` attempts projection itself when the run completes, so a successful run normally appears in `chron history` and `chron verify <session-id>` without a further command. Before that attempt, and if it fails, the run exists in the journal alone \u2014 inspect it with `chron verify --journal`.",
-      "projection is a separate step that can fail independently of capture, and a failure there changes nothing about what was captured. `chron project` is the retry: it replays the journal and is idempotent, so running it again after a failure or at any later time is safe.",
-      "`enforced:wrapper` is reported for a projected run only when `chron verify <session-id>` has followed its binding to the journal records and compared them field by field. The claim is checked on read, never taken from the session row.",
-      "nothing here establishes that the wrapper was used for any other invocation. Running the client directly bypasses it, and preventing that needs a control outside Chron (`enforced:policy`).",
-      "one client shape is supported: a child that speaks through inherited stdio pipes."
-    ]
-  };
-}
-function formatCaptureScope(durability = "durable") {
-  const scope = captureScope(durability);
-  const bullet = (s) => `  - ${s}`;
-  return [
-    "chron run \u2014 capture scope",
-    "",
-    `Storage durability: ${durability === "durable" ? "record contents and file names both survive a crash" : "contents are fsynced; file names are NOT \u2014 a record can outlive the name that reaches it"}`,
-    "",
-    "Covered, and therefore withheld until durable:",
-    ...scope.covered.map(bullet),
-    "",
-    "Not covered. The wrapper never sees these:",
-    ...scope.not_covered.map(bullet),
-    "",
-    "What a completed run establishes:",
-    ...scope.establishes.map(bullet),
-    "",
-    "What it does not establish:",
-    ...scope.does_not_establish.map(bullet),
-    "",
-    // Was 'Not built yet:'. The list below now includes things that are built
-    // — projection, and enforcement checked on read — so the heading denied
-    // what its own items described.
-    "Limitations and what they need:",
-    ...scope.known_limitations.map(bullet),
-    ""
-  ].join("\n");
-}
-var CAPTURE_SCOPE_VERSION, CAPTURE_SCOPE;
-var init_scope = __esm({
-  "src/journal/scope.ts"() {
-    "use strict";
-    CAPTURE_SCOPE_VERSION = 3;
-    CAPTURE_SCOPE = captureScope("durable");
-  }
-});
-
-// src/journal/runs.ts
-var runs_exports = {};
-__export(runs_exports, {
-  INTERACTION_INPUT: () => INTERACTION_INPUT,
-  INTERACTION_OUTPUT: () => INTERACTION_OUTPUT,
-  RUN_COMPLETED: () => RUN_COMPLETED,
-  RUN_STARTED: () => RUN_STARTED,
-  SUPPORTED_SCOPE_VERSIONS: () => SUPPORTED_SCOPE_VERSIONS,
-  collectRuns: () => collectRuns,
-  journalSegmentPaths: () => journalSegmentPaths
-});
-function runIdOf(r) {
-  const id = r.data.run_id;
-  return typeof id === "string" && id.length > 0 ? id : null;
-}
-function collectRuns(records) {
-  const byRun = /* @__PURE__ */ new Map();
-  for (const r of records) {
-    const id = runIdOf(r);
-    if (!id) continue;
-    const list = byRun.get(id);
-    if (list) list.push(r);
-    else byRun.set(id, [r]);
-  }
-  const runs = [];
-  for (const [run_id, rs] of byRun) {
-    const starts = rs.filter((r) => r.kind === RUN_STARTED);
-    const completions = rs.filter((r) => r.kind === RUN_COMPLETED);
-    const started = starts[0];
-    if (!started) continue;
-    const problems = [];
-    if (starts.length !== 1) problems.push(`${starts.length} start records; a run has exactly one`);
-    if (completions.length > 1) {
-      problems.push(`${completions.length} completion records; a run has at most one`);
-    }
-    const completed = completions[0] ?? null;
-    const interactions = rs.filter((r) => r.kind === INTERACTION_INPUT || r.kind === INTERACTION_OUTPUT);
-    for (const i of interactions) {
-      if (i.seq <= started.seq) {
-        problems.push(`interaction at seq ${i.seq} precedes the run's start at ${started.seq}`);
-      }
-      if (completed && i.seq >= completed.seq) {
-        problems.push(`interaction at seq ${i.seq} follows the run's completion at ${completed.seq}`);
-      }
-    }
-    if (completed && completed.seq <= started.seq) {
-      problems.push("the completion record precedes the start record");
-    }
-    const scope = started.data.scope;
-    let durability = "unknown";
-    if (!scope || typeof scope !== "object") {
-      problems.push("the start record carries no capture scope");
-    } else if (typeof scope.scope_version !== "number" || !SUPPORTED_SCOPE_VERSIONS.includes(scope.scope_version)) {
-      problems.push(`unsupported capture scope version ${String(scope.scope_version)}`);
-    } else if (scope.durability === "durable" || scope.durability === "names_not_durable") {
-      durability = scope.durability;
-    } else {
-      problems.push(`unrecognised durability ${JSON.stringify(scope.durability)}`);
-    }
-    runs.push({
-      run_id,
-      command: String(started.data.command ?? ""),
-      args: Array.isArray(started.data.args) ? started.data.args.map(String) : [],
-      durability,
-      started,
-      completed,
-      interactions,
-      records: rs,
-      last_record_hash: rs[rs.length - 1].hash,
-      record_count: rs.length,
-      problems
-    });
-  }
-  runs.sort((a, b) => a.started.seq - b.started.seq);
-  return runs;
-}
-function journalSegmentPaths(activePath) {
-  const dir = (0, import_path11.dirname)(activePath);
-  const name2 = (0, import_path11.basename)(activePath);
-  let entries;
-  try {
-    entries = (0, import_fs15.readdirSync)(dir);
-  } catch {
-    return [activePath];
-  }
-  const rotated = [];
-  for (const e of entries) {
-    if (!e.startsWith(`${name2}.`)) continue;
-    if (e.endsWith(".lock")) continue;
-    if (e.slice(name2.length + 1).startsWith("unterminated-")) continue;
-    const m = /\.(\d+)$/.exec(e);
-    if (!m) continue;
-    rotated.push({ path: (0, import_path11.join)(dir, e), seq: Number(m[1]) });
-  }
-  rotated.sort((a, b) => a.seq - b.seq);
-  return [...rotated.map((r) => r.path), activePath];
-}
-var import_fs15, import_path11, RUN_STARTED, RUN_COMPLETED, INTERACTION_INPUT, INTERACTION_OUTPUT, SUPPORTED_SCOPE_VERSIONS;
-var init_runs = __esm({
-  "src/journal/runs.ts"() {
-    "use strict";
-    import_fs15 = require("fs");
-    import_path11 = require("path");
-    init_scope();
-    RUN_STARTED = "run.started";
-    RUN_COMPLETED = "run.completed";
-    INTERACTION_INPUT = "interaction.input";
-    INTERACTION_OUTPUT = "interaction.output";
-    SUPPORTED_SCOPE_VERSIONS = [CAPTURE_SCOPE_VERSION, 2];
+    __internals = { freeBytesFor, statSync: import_fs16.statSync };
   }
 });
 
@@ -24826,16 +24901,16 @@ function projectInteractions(interactions) {
   return out;
 }
 function projectedTitle(run) {
-  return `chron run \u2014 ${(0, import_path12.basename)(run.command)} \u2014 ${run.started.at} (${run.run_id.slice(0, 8)})`;
+  return `chron run \u2014 ${(0, import_path13.basename)(run.command)} \u2014 ${run.started.at} (${run.run_id.slice(0, 8)})`;
 }
-function bindingOf(run, journalPath2, messageCount) {
+function bindingOf(run, journalPath3, messageCount) {
   return {
     run_id: run.run_id,
     last_record_hash: run.last_record_hash,
     record_count: run.record_count,
     message_count: messageCount,
     durability: run.durability,
-    journal_path: journalPath2
+    journal_path: journalPath3
   };
 }
 function projectedMetadata(run, binding) {
@@ -24929,12 +25004,12 @@ async function projectJournal(db, activeJournalPath) {
   }
   return outcome;
 }
-var import_path12;
+var import_path13;
 var init_project = __esm({
   "src/projection/project.ts"() {
     "use strict";
     init_drizzle_orm();
-    import_path12 = require("path");
+    import_path13 = require("path");
     init_schema();
     init_hash();
     init_content();
@@ -25080,6 +25155,952 @@ var init_enforcement = __esm({
   }
 });
 
+// src/native/events.ts
+function nativeEventSpec(event) {
+  const known = CLAUDE_CODE_EVENTS[event];
+  if (known) return known;
+  return {
+    client: NATIVE_CLIENT,
+    event,
+    // Null, not `display`. The boundary of an unmeasured event is not known
+    // either, and a default here would travel into every record as a fact.
+    boundary: null,
+    content_field: null,
+    metadata_fields: [],
+    blocking_exit_code: null,
+    measured: null
+  };
+}
+var NATIVE_SCOPE_VERSION, NATIVE_CLIENT, UserPromptSubmit, MessageDisplay, CLAUDE_CODE_EVENTS;
+var init_events = __esm({
+  "src/native/events.ts"() {
+    "use strict";
+    NATIVE_SCOPE_VERSION = 1;
+    NATIVE_CLIENT = "claude-code";
+    UserPromptSubmit = {
+      client: NATIVE_CLIENT,
+      event: "UserPromptSubmit",
+      boundary: "model_request",
+      content_field: "prompt",
+      // None read. The payload documents `session_title` when set, which is
+      // content rather than framing, and nothing else that changes what the prompt
+      // means.
+      metadata_fields: [],
+      blocking_exit_code: 2,
+      measured: {
+        client_version: "2.1.311",
+        invocation_mode: "claude -p",
+        measured_at: "2026-11-16",
+        content_precedes_hook: true,
+        gate: "honoured",
+        evidence: 'seven runs, onFailure "block" read back from the settings file: the client blocked the turn request on all four failure modes and on a documented denial, and a streaming POST /v1/messages carrying the prompt reached the observed endpoint 168 to 585 ms before the hook was invoked in every run'
+      }
+    };
+    MessageDisplay = {
+      client: NATIVE_CLIENT,
+      event: "MessageDisplay",
+      boundary: "display",
+      content_field: "delta",
+      // `index` places the batch in the turn and `final` is the end-of-message
+      // signal, which an empty last delta needs to be readable at all.
+      metadata_fields: ["index", "final"],
+      blocking_exit_code: null,
+      measured: {
+        client_version: "2.1.311",
+        invocation_mode: "claude -p",
+        measured_at: "2026-11-13",
+        content_precedes_hook: false,
+        gate: "fails_open",
+        evidence: "seven runs: the batch was displayed on every failure mode, including one held for 9901 ms and then displayed when the hook timed out, so the hook is a chance to record before display and not a condition of it"
+      }
+    };
+    CLAUDE_CODE_EVENTS = Object.freeze({
+      UserPromptSubmit,
+      MessageDisplay
+    });
+  }
+});
+
+// src/native/scope.ts
+function nativeCaptureScope(spec, durability) {
+  const durableNames = durability === "durable";
+  const m = spec.measured;
+  const establishes = [
+    durableNames ? "the event the client delivered to this handler was recorded and the journal write covering it was flushed and fsynced before the handler returned" : "the event the client delivered to this handler was recorded and the journal write covering it was flushed and fsynced before the handler returned, but see durability: the file holding that record does not have a durable name",
+    // Qualified twice, because the unqualified sentence was false in two
+    // directions. An edit is detectable and so is a deletion with records
+    // after it, since the next record names a predecessor that is no longer
+    // there. Removing the LAST record leaves a shorter chain that verifies
+    // clean. And an edit whose following hashes are recomputed leaves a chain
+    // that verifies clean too, because nothing in the file points forward and
+    // the chain is anchored nowhere outside it. Both limits are stated below
+    // rather than left to be discovered.
+    "the record is linked into the journal hash chain, so an edit of it, or a deletion that leaves later records in place, is detectable by `chron verify --journal` unless the hashes following it were recomputed as well",
+    "the time the record was created, which is taken before the write and is part of the hashed record"
+  ];
+  const doesNot = [
+    "that the content this event carries was withheld until the record was durable. A hook is invoked by the client and cannot hold anything the client has already sent or shown",
+    "that the client invoked this hook for every event of this kind. An invocation that did not happen leaves no record, and an absent record cannot establish uncaptured activity",
+    "that the client used this hook at all for any other session or any other invocation",
+    "anything about the client surfaces this event does not carry",
+    /**
+     * The tail. A journal is append-only and nothing in the file points
+     * forward, so a trailing record can be removed and what is left verifies
+     * as a whole chain. Detecting that needs the writing process\'s own
+     * durable position, which no reader has, or a last-hash anchor kept
+     * somewhere else.
+     */
+    "that the last records of this journal are still here. Removing a trailing record leaves a shorter chain that verifies clean, and detecting that needs the writing process's own durable position or an anchor kept outside the file",
+    /**
+     * The anchor, which is the same limit `chron run` states for its own
+     * journal and for the same reason. The chain binds each record to the one
+     * before it, so it catches an edit left on its own; it cannot catch an
+     * edit by someone who can rewrite the file, because recomputing every hash
+     * from the edited record forward produces a file that verifies clean with
+     * its sequence numbers intact.
+     */
+    "that nobody edited these records. The chain is anchored nowhere outside the file, so a rewrite that recomputes the hashes after an edited record verifies clean. Detecting that needs an anchor kept somewhere this journal is not, which Chron does not keep for native events",
+    "that the record carries the time it became durable. The post-fsync acknowledgement is a runtime value returned to the handler that wrote it, and it is not stored: the time in the record is the time the record was created, before the write"
+  ];
+  if (m === null) {
+    doesNot.push(
+      "anything about what this client does when the hook fails on this event, because this event has not been measured on a real client by this build"
+    );
+  } else {
+    if (m.content_precedes_hook) {
+      doesNot.push(
+        `that the content had not already crossed its boundary before this hook was invoked. On ${m.client_version} in ${m.invocation_mode}, measured ${m.measured_at}, it had: ${m.evidence}`
+      );
+    }
+    if (m.gate === "fails_open") {
+      doesNot.push(
+        `that a failure reported from this handler stops the action. This event fails open, measured on ${m.client_version} in ${m.invocation_mode} on ${m.measured_at}: ${m.evidence}`
+      );
+    }
+    if (m.gate === "honoured") {
+      doesNot.push(
+        `that blocking the action protects the content. The block was measured honoured on ${m.client_version} in ${m.invocation_mode} on ${m.measured_at}, and it stops the request the hook gates, which is not the request that carried the content`
+      );
+    }
+  }
+  if (!durableNames) {
+    doesNot.push(
+      "that a recorded event still exists after a system crash. Its contents were fsynced; its file name was not, because this platform cannot sync a directory entry and an operator accepted that trade-off"
+    );
+  }
+  return {
+    scope_version: NATIVE_SCOPE_VERSION,
+    client: spec.client,
+    event: spec.event,
+    boundary: spec.boundary,
+    durability,
+    covered: [
+      `the payload this client delivered for ${spec.event}, as the client sent it`,
+      spec.content_field === null ? `no content field: this build has not established which field of ${spec.event} carries content, so the record holds the event and its identifiers only` : `the content in \`${spec.content_field}\`, recorded as bytes rather than as a rendering of them`,
+      "the client identifiers the payload carried, and the time the record became durable"
+    ],
+    not_covered: [
+      "anything the client does without invoking this hook, including every request it makes to the model",
+      "the client content this event does not carry",
+      "files the client reads or writes, and subprocesses it spawns",
+      "whether the client proceeded, since the hook is not told and does not decide"
+    ],
+    establishes,
+    does_not_establish: doesNot,
+    measured: m,
+    known_limitations: [
+      "these records are not projected into the database yet. They exist in the journal, which is authoritative; read them with `chron verify --journal`",
+      "a capture failure is reported on the handler's stderr and appended to a failure marker file beside the journal. Nothing reads that file automatically yet, so a gap is visible to an operator who looks and not to one who does not",
+      "the failure marker is a plain append, not a chain. It carries no hashes, an earlier attempt that could not finish its line leaves that line unreadable, and the entry written after it says so rather than repairing it",
+      "a mark is written under an exclusive lock on the file it goes into, and a writer that cannot take that lock marks its own file instead. So counting a recurring gap means reading every native-capture-failures file beside the journal, not only the one with the plain name",
+      "one client is supported, and each event is scoped to the version and mode it was measured on"
+    ]
+  };
+}
+var init_scope2 = __esm({
+  "src/native/scope.ts"() {
+    "use strict";
+    init_events();
+  }
+});
+
+// src/native/record.ts
+function fsyncDirDefault2(dir) {
+  if (!DIRECTORY_SYNC_SUPPORTED) return false;
+  const fd = (0, import_fs17.openSync)(dir, "r");
+  try {
+    (0, import_fs17.fsyncSync)(fd);
+  } finally {
+    (0, import_fs17.closeSync)(fd);
+  }
+  return true;
+}
+function messageOf(e) {
+  const text2 = e instanceof Error ? e.message : String(e);
+  return text2.length > 300 ? `${text2.slice(0, 300)}\u2026` : text2;
+}
+function stringOrNull(x) {
+  return typeof x === "string" ? x : null;
+}
+function clientIdsOf(payload) {
+  return {
+    session_id: stringOrNull(payload.session_id),
+    prompt_id: stringOrNull(payload.prompt_id),
+    message_id: stringOrNull(payload.message_id),
+    turn_id: stringOrNull(payload.turn_id),
+    event_id: stringOrNull(payload.event_id),
+    transcript_path: stringOrNull(payload.transcript_path)
+  };
+}
+function endsMidLine(path) {
+  try {
+    const size = (0, import_fs17.statSync)(path).size;
+    if (size === 0) return false;
+    const fd = (0, import_fs17.openSync)(path, "r");
+    try {
+      const last = Buffer.alloc(1);
+      return (0, import_fs17.readSync)(fd, last, 0, 1, size - 1) === 1 && last[0] !== 10;
+    } finally {
+      (0, import_fs17.closeSync)(fd);
+    }
+  } catch {
+    return false;
+  }
+}
+function markerIdPart(invocationId) {
+  const cleaned = invocationId.replace(/[^A-Za-z0-9_-]+/g, "-").replace(/-{2,}/g, "-").replace(/^-+|-+$/g, "").slice(0, 64);
+  return cleaned.length > 0 ? cleaned : (0, import_crypto13.randomUUID)();
+}
+function ownMarkerPath(sharedPath, invocationId) {
+  const name2 = (0, import_path14.basename)(sharedPath);
+  const dot = name2.lastIndexOf(".");
+  const stem = dot > 0 ? name2.slice(0, dot) : name2;
+  const ext = dot > 0 ? name2.slice(dot) : "";
+  return (0, import_path14.join)((0, import_path14.dirname)(sharedPath), `${stem}.${markerIdPart(invocationId)}${ext}`);
+}
+function tryMarkerLock(path, now) {
+  try {
+    return acquireJournalLock(`${path}.lock`, now);
+  } catch {
+    return null;
+  }
+}
+function markFailure(sharedPath, entry, ops, opts) {
+  const openIt = ops.openSync ?? import_fs17.openSync;
+  const writeIt = ops.writeSync ?? ((fd, data) => (0, import_fs17.writeSync)(fd, data));
+  const syncIt = ops.fsyncSync ?? import_fs17.fsyncSync;
+  const closeIt = ops.closeSync ?? import_fs17.closeSync;
+  const syncDir = ops.fsyncDirSync ?? fsyncDirDefault2;
+  let lock = null;
+  let path = sharedPath;
+  try {
+    (0, import_fs17.mkdirSync)((0, import_path14.dirname)(sharedPath), { recursive: true });
+    for (const candidate of [
+      sharedPath,
+      ownMarkerPath(sharedPath, opts.invocationId),
+      ownMarkerPath(sharedPath, (0, import_crypto13.randomUUID)())
+    ]) {
+      lock = tryMarkerLock(candidate, opts.now);
+      if (lock !== null) {
+        path = candidate;
+        break;
+      }
+    }
+    if (lock === null) return null;
+    const midLine = endsMidLine(path);
+    const line = Buffer.from(
+      `${JSON.stringify(midLine ? { ...entry, after_partial_line: true } : entry)}
+`,
+      "utf8"
+    );
+    const fd = openIt(path, "a");
+    try {
+      const writeAll = (bytes2) => {
+        let written = 0;
+        while (written < bytes2.length) {
+          const n = writeIt(fd, bytes2.subarray(written));
+          if (!(n > 0)) throw new Error(`marker write made no progress at byte ${written}`);
+          written += n;
+        }
+      };
+      if (midLine) writeAll(Buffer.from("\n", "utf8"));
+      writeAll(line);
+      syncIt(fd);
+    } finally {
+      closeIt(fd);
+    }
+    const nameDurable = syncDir((0, import_path14.dirname)(path));
+    return { path, name_durable: nameDurable, shared: path === sharedPath };
+  } catch {
+    return null;
+  } finally {
+    lock?.release();
+  }
+}
+function scopeAlreadyWritten(records, event, sessionId, scopeVersion, durability) {
+  return records.some((r) => {
+    if (r.kind !== NATIVE_SCOPE_KIND) return false;
+    const d = r.data;
+    const ids = d.client_ids ?? {};
+    return d.event === event && d.scope_version === scopeVersion && d.durability === durability && (ids.session_id ?? null) === sessionId;
+  });
+}
+function metadataOf(payload, fields) {
+  const out = {};
+  for (const field of fields) {
+    const value = payload[field];
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      out[field] = value;
+    }
+  }
+  return out;
+}
+function recordNativeEvent(input) {
+  const now = input.now ?? localISOString;
+  const invocationId = input.invocationId ?? (0, import_crypto13.randomUUID)();
+  const markerPath = input.failureMarkerPath ?? (0, import_path14.join)((0, import_path14.dirname)(input.journalPath), NATIVE_FAILURE_MARKER_NAME);
+  const base = {
+    recorded: false,
+    event: null,
+    boundary: null,
+    invocation_id: invocationId,
+    byte_count: null,
+    scope_written: false,
+    durable_seq: null,
+    record_hash: null,
+    recorded_at_ms: null,
+    durability: null,
+    failure: null,
+    failure_marker: null,
+    failure_marker_durability: null,
+    journal_path: input.journalPath
+  };
+  if (typeof input.payload !== "object" || input.payload === null || Array.isArray(input.payload)) {
+    return {
+      ...base,
+      failure: { stage: "payload", reason: "the hook payload was not a JSON object" }
+    };
+  }
+  const payload = input.payload;
+  const event = stringOrNull(payload.hook_event_name);
+  if (event === null || event.length === 0) {
+    return {
+      ...base,
+      failure: {
+        stage: "payload",
+        reason: "the hook payload carried no hook_event_name, and the claim a record makes is per event"
+      }
+    };
+  }
+  const spec = nativeEventSpec(event);
+  const ids = clientIdsOf(payload);
+  const scope_version = nativeCaptureScope(spec, "durable").scope_version;
+  const markEntry = (stage, reason) => ({
+    at: now(),
+    client: NATIVE_CLIENT,
+    client_version: input.clientVersion ?? null,
+    event,
+    invocation_id: invocationId,
+    client_ids: ids,
+    stage,
+    reason,
+    journal_path: input.journalPath,
+    recorded: false
+  });
+  const contentField = spec.content_field;
+  const rawContent = contentField === null ? null : payload[contentField];
+  const content = contentField === null || rawContent === void 0 || rawContent === null ? null : String(rawContent);
+  const bytes2 = content === null ? null : Buffer.from(content, "utf8");
+  let lock = null;
+  let writer = null;
+  try {
+    (0, import_fs17.mkdirSync)((0, import_path14.dirname)(input.journalPath), { recursive: true });
+    lock = acquireJournalLock(`${input.journalPath}.lock`, now);
+    let existing = [];
+    writer = JournalWriter.open(input.journalPath, {
+      // One event per invocation, and the next invocation is a different
+      // process. Nothing is gained by holding bytes back for a group commit
+      // that will never come, and a buffered record is a record a crash loses.
+      flushBytes: 1,
+      rotateBytesCeiling: NATIVE_ROTATE_BYTES_CEILING,
+      inspectVerifiedPrefix: (records) => {
+        existing = records;
+      },
+      ...input.minFreeBytes !== void 0 ? { minFreeBytes: input.minFreeBytes } : {},
+      ...input.journalFs ? { fs: input.journalFs } : {},
+      ...input.acceptUnsyncedDirectories !== void 0 ? { acceptUnsyncedDirectories: input.acceptUnsyncedDirectories } : {},
+      now
+    }, lock);
+    lock = null;
+    const durability = writer.namesDurable ? "durable" : "names_not_durable";
+    const needsScope = !scopeAlreadyWritten(
+      existing,
+      event,
+      ids.session_id,
+      scope_version,
+      durability
+    );
+    let scopeWritten = false;
+    if (needsScope) {
+      writer.appendDurable(NATIVE_SCOPE_KIND, {
+        ...nativeCaptureScope(spec, durability),
+        client_ids: ids,
+        client_version: input.clientVersion ?? null
+      });
+      scopeWritten = true;
+    }
+    const record = writer.appendDurable(NATIVE_EVENT_KIND, {
+      client: NATIVE_CLIENT,
+      client_version: input.clientVersion ?? null,
+      event,
+      boundary: spec.boundary,
+      scope_version,
+      invocation_id: invocationId,
+      client_ids: ids,
+      cwd: stringOrNull(payload.cwd),
+      // The capability THIS record was written under, so a reader does not
+      // have to work out which scope record applies to it.
+      durability,
+      // Framing the content needs to be read with: the batch position and the
+      // end-of-message signal, where the event documents them.
+      event_metadata: metadataOf(payload, spec.metadata_fields),
+      content_field: contentField,
+      byte_count: bytes2 === null ? null : bytes2.length,
+      bytes_b64: bytes2 === null ? null : bytes2.toString("base64"),
+      ...contentField === null ? { content_absent_reason: "no_measured_content_field_for_this_event" } : {}
+    });
+    const recordedAtMs = Date.now();
+    const durableSeq = writer.durableSeq;
+    writer.close();
+    writer = null;
+    return {
+      ...base,
+      recorded: true,
+      event,
+      boundary: spec.boundary,
+      byte_count: bytes2 === null ? null : bytes2.length,
+      scope_written: scopeWritten,
+      durable_seq: durableSeq,
+      record_hash: record.hash,
+      recorded_at_ms: recordedAtMs,
+      durability
+    };
+  } catch (e) {
+    const stage = writer === null ? "open" : "append";
+    const reason = messageOf(e);
+    try {
+      writer?.close();
+    } catch {
+    }
+    lock?.release();
+    const mark = markFailure(
+      markerPath,
+      markEntry(stage, reason),
+      input.markerFs ?? {},
+      { invocationId, now }
+    );
+    return {
+      ...base,
+      event,
+      boundary: spec.boundary,
+      failure: { stage, reason },
+      failure_marker: mark === null ? null : mark.path,
+      failure_marker_durability: mark === null ? null : mark.name_durable ? "durable" : "names_not_durable"
+    };
+  }
+}
+var import_fs17, import_crypto13, import_path14, NATIVE_EVENT_KIND, NATIVE_SCOPE_KIND, NATIVE_FAILURE_MARKER_NAME, NATIVE_ROTATE_BYTES_CEILING;
+var init_record = __esm({
+  "src/native/record.ts"() {
+    "use strict";
+    import_fs17 = require("fs");
+    import_crypto13 = require("crypto");
+    import_path14 = require("path");
+    init_writer();
+    init_time();
+    init_events();
+    init_scope2();
+    NATIVE_EVENT_KIND = "native.event";
+    NATIVE_SCOPE_KIND = "native.capture.scope";
+    NATIVE_FAILURE_MARKER_NAME = "native-capture-failures.jsonl";
+    NATIVE_ROTATE_BYTES_CEILING = 16 * 1024;
+  }
+});
+
+// src/projection/native.ts
+function nativeSessionId(client, clientSessionId) {
+  const h = (0, import_crypto14.createHash)("sha256").update(`chron.native_hook.v1|${client}|${clientSessionId}`, "utf8").digest("hex");
+  return `native-${h.slice(0, 32)}`;
+}
+function describeError2(e) {
+  if (!(e instanceof Error)) return String(e);
+  const cause = e.cause;
+  const causeText = cause instanceof Error ? cause.message : cause === void 0 ? "" : String(cause);
+  return causeText ? `${causeText} (while: ${e.message.split("\n")[0]})` : e.message;
+}
+function str(x) {
+  return typeof x === "string" ? x : null;
+}
+function idsOf(r) {
+  const ids = r.data.client_ids;
+  return typeof ids === "object" && ids !== null && !Array.isArray(ids) ? ids : {};
+}
+function durabilityOf(r) {
+  const d = r.data.durability;
+  return d === "durable" || d === "names_not_durable" ? d : null;
+}
+function summariseDurability(records) {
+  const seen = /* @__PURE__ */ new Set();
+  for (const r of records) seen.add(durabilityOf(r));
+  if (seen.has(null)) return NATIVE_DURABILITY_UNKNOWN;
+  if (seen.size > 1) return NATIVE_DURABILITY_MIXED;
+  return seen.has("durable") ? "durable" : "names_not_durable";
+}
+function collectNativeSessions(records) {
+  const byKey = /* @__PURE__ */ new Map();
+  const unattributed = [];
+  for (const r of records) {
+    if (r.kind !== NATIVE_EVENT_KIND) continue;
+    const client = str(r.data.client);
+    const clientSessionId = str(idsOf(r).session_id);
+    if (client === null || clientSessionId === null || clientSessionId.length === 0) {
+      unattributed.push({
+        seq: r.seq,
+        reason: client === null ? "the record names no client, so the claims that apply to it are not established" : "the record carries no client session id, so it cannot be attributed to a conversation"
+      });
+      continue;
+    }
+    const key = `${client}\0${clientSessionId}`;
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.records.push(r);
+      existing.last_at = r.at;
+      existing.client_version = str(r.data.client_version) ?? existing.client_version;
+    } else {
+      byKey.set(key, {
+        client,
+        client_session_id: clientSessionId,
+        session_id: nativeSessionId(client, clientSessionId),
+        client_version: str(r.data.client_version),
+        records: [r],
+        first_at: r.at,
+        last_at: r.at,
+        durability: "durable"
+      });
+    }
+  }
+  const groups = [...byKey.values()];
+  for (const g of groups) g.durability = summariseDurability(g.records);
+  return { groups, unattributed };
+}
+function roleOf(r) {
+  const b = r.data.boundary;
+  if (b === "model_request") return "user";
+  if (b === "display") return "assistant";
+  return null;
+}
+function finalFlag(r) {
+  const m = r.data.event_metadata;
+  if (typeof m !== "object" || m === null || Array.isArray(m)) return false;
+  return m.final === true;
+}
+function projectNativeMessages(records) {
+  const out = [];
+  let withoutContent = 0;
+  const groups = [];
+  for (const r of records) {
+    if (r.data.content_field === null || r.data.content_field === void 0) {
+      withoutContent += 1;
+      continue;
+    }
+    const role = roleOf(r);
+    if (role === null) {
+      withoutContent += 1;
+      continue;
+    }
+    const b64 = str(r.data.bytes_b64);
+    if (b64 === null) {
+      withoutContent += 1;
+      continue;
+    }
+    const mergeable = role === "assistant";
+    const key = mergeable ? str(idsOf(r).message_id) : null;
+    const last = groups[groups.length - 1];
+    const continues = last !== void 0 && !last.closed && mergeable && last.role === role && key !== null && last.key === key;
+    if (continues) {
+      last.buffers.push(Buffer.from(b64, "base64"));
+      last.lastSeq = r.seq;
+      last.count += 1;
+      last.records.push(r);
+      if (finalFlag(r)) last.closed = true;
+      continue;
+    }
+    if (last !== void 0 && !last.closed) {
+      last.closed = true;
+      last.closedBy = r.seq;
+    }
+    groups.push({
+      role,
+      key,
+      buffers: [Buffer.from(b64, "base64")],
+      at: r.at,
+      seq: r.seq,
+      lastSeq: r.seq,
+      count: 1,
+      // A prompt is whole in one record. A display message is closed only by
+      // its own end-of-message signal or by what follows it.
+      closed: !mergeable || finalFlag(r),
+      closedBy: null,
+      records: [r]
+    });
+  }
+  const open = [];
+  for (const g of groups) {
+    if (!g.closed) {
+      open.push(...g.records);
+      continue;
+    }
+    out.push({
+      role: g.role,
+      content: canonicalContent(Buffer.concat(g.buffers).toString("utf8")),
+      created_at: g.at,
+      source_sequence: g.seq,
+      last_sequence: g.lastSeq,
+      closed_by: g.closedBy,
+      record_count: g.count
+    });
+  }
+  return { messages: out, open, without_content: withoutContent };
+}
+function nativeBindingOf(group, journalPath3, projected) {
+  const coveredThrough = projected.length === 0 ? 0 : Math.max(...projected.map((p) => p.closed_by ?? p.last_sequence));
+  const covered = projected.length === 0 ? [] : group.records.filter((r) => r.seq <= coveredThrough);
+  const last = covered[covered.length - 1];
+  const { without_content } = projectNativeMessages(covered);
+  return {
+    kind: "native_hook",
+    client: group.client,
+    client_session_id: group.client_session_id,
+    event_count: covered.length,
+    last_record_hash: last?.hash ?? "",
+    message_count: projected.length,
+    events_without_content: without_content,
+    durability: summariseDurability(covered),
+    journal_path: journalPath3
+  };
+}
+function projectedNativeMetadata(group, binding) {
+  return {
+    source: EVIDENCE_SOURCE.NATIVE_HOOK,
+    capture_mode: CAPTURE_MODE.UNENFORCED,
+    // A turn taken with no hook configured leaves no record and nothing marking
+    // where it would have been, so this is never a whole conversation.
+    partial: true,
+    client: group.client,
+    native: binding
+  };
+}
+function projectedNativeTitle(group) {
+  return `${group.client} hook session \u2014 ${group.first_at} (${group.session_id})`;
+}
+function reconcilePrefix(rows, implied) {
+  if (rows.length > implied.length) {
+    return {
+      reason: `the projection holds ${rows.length} messages and the journal implies ${implied.length}; a projection with more rows than its evidence is not extended`
+    };
+  }
+  for (let i = 0; i < rows.length; i++) {
+    const got = rows[i];
+    const want = implied[i];
+    const mismatch = got.role !== want.role ? `role ${got.role} should be ${want.role}` : got.content !== want.content ? "content does not match the journal" : got.created_at !== want.created_at ? "timestamp does not match the journal" : got.source_sequence !== want.source_sequence ? `sequence ${String(got.source_sequence)} should be ${want.source_sequence}` : null;
+    if (mismatch) {
+      return { reason: `stored message ${i + 1} does not match the journal: ${mismatch}` };
+    }
+  }
+  return { matched: rows.length };
+}
+async function projectNativeEvents(db, activeJournalPath) {
+  const segments = journalSegmentPaths(activeJournalPath);
+  const verdict = verifyJournalSequence(segments);
+  const { groups, unattributed } = collectNativeSessions(verdict.records);
+  const outcome = {
+    projected: [],
+    unchanged: [],
+    extended: [],
+    failed: [],
+    unattributed,
+    verdict
+  };
+  for (const group of groups) {
+    const { messages: implied } = projectNativeMessages(group.records);
+    const binding = nativeBindingOf(group, activeJournalPath, implied);
+    try {
+      await db.run(sql.raw("BEGIN IMMEDIATE"));
+    } catch (e) {
+      outcome.failed.push({ session_id: group.session_id, reason: describeError2(e) });
+      continue;
+    }
+    try {
+      const existing = await db.select({ id: sessions.id, metadata: sessions.metadata }).from(sessions).where(eq(sessions.id, group.session_id)).limit(1);
+      const rows = existing.length === 0 ? [] : await db.select({
+        role: messages.role,
+        content: messages.content,
+        created_at: messages.created_at,
+        source_sequence: messages.source_sequence,
+        content_hash: messages.content_hash
+      }).from(messages).where(eq(messages.session_id, group.session_id)).orderBy(asc(messages.source_sequence));
+      const reconciled = reconcilePrefix(rows, implied);
+      if ("reason" in reconciled) {
+        await db.run(sql.raw("ROLLBACK"));
+        outcome.failed.push({ session_id: group.session_id, reason: reconciled.reason });
+        continue;
+      }
+      if (implied.length === 0) {
+        await db.run(sql.raw("ROLLBACK"));
+        outcome.failed.push({
+          session_id: group.session_id,
+          reason: "no message in this conversation is closed yet, so nothing can be projected without claiming an end the journal does not have"
+        });
+        continue;
+      }
+      if (existing.length === 0) {
+        await db.insert(sessions).values({
+          id: group.session_id,
+          title: projectedNativeTitle(group),
+          ai_tool: NATIVE_AI_TOOL,
+          created_at: group.first_at,
+          updated_at: group.last_at,
+          metadata: JSON.stringify(projectedNativeMetadata(group, binding))
+        });
+      }
+      let prev = rows.length === 0 ? null : rows[rows.length - 1].content_hash ?? null;
+      let added = 0;
+      for (let i = reconciled.matched; i < implied.length; i++) {
+        const m = implied[i];
+        const hash2 = computeContentHash(
+          group.session_id,
+          m.role,
+          m.content,
+          m.created_at,
+          prev,
+          "message"
+        );
+        await db.insert(messages).values({
+          id: `${group.session_id}-${m.source_sequence}`,
+          session_id: group.session_id,
+          role: m.role,
+          content: m.content,
+          created_at: m.created_at,
+          prev_hash: prev,
+          content_hash: hash2,
+          event_type: "message",
+          source_sequence: m.source_sequence
+        });
+        prev = hash2;
+        added += 1;
+      }
+      if (existing.length > 0 && added > 0) {
+        await db.update(sessions).set({
+          updated_at: group.last_at,
+          metadata: mergeSessionMetadata(
+            existing[0].metadata,
+            projectedNativeMetadata(group, binding)
+          )
+        }).where(eq(sessions.id, group.session_id));
+      }
+      await db.run(sql.raw("COMMIT"));
+      if (existing.length === 0) outcome.projected.push(group.session_id);
+      else if (added > 0) outcome.extended.push({ session_id: group.session_id, added });
+      else outcome.unchanged.push(group.session_id);
+    } catch (e) {
+      try {
+        await db.run(sql.raw("ROLLBACK"));
+      } catch {
+      }
+      outcome.failed.push({ session_id: group.session_id, reason: describeError2(e) });
+    }
+  }
+  return outcome;
+}
+var import_crypto14, NATIVE_AI_TOOL, NATIVE_DURABILITY_MIXED, NATIVE_DURABILITY_UNKNOWN;
+var init_native2 = __esm({
+  "src/projection/native.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    import_crypto14 = require("crypto");
+    init_schema();
+    init_hash();
+    init_content();
+    init_evidence();
+    init_verify();
+    init_runs();
+    init_record();
+    NATIVE_AI_TOOL = "claude-code-hook";
+    NATIVE_DURABILITY_MIXED = "mixed";
+    NATIVE_DURABILITY_UNKNOWN = "unknown";
+  }
+});
+
+// src/projection/native-provenance.ts
+var native_provenance_exports = {};
+__export(native_provenance_exports, {
+  NATIVE_PROVENANCE_LIMITS: () => NATIVE_PROVENANCE_LIMITS,
+  nativeBindingFrom: () => nativeBindingFrom,
+  verifyNativeProvenance: () => verifyNativeProvenance
+});
+function nativeBindingFrom(meta) {
+  const raw = meta.native;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const b = raw;
+  if (b.kind !== "native_hook") return null;
+  if (typeof b.client !== "string" || typeof b.client_session_id !== "string") return null;
+  if (typeof b.event_count !== "number" || typeof b.last_record_hash !== "string") return null;
+  if (typeof b.message_count !== "number" || typeof b.events_without_content !== "number") return null;
+  const durability = b.durability;
+  if (durability !== "durable" && durability !== "names_not_durable" && durability !== "mixed" && durability !== "unknown") return null;
+  return {
+    kind: "native_hook",
+    client: b.client,
+    client_session_id: b.client_session_id,
+    event_count: b.event_count,
+    last_record_hash: b.last_record_hash,
+    message_count: b.message_count,
+    events_without_content: b.events_without_content,
+    durability,
+    journal_path: typeof b.journal_path === "string" ? b.journal_path : ""
+  };
+}
+async function verifyNativeProvenance(db, sessionId, metadataRaw, journalPathOverride) {
+  const meta = parseSessionMetadata(metadataRaw);
+  const binding = nativeBindingFrom(meta);
+  if (!binding) {
+    return {
+      supported: false,
+      reason: evidenceSourceOf(meta) === EVIDENCE_SOURCE.NATIVE_HOOK ? "this session is recorded as hook-captured but carries no binding to the hook events, so the label is a string in a mutable column and nothing checks it" : "this session carries no native hook binding, and claims no hook provenance"
+    };
+  }
+  const path = journalPathOverride ?? binding.journal_path;
+  if (!path) {
+    return {
+      supported: false,
+      client_session_id: binding.client_session_id,
+      reason: "the binding names no journal to check"
+    };
+  }
+  const expectedId = nativeSessionId(binding.client, binding.client_session_id);
+  if (sessionId !== expectedId) {
+    return {
+      supported: false,
+      client_session_id: binding.client_session_id,
+      reason: `this session is ${sessionId.slice(0, 16)} and the binding describes ${expectedId.slice(0, 16)}; a binding belongs to the session it was written for`
+    };
+  }
+  const verdict = verifyJournalSequence(journalSegmentPaths(path));
+  if (verdict.status === "corrupt") {
+    return {
+      supported: false,
+      client_session_id: binding.client_session_id,
+      reason: `the journal does not verify (${verdict.problem?.reason ?? "corrupt"}), so nothing in it supports a claim`
+    };
+  }
+  const group = collectNativeSessions(verdict.records).groups.find((g) => g.client === binding.client && g.client_session_id === binding.client_session_id);
+  if (!group) {
+    return {
+      supported: false,
+      client_session_id: binding.client_session_id,
+      reason: "the journal holds no hook events for the conversation this session was bound to"
+    };
+  }
+  if (group.records.length < binding.event_count) {
+    return {
+      supported: false,
+      client_session_id: binding.client_session_id,
+      reason: `the binding covers ${binding.event_count} hook records and the journal holds ${group.records.length}; records do not leave a verified journal`
+    };
+  }
+  const covered = group.records.slice(0, binding.event_count);
+  const last = covered[covered.length - 1];
+  if (!last || last.hash !== binding.last_record_hash) {
+    return {
+      supported: false,
+      client_session_id: binding.client_session_id,
+      reason: "the journal's record of this conversation no longer matches what the session was bound to"
+    };
+  }
+  const { messages: implied, without_content } = projectNativeMessages(covered);
+  if (implied.length !== binding.message_count) {
+    return {
+      supported: false,
+      client_session_id: binding.client_session_id,
+      reason: `the journal implies ${implied.length} messages; the binding records ${binding.message_count}`
+    };
+  }
+  if (without_content !== binding.events_without_content) {
+    return {
+      supported: false,
+      client_session_id: binding.client_session_id,
+      reason: `the journal has ${without_content} covered record(s) with no content field; the binding records ${binding.events_without_content}`
+    };
+  }
+  const durability = summariseDurability(covered);
+  if (durability !== binding.durability) {
+    return {
+      supported: false,
+      client_session_id: binding.client_session_id,
+      reason: `these records were written under '${durability}' and the binding records '${binding.durability}'; the capability a record was written under is not a detail`
+    };
+  }
+  const rows = await db.select().from(messages).where(eq(messages.session_id, sessionId)).orderBy(asc(messages.source_sequence));
+  if (rows.length !== implied.length) {
+    return {
+      supported: false,
+      client_session_id: binding.client_session_id,
+      reason: `the projection holds ${rows.length} messages; the journal implies ${implied.length}`
+    };
+  }
+  for (let i = 0; i < implied.length; i++) {
+    const want = implied[i];
+    const got = rows[i];
+    const mismatch = got.role !== want.role ? `role ${got.role} should be ${want.role}` : got.content !== want.content ? "content does not match the journal" : got.created_at !== want.created_at ? "timestamp does not match the journal" : got.source_sequence !== want.source_sequence ? `sequence ${String(got.source_sequence)} should be ${want.source_sequence}` : null;
+    if (mismatch) {
+      return {
+        supported: false,
+        client_session_id: binding.client_session_id,
+        reason: `projected message ${i + 1} does not match the journal: ${mismatch}`
+      };
+    }
+  }
+  return {
+    supported: true,
+    source: EVIDENCE_SOURCE.NATIVE_HOOK,
+    client: binding.client,
+    client_session_id: binding.client_session_id,
+    events: covered.length,
+    messages: implied.length,
+    events_without_content: without_content,
+    unprojected_events: group.records.length - covered.length,
+    durability,
+    limits: NATIVE_PROVENANCE_LIMITS
+  };
+}
+var NATIVE_PROVENANCE_LIMITS;
+var init_native_provenance = __esm({
+  "src/projection/native-provenance.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    init_schema();
+    init_evidence();
+    init_verify();
+    init_runs();
+    init_native2();
+    NATIVE_PROVENANCE_LIMITS = [
+      "The conversation id comes from the client's payload, so this establishes that these records are Chron's and unedited, not that the id names the conversation it claims to.",
+      "A turn taken while no hook was configured leaves no record and nothing marking its place, so this is never evidence that the conversation is complete.",
+      "Nothing required these events to be recorded. The prompt had already reached the model when the prompt hook was invoked, and displayed output is shown whatever the hook reports."
+    ];
+  }
+});
+
 // src/cli/verify.ts
 var verify_exports2 = {};
 __export(verify_exports2, {
@@ -25106,19 +26127,19 @@ async function runVerifyBundle(bundlePath) {
 ${BOLD8}Verifying bundle${RESET9} ${bundlePath}
 
 `);
-  const tempDir = (0, import_fs16.mkdtempSync)((0, import_path13.join)((0, import_os8.tmpdir)(), "chron-verify-"));
+  const tempDir = (0, import_fs18.mkdtempSync)((0, import_path15.join)((0, import_os9.tmpdir)(), "chron-verify-"));
   try {
     (0, import_child_process2.execFileSync)("tar", ["-xzf", bundlePath, "-C", tempDir], { stdio: "pipe" });
   } catch {
     process.stderr.write(`Failed to extract bundle: ${bundlePath}
 `);
-    (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
+    (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   let allOk = true;
   try {
-    const manifestPath = (0, import_path13.join)(tempDir, "manifest.json");
-    const manifestBytes = (0, import_fs16.readFileSync)(manifestPath);
+    const manifestPath = (0, import_path15.join)(tempDir, "manifest.json");
+    const manifestBytes = (0, import_fs18.readFileSync)(manifestPath);
     const manifest = JSON.parse(manifestBytes.toString());
     process.stdout.write(`${BOLD8}Manifest${RESET9} (${manifest.sessions.length} session(s), generated ${manifest.generated_at})
 `);
@@ -25126,10 +26147,10 @@ ${BOLD8}Verifying bundle${RESET9} ${bundlePath}
 ${BOLD8}File integrity${RESET9}
 `);
     for (const [rel, expectedHash] of Object.entries(manifest.files)) {
-      const filePath = (0, import_path13.join)(tempDir, rel);
+      const filePath = (0, import_path15.join)(tempDir, rel);
       try {
-        const content = (0, import_fs16.readFileSync)(filePath);
-        const actual = (0, import_crypto12.createHash)("sha256").update(content).digest("hex");
+        const content = (0, import_fs18.readFileSync)(filePath);
+        const actual = (0, import_crypto15.createHash)("sha256").update(content).digest("hex");
         if (actual === expectedHash) {
           ok(rel);
         } else {
@@ -25144,14 +26165,14 @@ ${BOLD8}File integrity${RESET9}
     process.stdout.write(`
 ${BOLD8}Signature${RESET9}
 `);
-    const sigPath = (0, import_path13.join)(tempDir, "manifest.sig");
+    const sigPath = (0, import_path15.join)(tempDir, "manifest.sig");
     let sigFile = null;
-    if (!(0, import_fs16.existsSync)(sigPath)) {
+    if (!(0, import_fs18.existsSync)(sigPath)) {
       fail("No manifest.sig \u2014 this bundle is unsigned and its origin cannot be established");
       allOk = false;
     } else {
       try {
-        const parsed = JSON.parse((0, import_fs16.readFileSync)(sigPath, "utf8"));
+        const parsed = JSON.parse((0, import_fs18.readFileSync)(sigPath, "utf8"));
         if (typeof parsed !== "object" || parsed === null || parsed.chron_sig !== "v1" || typeof parsed.session_id !== "string" || parsed.algorithm !== "Ed25519-SHA256" || typeof parsed.signature !== "string" || !parsed.signature) {
           throw new Error("invalid signature envelope");
         }
@@ -25166,9 +26187,9 @@ ${BOLD8}Signature${RESET9}
         fail("manifest.sig does not identify the exported session");
         allOk = false;
       }
-      const pubKeyPath2 = (0, import_path13.join)(tempDir, "pubkeys", `${sigFile.session_id}.pub`);
+      const pubKeyPath2 = (0, import_path15.join)(tempDir, "pubkeys", `${sigFile.session_id}.pub`);
       try {
-        const pubKey = (0, import_fs16.readFileSync)(pubKeyPath2, "utf8");
+        const pubKey = (0, import_fs18.readFileSync)(pubKeyPath2, "utf8");
         const valid = verifyBufferSignature(pubKey, sigFile.signature, manifestBytes);
         if (valid) {
           ok(`Ed25519 signature valid (session ${sigFile.session_id.slice(0, 8)})`);
@@ -25183,16 +26204,16 @@ ${BOLD8}Signature${RESET9}
     }
     process.stdout.write("\n");
   } finally {
-    (0, import_fs16.rmSync)(tempDir, { recursive: true, force: true });
+    (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
   }
   process.exit(allOk ? 0 : 1);
 }
 async function runVerifyJournal(pathArg) {
   const { journalStatus: journalStatus2 } = await Promise.resolve().then(() => (init_writer(), writer_exports));
-  const { join: join20 } = await import("path");
+  const { join: join22 } = await import("path");
   const { homedir: homedir15 } = await import("os");
   const { guardedJournalPath: guardedJournalPath2 } = await Promise.resolve().then(() => (init_config_path(), config_path_exports));
-  const path = guardedJournalPath2(pathArg || process.env.CHRON_JOURNAL_PATH || join20(process.env.CHRON_HOME ?? join20(homedir15(), ".chron"), "capture.jsonl"));
+  const path = guardedJournalPath2(pathArg || process.env.CHRON_JOURNAL_PATH || join22(process.env.CHRON_HOME ?? join22(homedir15(), ".chron"), "capture.jsonl"));
   process.stdout.write(`
 ${BOLD8}Verifying journal${RESET9} ${path}
 
@@ -25201,6 +26222,7 @@ ${BOLD8}Verifying journal${RESET9} ${path}
   const { verifyJournalSequence: verifyJournalSequence2 } = await Promise.resolve().then(() => (init_verify(), verify_exports));
   const segments = journalSegmentPaths2(path);
   const displaced = segments.filter((p) => p !== path);
+  let segmentsCorrupt = false;
   if (displaced.length > 0) {
     process.stdout.write(`${BOLD8}Segments${RESET9} (${segments.length}, oldest first)
 `);
@@ -25209,6 +26231,7 @@ ${BOLD8}Verifying journal${RESET9} ${path}
       note(`${seg}${here ? "  (active)" : "  (rotated)"}`);
     }
     const seq = verifyJournalSequence2(segments);
+    segmentsCorrupt = seq.status === "corrupt";
     if (seq.status === "corrupt") {
       fail(`Across segments: ${seq.problem?.reason} in ${seq.problem?.path}`);
     } else {
@@ -25265,7 +26288,7 @@ ${BOLD8}Durability${RESET9}
     note("They do not carry the guarantee a fully durable run makes.");
   }
   process.stdout.write("\n");
-  process.exit(v.status === "corrupt" ? 1 : 0);
+  process.exit(v.status === "corrupt" || segmentsCorrupt ? 1 : 0);
 }
 async function runVerify(args2) {
   const journalFlag = args2.find((a) => a === "--journal" || a.startsWith("--journal="));
@@ -25321,8 +26344,12 @@ ${BOLD8}Verifying session ${session.id.slice(0, 8)}${RESET9} \u2014 ${session.ti
 ${BOLD8}Capture${RESET9}
 `);
   const { journalBindingOf: journalBindingOf3, verifyEnforcement: verifyEnforcement2 } = await Promise.resolve().then(() => (init_enforcement(), enforcement_exports));
+  const { nativeBindingFrom: nativeBindingFrom2, verifyNativeProvenance: verifyNativeProvenance2 } = await Promise.resolve().then(() => (init_native_provenance(), native_provenance_exports));
   const binding = journalBindingOf3(sessionMeta);
-  if (!claimsEnforcement(sessionMeta) && !binding) {
+  const nativeBinding = nativeBindingFrom2(sessionMeta);
+  if (!claimsEnforcement(sessionMeta) && !binding && !nativeBinding) {
+    note(`Unenforced \u2014 ${describeCaptureMode(sessionMeta)}`);
+  } else if (!claimsEnforcement(sessionMeta) && !binding && nativeBinding) {
     note(`Unenforced \u2014 ${describeCaptureMode(sessionMeta)}`);
   } else if (!binding) {
     warn(describeEnforcementSupport(sessionMeta));
@@ -25340,7 +26367,38 @@ ${BOLD8}Capture${RESET9}
       allOkEnforcement = false;
     }
   }
-  const boundary = describeEvidenceBoundary(sessionMeta);
+  const claimsHookProvenance = nativeBinding !== null || evidenceSourceOf(sessionMeta) === EVIDENCE_SOURCE.NATIVE_HOOK;
+  let hookProvenanceRefused = false;
+  if (claimsHookProvenance) {
+    process.stdout.write(`
+${BOLD8}Hook provenance${RESET9}
+`);
+    const verdict = await verifyNativeProvenance2(db, session.id, session.metadata);
+    if (verdict.supported) {
+      ok(
+        `native_hook \u2014 ${verdict.events} hook record(s) verified against the journal, ${verdict.messages} message(s) compared field by field`
+      );
+      if (verdict.durability !== "durable") {
+        note(`Storage capability for these records: ${verdict.durability}.`);
+      }
+      if (verdict.events_without_content > 0) {
+        note(
+          `${verdict.events_without_content} covered record(s) carried no measured content field, so they are in the journal and in no message.`
+        );
+      }
+      if (verdict.unprojected_events > 0) {
+        note(
+          `${verdict.unprojected_events} later hook record(s) are in the journal and not yet projected. Run \`chron project\` to extend this session.`
+        );
+      }
+      for (const limit of verdict.limits) note(limit);
+    } else {
+      fail(`Hook provenance claim not supported \u2014 ${verdict.reason}`);
+      hookProvenanceRefused = true;
+      allOkEnforcement = false;
+    }
+  }
+  const boundary = hookProvenanceRefused ? "This session claims native-hook provenance. The claim did not verify against the journal, so how these records reached Chron is not established by this report." : describeEvidenceBoundary(sessionMeta);
   if (boundary) {
     process.stdout.write(`
 ${BOLD8}Evidence boundary${RESET9}
@@ -25398,15 +26456,15 @@ ${BOLD8}Signature${RESET9}
   const allOk = chainOk && allOkEnforcement;
   process.exit(allOk ? 0 : 1);
 }
-var import_fs16, import_crypto12, import_path13, import_os8, import_child_process2, RESET9, BOLD8, GREEN5, RED6, DIM7, YELLOW6;
+var import_fs18, import_crypto15, import_path15, import_os9, import_child_process2, RESET9, BOLD8, GREEN5, RED6, DIM7, YELLOW6;
 var init_verify2 = __esm({
   "src/cli/verify.ts"() {
     "use strict";
     init_drizzle_orm();
-    import_fs16 = require("fs");
-    import_crypto12 = require("crypto");
-    import_path13 = require("path");
-    import_os8 = require("os");
+    import_fs18 = require("fs");
+    import_crypto15 = require("crypto");
+    import_path15 = require("path");
+    import_os9 = require("os");
     import_child_process2 = require("child_process");
     init_db2();
     init_schema();
@@ -25434,12 +26492,12 @@ __export(coverage_exports, {
 });
 function checkConfigured(def, home, cwd) {
   if (def.importOnly) return false;
-  const configs = userMcpClientConfigs(home, cwd, (0, import_os9.platform)(), process.env.APPDATA);
+  const configs = userMcpClientConfigs(home, cwd, (0, import_os10.platform)(), process.env.APPDATA);
   return def.configNames.some((name2) => {
     const c = configs.find((mc) => mc.name === name2);
-    if (!c || !(0, import_fs17.existsSync)(c.path)) return false;
+    if (!c || !(0, import_fs19.existsSync)(c.path)) return false;
     try {
-      const content = (0, import_fs17.readFileSync)(c.path, "utf8");
+      const content = (0, import_fs19.readFileSync)(c.path, "utf8");
       return c.type === "codex-toml" ? hasChronCodexToml(content) : hasChronJsonMcp(content) === true;
     } catch {
       return false;
@@ -25547,7 +26605,7 @@ async function computeEvidenceUse(db, sessionIds) {
 }
 async function computeCoverage(since, opts = {}) {
   const db = await initDb();
-  const home = (0, import_os9.homedir)();
+  const home = (0, import_os10.homedir)();
   const cwd = process.cwd();
   const baseQuery = since ? db.select({
     ai_tool: sessions.ai_tool,
@@ -25781,12 +26839,12 @@ async function runCoverage(args2) {
   printCoverage(result);
   if (result.evidence_use) printEvidenceUse(result.evidence_use);
 }
-var import_fs17, import_os9, RESET10, BOLD9, DIM8, GREEN6, YELLOW7, CYAN6, RED7, KNOWN_TOOLS, MIN_CARDINALITY_SAMPLE, CONCENTRATION_THRESHOLD, SQLITE_BINDING_BATCH_SIZE;
+var import_fs19, import_os10, RESET10, BOLD9, DIM8, GREEN6, YELLOW7, CYAN6, RED7, KNOWN_TOOLS, MIN_CARDINALITY_SAMPLE, CONCENTRATION_THRESHOLD, SQLITE_BINDING_BATCH_SIZE;
 var init_coverage = __esm({
   "src/cli/coverage.ts"() {
     "use strict";
-    import_fs17 = require("fs");
-    import_os9 = require("os");
+    import_fs19 = require("fs");
+    import_os10 = require("os");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -25814,9 +26872,146 @@ var init_coverage = __esm({
   }
 });
 
+// src/native/failures.ts
+function isMarkerFileName(name2) {
+  const dot = NATIVE_FAILURE_MARKER_NAME.lastIndexOf(".");
+  const stem = dot > 0 ? NATIVE_FAILURE_MARKER_NAME.slice(0, dot) : NATIVE_FAILURE_MARKER_NAME;
+  const ext = dot > 0 ? NATIVE_FAILURE_MARKER_NAME.slice(dot) : "";
+  if (name2 === NATIVE_FAILURE_MARKER_NAME) return true;
+  if (!name2.startsWith(`${stem}.`) || !name2.endsWith(ext)) return false;
+  const middle = name2.slice(stem.length + 1, name2.length - ext.length);
+  return middle.length > 0 && /^[A-Za-z0-9_-]+$/.test(middle);
+}
+function str2(x) {
+  return typeof x === "string" ? x : null;
+}
+function messageOf2(e) {
+  return e instanceof Error ? e.message : String(e);
+}
+function attemptOf(line) {
+  let parsed;
+  try {
+    parsed = JSON.parse(line);
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
+  const o = parsed;
+  if (str2(o.stage) === null) return null;
+  const ids = typeof o.client_ids === "object" && o.client_ids !== null && !Array.isArray(o.client_ids) ? o.client_ids : {};
+  return {
+    at: str2(o.at),
+    client: str2(o.client),
+    client_version: str2(o.client_version),
+    event: str2(o.event),
+    invocation_id: str2(o.invocation_id),
+    stage: str2(o.stage),
+    reason: str2(o.reason),
+    journal_path: str2(o.journal_path),
+    client_session_id: str2(ids.session_id),
+    after_partial_line: o.after_partial_line === true
+  };
+}
+function readMarkerFile(path) {
+  let raw;
+  try {
+    raw = (0, import_fs20.readFileSync)(path, "utf8");
+  } catch (e) {
+    return { path, attempts: [], unreadable_lines: 0, read_error: messageOf2(e) };
+  }
+  const attempts = [];
+  let unreadable = 0;
+  for (const line of raw.split("\n")) {
+    if (line.trim().length === 0) continue;
+    const a = attemptOf(line);
+    if (a === null) unreadable += 1;
+    else attempts.push(a);
+  }
+  return { path, attempts, unreadable_lines: unreadable, read_error: null };
+}
+function surveyCaptureFailures(journalPath3) {
+  const dir = (0, import_path16.dirname)(journalPath3);
+  let names;
+  try {
+    names = (0, import_fs20.readdirSync)(dir);
+  } catch (e) {
+    return {
+      dir,
+      files: [],
+      scan_error: messageOf2(e),
+      attempts: 0,
+      unreadable_lines: 0,
+      incomplete: true
+    };
+  }
+  const files = names.filter(isMarkerFileName).sort().map((n) => readMarkerFile((0, import_path16.join)(dir, n)));
+  return {
+    dir,
+    files,
+    scan_error: null,
+    attempts: files.reduce((n, f) => n + f.attempts.length, 0),
+    unreadable_lines: files.reduce((n, f) => n + f.unreadable_lines, 0),
+    incomplete: files.some((f) => f.read_error !== null || f.unreadable_lines > 0)
+  };
+}
+function describeCaptureFailures(s) {
+  if (s.scan_error !== null) {
+    return [
+      `Could not look for capture failure marks in ${s.dir}: ${s.scan_error}.`,
+      "Whether any capture attempt failed here is unknown. This is not an all-clear."
+    ];
+  }
+  if (s.files.length === 0) {
+    return [
+      `No capture failure marks in ${s.dir}.`,
+      "A failure whose mark could not be written would not appear here either: the hook reports that on its own output at the time, and nothing survives the process."
+    ];
+  }
+  const out = [];
+  const count2 = s.incomplete ? `at least ${s.attempts}` : `${s.attempts}`;
+  out.push(`${count2} failed capture attempt(s) recorded in ${s.files.length} file(s).`);
+  for (const f of s.files) {
+    if (f.read_error !== null) {
+      out.push(`${(0, import_path16.basename)(f.path)} could not be read: ${f.read_error}. Marks in it are not counted.`);
+      continue;
+    }
+    const events = [...new Set(f.attempts.map((a) => a.event ?? "an unnamed event"))].join(", ");
+    const stages = [...new Set(f.attempts.map((a) => a.stage ?? "unknown"))].join(", ");
+    out.push(
+      `${(0, import_path16.basename)(f.path)}: ${f.attempts.length} attempt(s)${events ? ` (${events}; stage ${stages})` : ""}.`
+    );
+    if (f.unreadable_lines > 0) {
+      out.push(
+        `${(0, import_path16.basename)(f.path)}: ${f.unreadable_lines} line(s) could not be read as a mark, so the count above is a floor. An unfinished line is left in place rather than repaired, because it is the only trace of the failure that produced it.`
+      );
+    }
+    if (f.attempts.some((a) => a.after_partial_line)) {
+      out.push(
+        `${(0, import_path16.basename)(f.path)}: a mark records that an unreadable line precedes it, so the gap it reports is not the only one in that file.`
+      );
+    }
+  }
+  out.push(CAPTURE_FAILURE_LIMIT);
+  out.push(
+    "Check the journal around each mark: `chron verify --journal` for the chain, and the events either side of the recorded time for what was recorded instead."
+  );
+  return out;
+}
+var import_fs20, import_path16, CAPTURE_FAILURE_LIMIT;
+var init_failures = __esm({
+  "src/native/failures.ts"() {
+    "use strict";
+    import_fs20 = require("fs");
+    import_path16 = require("path");
+    init_record();
+    CAPTURE_FAILURE_LIMIT = "A failed attempt is not a missing record and not a withhold: the handler runs once per event, so a later attempt can succeed, and neither measured event can hold content back. What a mark establishes is that one attempt to record one event failed.";
+  }
+});
+
 // src/cli/doctor.ts
 var doctor_exports = {};
 __export(doctor_exports, {
+  captureFailureCheck: () => captureFailureCheck,
   claudeChronConflictFixes: () => claudeChronConflictFixes,
   compareVersions: () => compareVersions,
   findClaudeChronScopes: () => findClaudeChronScopes,
@@ -25845,7 +27040,7 @@ ${BOLD10}${title}${RESET11}
 }
 function canWrite(dir) {
   try {
-    (0, import_fs18.accessSync)(dir, import_fs18.constants.W_OK);
+    (0, import_fs21.accessSync)(dir, import_fs21.constants.W_OK);
     return true;
   } catch {
     return false;
@@ -25854,22 +27049,51 @@ function canWrite(dir) {
 function testWriteFile(path) {
   const probe = path + ".chron-probe";
   try {
-    (0, import_fs18.writeFileSync)(probe, "ok");
-    (0, import_fs18.unlinkSync)(probe);
+    (0, import_fs21.writeFileSync)(probe, "ok");
+    (0, import_fs21.unlinkSync)(probe);
     return true;
   } catch {
     return false;
   }
 }
+function journalPath() {
+  return guardedJournalPath(process.env.CHRON_JOURNAL_PATH ?? (0, import_path17.join)(process.env.CHRON_HOME ?? (0, import_path17.join)((0, import_os11.homedir)(), ".chron"), "capture.jsonl"));
+}
+function captureFailureCheck(survey) {
+  if (survey.scan_error !== null) {
+    return {
+      // Not a pass. "I could not look" and "there is nothing there" are
+      // different answers, and only the second one is an all-clear.
+      pass: "warn",
+      label: "Capture failure marks could not be read",
+      detail: `${survey.dir}: ${survey.scan_error}. Whether any capture attempt failed here is unknown.`,
+      fix: `Check permissions on "${survey.dir}"`
+    };
+  }
+  if (survey.files.length === 0) {
+    return {
+      pass: true,
+      label: "No failed capture attempts recorded",
+      detail: `Looked beside the journal in ${survey.dir}.`
+    };
+  }
+  const count2 = survey.incomplete ? `at least ${survey.attempts}` : `${survey.attempts}`;
+  return {
+    pass: "warn",
+    label: `${count2} failed capture attempt(s) recorded in ${survey.files.length} marker file(s)`,
+    detail: "A failed attempt is not a missing record and not a withhold: the handler runs once per event, so a later attempt can succeed.",
+    fix: "Read the marks beside the journal and check the journal around each recorded time: chron verify --journal"
+  };
+}
 function dbPath2() {
-  return process.env.CHRON_DB_PATH ?? (0, import_path14.join)((0, import_os10.homedir)(), ".chron", "chron.db");
+  return process.env.CHRON_DB_PATH ?? (0, import_path17.join)((0, import_os11.homedir)(), ".chron", "chron.db");
 }
 function keysDir2() {
-  return (0, import_path14.join)((0, import_os10.homedir)(), ".chron", "keys");
+  return (0, import_path17.join)((0, import_os11.homedir)(), ".chron", "keys");
 }
 function loadConfig2() {
   try {
-    return JSON.parse((0, import_fs18.readFileSync)(configPath(), "utf8"));
+    return JSON.parse((0, import_fs21.readFileSync)(configPath(), "utf8"));
   } catch {
     return {};
   }
@@ -25913,40 +27137,31 @@ function claudeChronConflictFixes(scopes) {
   return fixes.size > 0 ? [...fixes] : ["claude mcp remove chron -s local"];
 }
 function mcpConfigs() {
-  const home = (0, import_os10.homedir)();
-  const plat = (0, import_os10.platform)();
+  const home = (0, import_os11.homedir)();
+  const plat = (0, import_os11.platform)();
   const candidates = userMcpClientConfigs(home, process.cwd(), plat, process.env.APPDATA);
   return candidates.map((c) => {
     const instrPath = INSTRUCTION_PATHS[c.name];
     let instructionConfigured;
     if (instrPath) {
       try {
-        const content = (0, import_fs18.existsSync)(instrPath) ? (0, import_fs18.readFileSync)(instrPath, "utf8") : "";
+        const content = (0, import_fs21.existsSync)(instrPath) ? (0, import_fs21.readFileSync)(instrPath, "utf8") : "";
         instructionConfigured = content.includes(CHRON_INSTRUCTION_SENTINEL) || content.includes(CHRON_INSTRUCTION_BLOCK_START);
       } catch {
         instructionConfigured = false;
       }
     }
-    if (!(0, import_fs18.existsSync)(c.path)) {
+    if (!(0, import_fs21.existsSync)(c.path)) {
       return { name: c.name, path: c.path, exists: false, chronConfigured: null, connectCommand: c.connectCommand, instructionPath: instrPath, instructionConfigured };
     }
     try {
-      const content = (0, import_fs18.readFileSync)(c.path, "utf8");
+      const content = (0, import_fs21.readFileSync)(c.path, "utf8");
       const configured = c.type === "codex-toml" ? hasChronCodexToml(content) : hasChronJsonMcp(content);
       const launcher = inspectChronLauncher(content, c.type);
       return { name: c.name, path: c.path, exists: true, chronConfigured: configured, launcher, connectCommand: c.connectCommand, instructionPath: instrPath, instructionConfigured };
     } catch {
       return { name: c.name, path: c.path, exists: true, chronConfigured: null, connectCommand: c.connectCommand, note: "Could not read or parse config", instructionPath: instrPath, instructionConfigured };
     }
-  });
-}
-function fixableMcpConfigs() {
-  const configs = userMcpClientConfigs((0, import_os10.homedir)(), process.cwd(), (0, import_os10.platform)(), process.env.APPDATA);
-  return configs.filter((c) => {
-    if ((0, import_fs18.existsSync)(c.path)) return true;
-    if (["Claude Code", "Cursor (global)", "Cursor (project)", "Gemini CLI", "Codex (global)"].includes(c.name)) return true;
-    if ((0, import_fs18.existsSync)((0, import_path14.dirname)(c.path))) return true;
-    return false;
   });
 }
 function npmLatestVersion() {
@@ -26074,7 +27289,7 @@ ${BOLD10}Verify Chron Logging${RESET11}  ${DIM9}${displayTool}${RESET11}
   process.stdout.write(`
 ${DIM9}Once you've done this, Chron will detect the new session below.${RESET11}
 `);
-  if (!(0, import_fs18.existsSync)(db)) {
+  if (!(0, import_fs21.existsSync)(db)) {
     process.stdout.write(`
 ${RED8}\u2717${RESET11} Chron database not found at ${db}
 `);
@@ -26175,16 +27390,16 @@ ${BOLD10}chron doctor${RESET11}  ${DIM9}v${import_package3.version}${RESET11}${f
   if (!jsonMode) (launcherOk ? ok2 : fail2)(launcherLabel, launcherOk ? "works" : "failed \u2014 run: npm install -g chron-mcp");
   if (!jsonMode) section("Storage");
   const db = dbPath2();
-  const dbDir = (0, import_path14.join)(db, "..");
-  const dbDirExists = (0, import_fs18.existsSync)(dbDir);
+  const dbDir = (0, import_path17.join)(db, "..");
+  const dbDirExists = (0, import_fs21.existsSync)(dbDir);
   if (!dbDirExists) {
     try {
-      (0, import_fs18.mkdirSync)(dbDir, { recursive: true });
+      (0, import_fs21.mkdirSync)(dbDir, { recursive: true });
     } catch {
     }
   }
   const dbWritable = testWriteFile(dbDir);
-  const dbExists = (0, import_fs18.existsSync)(db);
+  const dbExists = (0, import_fs21.existsSync)(db);
   results.push({
     pass: dbWritable,
     label: `DB directory: ${dbDir}`,
@@ -26194,10 +27409,10 @@ ${BOLD10}chron doctor${RESET11}  ${DIM9}v${import_package3.version}${RESET11}${f
   if (!jsonMode) (dbWritable ? ok2 : fail2)(`DB: ${db}`, dbExists ? "found" : "not yet created \u2014 will init on first use");
   if (!dbWritable && !jsonMode) info("fix", `mkdir -p "${dbDir}" && chmod 700 "${dbDir}"`);
   const keys = keysDir2();
-  const keysExist = (0, import_fs18.existsSync)(keys);
+  const keysExist = (0, import_fs21.existsSync)(keys);
   if (!keysExist) {
     try {
-      (0, import_fs18.mkdirSync)(keys, { recursive: true });
+      (0, import_fs21.mkdirSync)(keys, { recursive: true });
     } catch {
     }
   }
@@ -26210,41 +27425,9 @@ ${BOLD10}chron doctor${RESET11}  ${DIM9}v${import_package3.version}${RESET11}${f
   if (!jsonMode) (keysWritable ? ok2 : fail2)(`Keys: ${keys}`, keysWritable ? "" : "not writable \u2014 Ed25519 signing will fail");
   if (!jsonMode) section("MCP Tool Configurations");
   if (fixMode) {
-    const fixed = fixableMcpConfigs();
-    for (const c of fixed) {
-      const result = ensureChronMcpConfig(c);
-      if (result.status === "added") {
-        if (!jsonMode) ok2(`${c.name}`, `configured at ${c.path}`);
-      } else if (result.status === "already") {
-        if (!jsonMode) ok2(`${c.name}`, "already configured");
-      } else {
-        results.push({ pass: "warn", label: `${c.name}: could not auto-fix`, detail: result.error, fix: c.connectCommand });
-        if (!jsonMode) warn2(`${c.name}`, `could not auto-fix \u2014 ${result.error}`);
-      }
-    }
-    const instructionTargets = [
-      { name: "Claude Code", write: ensureClaudeCodeInstructions, file: "~/CLAUDE.md" },
-      { name: "Codex", write: ensureCodexInstructions, file: "~/.codex/instructions.md" },
-      { name: "Codex (~/AGENTS.md)", write: ensureCodexGlobalAgentsMd, file: "~/AGENTS.md" },
-      { name: "Codex (AGENTS.md)", write: ensureCodexProjectInstructions, file: "./AGENTS.md" },
-      { name: "Gemini CLI", write: ensureGeminiInstructions, file: "~/.gemini/GEMINI.md" },
-      { name: "Cursor project", write: ensureCursorProjectInstructions, file: ".cursor/rules/chron.mdc" }
-    ];
-    for (const t of instructionTargets) {
-      const ir = t.write();
-      if (ir.status === "added" && !jsonMode) ok2(`${t.name} logging instructions`, `written to ${t.file}`);
-      if (ir.status === "error") {
-        results.push({ pass: "warn", label: `${t.name} logging instructions: could not write`, detail: ir.error });
-        if (!jsonMode) warn2(`${t.name} logging instructions`, `could not write \u2014 ${ir.error}`);
-      }
-    }
-    if (!jsonMode) {
-      process.stdout.write(`
-  ${DIM9}Restart your AI client, then verify end-to-end logging:${RESET11}
-`);
-      process.stdout.write(`  ${CYAN7}chron doctor --verify-logging [cursor|codex|gemini]${RESET11}
-`);
-    }
+    if (jsonMode) throw new Error("Configuration preview is text; run chron setup instead of doctor --fix --json");
+    const { runConfiguration: runConfiguration2 } = await Promise.resolve().then(() => (init_configuration(), configuration_exports));
+    await runConfiguration2(args2.filter((a) => a !== "--fix"));
   }
   const tools = mcpConfigs();
   const lastByTool = /* @__PURE__ */ new Map();
@@ -26339,8 +27522,8 @@ ${BOLD10}chron doctor${RESET11}  ${DIM9}v${import_package3.version}${RESET11}${f
     }
   }
   try {
-    const claudePath = (0, import_path14.join)((0, import_os10.homedir)(), ".claude.json");
-    const scopes = (0, import_fs18.existsSync)(claudePath) ? findClaudeChronScopes((0, import_fs18.readFileSync)(claudePath, "utf8"), process.cwd()) : [];
+    const claudePath = (0, import_path17.join)((0, import_os11.homedir)(), ".claude.json");
+    const scopes = (0, import_fs21.existsSync)(claudePath) ? findClaudeChronScopes((0, import_fs21.readFileSync)(claudePath, "utf8"), process.cwd()) : [];
     const endpointCount = new Set(scopes.map((s) => s.endpoint)).size;
     if (scopes.length > 1 && endpointCount > 1) {
       const fixCmds = claudeChronConflictFixes(scopes);
@@ -26407,6 +27590,30 @@ ${BOLD10}chron doctor${RESET11}  ${DIM9}v${import_package3.version}${RESET11}${f
     process.stdout.write(`  ${DIM9}No SIEM configured. Events will only be stored locally.${RESET11}
 `);
   }
+  if (!jsonMode) section("Native capture");
+  let failureSurvey = null;
+  try {
+    failureSurvey = surveyCaptureFailures(journalPath());
+  } catch (e) {
+    results.push({
+      pass: "warn",
+      label: "Capture journal path could not be resolved",
+      detail: e instanceof Error ? e.message : String(e)
+    });
+    if (!jsonMode) warn2("Capture journal path could not be resolved", e instanceof Error ? e.message : String(e));
+  }
+  if (failureSurvey) {
+    const check = captureFailureCheck(failureSurvey);
+    results.push(check);
+    if (!jsonMode) {
+      const render = check.pass === true ? ok2 : warn2;
+      render(check.label, check.detail ?? "");
+      for (const line of describeCaptureFailures(failureSurvey)) {
+        process.stdout.write(`    ${DIM9}${line}${RESET11}
+`);
+      }
+    }
+  }
   const failures = results.filter((r) => r.pass === false);
   const warnings = results.filter((r) => r.pass === "warn");
   if (!jsonMode) {
@@ -26453,6 +27660,24 @@ ${BOLD10}chron doctor${RESET11}  ${DIM9}v${import_package3.version}${RESET11}${f
         detail: r.detail,
         fix: r.fix
       })),
+      // The structured survey as well as its label, so a machine reader acts on
+      // the counts rather than parsing the sentence written for a person. The
+      // `incomplete` flag is the field that matters: it says the counts are a
+      // floor, which a reader must not drop.
+      native_capture: failureSurvey === null ? null : {
+        dir: failureSurvey.dir,
+        scan_error: failureSurvey.scan_error,
+        failed_attempts: failureSurvey.attempts,
+        unreadable_lines: failureSurvey.unreadable_lines,
+        incomplete: failureSurvey.incomplete,
+        marker_files: failureSurvey.files.map((f) => ({
+          path: f.path,
+          failed_attempts: f.attempts.length,
+          unreadable_lines: f.unreadable_lines,
+          read_error: f.read_error
+        })),
+        limit: "A failed attempt establishes neither missing evidence nor withholding."
+      },
       summary: {
         failures: failures.length,
         warnings: warnings.length,
@@ -26463,19 +27688,20 @@ ${BOLD10}chron doctor${RESET11}  ${DIM9}v${import_package3.version}${RESET11}${f
   }
   process.exit(failures.length > 0 ? 1 : 0);
 }
-var import_os10, import_path14, import_fs18, import_child_process3, import_package3, RESET11, BOLD10, DIM9, GREEN7, RED8, YELLOW8, CYAN7, CLAIIM_PREVIEW_URL, INSTRUCTION_PATHS, AI_TOOL_FOR_CLIENT, CAPTURE_FAMILY_LABEL, VERIFY_SLUG;
+var import_os11, import_path17, import_fs21, import_child_process3, import_package3, RESET11, BOLD10, DIM9, GREEN7, RED8, YELLOW8, CYAN7, CLAIIM_PREVIEW_URL, INSTRUCTION_PATHS, AI_TOOL_FOR_CLIENT, CAPTURE_FAMILY_LABEL, VERIFY_SLUG;
 var init_doctor = __esm({
   "src/cli/doctor.ts"() {
     "use strict";
-    import_os10 = require("os");
-    import_path14 = require("path");
-    import_fs18 = require("fs");
+    import_os11 = require("os");
+    import_path17 = require("path");
+    import_fs21 = require("fs");
     import_child_process3 = require("child_process");
     import_package3 = __toESM(require_package());
     init_mcp_config();
     init_coverage();
     init_connect();
     init_config_path();
+    init_failures();
     RESET11 = "\x1B[0m";
     BOLD10 = "\x1B[1m";
     DIM9 = "\x1B[2m";
@@ -26485,12 +27711,12 @@ var init_doctor = __esm({
     CYAN7 = "\x1B[36m";
     CLAIIM_PREVIEW_URL = "https://claiim.io/preview";
     INSTRUCTION_PATHS = {
-      "Claude Code": (0, import_path14.join)((0, import_os10.homedir)(), "CLAUDE.md"),
-      "Codex (global)": (0, import_path14.join)((0, import_os10.homedir)(), ".codex", "instructions.md"),
-      "Codex (~/AGENTS.md)": (0, import_path14.join)((0, import_os10.homedir)(), "AGENTS.md"),
-      "Codex (project AGENTS.md)": (0, import_path14.join)(process.cwd(), "AGENTS.md"),
-      "Gemini CLI": (0, import_path14.join)((0, import_os10.homedir)(), ".gemini", "GEMINI.md"),
-      "Cursor (project)": (0, import_path14.join)(process.cwd(), ".cursor", "rules", "chron.mdc")
+      "Claude Code": (0, import_path17.join)((0, import_os11.homedir)(), "CLAUDE.md"),
+      "Codex (global)": (0, import_path17.join)((0, import_os11.homedir)(), ".codex", "instructions.md"),
+      "Codex (~/AGENTS.md)": (0, import_path17.join)((0, import_os11.homedir)(), "AGENTS.md"),
+      "Codex (project AGENTS.md)": (0, import_path17.join)(process.cwd(), "AGENTS.md"),
+      "Gemini CLI": (0, import_path17.join)((0, import_os11.homedir)(), ".gemini", "GEMINI.md"),
+      "Cursor (project)": (0, import_path17.join)(process.cwd(), ".cursor", "rules", "chron.mdc")
     };
     AI_TOOL_FOR_CLIENT = {
       "Claude Code": "claude",
@@ -26885,7 +28111,7 @@ function summarizeToolResult(raw, opts = {}) {
   const { redacted } = redactSecrets(raw);
   const slice = redacted.slice(0, TOOL_OUTPUT_EXCERPT_BYTES);
   const truncated = redacted.length > slice.length;
-  const hash2 = (0, import_crypto13.createHash)("sha256").update(raw).digest("hex");
+  const hash2 = (0, import_crypto16.createHash)("sha256").update(raw).digest("hex");
   const header = `[tool output not ingested in full \u2014 ${originalBytes} bytes, sha256:${hash2.slice(0, 16)}` + (detected.length ? `, ${detected.length} secret detection(s)` : "") + "]";
   const body = truncated ? `${slice}
 [... truncated, ${originalBytes - Buffer.byteLength(slice, "utf8")} bytes not ingested]` : slice;
@@ -27037,17 +28263,17 @@ function parseTranscript(raw, opts = {}) {
     first_timestamp: first,
     last_timestamp: last,
     out_of_order_timestamps: outOfOrder,
-    content_hash: (0, import_crypto13.createHash)("sha256").update(raw).digest("hex"),
+    content_hash: (0, import_crypto16.createHash)("sha256").update(raw).digest("hex"),
     malformed_lines: malformedLines,
     secrets_found: secrets,
     secret_detections
   };
 }
-var import_crypto13, TOOL_OUTPUT_EXCERPT_BYTES, COMPACTION_BOUNDARY_TEXT;
+var import_crypto16, TOOL_OUTPUT_EXCERPT_BYTES, COMPACTION_BOUNDARY_TEXT;
 var init_claude_code = __esm({
   "src/import/claude-code.ts"() {
     "use strict";
-    import_crypto13 = require("crypto");
+    import_crypto16 = require("crypto");
     init_detect();
     init_redact();
     TOOL_OUTPUT_EXCERPT_BYTES = 400;
@@ -27058,7 +28284,7 @@ var init_claude_code = __esm({
 // src/import/discover.ts
 function transcriptRoot() {
   const override = process.env.CHRON_CLAUDE_PROJECTS_DIR;
-  return override && override.trim() ? override : (0, import_path15.join)((0, import_os11.homedir)(), ".claude", "projects");
+  return override && override.trim() ? override : (0, import_path18.join)((0, import_os12.homedir)(), ".claude", "projects");
 }
 function sessionIdOf(file) {
   if (!file.endsWith(".jsonl")) return null;
@@ -27066,35 +28292,35 @@ function sessionIdOf(file) {
   return id.length > 0 ? id : null;
 }
 function discoverTranscripts(root = transcriptRoot()) {
-  if (!(0, import_fs19.existsSync)(root)) return [];
+  if (!(0, import_fs22.existsSync)(root)) return [];
   const found = [];
   let projects;
   try {
-    projects = (0, import_fs19.readdirSync)(root);
+    projects = (0, import_fs22.readdirSync)(root);
   } catch {
     return [];
   }
   for (const project of projects) {
-    const projectDir = (0, import_path15.join)(root, project);
+    const projectDir = (0, import_path18.join)(root, project);
     let stat;
     try {
-      stat = (0, import_fs19.statSync)(projectDir);
+      stat = (0, import_fs22.statSync)(projectDir);
     } catch {
       continue;
     }
     if (!stat.isDirectory()) continue;
     let entries;
     try {
-      entries = (0, import_fs19.readdirSync)(projectDir);
+      entries = (0, import_fs22.readdirSync)(projectDir);
     } catch {
       continue;
     }
     for (const entry of entries) {
       const sessionId = sessionIdOf(entry);
       if (!sessionId) continue;
-      const path = (0, import_path15.join)(projectDir, entry);
+      const path = (0, import_path18.join)(projectDir, entry);
       try {
-        const s = (0, import_fs19.statSync)(path);
+        const s = (0, import_fs22.statSync)(path);
         if (!s.isFile()) continue;
         found.push({
           path,
@@ -27110,21 +28336,21 @@ function discoverTranscripts(root = transcriptRoot()) {
   return found.sort((a, b) => b.modified_at.localeCompare(a.modified_at));
 }
 function countNestedTranscripts(root = transcriptRoot()) {
-  if (!(0, import_fs19.existsSync)(root)) return 0;
+  if (!(0, import_fs22.existsSync)(root)) return 0;
   let count2 = 0;
   const walk = (dir, depth) => {
     if (depth > 6) return;
     let entries;
     try {
-      entries = (0, import_fs19.readdirSync)(dir);
+      entries = (0, import_fs22.readdirSync)(dir);
     } catch {
       return;
     }
     for (const entry of entries) {
-      const full = (0, import_path15.join)(dir, entry);
+      const full = (0, import_path18.join)(dir, entry);
       let s;
       try {
-        s = (0, import_fs19.statSync)(full);
+        s = (0, import_fs22.statSync)(full);
       } catch {
         continue;
       }
@@ -27134,40 +28360,40 @@ function countNestedTranscripts(root = transcriptRoot()) {
   };
   for (const project of (() => {
     try {
-      return (0, import_fs19.readdirSync)(root);
+      return (0, import_fs22.readdirSync)(root);
     } catch {
       return [];
     }
   })()) {
-    const projectDir = (0, import_path15.join)(root, project);
+    const projectDir = (0, import_path18.join)(root, project);
     try {
-      if (!(0, import_fs19.statSync)(projectDir).isDirectory()) continue;
+      if (!(0, import_fs22.statSync)(projectDir).isDirectory()) continue;
     } catch {
       continue;
     }
     for (const entry of (() => {
       try {
-        return (0, import_fs19.readdirSync)(projectDir);
+        return (0, import_fs22.readdirSync)(projectDir);
       } catch {
         return [];
       }
     })()) {
-      const full = (0, import_path15.join)(projectDir, entry);
+      const full = (0, import_path18.join)(projectDir, entry);
       try {
-        if ((0, import_fs19.statSync)(full).isDirectory()) walk(full, 1);
+        if ((0, import_fs22.statSync)(full).isDirectory()) walk(full, 1);
       } catch {
       }
     }
   }
   return count2;
 }
-var import_fs19, import_path15, import_os11;
+var import_fs22, import_path18, import_os12;
 var init_discover = __esm({
   "src/import/discover.ts"() {
     "use strict";
-    import_fs19 = require("fs");
-    import_path15 = require("path");
-    import_os11 = require("os");
+    import_fs22 = require("fs");
+    import_path18 = require("path");
+    import_os12 = require("os");
   }
 });
 
@@ -27199,7 +28425,7 @@ async function buildPreview(db, opts = {}) {
     };
     let raw;
     try {
-      raw = (0, import_fs20.readFileSync)(f.path, "utf8");
+      raw = (0, import_fs23.readFileSync)(f.path, "utf8");
     } catch (e) {
       unreadable++;
       transcripts.push({
@@ -27268,11 +28494,11 @@ function totalExclusions(result) {
   }
   return t;
 }
-var import_fs20;
+var import_fs23;
 var init_claude_code_preview = __esm({
   "src/import/claude-code-preview.ts"() {
     "use strict";
-    import_fs20 = require("fs");
+    import_fs23 = require("fs");
     init_drizzle_orm();
     init_schema();
     init_claude_code();
@@ -27282,7 +28508,7 @@ var init_claude_code_preview = __esm({
 
 // src/import/claude-code-import.ts
 function stableId(...parts) {
-  return (0, import_crypto14.createHash)("sha256").update(parts.join("\0")).digest("hex");
+  return (0, import_crypto17.createHash)("sha256").update(parts.join("\0")).digest("hex");
 }
 function importedMessageId(transcriptSessionId, sourceUuid) {
   return stableId("claude-code", transcriptSessionId, sourceUuid);
@@ -27336,7 +28562,7 @@ function prepareEvents(chronSessionId, transcriptSessionId, events) {
 async function importTranscript(db, file, includeToolOutput) {
   let raw;
   try {
-    raw = (0, import_fs21.readFileSync)(file.path, "utf8");
+    raw = (0, import_fs24.readFileSync)(file.path, "utf8");
   } catch (error) {
     return { session_id: file.session_id, imported_events: 0, skipped_events: 0, secrets_detected: 0, status: "error", error: error instanceof Error ? error.message : String(error) };
   }
@@ -27479,12 +28705,12 @@ async function importClaudeCodeTranscripts(db, opts = {}) {
   }
   return result;
 }
-var import_crypto14, import_fs21, INSERT_BATCH_SIZE;
+var import_crypto17, import_fs24, INSERT_BATCH_SIZE;
 var init_claude_code_import = __esm({
   "src/import/claude-code-import.ts"() {
     "use strict";
-    import_crypto14 = require("crypto");
-    import_fs21 = require("fs");
+    import_crypto17 = require("crypto");
+    import_fs24 = require("fs");
     init_drizzle_orm();
     init_esm();
     init_schema();
@@ -27727,10 +28953,10 @@ function messagesFromConversation(conv) {
   return result;
 }
 function findFile(dir, name2) {
-  for (const entry of (0, import_fs22.readdirSync)(dir)) {
-    const full = (0, import_path16.join)(dir, entry);
+  for (const entry of (0, import_fs25.readdirSync)(dir)) {
+    const full = (0, import_path19.join)(dir, entry);
     try {
-      if ((0, import_fs22.statSync)(full).isDirectory()) {
+      if ((0, import_fs25.statSync)(full).isDirectory()) {
         const found = findFile(full, name2);
         if (found) return found;
       } else if (entry === name2) {
@@ -27838,10 +29064,10 @@ async function importConversations(filePath) {
   const db = await initDb();
   let raw;
   let tempDir = null;
-  const ext = (0, import_path16.extname)(filePath).toLowerCase();
+  const ext = (0, import_path19.extname)(filePath).toLowerCase();
   if (ext === ".zip") {
-    tempDir = (0, import_path16.join)((0, import_os12.tmpdir)(), `chron-import-${Date.now()}`);
-    (0, import_fs22.mkdirSync)(tempDir, { recursive: true });
+    tempDir = (0, import_path19.join)((0, import_os13.tmpdir)(), `chron-import-${Date.now()}`);
+    (0, import_fs25.mkdirSync)(tempDir, { recursive: true });
     try {
       (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "conversations.json", "-d", tempDir], { stdio: "pipe" });
     } catch {
@@ -27850,7 +29076,7 @@ async function importConversations(filePath) {
       } catch {
         process.stderr.write(`Failed to extract ${filePath}. Make sure 'unzip' is installed.
 `);
-        (0, import_fs22.rmSync)(tempDir, { recursive: true, force: true });
+        (0, import_fs25.rmSync)(tempDir, { recursive: true, force: true });
         process.exit(1);
       }
     }
@@ -27858,12 +29084,12 @@ async function importConversations(filePath) {
     if (!found) {
       process.stderr.write(`conversations.json not found inside the ZIP.
 `);
-      (0, import_fs22.rmSync)(tempDir, { recursive: true, force: true });
+      (0, import_fs25.rmSync)(tempDir, { recursive: true, force: true });
       process.exit(1);
     }
-    raw = (0, import_fs22.readFileSync)(found, "utf8");
+    raw = (0, import_fs25.readFileSync)(found, "utf8");
   } else if (ext === ".json") {
-    raw = (0, import_fs22.readFileSync)(filePath, "utf8");
+    raw = (0, import_fs25.readFileSync)(filePath, "utf8");
   } else {
     process.stderr.write(`Unsupported file type: ${ext}. Pass a .zip export or a conversations.json file.
 `);
@@ -27876,7 +29102,7 @@ async function importConversations(filePath) {
   } catch {
     process.stderr.write(`Failed to parse conversations JSON.
 `);
-    if (tempDir) (0, import_fs22.rmSync)(tempDir, { recursive: true, force: true });
+    if (tempDir) (0, import_fs25.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   process.stdout.write(`
@@ -27890,7 +29116,7 @@ ${BOLD12}chron import chatgpt${RESET13}  ${DIM11}${filePath}${RESET13}
     process.stderr.write(`  ${YELLOW10}!${RESET13} Failed to import "${e.title}": ${e.error}
 `);
   }
-  if (tempDir) (0, import_fs22.rmSync)(tempDir, { recursive: true, force: true });
+  if (tempDir) (0, import_fs25.rmSync)(tempDir, { recursive: true, force: true });
   process.stdout.write("\n");
   process.stdout.write(`${BOLD12}Done.${RESET13}  `);
   process.stdout.write(`${GREEN9}${result.imported} imported${RESET13}`);
@@ -28002,10 +29228,10 @@ async function importClaudeAi(filePath) {
   const db = await initDb();
   let raw;
   let tempDir = null;
-  const ext = (0, import_path16.extname)(filePath).toLowerCase();
+  const ext = (0, import_path19.extname)(filePath).toLowerCase();
   if (ext === ".zip") {
-    tempDir = (0, import_path16.join)((0, import_os12.tmpdir)(), `chron-import-${Date.now()}`);
-    (0, import_fs22.mkdirSync)(tempDir, { recursive: true });
+    tempDir = (0, import_path19.join)((0, import_os13.tmpdir)(), `chron-import-${Date.now()}`);
+    (0, import_fs25.mkdirSync)(tempDir, { recursive: true });
     try {
       (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "conversations.json", "-d", tempDir], { stdio: "pipe" });
     } catch {
@@ -28014,7 +29240,7 @@ async function importClaudeAi(filePath) {
       } catch {
         process.stderr.write(`Failed to extract ${filePath}. Make sure 'unzip' is installed.
 `);
-        if (tempDir) (0, import_fs22.rmSync)(tempDir, { recursive: true, force: true });
+        if (tempDir) (0, import_fs25.rmSync)(tempDir, { recursive: true, force: true });
         process.exit(1);
       }
     }
@@ -28022,12 +29248,12 @@ async function importClaudeAi(filePath) {
     if (!found) {
       process.stderr.write(`conversations.json not found inside the ZIP.
 `);
-      if (tempDir) (0, import_fs22.rmSync)(tempDir, { recursive: true, force: true });
+      if (tempDir) (0, import_fs25.rmSync)(tempDir, { recursive: true, force: true });
       process.exit(1);
     }
-    raw = (0, import_fs22.readFileSync)(found, "utf8");
+    raw = (0, import_fs25.readFileSync)(found, "utf8");
   } else if (ext === ".json") {
-    raw = (0, import_fs22.readFileSync)(filePath, "utf8");
+    raw = (0, import_fs25.readFileSync)(filePath, "utf8");
   } else {
     process.stderr.write(`Unsupported file type: ${ext}. Pass the claude-ai-export-*.zip or conversations.json.
 `);
@@ -28040,7 +29266,7 @@ async function importClaudeAi(filePath) {
   } catch {
     process.stderr.write(`Failed to parse conversations JSON.
 `);
-    if (tempDir) (0, import_fs22.rmSync)(tempDir, { recursive: true, force: true });
+    if (tempDir) (0, import_fs25.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   process.stdout.write(`
@@ -28056,7 +29282,7 @@ ${BOLD12}chron import claude${RESET13}  ${DIM11}${filePath}${RESET13}
     process.stderr.write(`  ${YELLOW10}!${RESET13} Failed to import "${e.title}": ${e.error}
 `);
   }
-  if (tempDir) (0, import_fs22.rmSync)(tempDir, { recursive: true, force: true });
+  if (tempDir) (0, import_fs25.rmSync)(tempDir, { recursive: true, force: true });
   process.stdout.write("\n");
   process.stdout.write(`${BOLD12}Done.${RESET13}  `);
   process.stdout.write(`${GREEN9}${result.imported} imported${RESET13}`);
@@ -28081,7 +29307,7 @@ async function runImport(args2) {
       process.exit(1);
     }
     const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
-    if (!(0, import_fs22.existsSync)(resolved)) {
+    if (!(0, import_fs25.existsSync)(resolved)) {
       process.stderr.write(`File not found: ${resolved}
 `);
       process.exit(1);
@@ -28097,7 +29323,7 @@ async function runImport(args2) {
       process.exit(1);
     }
     const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
-    if (!(0, import_fs22.existsSync)(resolved)) {
+    if (!(0, import_fs25.existsSync)(resolved)) {
       process.stderr.write(`File not found: ${resolved}
 `);
       process.exit(1);
@@ -28136,13 +29362,13 @@ Available importers: chatgpt, claude
   );
   process.exit(1);
 }
-var import_fs22, import_path16, import_os12, import_child_process4, RESET13, BOLD12, DIM11, GREEN9, YELLOW10, CYAN9;
+var import_fs25, import_path19, import_os13, import_child_process4, RESET13, BOLD12, DIM11, GREEN9, YELLOW10, CYAN9;
 var init_import = __esm({
   "src/cli/import.ts"() {
     "use strict";
-    import_fs22 = require("fs");
-    import_path16 = require("path");
-    import_os12 = require("os");
+    import_fs25 = require("fs");
+    import_path19 = require("path");
+    import_os13 = require("os");
     import_child_process4 = require("child_process");
     init_drizzle_orm();
     init_esm();
@@ -28163,7 +29389,7 @@ var init_import = __esm({
 
 // src/review/workflow.ts
 function findingId(ruleId, sessionId) {
-  return (0, import_crypto15.createHash)("sha256").update(`${ruleId}:${sessionId}`).digest("hex");
+  return (0, import_crypto18.createHash)("sha256").update(`${ruleId}:${sessionId}`).digest("hex");
 }
 async function hydrateFindingStatuses(db, findings) {
   if (findings.length === 0) return findings;
@@ -28235,11 +29461,11 @@ async function loadFindingStates(client, ids) {
     reviewed_at: row.reviewed_at == null ? null : String(row.reviewed_at)
   }));
 }
-var import_crypto15;
+var import_crypto18;
 var init_workflow = __esm({
   "src/review/workflow.ts"() {
     "use strict";
-    import_crypto15 = require("crypto");
+    import_crypto18 = require("crypto");
   }
 });
 
@@ -28816,13 +30042,13 @@ async function runReview2(args2) {
     }
     const html = buildReviewHtml({
       framework: frameworkArg,
-      host: (0, import_os13.hostname)(),
+      host: (0, import_os14.hostname)(),
       generatedAt,
       sessionCount,
       findings,
       coverageMapHtml
     });
-    (0, import_fs23.writeFileSync)(outputArg, html, "utf8");
+    (0, import_fs26.writeFileSync)(outputArg, html, "utf8");
     process.stdout.write(`Review report written to ${outputArg}
 `);
   }
@@ -28854,12 +30080,12 @@ async function runReviewAction(action, args2) {
     process.exit(1);
   }
 }
-var import_fs23, import_os13, RESET14, BOLD13, DIM12, RED9, YELLOW11, CYAN10, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
+var import_fs26, import_os14, RESET14, BOLD13, DIM12, RED9, YELLOW11, CYAN10, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
 var init_review = __esm({
   "src/cli/review.ts"() {
     "use strict";
-    import_fs23 = require("fs");
-    import_os13 = require("os");
+    import_fs26 = require("fs");
+    import_os14 = require("os");
     init_db2();
     init_report();
     init_rules();
@@ -29445,7 +30671,7 @@ async function runSessionDetail(prefix, outputArg) {
   const html = buildDetailHtml(session, msgs, secretsByMsg, findings, risk, tamper, generatedAt);
   const defaultOut = `chron-session-${session.id.slice(0, 8)}.html`;
   const outFile = outputArg !== "chron-dashboard.html" ? outputArg : defaultOut;
-  (0, import_fs24.writeFileSync)(outFile, html, "utf8");
+  (0, import_fs27.writeFileSync)(outFile, html, "utf8");
   const openCount = findings.filter((f) => f.status === "open").length;
   process.stdout.write(
     `
@@ -29459,11 +30685,11 @@ async function runSessionDetail(prefix, outputArg) {
 `
   );
 }
-var import_fs24, RULE_META3, FW_LABELS3, DETAIL_CSS;
+var import_fs27, RULE_META3, FW_LABELS3, DETAIL_CSS;
 var init_session_detail = __esm({
   "src/cli/session-detail.ts"() {
     "use strict";
-    import_fs24 = require("fs");
+    import_fs27 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_roles();
@@ -29943,7 +31169,7 @@ async function runDashboard(args2) {
     minute: "2-digit"
   });
   const html = buildDashboardHtml(rows, findings, requirements, sessionIds.length, since, sinceArg, generatedAt, now);
-  (0, import_fs25.writeFileSync)(outputArg, html, "utf8");
+  (0, import_fs28.writeFileSync)(outputArg, html, "utf8");
   const criticalCount = rows.filter((r) => r.risk.band === "critical").length;
   const highCount = rows.filter((r) => r.risk.band === "high").length;
   process.stdout.write(
@@ -29957,11 +31183,11 @@ async function runDashboard(args2) {
 `
   );
 }
-var import_fs25, RULE_META4, FW_LABELS4, DASHBOARD_CSS, REASON_LABEL;
+var import_fs28, RULE_META4, FW_LABELS4, DASHBOARD_CSS, REASON_LABEL;
 var init_dashboard = __esm({
   "src/cli/dashboard.ts"() {
     "use strict";
-    import_fs25 = require("fs");
+    import_fs28 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -30184,13 +31410,12 @@ function getSplunkConfig() {
   _splunkCacheExpiry = now + 1e4;
   _splunkCachePath = path;
   try {
-    const cfg = JSON.parse((0, import_fs26.readFileSync)(path, "utf8"));
+    const cfg = JSON.parse((0, import_fs29.readFileSync)(path, "utf8"));
     const s = cfg?.splunk;
     _splunkCache = s?.url && s?.token ? { url: s.url, token: s.token, insecure: s.insecure ?? false } : null;
   } catch {
     _splunkCache = null;
   }
-  if (_splunkCache?.insecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
   return _splunkCache;
 }
 function getSentinelConfig() {
@@ -30209,7 +31434,7 @@ function getSentinelConfig() {
   _sentinelCacheExpiry = now + 1e4;
   _sentinelCachePath = path;
   try {
-    const cfg = JSON.parse((0, import_fs26.readFileSync)(path, "utf8"));
+    const cfg = JSON.parse((0, import_fs29.readFileSync)(path, "utf8"));
     const s = cfg?.sentinel;
     _sentinelCache = s?.dce && s?.dcrId && s?.stream && s?.tenantId && s?.clientId && s?.clientSecret ? { dce: s.dce, dcrId: s.dcrId, stream: s.stream, tenantId: s.tenantId, clientId: s.clientId, clientSecret: s.clientSecret } : null;
   } catch {
@@ -30221,11 +31446,12 @@ function requestTimeoutMs() {
   const configured = Number(process.env.CHRON_SIEM_TIMEOUT_MS ?? 1e4);
   return Number.isFinite(configured) && configured > 0 ? configured : 1e4;
 }
-async function fetchWithTimeout(url, init) {
+async function fetchWithTimeout(url, init, splunkInsecure) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), requestTimeoutMs());
   try {
-    return await fetch(url, { ...init, signal: controller.signal });
+    const options = { ...init, signal: controller.signal };
+    return splunkInsecure === void 0 ? await fetch(url, options) : await splunkRequest(url, options, splunkInsecure);
   } finally {
     clearTimeout(timer);
   }
@@ -30256,7 +31482,7 @@ async function getAzureToken(tenantId, clientId, clientSecret) {
 }
 function getMachineId() {
   if (!_machineId) {
-    _machineId = "sha256:" + (0, import_crypto16.createHash)("sha256").update((0, import_os14.hostname)()).digest("hex").slice(0, 16);
+    _machineId = "sha256:" + (0, import_crypto19.createHash)("sha256").update((0, import_os15.hostname)()).digest("hex").slice(0, 16);
   }
   return _machineId;
 }
@@ -30276,7 +31502,7 @@ function toSplunkEvent(payload) {
   }
   return {
     time: new Date(payload.timestamp).getTime() / 1e3,
-    host: (0, import_os14.hostname)(),
+    host: (0, import_os15.hostname)(),
     source: "chron-mcp",
     sourcetype: "chron:event",
     event
@@ -30287,14 +31513,14 @@ function emitToSplunk(payload) {
   if (!cfg) return;
   const url = `${cfg.url.replace(/\/$/, "")}/services/collector/event`;
   setImmediate(
-    () => fetch(url, {
+    () => fetchWithTimeout(url, {
       method: "POST",
       headers: {
         "Authorization": `Splunk ${cfg.token}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify(toSplunkEvent(payload))
-    }).catch(() => void 0)
+    }, cfg.insecure).catch(() => void 0)
   );
 }
 function toSentinelRecord(payload) {
@@ -30305,7 +31531,7 @@ function toSentinelRecord(payload) {
     AiTool: payload.session.ai_tool ?? "",
     OS: process.platform,
     ChronVersion: import_package4.version,
-    Computer: (0, import_os14.hostname)(),
+    Computer: (0, import_os15.hostname)(),
     Role: "",
     DetectionType: "",
     MaskedValue: ""
@@ -30359,7 +31585,7 @@ function emitToLogScale(payload) {
   const token = process.env.CHRON_LOGSCALE_TOKEN;
   if (!url || !token) return;
   const body = JSON.stringify([{
-    tags: { host: (0, import_os14.hostname)(), source: "chron-mcp" },
+    tags: { host: (0, import_os15.hostname)(), source: "chron-mcp" },
     events: [{ timestamp: payload.timestamp, attributes: toLogScaleAttributes(payload) }]
   }]);
   setImmediate(
@@ -30422,7 +31648,7 @@ function toSplunkRiskEvent(payload) {
     base.signals_code_changes = payload.signals.code_changes;
     base.signals_findings = payload.signals.findings;
   }
-  return { time: new Date(payload.timestamp).getTime() / 1e3, host: (0, import_os14.hostname)(), source: "chron", sourcetype: "chron:risk", event: base };
+  return { time: new Date(payload.timestamp).getTime() / 1e3, host: (0, import_os15.hostname)(), source: "chron", sourcetype: "chron:risk", event: base };
 }
 function toSentinelRiskRecord(payload) {
   const base = {
@@ -30430,7 +31656,7 @@ function toSentinelRiskRecord(payload) {
     EventType: payload.event_type,
     OS: process.platform,
     ChronVersion: import_package4.version,
-    Computer: (0, import_os14.hostname)()
+    Computer: (0, import_os15.hostname)()
   };
   if (payload.event_type === "pattern_detected") {
     base.PatternId = payload.pattern_id;
@@ -30472,9 +31698,9 @@ function toLogScaleRiskAttributes(payload) {
 }
 async function emitRiskEvent(payload) {
   const deliveries = [];
-  const post = async (target, url, headers, body) => {
+  const post = async (target, url, headers, body, splunkInsecure) => {
     try {
-      const res = await fetchWithTimeout(url, { method: "POST", headers, body });
+      const res = await fetchWithTimeout(url, { method: "POST", headers, body }, splunkInsecure);
       if (res.status >= 200 && res.status < 300) return { target, status: "accepted", httpStatus: res.status };
       return { target, status: "rejected", httpStatus: res.status };
     } catch (e) {
@@ -30506,7 +31732,7 @@ async function emitRiskEvent(payload) {
       lsUrl,
       { "Authorization": `Bearer ${lsToken}`, "Content-Type": "application/json" },
       JSON.stringify([{
-        tags: { host: (0, import_os14.hostname)(), source: "chron" },
+        tags: { host: (0, import_os15.hostname)(), source: "chron" },
         events: [{ timestamp: payload.timestamp, attributes: toLogScaleRiskAttributes(payload) }]
       }])
     ));
@@ -30536,24 +31762,23 @@ async function emitRiskEvent(payload) {
       "splunk",
       `${splunkCfg.url.replace(/\/$/, "")}/services/collector/event`,
       { "Authorization": `Splunk ${splunkCfg.token}`, "Content-Type": "application/json" },
-      JSON.stringify(toSplunkRiskEvent(payload))
+      JSON.stringify(toSplunkRiskEvent(payload)),
+      splunkCfg.insecure
     ));
   }
   return Promise.all(deliveries);
 }
-var import_fs26, import_crypto16, import_os14, import_package4, _splunkCache, _splunkCacheExpiry, _splunkCachePath, _sentinelCache, _sentinelCacheExpiry, _sentinelCachePath, _azureTokenCache, _machineId;
+var import_fs29, import_crypto19, import_os15, import_package4, _splunkCache, _splunkCacheExpiry, _splunkCachePath, _sentinelCache, _sentinelCacheExpiry, _sentinelCachePath, _azureTokenCache, _machineId;
 var init_relay = __esm({
   "src/utils/relay.ts"() {
     "use strict";
-    import_fs26 = require("fs");
-    import_crypto16 = require("crypto");
-    import_os14 = require("os");
+    import_fs29 = require("fs");
+    import_crypto19 = require("crypto");
+    import_os15 = require("os");
     import_package4 = __toESM(require_package());
     init_config_path();
     init_error_codes();
-    if (process.env.CHRON_SPLUNK_INSECURE === "1") {
-      process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-    }
+    init_splunk_request();
     _splunkCache = null;
     _splunkCacheExpiry = 0;
     _splunkCachePath = "";
@@ -30767,7 +31992,7 @@ function renderDelivery(r, toStderr) {
   return out.join("");
 }
 var RESET17, BOLD16, DIM15, RED12, YELLOW14, CYAN13, GREEN10, BAND_COLOR3, SEV_COLOR3;
-var init_events = __esm({
+var init_events2 = __esm({
   "src/cli/events.ts"() {
     "use strict";
     init_db2();
@@ -30805,7 +32030,7 @@ __export(evidence_exports, {
   runEvidence: () => runEvidence
 });
 function hash(input) {
-  return (0, import_crypto17.createHash)("sha256").update(input).digest("hex");
+  return (0, import_crypto20.createHash)("sha256").update(input).digest("hex");
 }
 function argValue(args2, name2) {
   const prefix = `--${name2}=`;
@@ -30871,12 +32096,12 @@ async function createEvidenceLink(db, evidenceId, targetType, targetId, now, not
   return id;
 }
 async function importEvidenceDocument(db, params) {
-  const filePath = (0, import_path17.resolve)(params.file);
-  const buf = (0, import_fs27.readFileSync)(filePath);
-  const stat = (0, import_fs27.statSync)(filePath);
+  const filePath = (0, import_path20.resolve)(params.file);
+  const buf = (0, import_fs30.readFileSync)(filePath);
+  const stat = (0, import_fs30.statSync)(filePath);
   const sha256 = hash(buf);
   const now = params.now ?? (/* @__PURE__ */ new Date()).toISOString();
-  const title = (0, import_path17.basename)(filePath);
+  const title = (0, import_path20.basename)(filePath);
   const documentId = sha256;
   const resolvedControl = params.control ? resolveControlTarget(params.control, params.framework) : void 0;
   const linkId = resolvedControl ? hash(`${documentId}:control:${resolvedControl.id}`) : null;
@@ -31037,13 +32262,13 @@ async function runEvidence(args2) {
   }
   throw new Error(`Unknown evidence command: ${subcommand}`);
 }
-var import_crypto17, import_path17, import_fs27, FW_LABELS5;
+var import_crypto20, import_path20, import_fs30, FW_LABELS5;
 var init_evidence2 = __esm({
   "src/cli/evidence.ts"() {
     "use strict";
-    import_crypto17 = require("crypto");
-    import_path17 = require("path");
-    import_fs27 = require("fs");
+    import_crypto20 = require("crypto");
+    import_path20 = require("path");
+    import_fs30 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -31249,100 +32474,19 @@ __export(setup_exports, {
   shouldConfigureFromInstall: () => shouldConfigureFromInstall
 });
 function shouldConfigureFromInstall(env = process.env) {
-  if (env.npm_lifecycle_event !== "postinstall") return true;
-  return env.npm_config_global === "true";
+  return !env.npm_lifecycle_event;
 }
-async function runSetup() {
-  if (!shouldConfigureFromInstall()) return;
-  const home = (0, import_os15.homedir)();
-  const plat = (0, import_os15.platform)();
-  const configs = userMcpClientConfigs(home, process.cwd(), plat, process.env.APPDATA);
-  const GLOBAL_ONLY = ["Claude Code", "Cursor (global)", "Gemini CLI", "Codex (global)"];
-  const fixable = configs.filter((c) => {
-    if (c.name === "Codex (project)" || c.name === "Cursor (project)") return false;
-    if ((0, import_fs28.existsSync)(c.path)) return true;
-    if (GLOBAL_ONLY.includes(c.name)) return true;
-    if ((0, import_fs28.existsSync)((0, import_path18.dirname)(c.path))) return true;
-    return false;
-  });
-  const added = [];
-  for (const c of fixable) {
-    try {
-      const r = ensureChronMcpConfig(c);
-      if (r.status === "added") added.push(c.name);
-    } catch {
-    }
+async function runSetup(args2 = []) {
+  if (!shouldConfigureFromInstall()) {
+    process.stdout.write("Installation does not configure agents. Run chron setup to preview changes.\n");
+    return;
   }
-  for (const write of [ensureClaudeCodeInstructions, ensureCodexInstructions, ensureCodexGlobalAgentsMd, ensureGeminiInstructions]) {
-    try {
-      write();
-    } catch {
-    }
-  }
-  try {
-    ensureCodexShellWrapper();
-  } catch {
-  }
-  if (added.length > 0) {
-    process.stdout.write(`Chron: configured MCP for ${added.join(", ")} \u2014 restart to begin logging.
-`);
-  }
+  await runConfiguration(args2);
 }
-var import_os15, import_path18, import_fs28;
 var init_setup = __esm({
   "src/cli/setup.ts"() {
     "use strict";
-    import_os15 = require("os");
-    import_path18 = require("path");
-    import_fs28 = require("fs");
-    init_mcp_config();
-    init_connect();
-  }
-});
-
-// src/bootstrap.ts
-var bootstrap_exports = {};
-__export(bootstrap_exports, {
-  bootstrapProjectLogging: () => bootstrapProjectLogging
-});
-function isRealProject(cwd) {
-  return PROJECT_INDICATORS.some((indicator) => (0, import_fs29.existsSync)((0, import_path19.join)(cwd, indicator)));
-}
-function bootstrapProjectLogging(cwd = process.cwd()) {
-  try {
-    if (process.env.CHRON_DISABLE_PROJECT_BOOTSTRAP === "1") return;
-    if (cwd === (0, import_os16.homedir)()) return;
-    if (cwd.includes("node_modules")) return;
-    if (cwd.includes(".npm")) return;
-    if (!isRealProject(cwd)) return;
-    const codexResult = ensureCodexProjectInstructions(cwd);
-    if (codexResult.status === "added") {
-      process.stderr.write("Chron: project logging instructions installed in AGENTS.md\n");
-    }
-    const cursorResult = ensureCursorProjectInstructions(cwd);
-    if (cursorResult.status === "added") {
-      process.stderr.write("Chron: project logging instructions installed in .cursor/rules/chron.mdc\n");
-    }
-  } catch {
-  }
-}
-var import_fs29, import_os16, import_path19, PROJECT_INDICATORS;
-var init_bootstrap = __esm({
-  "src/bootstrap.ts"() {
-    "use strict";
-    import_fs29 = require("fs");
-    import_os16 = require("os");
-    import_path19 = require("path");
-    init_connect();
-    PROJECT_INDICATORS = [
-      ".git",
-      "package.json",
-      "go.mod",
-      "Cargo.toml",
-      "pyproject.toml",
-      "pom.xml",
-      ".gitignore"
-    ];
+    init_configuration();
   }
 });
 
@@ -31413,7 +32557,7 @@ var init_semconv = __esm({
 
 // src/otel/spans.ts
 function deriveId(input, bytes2) {
-  const hex = (0, import_crypto18.createHash)("sha256").update(input).digest("hex").slice(0, bytes2 * 2);
+  const hex = (0, import_crypto21.createHash)("sha256").update(input).digest("hex").slice(0, bytes2 * 2);
   return /^0+$/.test(hex) ? hex.slice(0, -1) + "1" : hex;
 }
 function traceIdForSession(sessionId) {
@@ -31502,11 +32646,11 @@ function buildSessionTrace(session, messages3, opts = {}) {
     ...messages3.map((m, i) => buildMessageSpan(m, session, messages3[i - 1], opts))
   ];
 }
-var import_crypto18;
+var import_crypto21;
 var init_spans = __esm({
   "src/otel/spans.ts"() {
     "use strict";
-    import_crypto18 = require("crypto");
+    import_crypto21 = require("crypto");
     init_semconv();
   }
 });
@@ -31647,7 +32791,7 @@ async function exportSpans(spans, config, resource, deps = {}) {
     const remainingBatches = allBatches.slice(index + 1);
     const body = JSON.stringify(toResourceSpans(batch, resource));
     const payload = {
-      payloadDigest: (0, import_crypto19.createHash)("sha256").update(body).digest("hex"),
+      payloadDigest: (0, import_crypto22.createHash)("sha256").update(body).digest("hex"),
       payloadBytes: Buffer.byteLength(body, "utf8")
     };
     if (deps.onBatchStart) {
@@ -31686,11 +32830,11 @@ async function exportSpans(spans, config, resource, deps = {}) {
   result.complete = !gateHeld && result.sent === spans.length && result.rejected === 0 && result.failed === 0 && result.unknown === 0;
   return result;
 }
-var import_crypto19, CODE_CATEGORIES, ESTABLISHED_NON_DELIVERY2, defaultSleep;
+var import_crypto22, CODE_CATEGORIES, ESTABLISHED_NON_DELIVERY2, defaultSleep;
 var init_exporter = __esm({
   "src/otel/exporter.ts"() {
     "use strict";
-    import_crypto19 = require("crypto");
+    import_crypto22 = require("crypto");
     init_error_codes();
     init_otlp();
     CODE_CATEGORIES = [
@@ -32175,7 +33319,7 @@ async function readTranscript(path, onLine, opts = {}) {
   const maxLineChars = opts.maxLineChars ?? DEFAULT_MAX_LINE_CHARS;
   const recordTypes = new Set(opts.recordTypes ?? CLAUDE_CODE_RECORD_TYPES);
   const metadataTypes = new Set(opts.metadataTypes ?? CLAUDE_CODE_METADATA_TYPES);
-  const hash2 = (0, import_crypto20.createHash)("sha256");
+  const hash2 = (0, import_crypto23.createHash)("sha256");
   const decoder = new import_string_decoder.StringDecoder("utf8");
   const counts = {
     bytes: 0,
@@ -32272,12 +33416,12 @@ async function readTranscript(path, onLine, opts = {}) {
   };
   let before = null;
   try {
-    const st = (0, import_fs30.statSync)(path);
+    const st = (0, import_fs31.statSync)(path);
     before = { size: st.size, mtimeMs: st.mtimeMs, ino: st.ino };
   } catch {
   }
   try {
-    const stream = (0, import_fs30.createReadStream)(path, { highWaterMark: opts.chunkSize ?? DEFAULT_CHUNK });
+    const stream = (0, import_fs31.createReadStream)(path, { highWaterMark: opts.chunkSize ?? DEFAULT_CHUNK });
     for await (const chunk2 of stream) {
       hash2.update(chunk2);
       counts.bytes += chunk2.length;
@@ -32297,7 +33441,7 @@ async function readTranscript(path, onLine, opts = {}) {
   let changed = null;
   if (before !== null) {
     try {
-      const st = (0, import_fs30.statSync)(path);
+      const st = (0, import_fs31.statSync)(path);
       changed = st.size !== before.size || st.mtimeMs !== before.mtimeMs || st.ino !== before.ino;
     } catch {
       changed = true;
@@ -32311,12 +33455,12 @@ async function readTranscript(path, onLine, opts = {}) {
     ...readError === void 0 ? {} : { read_error: readError }
   };
 }
-var import_fs30, import_crypto20, import_string_decoder, DEFAULT_MAX_LINE_CHARS, DEFAULT_CHUNK, CLAUDE_CODE_RECORD_TYPES, CLAUDE_CODE_METADATA_TYPES;
+var import_fs31, import_crypto23, import_string_decoder, DEFAULT_MAX_LINE_CHARS, DEFAULT_CHUNK, CLAUDE_CODE_RECORD_TYPES, CLAUDE_CODE_METADATA_TYPES;
 var init_transcript_reader = __esm({
   "src/stream/transcript-reader.ts"() {
     "use strict";
-    import_fs30 = require("fs");
-    import_crypto20 = require("crypto");
+    import_fs31 = require("fs");
+    import_crypto23 = require("crypto");
     import_string_decoder = require("string_decoder");
     DEFAULT_MAX_LINE_CHARS = 4 * 1024 * 1024;
     DEFAULT_CHUNK = 256 * 1024;
@@ -32362,21 +33506,21 @@ var init_claude_code_messages = __esm({
 function discoverWithFailures(root) {
   const files = [];
   const failures = [];
-  if (!(0, import_fs31.existsSync)(root)) {
+  if (!(0, import_fs32.existsSync)(root)) {
     return { root, root_exists: false, files, failures };
   }
   let projects;
   try {
-    projects = (0, import_fs31.readdirSync)(root);
+    projects = (0, import_fs32.readdirSync)(root);
   } catch (e) {
     failures.push({ path: root, reason: `could not list the transcript root: ${msg(e)}` });
     return { root, root_exists: true, files, failures };
   }
   for (const project of projects) {
-    const projectDir = (0, import_path20.join)(root, project);
+    const projectDir = (0, import_path21.join)(root, project);
     let stat;
     try {
-      stat = (0, import_fs31.statSync)(projectDir);
+      stat = (0, import_fs32.statSync)(projectDir);
     } catch (e) {
       failures.push({ path: projectDir, reason: `could not stat: ${msg(e)}` });
       continue;
@@ -32384,7 +33528,7 @@ function discoverWithFailures(root) {
     if (!stat.isDirectory()) continue;
     let entries;
     try {
-      entries = (0, import_fs31.readdirSync)(projectDir);
+      entries = (0, import_fs32.readdirSync)(projectDir);
     } catch (e) {
       failures.push({ path: projectDir, reason: `could not list this project: ${msg(e)}` });
       continue;
@@ -32392,9 +33536,9 @@ function discoverWithFailures(root) {
     for (const entry of entries) {
       const sessionId = sessionIdOf(entry);
       if (!sessionId) continue;
-      const path = (0, import_path20.join)(projectDir, entry);
+      const path = (0, import_path21.join)(projectDir, entry);
       try {
-        const s = (0, import_fs31.statSync)(path);
+        const s = (0, import_fs32.statSync)(path);
         if (!s.isFile()) continue;
         files.push({
           path,
@@ -32413,19 +33557,19 @@ function discoverWithFailures(root) {
 function msg(e) {
   return e instanceof Error ? e.message : String(e);
 }
-var import_fs31, import_path20;
+var import_fs32, import_path21;
 var init_discover2 = __esm({
   "src/reconcile/discover.ts"() {
     "use strict";
-    import_fs31 = require("fs");
-    import_path20 = require("path");
+    import_fs32 = require("fs");
+    import_path21 = require("path");
     init_discover();
   }
 });
 
 // src/reconcile/reconcile.ts
 function fingerprint(normalised) {
-  return (0, import_crypto21.createHash)("sha256").update(normalised).digest("hex").slice(0, 32);
+  return (0, import_crypto24.createHash)("sha256").update(normalised).digest("hex").slice(0, 32);
 }
 function comparable(text2) {
   return canonicalContent(text2).replace(/\s+/g, " ").trim().toLowerCase();
@@ -32569,9 +33713,9 @@ async function reconcileClaudeCode(opts = {}) {
   const maxBytes = opts.maxTranscriptBytes === void 0 ? DEFAULT_MAX_TRANSCRIPT_BYTES : opts.maxTranscriptBytes;
   const maxLineChars = opts.maxLineChars ?? DEFAULT_MAX_LINE_CHARS2;
   const root = opts.transcriptRoot ?? transcriptRoot();
-  const chronHome = process.env.CHRON_HOME ?? (0, import_path21.join)((0, import_os17.homedir)(), ".chron");
-  const dbPath3 = opts.databasePath ?? process.env.CHRON_DB_PATH ?? (0, import_path21.join)((0, import_os17.homedir)(), ".chron", "chron.db");
-  const journalPath2 = opts.journalPath ?? process.env.CHRON_JOURNAL_PATH ?? (0, import_path21.join)(chronHome, "capture.jsonl");
+  const chronHome = process.env.CHRON_HOME ?? (0, import_path22.join)((0, import_os16.homedir)(), ".chron");
+  const dbPath3 = opts.databasePath ?? process.env.CHRON_DB_PATH ?? (0, import_path22.join)((0, import_os16.homedir)(), ".chron", "chron.db");
+  const journalPath3 = opts.journalPath ?? process.env.CHRON_JOURNAL_PATH ?? (0, import_path22.join)(chronHome, "capture.jsonl");
   const discovery = discoverWithFailures(root);
   const sources = [];
   const unreadable = [];
@@ -32579,7 +33723,7 @@ async function reconcileClaudeCode(opts = {}) {
   let sessions2 = [];
   const sessionPrints = /* @__PURE__ */ new Map();
   let dbReadable = false;
-  if (dbPath3 && (0, import_fs32.existsSync)(dbPath3)) {
+  if (dbPath3 && (0, import_fs33.existsSync)(dbPath3)) {
     const handle = openUntouched(dbPath3);
     if (handle) {
       try {
@@ -32619,11 +33763,11 @@ async function reconcileClaudeCode(opts = {}) {
   }
   let runs = [];
   let journalStatus2 = "not_read";
-  if (journalPath2) {
-    const verdict = verifyJournalSequence(journalSegmentPaths(journalPath2));
+  if (journalPath3) {
+    const verdict = verifyJournalSequence(journalSegmentPaths(journalPath3));
     journalStatus2 = verdict.status;
     runs = collectRuns(verdict.records);
-    sources.push(`journal ${journalPath2} (${verdict.status}, ${runs.length} runs)`);
+    sources.push(`journal ${journalPath3} (${verdict.status}, ${runs.length} runs)`);
   } else {
     sources.push("journal (no path configured)");
   }
@@ -32641,7 +33785,7 @@ async function reconcileClaudeCode(opts = {}) {
       max_line_chars: maxLineChars
     },
     sources,
-    journal_path: journalPath2,
+    journal_path: journalPath3,
     journal_status: journalStatus2,
     journal_runs_considered: runs.length,
     database_path: dbPath3,
@@ -32862,18 +34006,18 @@ async function reconcileClaudeCode(opts = {}) {
     discovery_failures: discovery.failures
   };
 }
-var import_fs32, import_crypto21, import_string_decoder2, import_os17, import_path21, DEFAULT_MAX_TRANSCRIPT_BYTES, DEFAULT_MAX_LINE_CHARS2, CLAUDE_CODE_REF, MAX_COMPARED, MIN_MESSAGE_CHARS;
+var import_fs33, import_crypto24, import_string_decoder2, import_os16, import_path22, DEFAULT_MAX_TRANSCRIPT_BYTES, DEFAULT_MAX_LINE_CHARS2, CLAUDE_CODE_REF, MAX_COMPARED, MIN_MESSAGE_CHARS;
 var init_reconcile = __esm({
   "src/reconcile/reconcile.ts"() {
     "use strict";
-    import_fs32 = require("fs");
-    import_crypto21 = require("crypto");
+    import_fs33 = require("fs");
+    import_crypto24 = require("crypto");
     import_string_decoder2 = require("string_decoder");
     init_drizzle_orm();
     init_transcript_reader();
     init_claude_code_messages();
-    import_os17 = require("os");
-    import_path21 = require("path");
+    import_os16 = require("os");
+    import_path22 = require("path");
     init_discover();
     init_discover2();
     init_readonly();
@@ -33096,7 +34240,7 @@ __export(project_exports2, {
 });
 async function runProject(args2) {
   const pathArg = args2.find((a) => a.startsWith("--journal="))?.split("=").slice(1).join("=");
-  const path = guardedJournalPath(pathArg || process.env.CHRON_JOURNAL_PATH || (0, import_path22.join)(process.env.CHRON_HOME ?? (0, import_path22.join)((0, import_os18.homedir)(), ".chron"), "capture.jsonl"));
+  const path = guardedJournalPath(pathArg || process.env.CHRON_JOURNAL_PATH || (0, import_path23.join)(process.env.CHRON_HOME ?? (0, import_path23.join)((0, import_os17.homedir)(), ".chron"), "capture.jsonl"));
   const segments = journalSegmentPaths(path);
   process.stdout.write(`
 ${BOLD21}Projecting journal${RESET22} ${path}
@@ -33131,17 +34275,51 @@ ${BOLD21}Projecting journal${RESET22} ${path}
     process.stdout.write(`  ${DIM20}No runs in the journal.${RESET22}
 `);
   }
+  const native = await projectNativeEvents(db, path);
+  const nativeTouched = native.projected.length + native.unchanged.length + native.extended.length + native.failed.length + native.unattributed.length;
+  if (nativeTouched > 0) {
+    process.stdout.write(`
+${BOLD21}Hook events${RESET22} ${DIM20}observational, unenforced${RESET22}
+`);
+    if (native.projected.length > 0) {
+      process.stdout.write(`  ${GREEN15}\u2713${RESET22} Projected ${native.projected.length} hook session(s)
+`);
+    }
+    for (const e of native.extended) {
+      process.stdout.write(
+        `  ${GREEN15}\u2713${RESET22} ${e.session_id.slice(0, 16)}: ${e.added} new message(s)
+`
+      );
+    }
+    if (native.unchanged.length > 0) {
+      process.stdout.write(
+        `  ${GREEN15}\u2713${RESET22} ${native.unchanged.length} hook session(s) already projected, left unchanged
+`
+      );
+    }
+    for (const f of native.failed) {
+      process.stdout.write(`  ${YELLOW19}!${RESET22} ${f.session_id.slice(0, 16)}: ${f.reason}
+`);
+    }
+    if (native.unattributed.length > 0) {
+      process.stdout.write(
+        `  ${YELLOW19}!${RESET22} ${native.unattributed.length} hook event(s) could not be attributed to a conversation: ${native.unattributed[0].reason}
+`
+      );
+    }
+  }
   process.stdout.write("\n");
   process.exit(result.verdict.status === "corrupt" ? 1 : 0);
 }
-var import_path22, import_os18, RESET22, BOLD21, GREEN15, RED16, YELLOW19, DIM20;
+var import_path23, import_os17, RESET22, BOLD21, GREEN15, RED16, YELLOW19, DIM20;
 var init_project2 = __esm({
   "src/cli/project.ts"() {
     "use strict";
-    import_path22 = require("path");
-    import_os18 = require("os");
+    import_path23 = require("path");
+    import_os17 = require("os");
     init_db2();
     init_project();
+    init_native2();
     init_runs();
     init_config_path();
     RESET22 = "\x1B[0m";
@@ -33161,11 +34339,11 @@ __export(run_exports, {
   runWrapped: () => runWrapped,
   splitRunArgs: () => splitRunArgs
 });
-function journalPath() {
-  return guardedJournalPath(process.env.CHRON_JOURNAL_PATH ?? (0, import_path23.join)(process.env.CHRON_HOME ?? (0, import_path23.join)((0, import_os19.homedir)(), ".chron"), "capture.jsonl"));
+function journalPath2() {
+  return guardedJournalPath(process.env.CHRON_JOURNAL_PATH ?? (0, import_path24.join)(process.env.CHRON_HOME ?? (0, import_path24.join)((0, import_os18.homedir)(), ".chron"), "capture.jsonl"));
 }
 async function runWrapped(argv, deps = {}) {
-  const path = deps.journalPath ?? journalPath();
+  const path = deps.journalPath ?? journalPath2();
   const releaseOut = deps.releaseOut ?? ((b) => {
     process.stdout.write(b);
   });
@@ -33177,7 +34355,7 @@ async function runWrapped(argv, deps = {}) {
   });
   const [cmd, ...args2] = argv;
   if (!cmd) throw new Error("chron run: no command given");
-  const runId = deps.runId ?? (0, import_crypto22.randomUUID)();
+  const runId = deps.runId ?? (0, import_crypto25.randomUUID)();
   const writer = JournalWriter.open(path, {
     flushBytes: deps.flushBytes ?? 1,
     // Not overridden here. An earlier version passed `minFreeBytes: 0`, which was
@@ -33313,15 +34491,15 @@ ${RED17}chron run: capture failed \u2014 output withheld${RESET23}
 `
     );
   });
-  const childExit = await new Promise((resolve5) => {
+  const childExit = await new Promise((resolve6) => {
     child.on("close", (code) => {
       finished = true;
-      resolve5(code);
+      resolve6(code);
     });
     child.on("error", (e) => {
       failClosed(e);
       finished = true;
-      resolve5(null);
+      resolve6(null);
     });
   });
   if (captureError === null) {
@@ -33361,9 +34539,9 @@ function defaultSpawn(cmd, args2) {
   return (0, import_child_process6.spawn)(cmd, args2, { stdio: ["pipe", "pipe", "pipe"] });
 }
 function splitRunArgs(args2) {
-  const sep2 = args2.indexOf("--");
-  if (sep2 !== -1) {
-    return { wrapper: args2.slice(0, sep2), command: args2.slice(sep2 + 1) };
+  const sep3 = args2.indexOf("--");
+  if (sep3 !== -1) {
+    return { wrapper: args2.slice(0, sep3), command: args2.slice(sep3 + 1) };
   }
   const firstOperand = args2.findIndex((a) => !a.startsWith("--"));
   if (firstOperand === -1) return { wrapper: args2, command: [] };
@@ -33435,14 +34613,14 @@ ${RED17}chron run: capture could not start \u2014 the command was not run${RESET
   }
   process.exit(outcome.exitCode);
 }
-var import_child_process6, import_crypto22, import_path23, import_os19, CAPTURE_FAILED_EXIT, RESET23, RED17, DIM21;
+var import_child_process6, import_crypto25, import_path24, import_os18, CAPTURE_FAILED_EXIT, RESET23, RED17, DIM21;
 var init_run = __esm({
   "src/cli/run.ts"() {
     "use strict";
     import_child_process6 = require("child_process");
-    import_crypto22 = require("crypto");
-    import_path23 = require("path");
-    import_os19 = require("os");
+    import_crypto25 = require("crypto");
+    import_path24 = require("path");
+    import_os18 = require("os");
     init_writer();
     init_scope();
     init_config_path();
@@ -33459,7 +34637,7 @@ function ntpDisabled() {
   return process.env[NTP_DISABLED_ENV] === "1";
 }
 function queryNtpUdp(server, timeout) {
-  return new Promise((resolve5, reject) => {
+  return new Promise((resolve6, reject) => {
     const client = (0, import_dgram.createSocket)("udp4");
     const timer = setTimeout(() => {
       try {
@@ -33486,7 +34664,7 @@ function queryNtpUdp(server, timeout) {
       const frac = msg2.readUInt32BE(44);
       const t3 = (secs - NTP_OFFSET) * 1e3 + frac / 4294967296 * 1e3;
       const offset_ms = Math.round(t3 - (t1 + t4) / 2);
-      resolve5({ offset_ms });
+      resolve6({ offset_ms });
     });
     client.once("error", (err) => {
       clearTimeout(timer);
@@ -33820,6 +34998,144 @@ var init_attach = __esm({
   }
 });
 
+// src/cli/hook.ts
+var hook_exports = {};
+__export(hook_exports, {
+  HOOK_BLOCKED_EXIT: () => HOOK_BLOCKED_EXIT,
+  HOOK_CAPTURE_FAILED_EXIT: () => HOOK_CAPTURE_FAILED_EXIT,
+  hookCommand: () => hookCommand,
+  hookUsage: () => hookUsage
+});
+function defaultJournalPath() {
+  return guardedJournalPath(process.env.CHRON_JOURNAL_PATH ?? (0, import_path25.join)(process.env.CHRON_HOME ?? (0, import_path25.join)((0, import_os19.homedir)(), ".chron"), "capture.jsonl"));
+}
+async function readAllStdin() {
+  const chunks = [];
+  for await (const chunk2 of process.stdin) chunks.push(chunk2);
+  return Buffer.concat(chunks).toString("utf8");
+}
+function flagValue(args2, name2) {
+  const prefix = `--${name2}=`;
+  const inline = args2.find((a) => a.startsWith(prefix));
+  if (inline) return inline.slice(prefix.length);
+  const i = args2.indexOf(`--${name2}`);
+  return i >= 0 && args2[i + 1] !== void 0 ? args2[i + 1] : null;
+}
+function hookUsage() {
+  return [
+    "usage: chron-hook claude-code [--journal <path>] [--client-version <v>]",
+    "                             [--invocation-id <id>] [--on-capture-failure report|block]",
+    "",
+    "Reads one hook payload on stdin and records it in the capture journal.",
+    "Equivalent compatibility command: chron hook claude-code [the same options].",
+    `Measured events: ${Object.keys(CLAUDE_CODE_EVENTS).join(", ")}. Any other event is recorded`,
+    "with no ordering claim, because this build has not measured it.",
+    "",
+    "It records. It does not withhold: a hook is invoked by the client and cannot hold",
+    "back content the client has already sent or shown. `block` is available where the",
+    "vendor documents a blocking exit code, and stops the action the hook gates, which",
+    "on UserPromptSubmit is not the request that already carried the prompt.",
+    "",
+    "Configure it as a command hook in the client's settings, for example:",
+    '  "hooks": { "UserPromptSubmit": [ { "hooks": [',
+    '    { "type": "command", "command": "chron-hook claude-code" } ] } ] }',
+    ""
+  ].join("\n");
+}
+async function hookCommand(args2, deps = {}) {
+  const stdout = deps.stdout ?? ((s) => {
+    process.stdout.write(s);
+  });
+  const stderr = deps.stderr ?? ((s) => {
+    process.stderr.write(s);
+  });
+  const client = args2[0] ?? "";
+  if (client === "" || client === "--help" || client === "-h") {
+    stdout(hookUsage());
+    return client === "" ? 64 : 0;
+  }
+  if (client !== NATIVE_CLIENT) {
+    stderr(
+      `chron hook: only ${NATIVE_CLIENT} is supported, not '${client}'. A client this build has not measured would have its events recorded under claims taken from another client, which is the one thing a per-event table exists to prevent.
+`
+    );
+    return HOOK_CAPTURE_FAILED_EXIT;
+  }
+  const modeRaw = flagValue(args2, "on-capture-failure") ?? "report";
+  if (modeRaw !== "report" && modeRaw !== "block") {
+    stderr(
+      `chron hook: --on-capture-failure must be 'report' or 'block', not '${modeRaw}'. Choosing one for you would decide how a client behaves on a failed capture.
+`
+    );
+    return HOOK_CAPTURE_FAILED_EXIT;
+  }
+  const mode = modeRaw;
+  let journalPath3;
+  try {
+    const named = flagValue(args2, "journal");
+    journalPath3 = named === null ? defaultJournalPath() : guardedJournalPath(named);
+  } catch (e) {
+    stderr(`chron: capture failed \u2014 ${e.message}
+`);
+    return HOOK_CAPTURE_FAILED_EXIT;
+  }
+  const clientVersion = flagValue(args2, "client-version");
+  const invocationId = flagValue(args2, "invocation-id");
+  const raw = deps.payload ?? await (deps.readStdin ?? readAllStdin)();
+  let payload;
+  try {
+    payload = JSON.parse(raw.length === 0 ? "null" : raw);
+  } catch {
+    stderr(
+      `chron: capture failed \u2014 the hook payload could not be read as JSON (${Buffer.byteLength(raw, "utf8")} bytes received). Nothing was recorded for this event, and the payload is not repeated here.
+`
+    );
+    return HOOK_CAPTURE_FAILED_EXIT;
+  }
+  const result = recordNativeEvent({
+    journalPath: journalPath3,
+    payload,
+    ...invocationId ? { invocationId } : {},
+    ...clientVersion ? { clientVersion } : {},
+    ...deps.markerFs ? { markerFs: deps.markerFs } : {}
+  });
+  if (result.recorded) {
+    return 0;
+  }
+  const spec = nativeEventSpec(result.event ?? "");
+  const marker = result.failure_marker === null ? "the failure could not be marked beside the journal either, so this message is the only record of it" : result.failure_marker_durability === "durable" ? `marked in ${(0, import_path25.basename)(result.failure_marker)} beside the journal` : `marked in ${(0, import_path25.basename)(result.failure_marker)} beside the journal, but that file's own name is not durable on this filesystem: its bytes were fsynced and the directory entry naming them could not be, so a crash can leave the mark with no name to reach it by`;
+  stderr(
+    `chron: capture failed \u2014 could not confirm capture of ${result.event ?? "an unreadable event"} (${result.failure?.stage}: ${result.failure?.reason}). ${marker}.
+`
+  );
+  if (mode === "report") return HOOK_CAPTURE_FAILED_EXIT;
+  if (spec.blocking_exit_code === null) {
+    stderr(
+      `chron: ${spec.event} documents no blocking exit code, so the failure is reported and the action continues. Asking for a block where none exists would be a guarantee this cannot keep.
+`
+    );
+    return HOOK_CAPTURE_FAILED_EXIT;
+  }
+  stderr(
+    `chron: blocking the action, as --on-capture-failure=block asked. This stops the request this hook gates. It does not recover anything that already crossed: on the measured version the prompt reached the model before this hook was invoked.
+`
+  );
+  return spec.blocking_exit_code;
+}
+var import_path25, import_os19, HOOK_CAPTURE_FAILED_EXIT, HOOK_BLOCKED_EXIT;
+var init_hook = __esm({
+  "src/cli/hook.ts"() {
+    "use strict";
+    import_path25 = require("path");
+    import_os19 = require("os");
+    init_config_path();
+    init_record();
+    init_events();
+    HOOK_CAPTURE_FAILED_EXIT = 1;
+    HOOK_BLOCKED_EXIT = 2;
+  }
+});
+
 // src/cli/session.ts
 var session_exports = {};
 __export(session_exports, {
@@ -34034,7 +35350,7 @@ async function main() {
       break;
     }
     case "events": {
-      const { runEvents: runEvents2 } = await Promise.resolve().then(() => (init_events(), events_exports));
+      const { runEvents: runEvents2 } = await Promise.resolve().then(() => (init_events2(), events_exports));
       await runEvents2(args);
       break;
     }
@@ -34050,7 +35366,12 @@ async function main() {
     }
     case "setup": {
       const { runSetup: runSetup2 } = await Promise.resolve().then(() => (init_setup(), setup_exports));
-      await runSetup2();
+      await runSetup2(args);
+      break;
+    }
+    case "unsetup": {
+      const { runConfiguration: runConfiguration2 } = await Promise.resolve().then(() => (init_configuration(), configuration_exports));
+      await runConfiguration2(args, true);
       break;
     }
     case "coverage": {
@@ -34059,8 +35380,8 @@ async function main() {
       break;
     }
     case "bootstrap": {
-      const { bootstrapProjectLogging: bootstrapProjectLogging2 } = await Promise.resolve().then(() => (init_bootstrap(), bootstrap_exports));
-      bootstrapProjectLogging2(process.cwd());
+      const { runConfiguration: runConfiguration2 } = await Promise.resolve().then(() => (init_configuration(), configuration_exports));
+      await runConfiguration2(["--client=project", ...args]);
       break;
     }
     case "otel": {
@@ -34086,6 +35407,14 @@ async function main() {
     case "attach": {
       const { runAttach: runAttach2 } = await Promise.resolve().then(() => (init_attach(), attach_exports));
       await runAttach2(args);
+      break;
+    }
+    // One hook event in, one durable journal record out. The exit code is the
+    // only channel the client reads, so the command returns one rather than
+    // printing anything, and this is where it becomes the process's.
+    case "hook": {
+      const { hookCommand: hookCommand2 } = await Promise.resolve().then(() => (init_hook(), hook_exports));
+      process.exit(await hookCommand2(args));
       break;
     }
     case "session": {
@@ -34131,6 +35460,9 @@ Commands:
   prune           Delete sessions older than a retention cutoff
   backup          Snapshot the database with a verifiable manifest
   restore         Restore a backup, or drill the recovery without touching anything
+  setup           Preview agent configuration; --apply to consent
+  unsetup         Preview undo; --apply to restore tracked files
+  bootstrap       Preview project instructions; --apply to consent
   doctor          Check your Chron setup \u2014 Node version, DB, MCP configs, SIEM
   import          Import conversations from external AI tools
   review          Review AI sessions against compliance control criteria
@@ -34142,6 +35474,7 @@ Commands:
   reviews         Review queue \u2014 flag sessions for human review, track SLA compliance
   update          Update chron to the latest version
   run             Run a command with fail-closed capture \u2014 output is withheld until recorded
+  hook            Record one native client hook event in the capture journal (observation, not withholding)
   project         Replay the capture journal into the database (idempotent)
   reconcile       Read-only: what your client records that Chron cannot account for
   attach          Start recording a conversation already in progress (partial evidence)

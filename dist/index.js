@@ -1336,10 +1336,10 @@ var init_regexes = __esm({
     nanoid = /^[a-zA-Z0-9_-]{21}$/;
     duration = /^P(?:(\d+W)|(?!.*W)(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+([.,]\d+)?S)?)?)$/;
     guid = /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/;
-    uuid = (version7) => {
-      if (!version7)
+    uuid = (version5) => {
+      if (!version5)
         return /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/;
-      return new RegExp(`^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-${version7}[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$`);
+      return new RegExp(`^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-${version5}[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$`);
     };
     email = /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/;
     _emoji = `^(?=[\\s\\S]*[\\p{Extended_Pictographic}\\p{Regional_Indicator}\\u20E3])[\\p{Extended_Pictographic}\\p{Emoji_Component}]+$`;
@@ -3435,7 +3435,7 @@ function isRef(value) {
 function cloneIssues(issues) {
   return issues.map((iss) => iss.path ? { ...iss, path: iss.path.slice() } : { ...iss });
 }
-function isRecursive(inst, stack, resolve2) {
+function isRecursive(inst, stack, resolve3) {
   const cached2 = recursive.get(inst);
   if (cached2 !== void 0)
     return cached2 ? PROVEN : NONE;
@@ -3445,7 +3445,7 @@ function isRecursive(inst, stack, resolve2) {
   let result = NONE;
   const check = (child) => {
     if (result !== PROVEN && child?._zod) {
-      const answer = isRecursive(child, stack, resolve2);
+      const answer = isRecursive(child, stack, resolve3);
       if (answer > result)
         result = answer;
     }
@@ -3456,7 +3456,7 @@ function isRecursive(inst, stack, resolve2) {
       const desc2 = Object.getOwnPropertyDescriptor(sh, key);
       if (spread && !desc2.enumerable)
         continue;
-      const child = desc2.get ? ASSUMED : desc2.value?._zod ? isRecursive(desc2.value, stack, resolve2) : NONE;
+      const child = desc2.get ? ASSUMED : desc2.value?._zod ? isRecursive(desc2.value, stack, resolve3) : NONE;
       if (child > answer)
         answer = child;
     }
@@ -3520,7 +3520,7 @@ function isRecursive(inst, stack, resolve2) {
       break;
     // `$ZodLazy` caches its inner on the def, so a resolved edge is followed exactly
     case "lazy": {
-      const inner = def._cachedInner ?? (resolve2 ? inst._zod.innerType : void 0);
+      const inner = def._cachedInner ?? (resolve3 ? inst._zod.innerType : void 0);
       merge2(inner ? isRecursive(inner, stack, false) : ASSUMED);
       break;
     }
@@ -6875,17 +6875,17 @@ var init_v4 = __esm({
 });
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/types.js
-function assertCompleteRequestPrompt(request) {
-  if (request.params.ref.type !== "ref/prompt") {
-    throw new TypeError(`Expected CompleteRequestPrompt, but got ${request.params.ref.type}`);
+function assertCompleteRequestPrompt(request2) {
+  if (request2.params.ref.type !== "ref/prompt") {
+    throw new TypeError(`Expected CompleteRequestPrompt, but got ${request2.params.ref.type}`);
   }
-  void request;
+  void request2;
 }
-function assertCompleteRequestResourceTemplate(request) {
-  if (request.params.ref.type !== "ref/resource") {
-    throw new TypeError(`Expected CompleteRequestResourceTemplate, but got ${request.params.ref.type}`);
+function assertCompleteRequestResourceTemplate(request2) {
+  if (request2.params.ref.type !== "ref/resource") {
+    throw new TypeError(`Expected CompleteRequestResourceTemplate, but got ${request2.params.ref.type}`);
   }
-  void request;
+  void request2;
 }
 var LATEST_PROTOCOL_VERSION, SUPPORTED_PROTOCOL_VERSIONS, RELATED_TASK_META_KEY, JSONRPC_VERSION, AssertObjectSchema, ProgressTokenSchema, CursorSchema, TaskCreationParamsSchema, TaskMetadataSchema, RelatedTaskMetadataSchema, RequestMetaSchema, BaseRequestParamsSchema, TaskAugmentedRequestParamsSchema, isTaskAugmentedRequestParams, RequestSchema, NotificationsParamsSchema, NotificationSchema, ResultSchema, RequestIdSchema, JSONRPCRequestSchema, isJSONRPCRequest, JSONRPCNotificationSchema, isJSONRPCNotification, JSONRPCResultResponseSchema, isJSONRPCResultResponse, ErrorCode, JSONRPCErrorResponseSchema, isJSONRPCErrorResponse, JSONRPCMessageSchema, JSONRPCResponseSchema, EmptyResultSchema, CancelledNotificationParamsSchema, CancelledNotificationSchema, IconSchema, IconsSchema, BaseMetadataSchema, ImplementationSchema, FormElicitationCapabilitySchema, ElicitationCapabilitySchema, ClientTasksCapabilitySchema, ServerTasksCapabilitySchema, ClientCapabilitiesSchema, InitializeRequestParamsSchema, InitializeRequestSchema, ServerCapabilitiesSchema, InitializeResultSchema, InitializedNotificationSchema, PingRequestSchema, ProgressSchema, ProgressNotificationParamsSchema, ProgressNotificationSchema, PaginatedRequestParamsSchema, PaginatedRequestSchema, PaginatedResultSchema, TaskStatusSchema, TaskSchema, CreateTaskResultSchema, TaskStatusNotificationParamsSchema, TaskStatusNotificationSchema, GetTaskRequestSchema, GetTaskResultSchema, GetTaskPayloadRequestSchema, GetTaskPayloadResultSchema, ListTasksRequestSchema, ListTasksResultSchema, CancelTaskRequestSchema, CancelTaskResultSchema, ResourceContentsSchema, TextResourceContentsSchema, Base64Schema, BlobResourceContentsSchema, RoleSchema, AnnotationsSchema, ResourceSchema, ResourceTemplateSchema, ListResourcesRequestSchema, ListResourcesResultSchema, ListResourceTemplatesRequestSchema, ListResourceTemplatesResultSchema, ResourceRequestParamsSchema, ReadResourceRequestParamsSchema, ReadResourceRequestSchema, ReadResourceResultSchema, ResourceListChangedNotificationSchema, SubscribeRequestParamsSchema, SubscribeRequestSchema, UnsubscribeRequestParamsSchema, UnsubscribeRequestSchema, ResourceUpdatedNotificationParamsSchema, ResourceUpdatedNotificationSchema, PromptArgumentSchema, PromptSchema, ListPromptsRequestSchema, ListPromptsResultSchema, GetPromptRequestParamsSchema, GetPromptRequestSchema, TextContentSchema, ImageContentSchema, AudioContentSchema, ToolUseContentSchema, EmbeddedResourceSchema, ResourceLinkSchema, ContentBlockSchema, PromptMessageSchema, GetPromptResultSchema, PromptListChangedNotificationSchema, ToolAnnotationsSchema, ToolExecutionSchema, ToolSchema, ListToolsRequestSchema, ListToolsResultSchema, CallToolResultSchema, CompatibilityCallToolResultSchema, CallToolRequestParamsSchema, CallToolRequestSchema, ToolListChangedNotificationSchema, ListChangedOptionsBaseSchema, LoggingLevelSchema, SetLevelRequestParamsSchema, SetLevelRequestSchema, LoggingMessageNotificationParamsSchema, LoggingMessageNotificationSchema, ModelHintSchema, ModelPreferencesSchema, ToolChoiceSchema, ToolResultContentSchema, SamplingContentSchema, SamplingMessageContentBlockSchema, SamplingMessageSchema, CreateMessageRequestParamsSchema, CreateMessageRequestSchema, CreateMessageResultSchema, CreateMessageResultWithToolsSchema, BooleanSchemaSchema, StringSchemaSchema, NumberSchemaSchema, UntitledSingleSelectEnumSchemaSchema, TitledSingleSelectEnumSchemaSchema, LegacyTitledEnumSchemaSchema, SingleSelectEnumSchemaSchema, UntitledMultiSelectEnumSchemaSchema, TitledMultiSelectEnumSchemaSchema, MultiSelectEnumSchemaSchema, EnumSchemaSchema, PrimitiveSchemaDefinitionSchema, ElicitRequestFormParamsSchema, ElicitRequestURLParamsSchema, ElicitRequestParamsSchema, ElicitRequestSchema, ElicitationCompleteNotificationParamsSchema, ElicitationCompleteNotificationSchema, ElicitResultSchema, ResourceTemplateReferenceSchema, PromptReferenceSchema, CompleteRequestParamsSchema, CompleteRequestSchema, CompleteResultSchema, RootSchema, ListRootsRequestSchema, ListRootsResultSchema, RootsListChangedNotificationSchema, ClientRequestSchema, ClientNotificationSchema, ClientResultSchema, ServerRequestSchema, ServerNotificationSchema, ServerResultSchema, McpError, UrlElicitationRequiredError;
 var init_types = __esm({
@@ -8996,8 +8996,8 @@ var require_dist = __commonJS({
       const header = report.header;
       return typeof header === "object" && !!header && "glibcVersionRuntime" in header;
     }
-    function load(dirname5) {
-      const m = path.join(dirname5, "index.node");
+    function load(dirname4) {
+      const m = path.join(dirname4, "index.node");
       return fs.existsSync(m) ? require(m) : null;
     }
     exports2.load = load;
@@ -9026,19 +9026,19 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync6 = (path) => fs.readFileSync(path, "utf-8");
-    var readFile = (path) => new Promise((resolve2, reject) => {
+    var readFileSync5 = (path) => fs.readFileSync(path, "utf-8");
+    var readFile = (path) => new Promise((resolve3, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
           reject(err);
         } else {
-          resolve2(data);
+          resolve3(data);
         }
       });
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync6,
+      readFileSync: readFileSync5,
       readFile
     };
   }
@@ -9050,17 +9050,17 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync6 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync5 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
     var commandOut = "";
     var safeCommand = () => {
       if (!commandOut) {
-        return new Promise((resolve2) => {
+        return new Promise((resolve3) => {
           childProcess.exec(command, (err, out) => {
             commandOut = err ? " " : out;
-            resolve2(commandOut);
+            resolve3(commandOut);
           });
         });
       }
@@ -9131,7 +9131,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync6(LDD_PATH);
+        const lddContent = readFileSync5(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -9188,7 +9188,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync6(LDD_PATH);
+        const lddContent = readFileSync5(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -9215,33 +9215,33 @@ var require_detect_libc = __commonJS({
       }
       return null;
     };
-    var version7 = async () => {
-      let version8 = null;
+    var version5 = async () => {
+      let version6 = null;
       if (isLinux()) {
-        version8 = await versionFromFilesystem();
-        if (!version8) {
-          version8 = versionFromReport();
+        version6 = await versionFromFilesystem();
+        if (!version6) {
+          version6 = versionFromReport();
         }
-        if (!version8) {
+        if (!version6) {
           const out = await safeCommand();
-          version8 = versionFromCommand(out);
+          version6 = versionFromCommand(out);
         }
       }
-      return version8;
+      return version6;
     };
     var versionSync = () => {
-      let version8 = null;
+      let version6 = null;
       if (isLinux()) {
-        version8 = versionFromFilesystemSync();
-        if (!version8) {
-          version8 = versionFromReport();
+        version6 = versionFromFilesystemSync();
+        if (!version6) {
+          version6 = versionFromReport();
         }
-        if (!version8) {
+        if (!version6) {
           const out = safeCommandSync();
-          version8 = versionFromCommand(out);
+          version6 = versionFromCommand(out);
         }
       }
-      return version8;
+      return version6;
     };
     module2.exports = {
       GLIBC,
@@ -9250,7 +9250,7 @@ var require_detect_libc = __commonJS({
       familySync,
       isNonGlibcLinux,
       isNonGlibcLinuxSync,
-      version: version7,
+      version: version5,
       versionSync
     };
   }
@@ -12909,7 +12909,7 @@ var require_websocket = __commonJS({
       }
       const defaultPort = isSecure ? 443 : 80;
       const key = randomBytes(16).toString("base64");
-      const request = isSecure ? https.request : http.request;
+      const request2 = isSecure ? https.request : http.request;
       const protocolSet = /* @__PURE__ */ new Set();
       let perMessageDeflate;
       opts.createConnection = opts.createConnection || (isSecure ? tlsConnect : netConnect);
@@ -12986,12 +12986,12 @@ var require_websocket = __commonJS({
         if (opts.auth && !options.headers.authorization) {
           options.headers.authorization = "Basic " + Buffer.from(opts.auth).toString("base64");
         }
-        req = websocket._req = request(opts);
+        req = websocket._req = request2(opts);
         if (websocket._redirects) {
           websocket.emit("redirect", websocket.url, req);
         }
       } else {
-        req = websocket._req = request(opts);
+        req = websocket._req = request2(opts);
       }
       if (opts.timeout) {
         req.on("timeout", () => {
@@ -13608,7 +13608,7 @@ var require_websocket_server = __commonJS({
         socket.on("error", socketOnError);
         const key = req.headers["sec-websocket-key"];
         const upgrade = req.headers.upgrade;
-        const version7 = +req.headers["sec-websocket-version"];
+        const version5 = +req.headers["sec-websocket-version"];
         if (req.method !== "GET") {
           const message = "Invalid HTTP method";
           abortHandshakeOrEmitwsClientError(this, req, socket, 405, message);
@@ -13624,7 +13624,7 @@ var require_websocket_server = __commonJS({
           abortHandshakeOrEmitwsClientError(this, req, socket, 400, message);
           return;
         }
-        if (version7 !== 13 && version7 !== 8) {
+        if (version5 !== 13 && version5 !== 8) {
           const message = "Missing or invalid Sec-WebSocket-Version header";
           abortHandshakeOrEmitwsClientError(this, req, socket, 400, message, {
             "Sec-WebSocket-Version": "13, 8"
@@ -13668,7 +13668,7 @@ var require_websocket_server = __commonJS({
         }
         if (this.options.verifyClient) {
           const info = {
-            origin: req.headers[`${version7 === 8 ? "sec-websocket-origin" : "origin"}`],
+            origin: req.headers[`${version5 === 8 ? "sec-websocket-origin" : "origin"}`],
             secure: !!(req.socket.authorized || req.socket.encrypted),
             req
           };
@@ -15134,8 +15134,8 @@ var init_stream2 = __esm({
         const stream = new _WsStream(client, streamId);
         const responseCallback = () => void 0;
         const errorCallback = (e) => stream.#setClosed(e);
-        const request = { type: "open_stream", streamId };
-        client._sendRequest(request, { responseCallback, errorCallback });
+        const request2 = { type: "open_stream", streamId };
+        client._sendRequest(request2, { responseCallback, errorCallback });
         return stream;
       }
       /** @private */
@@ -15212,9 +15212,9 @@ var init_stream2 = __esm({
           return response.isAutocommit;
         });
       }
-      #sendStreamRequest(request) {
+      #sendStreamRequest(request2) {
         return new Promise((responseCallback, errorCallback) => {
-          this.#pushToQueue({ type: "request", request, responseCallback, errorCallback });
+          this.#pushToQueue({ type: "request", request: request2, responseCallback, errorCallback });
         });
       }
       /** @private */
@@ -15225,7 +15225,7 @@ var init_stream2 = __esm({
         });
       }
       /** @private */
-      _sendCursorRequest(cursor, request) {
+      _sendCursorRequest(cursor, request2) {
         if (cursor !== this.#cursor) {
           throw new InternalError("Cursor not associated with the stream attempted to execute a request");
         }
@@ -15233,7 +15233,7 @@ var init_stream2 = __esm({
           if (this.#closed !== void 0) {
             errorCallback(new ClosedError("Stream is closed", this.#closed));
           } else {
-            this.#client._sendRequest(request, { responseCallback, errorCallback });
+            this.#client._sendRequest(request2, { responseCallback, errorCallback });
           }
         });
       }
@@ -15262,15 +15262,15 @@ var init_stream2 = __esm({
             this.#setClosed(new ClientError("Stream was gracefully closed"));
             break;
           } else if (entry?.type === "request" && this.#cursor === void 0) {
-            const { request, responseCallback, errorCallback } = entry;
+            const { request: request2, responseCallback, errorCallback } = entry;
             this.#queue.shift();
-            this.#client._sendRequest(request, { responseCallback, errorCallback });
+            this.#client._sendRequest(request2, { responseCallback, errorCallback });
           } else if (entry?.type === "cursor" && this.#cursor === void 0) {
             const { batch, cursorCallback } = entry;
             this.#queue.shift();
             const cursorId = this.#client._cursorIdAlloc.alloc();
             const cursor = new WsCursor(this.#client, this, cursorId);
-            const request = {
+            const request2 = {
               type: "open_cursor",
               streamId: this.#streamId,
               cursorId,
@@ -15278,7 +15278,7 @@ var init_stream2 = __esm({
             };
             const responseCallback = () => void 0;
             const errorCallback = (e) => cursor._setClosed(e);
-            this.#client._sendRequest(request, { responseCallback, errorCallback });
+            this.#client._sendRequest(request2, { responseCallback, errorCallback });
             this.#cursor = cursor;
             cursorCallback(cursor);
           } else {
@@ -15302,10 +15302,10 @@ var init_stream2 = __esm({
             break;
           }
         }
-        const request = { type: "close_stream", streamId: this.#streamId };
+        const request2 = { type: "close_stream", streamId: this.#streamId };
         const responseCallback = () => this.#client._streamIdAlloc.free(this.#streamId);
         const errorCallback = () => void 0;
-        this.#client._sendRequest(request, { responseCallback, errorCallback });
+        this.#client._sendRequest(request2, { responseCallback, errorCallback });
       }
       /** Immediately close the stream. */
       close() {
@@ -15552,33 +15552,33 @@ function HelloMsg(w, msg) {
 }
 function RequestMsg(w, msg) {
   w.int32(1, msg.requestId);
-  const request = msg.request;
-  if (request.type === "open_stream") {
-    w.message(2, request, OpenStreamReq);
-  } else if (request.type === "close_stream") {
-    w.message(3, request, CloseStreamReq);
-  } else if (request.type === "execute") {
-    w.message(4, request, ExecuteReq);
-  } else if (request.type === "batch") {
-    w.message(5, request, BatchReq);
-  } else if (request.type === "open_cursor") {
-    w.message(6, request, OpenCursorReq);
-  } else if (request.type === "close_cursor") {
-    w.message(7, request, CloseCursorReq);
-  } else if (request.type === "fetch_cursor") {
-    w.message(8, request, FetchCursorReq);
-  } else if (request.type === "sequence") {
-    w.message(9, request, SequenceReq);
-  } else if (request.type === "describe") {
-    w.message(10, request, DescribeReq);
-  } else if (request.type === "store_sql") {
-    w.message(11, request, StoreSqlReq);
-  } else if (request.type === "close_sql") {
-    w.message(12, request, CloseSqlReq);
-  } else if (request.type === "get_autocommit") {
-    w.message(13, request, GetAutocommitReq);
+  const request2 = msg.request;
+  if (request2.type === "open_stream") {
+    w.message(2, request2, OpenStreamReq);
+  } else if (request2.type === "close_stream") {
+    w.message(3, request2, CloseStreamReq);
+  } else if (request2.type === "execute") {
+    w.message(4, request2, ExecuteReq);
+  } else if (request2.type === "batch") {
+    w.message(5, request2, BatchReq);
+  } else if (request2.type === "open_cursor") {
+    w.message(6, request2, OpenCursorReq);
+  } else if (request2.type === "close_cursor") {
+    w.message(7, request2, CloseCursorReq);
+  } else if (request2.type === "fetch_cursor") {
+    w.message(8, request2, FetchCursorReq);
+  } else if (request2.type === "sequence") {
+    w.message(9, request2, SequenceReq);
+  } else if (request2.type === "describe") {
+    w.message(10, request2, DescribeReq);
+  } else if (request2.type === "store_sql") {
+    w.message(11, request2, StoreSqlReq);
+  } else if (request2.type === "close_sql") {
+    w.message(12, request2, CloseSqlReq);
+  } else if (request2.type === "get_autocommit") {
+    w.message(13, request2, GetAutocommitReq);
   } else {
-    throw impossible(request, "Impossible type of Request");
+    throw impossible(request2, "Impossible type of Request");
   }
 }
 function OpenStreamReq(w, msg) {
@@ -15752,7 +15752,7 @@ function ServerMsg(obj) {
     return { type: "hello_error", error: error2 };
   } else if (type === "response_ok") {
     const requestId = number3(obj["request_id"]);
-    const response = Response(object2(obj["response"]));
+    const response = Response2(object2(obj["response"]));
     return { type: "response_ok", requestId, response };
   } else if (type === "response_error") {
     const requestId = number3(obj["request_id"]);
@@ -15762,7 +15762,7 @@ function ServerMsg(obj) {
     throw new ProtoError("Unexpected type of ServerMsg");
   }
 }
-function Response(obj) {
+function Response2(obj) {
   const type = string3(obj["type"]);
   if (type === "open_stream") {
     return { type: "open_stream" };
@@ -16305,14 +16305,14 @@ var init_client2 = __esm({
       }
       // Send a request to the server and invoke a callback when we get the response.
       /** @private */
-      _sendRequest(request, callbacks) {
+      _sendRequest(request2, callbacks) {
         if (this.#closed !== void 0) {
           callbacks.errorCallback(new ClosedError("Client is closed", this.#closed));
           return;
         }
         const requestId = this.#requestIdAlloc.alloc();
-        this.#responseMap.set(requestId, { ...callbacks, type: request.type });
-        this.#send({ type: "request", requestId, request });
+        this.#responseMap.set(requestId, { ...callbacks, type: request2.type });
+        this.#send({ type: "request", requestId, request: request2 });
       }
       // The socket encountered an error.
       #onSocketError(event) {
@@ -16434,8 +16434,8 @@ var init_client2 = __esm({
         const sqlObj = new Sql(this, sqlId);
         const responseCallback = () => void 0;
         const errorCallback = (e) => sqlObj._setClosed(e);
-        const request = { type: "store_sql", sqlId, sql: sql4 };
-        this._sendRequest(request, { responseCallback, errorCallback });
+        const request2 = { type: "store_sql", sqlId, sql: sql4 };
+        this._sendRequest(request2, { responseCallback, errorCallback });
         return sqlObj;
       }
       /** @private */
@@ -16445,8 +16445,8 @@ var init_client2 = __esm({
         }
         const responseCallback = () => this.#sqlIdAlloc.free(sqlId);
         const errorCallback = (e) => this.#setClosed(e);
-        const request = { type: "close_sql", sqlId };
-        this._sendRequest(request, { responseCallback, errorCallback });
+        const request2 = { type: "close_sql", sqlId };
+        this._sendRequest(request2, { responseCallback, errorCallback });
       }
       /** Close the client and the WebSocket. */
       close() {
@@ -17119,9 +17119,9 @@ var init_stream3 = __esm({
           return response.isAutocommit;
         });
       }
-      #sendStreamRequest(request) {
+      #sendStreamRequest(request2) {
         return new Promise((responseCallback, errorCallback) => {
-          this.#pushToQueue({ type: "pipeline", request, responseCallback, errorCallback });
+          this.#pushToQueue({ type: "pipeline", request: request2, responseCallback, errorCallback });
         });
       }
       /** @private */
@@ -17244,9 +17244,9 @@ var init_stream3 = __esm({
       #flush(createRequest, decodeResponse, getBaton, getBaseUrl, handleResponse, handleError) {
         let promise;
         try {
-          const request = createRequest();
+          const request2 = createRequest();
           const fetch2 = this.#fetch;
-          promise = fetch2(request);
+          promise = fetch2(request2);
         } catch (error2) {
           promise = Promise.reject(error2);
         }
@@ -17316,8 +17316,8 @@ async function findEndpoint(customFetch, clientUrl) {
   const fetch2 = customFetch;
   for (const endpoint of checkEndpoints) {
     const url = new URL(endpoint.versionPath, clientUrl);
-    const request = new Request(url.toString(), { method: "GET" });
-    const response = await fetch2(request);
+    const request2 = new Request(url.toString(), { method: "GET" });
+    const response = await fetch2(request2);
     await response.arrayBuffer();
     if (response.ok) {
       return endpoint;
@@ -17483,7 +17483,7 @@ var init_lib_esm = __esm({
 });
 
 // node_modules/@libsql/client/lib-esm/hrana.js
-async function executeHranaBatch(mode, version7, batch, hranaStmts, disableForeignKeys = false) {
+async function executeHranaBatch(mode, version5, batch, hranaStmts, disableForeignKeys = false) {
   if (disableForeignKeys) {
     batch.step().run("PRAGMA foreign_keys=off");
   }
@@ -17492,7 +17492,7 @@ async function executeHranaBatch(mode, version7, batch, hranaStmts, disableForei
   let lastStep = beginStep;
   const stmtPromises = hranaStmts.map((hranaStmt) => {
     const stmtStep = batch.step().condition(BatchCond.ok(lastStep));
-    if (version7 >= 3) {
+    if (version5 >= 3) {
       stmtStep.condition(BatchCond.not(BatchCond.isAutocommit(batch)));
     }
     const stmtPromise = stmtStep.query(hranaStmt);
@@ -17500,7 +17500,7 @@ async function executeHranaBatch(mode, version7, batch, hranaStmts, disableForei
     return stmtPromise;
   });
   const commitStep = batch.step().condition(BatchCond.ok(lastStep));
-  if (version7 >= 3) {
+  if (version5 >= 3) {
     commitStep.condition(BatchCond.not(BatchCond.isAutocommit(batch)));
   }
   const commitPromise = commitStep.run("COMMIT");
@@ -17603,9 +17603,9 @@ var init_hrana = __esm({
       // BEGIN statement yet.
       #started;
       /** @private */
-      constructor(mode, version7) {
+      constructor(mode, version5) {
         this.#mode = mode;
-        this.#version = version7;
+        this.#version = version5;
         this.#started = void 0;
       }
       execute(stmt) {
@@ -17867,8 +17867,8 @@ var require_promise_limit = __commonJS({
         }
       }
       function queue(fn) {
-        return new Promise(function(resolve2, reject) {
-          jobs.push({ fn, resolve: resolve2, reject });
+        return new Promise(function(resolve3, reject) {
+          jobs.push({ fn, resolve: resolve3, reject });
           semaphore.queue = jobs.length;
         });
       }
@@ -18036,10 +18036,10 @@ var init_ws = __esm({
               return stmt;
             });
             const hranaStmts = normalizedStmts.map(stmtToHrana);
-            const version7 = await streamState.conn.client.getVersion();
+            const version5 = await streamState.conn.client.getVersion();
             streamState.conn.sqlCache.apply(hranaStmts);
-            const batch = streamState.stream.batch(version7 >= 3);
-            const resultsPromise = executeHranaBatch(mode, version7, batch, hranaStmts);
+            const batch = streamState.stream.batch(version5 >= 3);
+            const resultsPromise = executeHranaBatch(mode, version5, batch, hranaStmts);
             const results = await resultsPromise;
             return results;
           } catch (e) {
@@ -18054,9 +18054,9 @@ var init_ws = __esm({
           const streamState = await this.#openStream();
           try {
             const hranaStmts = stmts.map(stmtToHrana);
-            const version7 = await streamState.conn.client.getVersion();
-            const batch = streamState.stream.batch(version7 >= 3);
-            const resultsPromise = executeHranaBatch("deferred", version7, batch, hranaStmts, true);
+            const version5 = await streamState.conn.client.getVersion();
+            const batch = streamState.stream.batch(version5 >= 3);
+            const resultsPromise = executeHranaBatch("deferred", version5, batch, hranaStmts, true);
             const results = await resultsPromise;
             return results;
           } catch (e) {
@@ -18070,8 +18070,8 @@ var init_ws = __esm({
         return this.limit(async () => {
           const streamState = await this.#openStream();
           try {
-            const version7 = await streamState.conn.client.getVersion();
-            return new WsTransaction(this, streamState, mode, version7);
+            const version5 = await streamState.conn.client.getVersion();
+            return new WsTransaction(this, streamState, mode, version5);
           } catch (e) {
             this._closeStream(streamState);
             throw mapHranaError(e);
@@ -18178,8 +18178,8 @@ var init_ws = __esm({
           this.#futureConnState = void 0;
         }
         const next = this.#openConn();
-        const version7 = await next.client.getVersion();
-        next.useSqlCache = version7 >= 2;
+        const version5 = await next.client.getVersion();
+        next.useSqlCache = version5 >= 2;
         if (next.useSqlCache) {
           next.sqlCache.capacity = sqlCacheCapacity;
         }
@@ -18211,8 +18211,8 @@ var init_ws = __esm({
       #client;
       #streamState;
       /** @private */
-      constructor(client, state, mode, version7) {
-        super(mode, version7);
+      constructor(client, state, mode, version5) {
+        super(mode, version5);
         this.#client = client;
         this.#streamState = state;
       }
@@ -18329,14 +18329,14 @@ var init_http = __esm({
               return stmt;
             });
             const hranaStmts = normalizedStmts.map(stmtToHrana);
-            const version7 = await this.#client.getVersion();
+            const version5 = await this.#client.getVersion();
             let resultsPromise;
             const stream = this.#client.openStream();
             try {
               const sqlCache = new SqlCache(stream, sqlCacheCapacity2);
               sqlCache.apply(hranaStmts);
               const batch = stream.batch(false);
-              resultsPromise = executeHranaBatch(mode, version7, batch, hranaStmts);
+              resultsPromise = executeHranaBatch(mode, version5, batch, hranaStmts);
             } finally {
               stream.closeGracefully();
             }
@@ -18351,12 +18351,12 @@ var init_http = __esm({
         return this.limit(async () => {
           try {
             const hranaStmts = stmts.map(stmtToHrana);
-            const version7 = await this.#client.getVersion();
+            const version5 = await this.#client.getVersion();
             let resultsPromise;
             const stream = this.#client.openStream();
             try {
               const batch = stream.batch(false);
-              resultsPromise = executeHranaBatch("deferred", version7, batch, hranaStmts, true);
+              resultsPromise = executeHranaBatch("deferred", version5, batch, hranaStmts, true);
             } finally {
               stream.closeGracefully();
             }
@@ -18370,8 +18370,8 @@ var init_http = __esm({
       async transaction(mode = "write") {
         return this.limit(async () => {
           try {
-            const version7 = await this.#client.getVersion();
-            return new HttpTransaction(this.#client.openStream(), mode, version7);
+            const version5 = await this.#client.getVersion();
+            return new HttpTransaction(this.#client.openStream(), mode, version5);
           } catch (e) {
             throw mapHranaError(e);
           }
@@ -18417,8 +18417,8 @@ var init_http = __esm({
       #stream;
       #sqlCache;
       /** @private */
-      constructor(stream, mode, version7) {
-        super(mode, version7);
+      constructor(stream, mode, version5) {
+        super(mode, version5);
         this.#stream = stream;
         this.#sqlCache = new SqlCache(stream, sqlCacheCapacity2);
       }
@@ -19612,7 +19612,7 @@ var init_sql2 = __esm({
         return new SQL([new StringChunk(str)]);
       }
       sql22.raw = raw;
-      function join9(chunks, separator) {
+      function join7(chunks, separator) {
         const result = [];
         for (const [i, chunk] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -19622,7 +19622,7 @@ var init_sql2 = __esm({
         }
         return new SQL(result);
       }
-      sql22.join = join9;
+      sql22.join = join7;
       function identifier(value) {
         return new Name(value);
       }
@@ -22535,7 +22535,7 @@ var init_select2 = __esm({
           const baseTableName = this.tableName;
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table)) this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join9) => join9.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join7) => join7.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -23421,7 +23421,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join9) => join9.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join7) => join7.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -25891,11 +25891,11 @@ function datetimeRegex(args) {
   regex = `${regex}(${opts.join("|")})`;
   return new RegExp(`^${regex}$`);
 }
-function isValidIP(ip, version7) {
-  if ((version7 === "v4" || !version7) && ipv4Regex.test(ip)) {
+function isValidIP(ip, version5) {
+  if ((version5 === "v4" || !version5) && ipv4Regex.test(ip)) {
     return true;
   }
-  if ((version7 === "v6" || !version7) && ipv6Regex.test(ip)) {
+  if ((version5 === "v6" || !version5) && ipv6Regex.test(ip)) {
     return true;
   }
   return false;
@@ -25922,11 +25922,11 @@ function isValidJWT2(jwt, alg) {
     return false;
   }
 }
-function isValidCidr(ip, version7) {
-  if ((version7 === "v4" || !version7) && ipv4CidrRegex.test(ip)) {
+function isValidCidr(ip, version5) {
+  if ((version5 === "v4" || !version5) && ipv4CidrRegex.test(ip)) {
     return true;
   }
-  if ((version7 === "v6" || !version7) && ipv6CidrRegex.test(ip)) {
+  if ((version5 === "v6" || !version5) && ipv6CidrRegex.test(ip)) {
     return true;
   }
   return false;
@@ -31407,8 +31407,8 @@ var init_protocol = __esm({
         this._taskStore = _options?.taskStore;
         this._taskMessageQueue = _options?.taskMessageQueue;
         if (this._taskStore) {
-          this.setRequestHandler(GetTaskRequestSchema, async (request, extra) => {
-            const task = await this._taskStore.getTask(request.params.taskId, extra.sessionId);
+          this.setRequestHandler(GetTaskRequestSchema, async (request2, extra) => {
+            const task = await this._taskStore.getTask(request2.params.taskId, extra.sessionId);
             if (!task) {
               throw new McpError(ErrorCode.InvalidParams, "Failed to retrieve task: Task not found");
             }
@@ -31416,9 +31416,9 @@ var init_protocol = __esm({
               ...task
             };
           });
-          this.setRequestHandler(GetTaskPayloadRequestSchema, async (request, extra) => {
+          this.setRequestHandler(GetTaskPayloadRequestSchema, async (request2, extra) => {
             const handleTaskResult = async () => {
-              const taskId = request.params.taskId;
+              const taskId = request2.params.taskId;
               if (!await this._taskStore.getTask(taskId, extra.sessionId)) {
                 throw new McpError(ErrorCode.InvalidParams, `Task not found: ${taskId}`);
               }
@@ -31472,9 +31472,9 @@ var init_protocol = __esm({
             };
             return await handleTaskResult();
           });
-          this.setRequestHandler(ListTasksRequestSchema, async (request, extra) => {
+          this.setRequestHandler(ListTasksRequestSchema, async (request2, extra) => {
             try {
-              const { tasks, nextCursor } = await this._taskStore.listTasks(request.params?.cursor, extra.sessionId);
+              const { tasks, nextCursor } = await this._taskStore.listTasks(request2.params?.cursor, extra.sessionId);
               return {
                 tasks,
                 nextCursor,
@@ -31484,20 +31484,20 @@ var init_protocol = __esm({
               throw new McpError(ErrorCode.InvalidParams, `Failed to list tasks: ${error2 instanceof Error ? error2.message : String(error2)}`);
             }
           });
-          this.setRequestHandler(CancelTaskRequestSchema, async (request, extra) => {
+          this.setRequestHandler(CancelTaskRequestSchema, async (request2, extra) => {
             try {
-              const task = await this._taskStore.getTask(request.params.taskId, extra.sessionId);
+              const task = await this._taskStore.getTask(request2.params.taskId, extra.sessionId);
               if (!task) {
-                throw new McpError(ErrorCode.InvalidParams, `Task not found: ${request.params.taskId}`);
+                throw new McpError(ErrorCode.InvalidParams, `Task not found: ${request2.params.taskId}`);
               }
               if (isTerminal(task.status)) {
                 throw new McpError(ErrorCode.InvalidParams, `Cannot cancel task in terminal status: ${task.status}`);
               }
-              await this._taskStore.updateTaskStatus(request.params.taskId, "cancelled", "Client cancelled task execution.", extra.sessionId);
-              this._clearTaskQueue(request.params.taskId, extra.sessionId);
-              const cancelledTask = await this._taskStore.getTask(request.params.taskId, extra.sessionId);
+              await this._taskStore.updateTaskStatus(request2.params.taskId, "cancelled", "Client cancelled task execution.", extra.sessionId);
+              this._clearTaskQueue(request2.params.taskId, extra.sessionId);
+              const cancelledTask = await this._taskStore.getTask(request2.params.taskId, extra.sessionId);
               if (!cancelledTask) {
-                throw new McpError(ErrorCode.InvalidParams, `Task not found after cancellation: ${request.params.taskId}`);
+                throw new McpError(ErrorCode.InvalidParams, `Task not found after cancellation: ${request2.params.taskId}`);
               }
               return {
                 _meta: {},
@@ -31618,10 +31618,10 @@ var init_protocol = __esm({
         }
         Promise.resolve().then(() => handler(notification)).catch((error2) => this._onerror(new Error(`Uncaught error in notification handler: ${error2}`)));
       }
-      _onrequest(request, extra) {
-        const handler = this._requestHandlers.get(request.method) ?? this.fallbackRequestHandler;
+      _onrequest(request2, extra) {
+        const handler = this._requestHandlers.get(request2.method) ?? this.fallbackRequestHandler;
         const capturedTransport = this._transport;
-        const relatedTaskId = request.params?._meta?.[RELATED_TASK_META_KEY]?.taskId;
+        const relatedTaskId = request2.params?._meta?.[RELATED_TASK_META_KEY]?.taskId;
         const sessionId = capturedTransport?.sessionId;
         const store = this._taskStore;
         let relatedTaskFound = true;
@@ -31638,7 +31638,7 @@ var init_protocol = __esm({
         if (handler === void 0) {
           const errorResponse = {
             jsonrpc: "2.0",
-            id: request.id,
+            id: request2.id,
             error: {
               code: ErrorCode.MethodNotFound,
               message: "Method not found"
@@ -31659,17 +31659,17 @@ var init_protocol = __esm({
           return;
         }
         const abortController = new AbortController();
-        this._requestHandlerAbortControllers.set(request.id, abortController);
-        const taskCreationParams = isTaskAugmentedRequestParams(request.params) ? request.params.task : void 0;
-        const taskStore = this._taskStore ? this.requestTaskStore(request, capturedTransport?.sessionId) : void 0;
+        this._requestHandlerAbortControllers.set(request2.id, abortController);
+        const taskCreationParams = isTaskAugmentedRequestParams(request2.params) ? request2.params.task : void 0;
+        const taskStore = this._taskStore ? this.requestTaskStore(request2, capturedTransport?.sessionId) : void 0;
         const fullExtra = {
           signal: abortController.signal,
           sessionId: capturedTransport?.sessionId,
-          _meta: request.params?._meta,
+          _meta: request2.params?._meta,
           sendNotification: async (notification) => {
             if (abortController.signal.aborted)
               return;
-            const notificationOptions = { relatedRequestId: request.id };
+            const notificationOptions = { relatedRequestId: request2.id };
             if (relatedTaskId) {
               notificationOptions.relatedTask = { taskId: relatedTaskId };
             }
@@ -31679,7 +31679,7 @@ var init_protocol = __esm({
             if (abortController.signal.aborted) {
               throw new McpError(ErrorCode.ConnectionClosed, "Request was cancelled");
             }
-            const requestOptions = { ...options, relatedRequestId: request.id };
+            const requestOptions = { ...options, relatedRequestId: request2.id };
             if (relatedTaskId && !requestOptions.relatedTask) {
               requestOptions.relatedTask = { taskId: relatedTaskId };
             }
@@ -31690,7 +31690,7 @@ var init_protocol = __esm({
             return await this.request(r, resultSchema, requestOptions);
           },
           authInfo: extra?.authInfo,
-          requestId: request.id,
+          requestId: request2.id,
           requestInfo: extra?.requestInfo,
           taskId: relatedTaskId,
           taskStore,
@@ -31703,16 +31703,16 @@ var init_protocol = __esm({
             throw new McpError(ErrorCode.ConnectionClosed, "Request was cancelled");
           }
           if (taskCreationParams) {
-            this.assertTaskHandlerCapability(request.method);
+            this.assertTaskHandlerCapability(request2.method);
           }
-        }).then(() => handler(request, fullExtra)).then(async (result) => {
+        }).then(() => handler(request2, fullExtra)).then(async (result) => {
           if (abortController.signal.aborted) {
             return;
           }
           const response = {
             result,
             jsonrpc: "2.0",
-            id: request.id
+            id: request2.id
           };
           if (relatedTaskId && this._taskMessageQueue) {
             await this._enqueueTaskMessage(relatedTaskId, {
@@ -31729,7 +31729,7 @@ var init_protocol = __esm({
           }
           const errorResponse = {
             jsonrpc: "2.0",
-            id: request.id,
+            id: request2.id,
             error: {
               code: Number.isSafeInteger(error2["code"]) ? error2["code"] : ErrorCode.InternalError,
               message: error2.message ?? "Internal error",
@@ -31746,8 +31746,8 @@ var init_protocol = __esm({
             await capturedTransport?.send(errorResponse);
           }
         }).catch((error2) => this._onerror(new Error(`Failed to send response: ${error2}`))).finally(() => {
-          if (this._requestHandlerAbortControllers.get(request.id) === abortController) {
-            this._requestHandlerAbortControllers.delete(request.id);
+          if (this._requestHandlerAbortControllers.get(request2.id) === abortController) {
+            this._requestHandlerAbortControllers.delete(request2.id);
           }
         });
       }
@@ -31851,11 +31851,11 @@ var init_protocol = __esm({
        *
        * @experimental Use `client.experimental.tasks.requestStream()` to access this method.
        */
-      async *requestStream(request, resultSchema, options) {
+      async *requestStream(request2, resultSchema, options) {
         const { task } = options ?? {};
         if (!task) {
           try {
-            const result = await this.request(request, resultSchema, options);
+            const result = await this.request(request2, resultSchema, options);
             yield { type: "result", result };
           } catch (error2) {
             yield {
@@ -31867,7 +31867,7 @@ var init_protocol = __esm({
         }
         let taskId;
         try {
-          const createResult = await this.request(request, CreateTaskResultSchema, options);
+          const createResult = await this.request(request2, CreateTaskResultSchema, options);
           if (createResult.task) {
             taskId = createResult.task.taskId;
             yield { type: "taskCreated", task: createResult.task };
@@ -31900,7 +31900,7 @@ var init_protocol = __esm({
               return;
             }
             const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-            await new Promise((resolve2) => setTimeout(resolve2, pollInterval));
+            await new Promise((resolve3) => setTimeout(resolve3, pollInterval));
             options?.signal?.throwIfAborted();
           }
         } catch (error2) {
@@ -31915,9 +31915,9 @@ var init_protocol = __esm({
        *
        * Do not use this method to emit notifications! Use notification() instead.
        */
-      request(request, resultSchema, options) {
+      request(request2, resultSchema, options) {
         const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve3, reject) => {
           const earlyReject = (error2) => {
             reject(error2);
           };
@@ -31927,9 +31927,9 @@ var init_protocol = __esm({
           }
           if (this._options?.enforceStrictCapabilities === true) {
             try {
-              this.assertCapabilityForMethod(request.method);
+              this.assertCapabilityForMethod(request2.method);
               if (task) {
-                this.assertTaskCapability(request.method);
+                this.assertTaskCapability(request2.method);
               }
             } catch (e) {
               earlyReject(e);
@@ -31939,16 +31939,16 @@ var init_protocol = __esm({
           options?.signal?.throwIfAborted();
           const messageId = this._requestMessageId++;
           const jsonrpcRequest = {
-            ...request,
+            ...request2,
             jsonrpc: "2.0",
             id: messageId
           };
           if (options?.onprogress) {
             this._progressHandlers.set(messageId, options.onprogress);
             jsonrpcRequest.params = {
-              ...request.params,
+              ...request2.params,
               _meta: {
-                ...request.params?._meta || {},
+                ...request2.params?._meta || {},
                 progressToken: messageId
               }
             };
@@ -31995,7 +31995,7 @@ var init_protocol = __esm({
               if (!parseResult.success) {
                 reject(parseResult.error);
               } else {
-                resolve2(parseResult.data);
+                resolve3(parseResult.data);
               }
             } catch (error2) {
               reject(error2);
@@ -32152,8 +32152,8 @@ var init_protocol = __esm({
       setRequestHandler(requestSchema, handler) {
         const method = getMethodLiteral(requestSchema);
         this.assertRequestHandlerCapability(method);
-        this._requestHandlers.set(method, (request, extra) => {
-          const parsed = parseWithCompat(requestSchema, request);
+        this._requestHandlers.set(method, (request2, extra) => {
+          const parsed = parseWithCompat(requestSchema, request2);
           return Promise.resolve(handler(parsed, extra));
         });
       }
@@ -32257,31 +32257,31 @@ var init_protocol = __esm({
           }
         } catch {
         }
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve3, reject) => {
           if (signal.aborted) {
             reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
             return;
           }
-          const timeoutId = setTimeout(resolve2, interval);
+          const timeoutId = setTimeout(resolve3, interval);
           signal.addEventListener("abort", () => {
             clearTimeout(timeoutId);
             reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
           }, { once: true });
         });
       }
-      requestTaskStore(request, sessionId) {
+      requestTaskStore(request2, sessionId) {
         const taskStore = this._taskStore;
         if (!taskStore) {
           throw new Error("No task store configured");
         }
         return {
           createTask: async (taskParams) => {
-            if (!request) {
+            if (!request2) {
               throw new Error("No request provided");
             }
-            return await taskStore.createTask(taskParams, request.id, {
-              method: request.method,
-              params: request.params
+            return await taskStore.createTask(taskParams, request2.id, {
+              method: request2.method,
+              params: request2.params
             }, sessionId);
           },
           getTask: async (taskId) => {
@@ -32715,11 +32715,11 @@ var require_codegen = __commonJS({
         const rhs = this.rhs === void 0 ? "" : ` = ${this.rhs}`;
         return `${varKind} ${this.name}${rhs};` + _n;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants2) {
         if (!names[this.name.str])
           return;
         if (this.rhs)
-          this.rhs = optimizeExpr(this.rhs, names, constants);
+          this.rhs = optimizeExpr(this.rhs, names, constants2);
         return this;
       }
       get names() {
@@ -32736,10 +32736,10 @@ var require_codegen = __commonJS({
       render({ _n }) {
         return `${this.lhs} = ${this.rhs};` + _n;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants2) {
         if (this.lhs instanceof code_1.Name && !names[this.lhs.str] && !this.sideEffects)
           return;
-        this.rhs = optimizeExpr(this.rhs, names, constants);
+        this.rhs = optimizeExpr(this.rhs, names, constants2);
         return this;
       }
       get names() {
@@ -32800,8 +32800,8 @@ var require_codegen = __commonJS({
       optimizeNodes() {
         return `${this.code}` ? this : void 0;
       }
-      optimizeNames(names, constants) {
-        this.code = optimizeExpr(this.code, names, constants);
+      optimizeNames(names, constants2) {
+        this.code = optimizeExpr(this.code, names, constants2);
         return this;
       }
       get names() {
@@ -32830,12 +32830,12 @@ var require_codegen = __commonJS({
         }
         return nodes.length > 0 ? this : void 0;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants2) {
         const { nodes } = this;
         let i = nodes.length;
         while (i--) {
           const n = nodes[i];
-          if (n.optimizeNames(names, constants))
+          if (n.optimizeNames(names, constants2))
             continue;
           subtractNames(names, n.names);
           nodes.splice(i, 1);
@@ -32888,12 +32888,12 @@ var require_codegen = __commonJS({
           return void 0;
         return this;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants2) {
         var _a3;
-        this.else = (_a3 = this.else) === null || _a3 === void 0 ? void 0 : _a3.optimizeNames(names, constants);
-        if (!(super.optimizeNames(names, constants) || this.else))
+        this.else = (_a3 = this.else) === null || _a3 === void 0 ? void 0 : _a3.optimizeNames(names, constants2);
+        if (!(super.optimizeNames(names, constants2) || this.else))
           return;
-        this.condition = optimizeExpr(this.condition, names, constants);
+        this.condition = optimizeExpr(this.condition, names, constants2);
         return this;
       }
       get names() {
@@ -32916,10 +32916,10 @@ var require_codegen = __commonJS({
       render(opts) {
         return `for(${this.iteration})` + super.render(opts);
       }
-      optimizeNames(names, constants) {
-        if (!super.optimizeNames(names, constants))
+      optimizeNames(names, constants2) {
+        if (!super.optimizeNames(names, constants2))
           return;
-        this.iteration = optimizeExpr(this.iteration, names, constants);
+        this.iteration = optimizeExpr(this.iteration, names, constants2);
         return this;
       }
       get names() {
@@ -32955,10 +32955,10 @@ var require_codegen = __commonJS({
       render(opts) {
         return `for(${this.varKind} ${this.name} ${this.loop} ${this.iterable})` + super.render(opts);
       }
-      optimizeNames(names, constants) {
-        if (!super.optimizeNames(names, constants))
+      optimizeNames(names, constants2) {
+        if (!super.optimizeNames(names, constants2))
           return;
-        this.iterable = optimizeExpr(this.iterable, names, constants);
+        this.iterable = optimizeExpr(this.iterable, names, constants2);
         return this;
       }
       get names() {
@@ -33000,11 +33000,11 @@ var require_codegen = __commonJS({
         (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNodes();
         return this;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants2) {
         var _a3, _b;
-        super.optimizeNames(names, constants);
-        (_a3 = this.catch) === null || _a3 === void 0 ? void 0 : _a3.optimizeNames(names, constants);
-        (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNames(names, constants);
+        super.optimizeNames(names, constants2);
+        (_a3 = this.catch) === null || _a3 === void 0 ? void 0 : _a3.optimizeNames(names, constants2);
+        (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNames(names, constants2);
         return this;
       }
       get names() {
@@ -33305,7 +33305,7 @@ var require_codegen = __commonJS({
     function addExprNames(names, from) {
       return from instanceof code_1._CodeOrName ? addNames(names, from.names) : names;
     }
-    function optimizeExpr(expr, names, constants) {
+    function optimizeExpr(expr, names, constants2) {
       if (expr instanceof code_1.Name)
         return replaceName(expr);
       if (!canOptimize(expr))
@@ -33320,14 +33320,14 @@ var require_codegen = __commonJS({
         return items;
       }, []));
       function replaceName(n) {
-        const c = constants[n.str];
+        const c = constants2[n.str];
         if (c === void 0 || names[n.str] !== 1)
           return n;
         delete names[n.str];
         return c;
       }
       function canOptimize(e) {
-        return e instanceof code_1._Code && e._items.some((c) => c instanceof code_1.Name && names[c.str] === 1 && constants[c.str] !== void 0);
+        return e instanceof code_1._Code && e._items.some((c) => c instanceof code_1.Name && names[c.str] === 1 && constants2[c.str] !== void 0);
       }
     }
     function subtractNames(names, from) {
@@ -35289,7 +35289,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve2.call(this, root, ref);
+      let _sch = resolve3.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a3 = root.localRefs) === null || _a3 === void 0 ? void 0 : _a3[ref];
         const { schemaId } = this.opts;
@@ -35316,7 +35316,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve2(root, ref) {
+    function resolve3(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -35947,7 +35947,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve2(baseURI, relativeURI, options) {
+    function resolve3(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const { parsed: baseParsed, malformedAuthorityOrPort: baseMalformed } = parseWithStatus(baseURI, schemelessOptions);
       const { parsed: relativeParsed, malformedAuthorityOrPort: relativeMalformed } = parseWithStatus(relativeURI, schemelessOptions);
@@ -35958,49 +35958,49 @@ var require_fast_uri = __commonJS({
       schemelessOptions.skipEscape = true;
       return serialize(resolved, schemelessOptions);
     }
-    function resolveComponent(base, relative2, options, skipNormalization) {
+    function resolveComponent(base, relative3, options, skipNormalization) {
       const target = {};
       if (!skipNormalization) {
         base = parse3(serialize(base, options), options);
-        relative2 = parse3(serialize(relative2, options), options);
+        relative3 = parse3(serialize(relative3, options), options);
       }
       options = options || {};
-      if (!options.tolerant && relative2.scheme) {
-        target.scheme = relative2.scheme;
-        target.userinfo = relative2.userinfo;
-        target.host = relative2.host;
-        target.port = relative2.port;
-        target.path = removeDotSegments(relative2.path || "");
-        target.query = relative2.query;
+      if (!options.tolerant && relative3.scheme) {
+        target.scheme = relative3.scheme;
+        target.userinfo = relative3.userinfo;
+        target.host = relative3.host;
+        target.port = relative3.port;
+        target.path = removeDotSegments(relative3.path || "");
+        target.query = relative3.query;
       } else {
-        if (relative2.userinfo !== void 0 || relative2.host !== void 0 || relative2.port !== void 0) {
-          target.userinfo = relative2.userinfo;
-          target.host = relative2.host;
-          target.port = relative2.port;
-          target.path = removeDotSegments(relative2.path || "");
-          target.query = relative2.query;
+        if (relative3.userinfo !== void 0 || relative3.host !== void 0 || relative3.port !== void 0) {
+          target.userinfo = relative3.userinfo;
+          target.host = relative3.host;
+          target.port = relative3.port;
+          target.path = removeDotSegments(relative3.path || "");
+          target.query = relative3.query;
         } else {
-          if (!relative2.path) {
+          if (!relative3.path) {
             target.path = base.path;
-            if (relative2.query !== void 0) {
-              target.query = relative2.query;
+            if (relative3.query !== void 0) {
+              target.query = relative3.query;
             } else {
               target.query = base.query;
             }
           } else {
-            if (relative2.path[0] === "/") {
-              target.path = removeDotSegments(relative2.path);
+            if (relative3.path[0] === "/") {
+              target.path = removeDotSegments(relative3.path);
             } else {
               if ((base.userinfo !== void 0 || base.host !== void 0 || base.port !== void 0) && !base.path) {
-                target.path = "/" + relative2.path;
+                target.path = "/" + relative3.path;
               } else if (!base.path) {
-                target.path = relative2.path;
+                target.path = relative3.path;
               } else {
-                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative2.path;
+                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative3.path;
               }
               target.path = removeDotSegments(target.path);
             }
-            target.query = relative2.query;
+            target.query = relative3.query;
           }
           target.userinfo = base.userinfo;
           target.host = base.host;
@@ -36008,7 +36008,7 @@ var require_fast_uri = __commonJS({
         }
         target.scheme = base.scheme;
       }
-      target.fragment = relative2.fragment;
+      target.fragment = relative3.fragment;
       return target;
     }
     function equal(uriA, uriB, options) {
@@ -36231,7 +36231,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve2,
+      resolve: resolve3,
       resolveComponent,
       equal,
       serialize,
@@ -39316,8 +39316,8 @@ var init_server = __esm({
        *
        * @experimental
        */
-      requestStream(request, resultSchema, options) {
-        return this._server.requestStream(request, resultSchema, options);
+      requestStream(request2, resultSchema, options) {
+        return this._server.requestStream(request2, resultSchema, options);
       }
       /**
        * Sends a sampling request and returns an AsyncGenerator that yields response messages.
@@ -39577,12 +39577,12 @@ var init_server2 = __esm({
         this._capabilities = options?.capabilities ?? {};
         this._instructions = options?.instructions;
         this._jsonSchemaValidator = options?.jsonSchemaValidator ?? new AjvJsonSchemaValidator();
-        this.setRequestHandler(InitializeRequestSchema, (request) => this._oninitialize(request));
+        this.setRequestHandler(InitializeRequestSchema, (request2) => this._oninitialize(request2));
         this.setNotificationHandler(InitializedNotificationSchema, () => this.oninitialized?.());
         if (this._capabilities.logging) {
-          this.setRequestHandler(SetLevelRequestSchema, async (request, extra) => {
+          this.setRequestHandler(SetLevelRequestSchema, async (request2, extra) => {
             const transportSessionId = extra.sessionId || extra.requestInfo?.headers["mcp-session-id"] || void 0;
-            const { level } = request.params;
+            const { level } = request2.params;
             const parseResult = LoggingLevelSchema.safeParse(level);
             if (parseResult.success) {
               this._loggingLevels.set(transportSessionId, parseResult.data);
@@ -39632,14 +39632,14 @@ var init_server2 = __esm({
         }
         const method = methodValue;
         if (method === "tools/call") {
-          const wrappedHandler = async (request, extra) => {
-            const validatedRequest = safeParse3(CallToolRequestSchema, request);
+          const wrappedHandler = async (request2, extra) => {
+            const validatedRequest = safeParse3(CallToolRequestSchema, request2);
             if (!validatedRequest.success) {
               const errorMessage = validatedRequest.error instanceof Error ? validatedRequest.error.message : String(validatedRequest.error);
               throw new McpError(ErrorCode.InvalidParams, `Invalid tools/call request: ${errorMessage}`);
             }
             const { params } = validatedRequest.data;
-            const result = await Promise.resolve(handler(request, extra));
+            const result = await Promise.resolve(handler(request2, extra));
             if (params.task) {
               const taskValidationResult = safeParse3(CreateTaskResultSchema, result);
               if (!taskValidationResult.success) {
@@ -39770,10 +39770,10 @@ var init_server2 = __esm({
         }
         assertToolsCallTaskCapability(this._capabilities.tasks?.requests, method, "Server");
       }
-      async _oninitialize(request) {
-        const requestedVersion = request.params.protocolVersion;
-        this._clientCapabilities = request.params.capabilities;
-        this._clientVersion = request.params.clientInfo;
+      async _oninitialize(request2) {
+        const requestedVersion = request2.params.protocolVersion;
+        this._clientCapabilities = request2.params.capabilities;
+        this._clientVersion = request2.params.clientInfo;
         const protocolVersion = SUPPORTED_PROTOCOL_VERSIONS.includes(requestedVersion) ? requestedVersion : LATEST_PROTOCOL_VERSION;
         return {
           protocolVersion,
@@ -40252,33 +40252,33 @@ var init_mcp = __esm({
             return toolDefinition;
           })
         }));
-        this.server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
+        this.server.setRequestHandler(CallToolRequestSchema, async (request2, extra) => {
           try {
-            const tool = this._registeredTools[request.params.name];
+            const tool = this._registeredTools[request2.params.name];
             if (!tool) {
-              throw new McpError(ErrorCode.InvalidParams, `Tool ${request.params.name} not found`);
+              throw new McpError(ErrorCode.InvalidParams, `Tool ${request2.params.name} not found`);
             }
             if (!tool.enabled) {
-              throw new McpError(ErrorCode.InvalidParams, `Tool ${request.params.name} disabled`);
+              throw new McpError(ErrorCode.InvalidParams, `Tool ${request2.params.name} disabled`);
             }
-            const isTaskRequest = !!request.params.task;
+            const isTaskRequest = !!request2.params.task;
             const taskSupport = tool.execution?.taskSupport;
             const isTaskHandler = "createTask" in tool.handler;
             if ((taskSupport === "required" || taskSupport === "optional") && !isTaskHandler) {
-              throw new McpError(ErrorCode.InternalError, `Tool ${request.params.name} has taskSupport '${taskSupport}' but was not registered with registerToolTask`);
+              throw new McpError(ErrorCode.InternalError, `Tool ${request2.params.name} has taskSupport '${taskSupport}' but was not registered with registerToolTask`);
             }
             if (taskSupport === "required" && !isTaskRequest) {
-              throw new McpError(ErrorCode.MethodNotFound, `Tool ${request.params.name} requires task augmentation (taskSupport: 'required')`);
+              throw new McpError(ErrorCode.MethodNotFound, `Tool ${request2.params.name} requires task augmentation (taskSupport: 'required')`);
             }
             if (taskSupport === "optional" && !isTaskRequest && isTaskHandler) {
-              return await this.handleAutomaticTaskPolling(tool, request, extra);
+              return await this.handleAutomaticTaskPolling(tool, request2, extra);
             }
-            const args = await this.validateToolInput(tool, request.params.arguments, request.params.name);
+            const args = await this.validateToolInput(tool, request2.params.arguments, request2.params.name);
             const result = await this.executeToolHandler(tool, args, extra);
             if (isTaskRequest) {
               return result;
             }
-            await this.validateToolOutput(tool, result, request.params.name);
+            await this.validateToolOutput(tool, result, request2.params.name);
             return result;
           } catch (error2) {
             if (error2 instanceof McpError) {
@@ -40382,11 +40382,11 @@ var init_mcp = __esm({
       /**
        * Handles automatic task polling for tools with taskSupport 'optional'.
        */
-      async handleAutomaticTaskPolling(tool, request, extra) {
+      async handleAutomaticTaskPolling(tool, request2, extra) {
         if (!extra.taskStore) {
           throw new Error("No task store provided for task-capable tool.");
         }
-        const args = await this.validateToolInput(tool, request.params.arguments, request.params.name);
+        const args = await this.validateToolInput(tool, request2.params.arguments, request2.params.name);
         const handler = tool.handler;
         const taskExtra = { ...extra, taskStore: extra.taskStore };
         const createTaskResult = args ? await Promise.resolve(handler.createTask(args, taskExtra)) : (
@@ -40397,7 +40397,7 @@ var init_mcp = __esm({
         let task = createTaskResult.task;
         const pollInterval = task.pollInterval ?? 5e3;
         while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-          await new Promise((resolve2) => setTimeout(resolve2, pollInterval));
+          await new Promise((resolve3) => setTimeout(resolve3, pollInterval));
           const updatedTask = await extra.taskStore.getTask(taskId);
           if (!updatedTask) {
             throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -40414,21 +40414,21 @@ var init_mcp = __esm({
         this.server.registerCapabilities({
           completions: {}
         });
-        this.server.setRequestHandler(CompleteRequestSchema, async (request) => {
-          switch (request.params.ref.type) {
+        this.server.setRequestHandler(CompleteRequestSchema, async (request2) => {
+          switch (request2.params.ref.type) {
             case "ref/prompt":
-              assertCompleteRequestPrompt(request);
-              return this.handlePromptCompletion(request, request.params.ref);
+              assertCompleteRequestPrompt(request2);
+              return this.handlePromptCompletion(request2, request2.params.ref);
             case "ref/resource":
-              assertCompleteRequestResourceTemplate(request);
-              return this.handleResourceCompletion(request, request.params.ref);
+              assertCompleteRequestResourceTemplate(request2);
+              return this.handleResourceCompletion(request2, request2.params.ref);
             default:
-              throw new McpError(ErrorCode.InvalidParams, `Invalid completion reference: ${request.params.ref}`);
+              throw new McpError(ErrorCode.InvalidParams, `Invalid completion reference: ${request2.params.ref}`);
           }
         });
         this._completionHandlerInitialized = true;
       }
-      async handlePromptCompletion(request, ref) {
+      async handlePromptCompletion(request2, ref) {
         const prompt = this._registeredPrompts[ref.name];
         if (!prompt) {
           throw new McpError(ErrorCode.InvalidParams, `Prompt ${ref.name} not found`);
@@ -40440,7 +40440,7 @@ var init_mcp = __esm({
           return EMPTY_COMPLETION_RESULT;
         }
         const promptShape = getObjectShape(prompt.argsSchema);
-        const field = promptShape?.[request.params.argument.name];
+        const field = promptShape?.[request2.params.argument.name];
         if (!isCompletable(field)) {
           return EMPTY_COMPLETION_RESULT;
         }
@@ -40448,22 +40448,22 @@ var init_mcp = __esm({
         if (!completer) {
           return EMPTY_COMPLETION_RESULT;
         }
-        const suggestions = await completer(request.params.argument.value, request.params.context);
+        const suggestions = await completer(request2.params.argument.value, request2.params.context);
         return createCompletionResult(suggestions);
       }
-      async handleResourceCompletion(request, ref) {
+      async handleResourceCompletion(request2, ref) {
         const template = Object.values(this._registeredResourceTemplates).find((t) => t.resourceTemplate.uriTemplate.toString() === ref.uri);
         if (!template) {
           if (this._registeredResources[ref.uri]) {
             return EMPTY_COMPLETION_RESULT;
           }
-          throw new McpError(ErrorCode.InvalidParams, `Resource template ${request.params.ref.uri} not found`);
+          throw new McpError(ErrorCode.InvalidParams, `Resource template ${request2.params.ref.uri} not found`);
         }
-        const completer = template.resourceTemplate.completeCallback(request.params.argument.name);
+        const completer = template.resourceTemplate.completeCallback(request2.params.argument.name);
         if (!completer) {
           return EMPTY_COMPLETION_RESULT;
         }
-        const suggestions = await completer(request.params.argument.value, request.params.context);
+        const suggestions = await completer(request2.params.argument.value, request2.params.context);
         return createCompletionResult(suggestions);
       }
       setResourceRequestHandlers() {
@@ -40478,7 +40478,7 @@ var init_mcp = __esm({
             listChanged: true
           }
         });
-        this.server.setRequestHandler(ListResourcesRequestSchema, async (request, extra) => {
+        this.server.setRequestHandler(ListResourcesRequestSchema, async (request2, extra) => {
           const resources = Object.entries(this._registeredResources).filter(([_, resource]) => resource.enabled).map(([uri, resource]) => ({
             uri,
             name: resource.name,
@@ -40508,8 +40508,8 @@ var init_mcp = __esm({
           }));
           return { resourceTemplates };
         });
-        this.server.setRequestHandler(ReadResourceRequestSchema, async (request, extra) => {
-          const uri = new URL(request.params.uri);
+        this.server.setRequestHandler(ReadResourceRequestSchema, async (request2, extra) => {
+          const uri = new URL(request2.params.uri);
           const resource = this._registeredResources[uri.toString()];
           if (resource) {
             if (!resource.enabled) {
@@ -40548,21 +40548,21 @@ var init_mcp = __esm({
             };
           })
         }));
-        this.server.setRequestHandler(GetPromptRequestSchema, async (request, extra) => {
-          const prompt = this._registeredPrompts[request.params.name];
+        this.server.setRequestHandler(GetPromptRequestSchema, async (request2, extra) => {
+          const prompt = this._registeredPrompts[request2.params.name];
           if (!prompt) {
-            throw new McpError(ErrorCode.InvalidParams, `Prompt ${request.params.name} not found`);
+            throw new McpError(ErrorCode.InvalidParams, `Prompt ${request2.params.name} not found`);
           }
           if (!prompt.enabled) {
-            throw new McpError(ErrorCode.InvalidParams, `Prompt ${request.params.name} disabled`);
+            throw new McpError(ErrorCode.InvalidParams, `Prompt ${request2.params.name} disabled`);
           }
           if (prompt.argsSchema) {
             const argsObj = normalizeObjectSchema(prompt.argsSchema);
-            const parseResult = await safeParseAsync3(argsObj, request.params.arguments ?? {});
+            const parseResult = await safeParseAsync3(argsObj, request2.params.arguments ?? {});
             if (!parseResult.success) {
               const error2 = "error" in parseResult ? parseResult.error : "Unknown error";
               const errorMessage = getParseErrorMessage(error2);
-              throw new McpError(ErrorCode.InvalidParams, `Invalid arguments for prompt ${request.params.name}: ${errorMessage}`);
+              throw new McpError(ErrorCode.InvalidParams, `Invalid arguments for prompt ${request2.params.name}: ${errorMessage}`);
             }
             const args = parseResult.data;
             const cb = prompt.callback;
@@ -41033,82 +41033,10 @@ var init_time = __esm({
 });
 
 // package.json
-var require_package = __commonJS({
-  "package.json"(exports2, module2) {
-    module2.exports = {
-      name: "chron-mcp",
-      version: "0.1.66",
-      mcpName: "io.github.sirinivask/chron",
-      description: "Audit-grade timestamped logs for every AI conversation",
-      repository: {
-        type: "git",
-        url: "https://github.com/sirinivask/chron.git"
-      },
-      main: "dist/index.js",
-      vitest: {
-        include: [
-          "tests/**/*.test.ts"
-        ],
-        globals: true,
-        setupFiles: [
-          "./tests/setup.ts"
-        ]
-      },
-      bin: {
-        "chron-mcp": "dist/index.js",
-        chron: "dist/cli/index.js"
-      },
-      files: [
-        "dist",
-        "skills",
-        ".claude-plugin",
-        "assets",
-        "dashboards",
-        "README.md"
-      ],
-      engines: {
-        node: ">=18"
-      },
-      scripts: {
-        build: "npx esbuild src/index.ts --bundle --format=cjs --outfile=dist/index.js --platform=node && chmod +x dist/index.js && npx esbuild src/cli/index.ts --bundle --format=cjs --outfile=dist/cli/index.js --platform=node && chmod +x dist/cli/index.js",
-        "build:cli": "npx esbuild src/cli/index.ts --bundle --format=cjs --outfile=dist/cli/index.js --platform=node && chmod +x dist/cli/index.js",
-        typecheck: "tsc --noEmit",
-        dev: "tsc --watch",
-        start: "node dist/index.js",
-        test: "vitest run",
-        "test:watch": "vitest",
-        postinstall: "node dist/cli/index.js setup 2>/dev/null || true",
-        prepublishOnly: "npm run typecheck && npm test && npm run build"
-      },
-      keywords: [
-        "mcp",
-        "ai",
-        "audit",
-        "logging",
-        "claude",
-        "cursor"
-      ],
-      license: "SEE LICENSE IN LICENSE",
-      dependencies: {
-        "@libsql/client": "^0.17.3",
-        "@modelcontextprotocol/sdk": "^1.32.0",
-        "drizzle-orm": "^0.45.2",
-        express: "^4.22.2",
-        uuid: "^11.1.1",
-        zod: "^4.6.6"
-      },
-      devDependencies: {
-        "@types/express": "^4.17.21",
-        "@types/node": "^20.0.0",
-        "@types/uuid": "^9.0.0",
-        esbuild: "^0.25.12",
-        typescript: "^5.4.5",
-        vitest: "^3.2.7"
-      },
-      overrides: {
-        "@hono/node-server": "^2.0.5"
-      }
-    };
+var version4;
+var init_package = __esm({
+  "package.json"() {
+    version4 = "0.1.67";
   }
 });
 
@@ -41116,6 +41044,69 @@ var require_package = __commonJS({
 var init_error_codes = __esm({
   "src/utils/error-codes.ts"() {
     "use strict";
+  }
+});
+
+// src/utils/splunk-request.ts
+async function splunkRequest(url, init, insecure = false) {
+  const target = new URL(url);
+  if (!["http:", "https:"].includes(target.protocol)) throw new Error("Splunk requires HTTP or HTTPS");
+  if (!insecure || target.protocol !== "https:") return fetch(url, { ...init, redirect: "error" });
+  if (init.signal?.aborted) throw init.signal.reason ?? new Error("Splunk request aborted");
+  if (typeof init.body !== "string") throw new Error("Splunk request body must be a string");
+  const headers = Object.fromEntries(new Headers(init.headers).entries());
+  const agent = new import_https.Agent({ rejectUnauthorized: false, keepAlive: false });
+  return new Promise((resolve3, reject) => {
+    const req = (0, import_https.request)(target, { method: init.method ?? "POST", headers, agent }, (res) => {
+      const chunks = [];
+      let size = 0;
+      res.on("data", (chunk) => {
+        size += chunk.length;
+        if (size > 1024 * 1024) {
+          req.destroy(new Error("Splunk response exceeded 1 MiB"));
+          return;
+        }
+        chunks.push(Buffer.from(chunk));
+      });
+      res.on("error", (e) => {
+        cleanup();
+        reject(e);
+      });
+      res.on("end", () => {
+        cleanup();
+        const responseHeaders = new Headers();
+        for (const [name, value] of Object.entries(res.headers)) {
+          if (value !== void 0) responseHeaders.set(name, Array.isArray(value) ? value.join(", ") : value);
+        }
+        try {
+          const status = res.statusCode ?? 500;
+          resolve3(new Response([204, 205, 304].includes(status) ? null : Buffer.concat(chunks), { status, headers: responseHeaders }));
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+    const abort = () => req.destroy(init.signal?.reason instanceof Error ? init.signal.reason : new Error("Splunk request aborted"));
+    const timer = setTimeout(() => req.destroy(new Error("Splunk request timed out")), 1e4);
+    const cleanup = () => {
+      clearTimeout(timer);
+      init.signal?.removeEventListener("abort", abort);
+      agent.destroy();
+    };
+    req.on("error", (e) => {
+      cleanup();
+      reject(e);
+    });
+    req.on("close", cleanup);
+    init.signal?.addEventListener("abort", abort, { once: true });
+    req.end(init.body);
+  });
+}
+var import_https;
+var init_splunk_request = __esm({
+  "src/utils/splunk-request.ts"() {
+    "use strict";
+    import_https = require("https");
   }
 });
 
@@ -41138,7 +41129,6 @@ function getSplunkConfig() {
   } catch {
     _splunkCache = null;
   }
-  if (_splunkCache?.insecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
   return _splunkCache;
 }
 function getSentinelConfig() {
@@ -41169,11 +41159,12 @@ function requestTimeoutMs() {
   const configured = Number(process.env.CHRON_SIEM_TIMEOUT_MS ?? 1e4);
   return Number.isFinite(configured) && configured > 0 ? configured : 1e4;
 }
-async function fetchWithTimeout(url, init) {
+async function fetchWithTimeout(url, init, splunkInsecure) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), requestTimeoutMs());
   try {
-    return await fetch(url, { ...init, signal: controller.signal });
+    const options = { ...init, signal: controller.signal };
+    return splunkInsecure === void 0 ? await fetch(url, options) : await splunkRequest(url, options, splunkInsecure);
   } finally {
     clearTimeout(timer);
   }
@@ -41214,7 +41205,7 @@ function toSplunkEvent(payload) {
     session_id_prefix: payload.session.id_prefix,
     ai_tool: payload.session.ai_tool ?? "",
     os: process.platform,
-    chron_version: import_package.version
+    chron_version: version4
   };
   if (payload.event_type === "message_logged") {
     event.role = payload.message.role;
@@ -41235,14 +41226,14 @@ function emitToSplunk(payload) {
   if (!cfg) return;
   const url = `${cfg.url.replace(/\/$/, "")}/services/collector/event`;
   setImmediate(
-    () => fetch(url, {
+    () => fetchWithTimeout(url, {
       method: "POST",
       headers: {
         "Authorization": `Splunk ${cfg.token}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify(toSplunkEvent(payload))
-    }).catch(() => void 0)
+    }, cfg.insecure).catch(() => void 0)
   );
 }
 function toSentinelRecord(payload) {
@@ -41252,7 +41243,7 @@ function toSentinelRecord(payload) {
     SessionIdPrefix: payload.session.id_prefix,
     AiTool: payload.session.ai_tool ?? "",
     OS: process.platform,
-    ChronVersion: import_package.version,
+    ChronVersion: version4,
     Computer: (0, import_os3.hostname)(),
     Role: "",
     DetectionType: "",
@@ -41292,7 +41283,7 @@ function toLogScaleAttributes(payload) {
     session_id_prefix: payload.session.id_prefix,
     ai_tool: payload.session.ai_tool ?? "",
     os: process.platform,
-    chron_version: import_package.version
+    chron_version: version4
   };
   if (payload.event_type === "message_logged") {
     attrs.role = payload.message.role;
@@ -41327,7 +41318,7 @@ function emitEvent(payload) {
   if (url && token) {
     const event = {
       schema_version: "1.0",
-      chron_version: import_package.version,
+      chron_version: version4,
       machine_id: getMachineId(),
       os: process.platform,
       ...payload
@@ -41347,19 +41338,17 @@ function emitEvent(payload) {
   emitToSentinel(payload);
   emitToSplunk(payload);
 }
-var import_fs2, import_crypto3, import_os3, import_package, _splunkCache, _splunkCacheExpiry, _splunkCachePath, _sentinelCache, _sentinelCacheExpiry, _sentinelCachePath, _azureTokenCache, _machineId;
+var import_fs2, import_crypto3, import_os3, _splunkCache, _splunkCacheExpiry, _splunkCachePath, _sentinelCache, _sentinelCacheExpiry, _sentinelCachePath, _azureTokenCache, _machineId;
 var init_relay = __esm({
   "src/utils/relay.ts"() {
     "use strict";
     import_fs2 = require("fs");
     import_crypto3 = require("crypto");
     import_os3 = require("os");
-    import_package = __toESM(require_package());
+    init_package();
     init_config_path();
     init_error_codes();
-    if (process.env.CHRON_SPLUNK_INSECURE === "1") {
-      process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-    }
+    init_splunk_request();
     _splunkCache = null;
     _splunkCacheExpiry = 0;
     _splunkCachePath = "";
@@ -41423,7 +41412,7 @@ function ntpDisabled() {
   return process.env[NTP_DISABLED_ENV] === "1";
 }
 function queryNtpUdp(server, timeout) {
-  return new Promise((resolve2, reject) => {
+  return new Promise((resolve3, reject) => {
     const client = (0, import_dgram.createSocket)("udp4");
     const timer = setTimeout(() => {
       try {
@@ -41450,7 +41439,7 @@ function queryNtpUdp(server, timeout) {
       const frac = msg.readUInt32BE(44);
       const t3 = (secs - NTP_OFFSET) * 1e3 + frac / 4294967296 * 1e3;
       const offset_ms = Math.round(t3 - (t1 + t4) / 2);
-      resolve2({ offset_ms });
+      resolve3({ offset_ms });
     });
     client.once("error", (err) => {
       clearTimeout(timer);
@@ -41600,6 +41589,8 @@ function chainScopeLabel(meta2) {
       return "Hash chain covers Chron's imported representation of this client transcript. Chron did not witness the original events.";
     case EVIDENCE_SOURCE.IMPORTED:
       return "Hash chain covers Chron's imported representation of this vendor export. Chron did not witness the original events.";
+    case EVIDENCE_SOURCE.NATIVE_HOOK:
+      return "Hash chain covers the hook events Chron recorded for this conversation. A turn where no hook ran is not in the chain.";
     case EVIDENCE_SOURCE.WITNESSED:
     default:
       return meta2.partial === true ? "Hash chain covers the records Chron holds for this session" : "Hash chain covers complete session";
@@ -41613,6 +41604,8 @@ function describeEvidenceBoundary(meta2) {
       return "Imported from a vendor export. Tool calls, file access, and environment state are not captured by the export.";
     case EVIDENCE_SOURCE.TRANSCRIPT_BACKFILL:
       return "Recovered from a local client transcript. Chron ingested this record rather than observing it directly.";
+    case EVIDENCE_SOURCE.NATIVE_HOOK:
+      return "Recorded from the client's own hook events, one record per event Chron was configured for. Turns taken while no hook was configured are outside the evidence boundary, and nothing marks where they would have been. Nothing required these events to be recorded.";
     case EVIDENCE_SOURCE.WITNESSED:
     default:
       return null;
@@ -41630,7 +41623,22 @@ var init_evidence = __esm({
       /** Chron started recording partway through a conversation already in progress. */
       LIVE_ATTACH: "live_attach",
       /** Recovered from a local transcript the AI client wrote. Reserved; not yet implemented. */
-      TRANSCRIPT_BACKFILL: "transcript_backfill"
+      TRANSCRIPT_BACKFILL: "transcript_backfill",
+      /**
+       * The client invoked a hook Chron is configured into, once per event, and
+       * Chron recorded the event as it was handed over.
+       *
+       * Separate from `witnessed` because the mechanism is different, not because
+       * the coverage is weaker — an MCP-logged `witnessed` session has no
+       * completeness guarantee either. A hook event arrives because the client's
+       * configuration names this command, so capture does not depend on a model
+       * deciding to call a tool; and it arrives per configured event, so a turn
+       * taken with no hook configured leaves nothing at all, which is why these
+       * sessions are partial.
+       *
+       * Never assertable by a caller. See `CALLER_ASSERTABLE_SOURCES`.
+       */
+      NATIVE_HOOK: "native_hook"
     };
     EVIDENCE_SOURCES = Object.values(EVIDENCE_SOURCE);
     CAPTURE_MODE = {
@@ -41642,7 +41650,12 @@ var init_evidence = __esm({
       ENFORCED_POLICY: "enforced:policy"
     };
     CAPTURE_MODES = Object.values(CAPTURE_MODE);
-    CALLER_ASSERTABLE_SOURCES = EVIDENCE_SOURCES;
+    CALLER_ASSERTABLE_SOURCES = [
+      EVIDENCE_SOURCE.WITNESSED,
+      EVIDENCE_SOURCE.IMPORTED,
+      EVIDENCE_SOURCE.LIVE_ATTACH,
+      EVIDENCE_SOURCE.TRANSCRIPT_BACKFILL
+    ];
     ATTACH_REASON_MID_SESSION = "chron_available_mid_session";
   }
 });
@@ -42099,7 +42112,7 @@ function deduplicateOverlaps(secrets) {
   }
   return kept;
 }
-async function scanForSecretsWithoutBlocking(input, yieldNow = () => new Promise((resolve2) => setImmediate(resolve2))) {
+async function scanForSecretsWithoutBlocking(input, yieldNow = () => new Promise((resolve3) => setImmediate(resolve3))) {
   if (input.length <= OWNED_CHARS) return scanForSecrets(input);
   const byStart = /* @__PURE__ */ new Map();
   for (let owned = 0; owned < input.length; owned += OWNED_CHARS) {
@@ -43063,7 +43076,7 @@ function registerTool(server, name, description, shape, handler) {
 function createServer(db) {
   const server = new McpServer({
     name: "chron-mcp",
-    version: import_package2.version
+    version: version4
   }, {
     instructions: MCP_LOGGING_INSTRUCTIONS,
     maxToolInputElements: MAX_TOOL_INPUT_ELEMENTS
@@ -43235,7 +43248,7 @@ function createServer(db) {
   );
   return server;
 }
-var import_package2, MAX_TOOL_INPUT_ELEMENTS, roleEnum;
+var MAX_TOOL_INPUT_ELEMENTS, roleEnum;
 var init_server3 = __esm({
   "src/server.ts"() {
     "use strict";
@@ -43247,7 +43260,7 @@ var init_server3 = __esm({
     init_detect2();
     init_summary2();
     init_search();
-    import_package2 = __toESM(require_package());
+    init_package();
     init_instructions();
     MAX_TOOL_INPUT_ELEMENTS = 25e4;
     roleEnum = external_exports.enum(["user", "assistant"]);
@@ -43357,35 +43370,6 @@ ${argsLine}
 ` : "") + codexMcpBlock(server);
   return { content: updated, changed: true };
 }
-function ensureChronJsonMcpConfig(path) {
-  try {
-    const existing = (0, import_fs4.existsSync)(path) ? (0, import_fs4.readFileSync)(path, "utf8") : "{}";
-    const updated = upsertChronJsonMcp(existing);
-    (0, import_fs4.mkdirSync)((0, import_path4.dirname)(path), { recursive: true });
-    if (updated.changed || !(0, import_fs4.existsSync)(path)) {
-      (0, import_fs4.writeFileSync)(path, updated.content, "utf8");
-    }
-    return { status: updated.changed ? "added" : "already", path };
-  } catch (err) {
-    return { status: "error", path, error: err.message };
-  }
-}
-function ensureChronCodexTomlConfig(path) {
-  try {
-    const existing = (0, import_fs4.existsSync)(path) ? (0, import_fs4.readFileSync)(path, "utf8") : "";
-    const updated = upsertChronCodexToml(existing);
-    (0, import_fs4.mkdirSync)((0, import_path4.dirname)(path), { recursive: true });
-    if (updated.changed || !(0, import_fs4.existsSync)(path)) {
-      (0, import_fs4.writeFileSync)(path, updated.content, "utf8");
-    }
-    return { status: updated.changed ? "added" : "already", path };
-  } catch (err) {
-    return { status: "error", path, error: err.message };
-  }
-}
-function ensureChronMcpConfig(config2) {
-  return config2.type === "codex-toml" ? ensureChronCodexTomlConfig(config2.path) : ensureChronJsonMcpConfig(config2.path);
-}
 var import_fs4, import_path4, CHRON_MCP_SERVER;
 var init_mcp_config = __esm({
   "src/cli/mcp-config.ts"() {
@@ -43396,203 +43380,360 @@ var init_mcp_config = __esm({
   }
 });
 
-// src/setup.ts
-var setup_exports = {};
-__export(setup_exports, {
-  runSetup: () => runSetup
+// src/cli/configuration.ts
+var configuration_exports = {};
+__export(configuration_exports, {
+  configurationPlan: () => configurationPlan,
+  runConfiguration: () => runConfiguration
 });
-function readJson(filePath) {
-  if (!(0, import_fs5.existsSync)(filePath)) return {};
-  try {
-    return JSON.parse((0, import_fs5.readFileSync)(filePath, "utf8"));
-  } catch {
-    return {};
+function safePath(path) {
+  path = (0, import_path5.resolve)(path);
+  const root = process.env.CHRON_TEST_ROOT;
+  if (root) {
+    const rel = (0, import_path5.relative)((0, import_path5.resolve)(root), path);
+    if ((0, import_path5.isAbsolute)(rel) || rel === ".." || rel.startsWith(`..${import_path5.sep}`)) throw new Error("Configuration path is outside CHRON_TEST_ROOT");
   }
-}
-function writeJson(filePath, data) {
-  (0, import_fs5.mkdirSync)((0, import_path5.dirname)(filePath), { recursive: true });
-  (0, import_fs5.writeFileSync)(filePath, JSON.stringify(data, null, 2) + "\n", "utf8");
-}
-function configureClaudeCode() {
-  try {
-    const server = resolveChronMcpServer();
-    (0, import_child_process.execFileSync)("claude", ["mcp", "add", "chron", "--", server.command, ...server.args], { stdio: "pipe" });
-  } catch {
-    const result = ensureChronMcpConfig({
-      name: "Claude Code",
-      path: (0, import_path5.join)((0, import_os5.homedir)(), ".claude.json"),
-      type: "json",
-      connectCommand: "chron doctor --fix"
-    });
-    if (result.status === "error") return { tool: "Claude Code", status: "error", error: result.error };
-  }
-  installClaudeCodeHook();
-  return { tool: "Claude Code", status: "added" };
-}
-function installClaudeCodeHook() {
-  const skillSrc = (0, import_path5.join)(__dirname, "..", "skills", "chron.skill.md");
-  const skillDst = (0, import_path5.join)((0, import_os5.homedir)(), ".chron", "chron.skill.md");
-  if ((0, import_fs5.existsSync)(skillSrc)) {
-    (0, import_fs5.mkdirSync)((0, import_path5.dirname)(skillDst), { recursive: true });
-    (0, import_fs5.copyFileSync)(skillSrc, skillDst);
-  }
-  const settingsPath = (0, import_path5.join)((0, import_os5.homedir)(), ".claude", "settings.json");
-  const settings = readJson(settingsPath);
-  if (!settings.hooks) settings.hooks = {};
-  if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
-  const alreadyInstalled = settings.hooks.SessionStart.some(
-    (h) => Array.isArray(h.hooks) && h.hooks.some((c) => c.command?.includes("chron"))
-  );
-  if (!alreadyInstalled) {
-    settings.hooks.SessionStart.push({
-      hooks: [{ type: "command", command: "cat ~/.chron/chron.skill.md" }]
-    });
-    writeJson(settingsPath, settings);
-  }
-}
-async function runSetup() {
-  const results = [];
-  const tools = userMcpClientConfigs((0, import_os5.homedir)(), process.cwd(), process.platform, process.env.APPDATA).filter((c) => c.name !== "Codex (project)");
-  for (const tool of tools) {
-    if (tool.name === "Claude Code") {
-      results.push(configureClaudeCode());
-      continue;
+  const anchors = [(0, import_os5.homedir)(), process.cwd(), ...process.env.APPDATA ? [process.env.APPDATA] : []].map((p) => (0, import_path5.resolve)(p)).filter((p) => path === p || path.startsWith(p + import_path5.sep)).sort((a, b) => b.length - a.length);
+  if (!anchors.length) throw new Error("Configuration target is outside the selected home/project roots");
+  for (let p = path; ; p = (0, import_path5.dirname)(p)) {
+    try {
+      if ((0, import_fs5.lstatSync)(p).isSymbolicLink()) throw new Error(`Refusing symbolic link: ${p}`);
+    } catch (e) {
+      if (e.code !== "ENOENT") throw e;
     }
-    const result = ensureChronMcpConfig(tool);
-    results.push({
-      tool: tool.name,
-      status: result.status,
-      path: result.path,
-      error: result.error
-    });
+    if (p === anchors[0]) break;
   }
-  return results;
+  return path;
 }
-var import_fs5, import_os5, import_path5, import_child_process;
-var init_setup = __esm({
-  "src/setup.ts"() {
-    "use strict";
-    import_fs5 = require("fs");
-    import_os5 = require("os");
-    import_path5 = require("path");
-    import_child_process = require("child_process");
-    init_mcp_config();
+function read(path) {
+  safePath(path);
+  try {
+    const bytes = (0, import_fs5.readFileSync)(path), text2 = bytes.toString("utf8");
+    if (!Buffer.from(text2, "utf8").equals(bytes)) throw new Error(`Refusing non-UTF-8 configuration: ${path}`);
+    return text2;
+  } catch (e) {
+    if (e.code === "ENOENT") return null;
+    throw e;
   }
-});
-
-// src/cli/connect.ts
-function buildCursorRule(instructions) {
-  return `---
+}
+function parseJson(text2, what) {
+  try {
+    return JSON.parse(text2);
+  } catch {
+    throw new Error(`${what} could not be parsed; contents are not repeated`);
+  }
+}
+function spliceBlock(text2, start, end, block) {
+  const a = text2.indexOf(start), b = text2.indexOf(end);
+  if (a < 0 && b < 0) return block === null ? text2 : text2 + (text2 && !text2.endsWith("\n") ? "\n" : "") + (text2 ? "\n" : "") + block + "\n";
+  if (a < 0 || b < a || text2.indexOf(start, a + start.length) >= 0 || text2.indexOf(end, b + end.length) >= 0)
+    throw new Error("Malformed or repeated Chron block; inspect manually");
+  return text2.slice(0, a) + (block ?? "") + text2.slice(b + end.length);
+}
+function instruction(text2, tool) {
+  if (text2.includes(CHRON_SKILL_SENTINEL) && !text2.includes(CHRON_BLOCK_START))
+    throw new Error("Unbounded legacy Chron instructions; inspect manually instead of replacing");
+  if (text2.includes(CHRON_BLOCK_START)) {
+    const block = text2.slice(text2.indexOf(CHRON_BLOCK_START), text2.indexOf(CHRON_BLOCK_END) + CHRON_BLOCK_END.length);
+    if (block !== `${CHRON_BLOCK_START}
+${buildChronInstructions(tool)}
+${CHRON_BLOCK_END}`)
+      throw new Error("Edited Chron instructions; preserving them instead of overwriting");
+  }
+  return spliceBlock(
+    text2,
+    CHRON_BLOCK_START,
+    CHRON_BLOCK_END,
+    `${CHRON_BLOCK_START}
+${buildChronInstructions(tool)}
+${CHRON_BLOCK_END}`
+  );
+}
+function knownServer(server) {
+  if (!server || typeof server.command !== "string" || !Array.isArray(server.args)) return false;
+  return server.command === CHRON_MCP_SERVER.command && JSON.stringify(server.args) === JSON.stringify(CHRON_MCP_SERVER.args) || ["chron-mcp", "chron-mcp.cmd", "chron-mcp.exe"].includes((0, import_path5.basename)(server.command)) && server.args.length === 0 || /[/\\]node_modules[/\\]chron-mcp[/\\]dist[/\\]index\.js$/.test(server.command) && server.args.length === 0 || ["npx", "npx.cmd"].includes((0, import_path5.basename)(server.command)) && JSON.stringify(server.args) === '["-y","chron-mcp"]';
+}
+function configureMcp(text2, type) {
+  if (type === "json") {
+    const doc = text2.trim() ? parseJson(text2, "MCP configuration") : {};
+    if (!doc || Array.isArray(doc) || typeof doc !== "object") throw new Error("MCP config must be an object");
+    const servers = doc.mcpServers ?? {};
+    if (!servers || Array.isArray(servers) || typeof servers !== "object") throw new Error("MCP servers must be an object");
+    for (const [key, value] of Object.entries(servers)) {
+      if ((key === "chron" || key === "chron-mcp" || JSON.stringify(value).includes("chron")) && !knownServer(value)) {
+        if (key === "chron" || key === "chron-mcp" || JSON.stringify(value?.command ?? "").includes("chron") || JSON.stringify(value?.args ?? []).includes("chron-mcp"))
+          throw new Error(`Unrecognized existing MCP server ${key}; preserving it`);
+      }
+    }
+    return upsertChronJsonMcp(text2).content;
+  }
+  if (/\[mcp_servers\.chron\]/.test(text2)) {
+    const section = text2.match(/\[mcp_servers\.chron\]([\s\S]*?)(?=\n\[|$)/)[1];
+    let server;
+    try {
+      server = { command: JSON.parse(section.match(/^command\s*=\s*(.+)$/m)[1]), args: JSON.parse(section.match(/^args\s*=\s*(.+)$/m)[1]) };
+    } catch {
+      throw new Error("Unrecognized Codex entry; preserving it");
+    }
+    if (!knownServer(server)) throw new Error("Unrecognized Codex launcher; preserving it");
+  }
+  return upsertChronCodexToml(text2).content;
+}
+function change(path, description, transform2) {
+  path = safePath(path);
+  const before = read(path), after = transform2(before ?? "");
+  return before === after ? null : {
+    path,
+    before,
+    after,
+    description,
+    mode: before === null ? 384 : (0, import_fs5.lstatSync)(path).mode & 511
+  };
+}
+function allowedPaths(cwd) {
+  return /* @__PURE__ */ new Set([
+    ...userMcpClientConfigs((0, import_os5.homedir)(), cwd, process.platform, process.env.APPDATA).map((c) => (0, import_path5.resolve)(c.path)),
+    ...["CLAUDE.md", "AGENTS.md", ".codex/instructions.md", ".gemini/GEMINI.md", ".zshrc", ".bashrc"].map((p) => (0, import_path5.resolve)((0, import_os5.homedir)(), p)),
+    (0, import_path5.resolve)((0, import_os5.homedir)(), ".claude/settings.json"),
+    (0, import_path5.resolve)(cwd, "AGENTS.md"),
+    (0, import_path5.resolve)(cwd, ".cursor/rules/chron.mdc")
+  ]);
+}
+function configurationPlan(args, cwd = process.cwd()) {
+  const client = args.find((a) => a.startsWith("--client="))?.slice(9) ?? "all";
+  if (!["all", "claude", "codex", "cursor", "gemini", "project"].includes(client)) throw new Error("Unknown setup client");
+  const changes = [];
+  const add = (p, label, transform2) => {
+    const c = change(p, label, transform2);
+    if (c) changes.push(c);
+  };
+  if (client !== "project") {
+    for (const c of userMcpClientConfigs((0, import_os5.homedir)(), cwd, process.platform, process.env.APPDATA)) {
+      if (c.name.includes("(project)")) continue;
+      const selected = client === "all" || { claude: ["Claude Code", "Claude Desktop"], codex: ["Codex (global)"], cursor: ["Cursor (global)"], gemini: ["Gemini CLI"] }[client]?.includes(c.name);
+      if (!selected) continue;
+      if (!["Claude Code", "Codex (global)", "Cursor (global)", "Gemini CLI"].includes(c.name) && !(0, import_fs5.existsSync)(c.path) && !(0, import_fs5.existsSync)((0, import_path5.dirname)(c.path))) continue;
+      add(c.path, `${c.name} MCP server entry`, (text2) => configureMcp(text2, c.type));
+    }
+    for (const [name, path, tool] of [
+      ["claude", "CLAUDE.md", "claude"],
+      ["codex", ".codex/instructions.md", "codex"],
+      ["codex", "AGENTS.md", "codex"],
+      ["gemini", ".gemini/GEMINI.md", "gemini"]
+    ]) if (client === "all" || client === name) add((0, import_path5.join)((0, import_os5.homedir)(), path), `${tool} logging instructions`, (text2) => instruction(text2, tool));
+  }
+  if (args.includes("--project") || client === "project") {
+    add((0, import_path5.join)(cwd, "AGENTS.md"), "project logging instructions", (text2) => instruction(text2, "codex"));
+    const rule = `---
 description: Chron AI audit logging for Cursor agent sessions
 alwaysApply: true
 ---
 
-${instructions}`;
+${buildChronInstructions("cursor")}`;
+    add((0, import_path5.join)(cwd, ".cursor/rules/chron.mdc"), "Cursor project rule", (text2) => {
+      if (text2 && text2 !== rule) throw new Error("Existing Cursor rule is not the exact Chron-generated rule; preserving it");
+      return rule;
+    });
+  }
+  if (args.includes("--shell-wrapper")) {
+    if (!["all", "codex"].includes(client)) throw new Error("Shell wrapper requires --client=codex or all");
+    for (const name of [".zshrc", ".bashrc"]) add((0, import_path5.join)((0, import_os5.homedir)(), name), "optional Codex shell wrapper (bootstrap is preview-only)", (text2) => {
+      if (text2.includes(SHELL_START) && !text2.includes(shellBlock)) throw new Error("Edited shell wrapper; preserving it");
+      return spliceBlock(text2, SHELL_START, SHELL_END, shellBlock);
+    });
+  }
+  return changes;
 }
-function writeInstructionFile(filePath, content) {
-  const block = `${CHRON_BLOCK_START}
-${content}
-${CHRON_BLOCK_END}`;
+function atomicWrite(path, value, mode) {
+  safePath(path);
+  (0, import_fs5.mkdirSync)((0, import_path5.dirname)(path), { recursive: true, mode: 448 });
+  safePath(path);
+  const temp = `${path}.chron-${(0, import_crypto6.randomUUID)()}`;
+  const fd = (0, import_fs5.openSync)(temp, import_fs5.constants.O_CREAT | import_fs5.constants.O_EXCL | import_fs5.constants.O_WRONLY | import_fs5.constants.O_NOFOLLOW, 384);
   try {
-    (0, import_fs6.mkdirSync)((0, import_path6.dirname)(filePath), { recursive: true });
-    if ((0, import_fs6.existsSync)(filePath)) {
-      const existing = (0, import_fs6.readFileSync)(filePath, "utf8");
-      const startIdx = existing.indexOf(CHRON_BLOCK_START);
-      const endIdx = existing.indexOf(CHRON_BLOCK_END);
-      if (startIdx !== -1 && endIdx > startIdx) {
-        const before = existing.slice(0, startIdx);
-        const after = existing.slice(endIdx + CHRON_BLOCK_END.length);
-        (0, import_fs6.writeFileSync)(filePath, before + block + after, "utf8");
-        return { status: "added" };
+    (0, import_fs5.writeFileSync)(fd, value);
+    (0, import_fs5.fsyncSync)(fd);
+    (0, import_fs5.fchmodSync)(fd, mode);
+  } finally {
+    (0, import_fs5.closeSync)(fd);
+  }
+  try {
+    (0, import_fs5.renameSync)(temp, path);
+  } finally {
+    if ((0, import_fs5.existsSync)(temp)) (0, import_fs5.unlinkSync)(temp);
+  }
+}
+function stateDir() {
+  return safePath((0, import_path5.join)((0, import_os5.homedir)(), ".chron", "configuration-receipts"));
+}
+function show(changes, action) {
+  process.stdout.write(`${action}: ${changes.length} file change(s). No file contents or credentials printed.
+`);
+  for (const c of changes) process.stdout.write(`  ${c.after === null ? "remove" : c.before === null ? "create" : "update"} ${c.path} \u2014 ${c.description}
+`);
+}
+function validateArgs(args) {
+  for (const a of args) if (!["--apply", "--project", "--shell-wrapper", "--legacy", "--help"].includes(a) && !a.startsWith("--client=")) throw new Error(`Unknown configuration argument: ${a}`);
+}
+async function runConfiguration(args, undo = false) {
+  validateArgs(args);
+  if (["preinstall", "install", "postinstall"].includes(process.env.npm_lifecycle_event ?? ""))
+    throw new Error("Package installation cannot authorize configuration; run chron setup separately");
+  if (args.includes("--help")) {
+    process.stdout.write("chron setup [--client=claude|codex|cursor|gemini|all] [--project] [--shell-wrapper] [--apply]\nchron unsetup [--legacy] [--apply]\nPreview is the default. --apply explicitly authorizes the displayed file changes.\nUndo restores the most recent setup; modified files are refused. Use --legacy to preview removal of exact recognized old blocks.\n");
+    return;
+  }
+  const dir = stateDir(), cwd = process.cwd();
+  let receiptPath, changes;
+  if (undo && !args.includes("--legacy")) {
+    const files = (0, import_fs5.existsSync)(dir) ? (0, import_fs5.readdirSync)(dir).filter((x) => /^\d+-[0-9a-f-]+\.json$/.test(x)).sort() : [];
+    receiptPath = files.length ? (0, import_path5.join)(dir, files[files.length - 1]) : void 0;
+    if (!receiptPath) {
+      process.stdout.write("No tracked setup to undo. To inspect older installations: chron unsetup --legacy\n");
+      return;
+    }
+    const receipt = parseJson(read(receiptPath), "Configuration receipt");
+    const allowed = allowedPaths(cwd);
+    if (receipt.schema !== 1 || !Array.isArray(receipt.changes) || receipt.cwd !== cwd) throw new Error("Undo must run from the original setup directory");
+    changes = receipt.changes.flatMap((c) => {
+      if (!allowed.has(c.path) || typeof c.after !== "string" || !(c.before === null || typeof c.before === "string") || !Number.isInteger(c.mode) || c.mode < 0 || c.mode > 511) throw new Error("Invalid configuration receipt");
+      const current = read(c.path);
+      if (current === c.before) return [];
+      if (current !== c.after || ((0, import_fs5.lstatSync)(c.path).mode & 511) !== c.mode) throw new Error(`Modified since setup; preserving ${c.path}`);
+      return [{ ...c, before: c.after, after: c.before, description: "restore state before tracked setup" }];
+    });
+  } else changes = undo ? legacyRemoval(cwd) : configurationPlan(args, cwd);
+  show(changes, undo ? "Undo preview" : "Setup preview");
+  if (!args.includes("--apply")) {
+    process.stdout.write("No files changed. Repeat with --apply to authorize these changes.\n");
+    return;
+  }
+  if (!changes.length) {
+    if (receiptPath) (0, import_fs5.renameSync)(receiptPath, receiptPath + ".undone");
+    return;
+  }
+  (0, import_fs5.mkdirSync)(dir, { recursive: true, mode: 448 });
+  safePath(dir);
+  const lock = (0, import_path5.join)(dir, ".lock");
+  const fd = (0, import_fs5.openSync)(lock, import_fs5.constants.O_CREAT | import_fs5.constants.O_EXCL | import_fs5.constants.O_WRONLY | import_fs5.constants.O_NOFOLLOW, 384);
+  try {
+    for (const c of changes) if (read(c.path) !== c.before) throw new Error(`Changed during preview; preserving ${c.path}`);
+    if (!undo) {
+      const receipt = { schema: 1, id: (0, import_crypto6.randomUUID)(), cwd, changes };
+      const prior = (0, import_fs5.readdirSync)(dir).map((n) => Number(n.match(/^(\d+)-/)?.[1] ?? 0));
+      const sequence = Math.max(Date.now(), ...prior.map((n) => n + 1));
+      atomicWrite((0, import_path5.join)(dir, `${sequence}-${receipt.id}.json`), JSON.stringify(receipt), 384);
+    }
+    for (const c of changes) {
+      if (c.after === null) (0, import_fs5.unlinkSync)(safePath(c.path));
+      else atomicWrite(c.path, c.after, c.mode);
+    }
+    if (receiptPath) (0, import_fs5.renameSync)(receiptPath, receiptPath + ".undone");
+    process.stdout.write("Applied the listed changes. Restart the configured client to load changes.\n");
+  } finally {
+    (0, import_fs5.closeSync)(fd);
+    (0, import_fs5.unlinkSync)(lock);
+  }
+}
+function legacyRemoval(cwd) {
+  const changes = [];
+  const configs = userMcpClientConfigs((0, import_os5.homedir)(), cwd, process.platform, process.env.APPDATA);
+  for (const path of allowedPaths(cwd)) {
+    const text2 = read(path);
+    if (text2 === null) continue;
+    let after = text2;
+    if ([".zshrc", ".bashrc"].some((n) => path === (0, import_path5.join)((0, import_os5.homedir)(), n))) {
+      if (text2.includes(SHELL_START) && !text2.includes(shellBlock)) throw new Error(`Modified legacy shell wrapper; preserving ${path}`);
+      after = spliceBlock(text2, SHELL_START, SHELL_END, null);
+    } else if (path === (0, import_path5.resolve)((0, import_os5.homedir)(), ".claude/settings.json")) {
+      const doc = parseJson(text2, "Claude settings"), hooks = doc.hooks?.SessionStart;
+      if (Array.isArray(hooks)) {
+        const recognized = (entry) => Array.isArray(entry?.hooks) && entry.hooks.some((h) => h?.command === "cat ~/.chron/chron.skill.md");
+        for (const entry of hooks.filter(recognized)) {
+          if (Object.keys(entry).some((k) => k !== "hooks") || entry.hooks.length !== 1 || Object.keys(entry.hooks[0]).some((k) => !["type", "command"].includes(k)) || entry.hooks[0].type !== "command")
+            throw new Error(`Customized legacy session hook; preserving ${path}`);
+        }
+        const remaining = hooks.filter((entry) => !recognized(entry));
+        if (remaining.length !== hooks.length) {
+          doc.hooks.SessionStart = remaining;
+          after = JSON.stringify(doc, null, 2) + "\n";
+        }
       }
-      if (existing.includes(CHRON_SKILL_SENTINEL)) return { status: "already" };
-      (0, import_fs6.writeFileSync)(filePath, existing.trimEnd() + "\n\n" + block, "utf8");
-    } else {
-      (0, import_fs6.writeFileSync)(filePath, block, "utf8");
-    }
-    return { status: "added" };
-  } catch (err) {
-    return { status: "error", error: String(err.message) };
-  }
-}
-function ensureCodexProjectInstructions(cwd = process.cwd()) {
-  return writeInstructionFile(
-    (0, import_path6.join)(cwd, "AGENTS.md"),
-    buildChronInstructions("codex")
-  );
-}
-function ensureCursorProjectInstructions(cwd = process.cwd()) {
-  const filePath = (0, import_path6.join)(cwd, ".cursor", "rules", "chron.mdc");
-  try {
-    (0, import_fs6.mkdirSync)((0, import_path6.dirname)(filePath), { recursive: true });
-    (0, import_fs6.writeFileSync)(filePath, buildCursorRule(buildChronInstructions("cursor")), "utf8");
-    return { status: "added" };
-  } catch (err) {
-    return { status: "error", error: String(err.message) };
-  }
-}
-var import_path6, import_fs6;
-var init_connect = __esm({
-  "src/cli/connect.ts"() {
-    "use strict";
-    import_path6 = require("path");
-    import_fs6 = require("fs");
-    init_config_path();
-    init_mcp_config();
-    init_instructions();
-  }
-});
+    } else if (path === (0, import_path5.resolve)(cwd, ".cursor/rules/chron.mdc")) {
+      const rule = `---
+description: Chron AI audit logging for Cursor agent sessions
+alwaysApply: true
+---
 
-// src/bootstrap.ts
-var bootstrap_exports = {};
-__export(bootstrap_exports, {
-  bootstrapProjectLogging: () => bootstrapProjectLogging
-});
-function isRealProject(cwd) {
-  return PROJECT_INDICATORS.some((indicator) => (0, import_fs7.existsSync)((0, import_path7.join)(cwd, indicator)));
-}
-function bootstrapProjectLogging(cwd = process.cwd()) {
-  try {
-    if (process.env.CHRON_DISABLE_PROJECT_BOOTSTRAP === "1") return;
-    if (cwd === (0, import_os6.homedir)()) return;
-    if (cwd.includes("node_modules")) return;
-    if (cwd.includes(".npm")) return;
-    if (!isRealProject(cwd)) return;
-    const codexResult = ensureCodexProjectInstructions(cwd);
-    if (codexResult.status === "added") {
-      process.stderr.write("Chron: project logging instructions installed in AGENTS.md\n");
+${buildChronInstructions("cursor")}`;
+      if (text2 !== rule) throw new Error(`Unrecognized Cursor rule; preserving ${path}`);
+      after = "";
+    } else if (text2.includes(CHRON_BLOCK_START)) {
+      const start = text2.indexOf(CHRON_BLOCK_START), end = text2.indexOf(CHRON_BLOCK_END);
+      const block = text2.slice(start, end + CHRON_BLOCK_END.length);
+      if (!["claude", "codex", "gemini", "cursor"].some((tool) => block === `${CHRON_BLOCK_START}
+${buildChronInstructions(tool)}
+${CHRON_BLOCK_END}`))
+        throw new Error(`Unrecognized or edited legacy instructions; preserving ${path}`);
+      after = spliceBlock(text2, CHRON_BLOCK_START, CHRON_BLOCK_END, null);
+    } else if (text2.includes(CHRON_SKILL_SENTINEL)) {
+      throw new Error(`Unbounded legacy instructions; preserving ${path}`);
+    } else if (configs.some((c) => (0, import_path5.resolve)(c.path) === path)) {
+      const config2 = configs.find((c) => (0, import_path5.resolve)(c.path) === path);
+      if (config2.type === "json") {
+        const doc = parseJson(text2, "MCP configuration"), servers = doc.mcpServers;
+        if (servers && typeof servers === "object") {
+          for (const [key, server] of Object.entries(servers)) {
+            if (key !== "chron" && key !== "chron-mcp" && !knownServer(server)) continue;
+            if (!knownServer(server) || Object.keys(server).some((k) => !["command", "args"].includes(k)))
+              throw new Error(`MCP entry has custom fields or unrecognized launcher; preserving ${path}`);
+            delete servers[key];
+          }
+          if (JSON.stringify(doc) !== JSON.stringify(parseJson(text2, "MCP configuration"))) after = JSON.stringify(doc, null, 2) + "\n";
+        }
+      } else if (/\[mcp_servers\.chron\]/.test(text2)) {
+        const section = text2.match(/\[mcp_servers\.chron\]([\s\S]*?)(?=\n\[|$)/);
+        let server;
+        try {
+          server = { command: JSON.parse(section[1].match(/^command\s*=\s*(.+)$/m)[1]), args: JSON.parse(section[1].match(/^args\s*=\s*(.+)$/m)[1]) };
+        } catch {
+          throw new Error(`Unrecognized legacy Codex config; preserving ${path}`);
+        }
+        const rest = section[1].replace(/^command\s*=.*$/m, "").replace(/^args\s*=.*$/m, "");
+        if (!knownServer(server) || rest.trim() || /\[mcp_servers\.chron\./.test(text2)) throw new Error(`Custom Codex fields; preserving ${path}`);
+        after = text2.replace(section[0], "");
+      }
     }
-    const cursorResult = ensureCursorProjectInstructions(cwd);
-    if (cursorResult.status === "added") {
-      process.stderr.write("Chron: project logging instructions installed in .cursor/rules/chron.mdc\n");
-    }
-  } catch {
+    if (after !== text2) changes.push({ path, before: text2, after, mode: (0, import_fs5.lstatSync)(path).mode & 511, description: "remove exact recognized legacy Chron block; keep surrounding content" });
   }
+  return changes;
 }
-var import_fs7, import_os6, import_path7, PROJECT_INDICATORS;
-var init_bootstrap = __esm({
-  "src/bootstrap.ts"() {
+var import_fs5, import_crypto6, import_os5, import_path5, SHELL_START, SHELL_END, shellBlock;
+var init_configuration = __esm({
+  "src/cli/configuration.ts"() {
     "use strict";
-    import_fs7 = require("fs");
-    import_os6 = require("os");
-    import_path7 = require("path");
-    init_connect();
-    PROJECT_INDICATORS = [
-      ".git",
-      "package.json",
-      "go.mod",
-      "Cargo.toml",
-      "pyproject.toml",
-      "pom.xml",
-      ".gitignore"
-    ];
+    import_fs5 = require("fs");
+    import_crypto6 = require("crypto");
+    import_os5 = require("os");
+    import_path5 = require("path");
+    init_instructions();
+    init_mcp_config();
+    SHELL_START = "# chron-codex-wrapper-start";
+    SHELL_END = "# chron-codex-wrapper-end";
+    shellBlock = `${SHELL_START}
+# Chron: write project logging instructions before Codex reads AGENTS.md
+codex() {
+  command chron bootstrap 2>/dev/null
+  command codex "$@"
+}
+${SHELL_END}`;
   }
 });
 
 // node_modules/depd/index.js
 var require_depd = __commonJS({
   "node_modules/depd/index.js"(exports2, module2) {
-    var relative2 = require("path").relative;
+    var relative3 = require("path").relative;
     module2.exports = depd;
     var basePath = process.cwd();
     function containsNamespace(str, namespace) {
@@ -43784,7 +43925,7 @@ var require_depd = __commonJS({
       return formatted;
     }
     function formatLocation(callSite) {
-      return relative2(basePath, callSite[0]) + ":" + callSite[1] + ":" + callSite[2];
+      return relative3(basePath, callSite[0]) + ":" + callSite[1] + ":" + callSite[2];
     }
     function getStack() {
       var limit = Error.stackTraceLimit;
@@ -48502,10 +48643,10 @@ var require_raw_body = __commonJS({
       if (done) {
         return readStream(stream, encoding, length, limit, wrap(done));
       }
-      return new Promise(function executor(resolve2, reject) {
+      return new Promise(function executor(resolve3, reject) {
         readStream(stream, encoding, length, limit, function onRead(err, buf) {
           if (err) return reject(err);
-          resolve2(buf);
+          resolve3(buf);
         });
       });
     }
@@ -48810,8 +48951,8 @@ var require_read = __commonJS({
     var onFinished = require_on_finished();
     var unpipe = require_unpipe();
     var zlib = require("zlib");
-    module2.exports = read;
-    function read(req, res, next, parse3, debug, options) {
+    module2.exports = read2;
+    function read2(req, res, next, parse3, debug, options) {
       var length;
       var opts = options;
       var stream;
@@ -57785,7 +57926,7 @@ var require_json = __commonJS({
     var contentType2 = require_content_type();
     var createError = require_http_errors();
     var debug = require_src()("body-parser:json");
-    var read = require_read();
+    var read2 = require_read();
     var typeis = require_type_is();
     module2.exports = json;
     var FIRST_CHAR_REGEXP = /^[\x20\x09\x0a\x0d]*([^\x20\x09\x0a\x0d])/;
@@ -57854,7 +57995,7 @@ var require_json = __commonJS({
           }));
           return;
         }
-        read(req, res, next, parse3, debug, {
+        read2(req, res, next, parse3, debug, {
           encoding: charset,
           inflate,
           limit,
@@ -57917,7 +58058,7 @@ var require_raw = __commonJS({
     "use strict";
     var bytes = require_bytes();
     var debug = require_src()("body-parser:raw");
-    var read = require_read();
+    var read2 = require_read();
     var typeis = require_type_is();
     module2.exports = raw;
     function raw(options) {
@@ -57954,7 +58095,7 @@ var require_raw = __commonJS({
           next();
           return;
         }
-        read(req, res, next, parse3, debug, {
+        read2(req, res, next, parse3, debug, {
           encoding: null,
           inflate,
           limit,
@@ -57977,7 +58118,7 @@ var require_text = __commonJS({
     var bytes = require_bytes();
     var contentType2 = require_content_type();
     var debug = require_src()("body-parser:text");
-    var read = require_read();
+    var read2 = require_read();
     var typeis = require_type_is();
     module2.exports = text2;
     function text2(options) {
@@ -58016,7 +58157,7 @@ var require_text = __commonJS({
           return;
         }
         var charset = getCharset(req) || defaultCharset;
-        read(req, res, next, parse3, debug, {
+        read2(req, res, next, parse3, debug, {
           encoding: charset,
           inflate,
           limit,
@@ -60634,7 +60775,7 @@ var require_urlencoded = __commonJS({
     var createError = require_http_errors();
     var debug = require_src()("body-parser:urlencoded");
     var deprecate = require_depd()("body-parser");
-    var read = require_read();
+    var read2 = require_read();
     var typeis = require_type_is();
     module2.exports = urlencoded;
     var parsers = /* @__PURE__ */ Object.create(null);
@@ -60686,7 +60827,7 @@ var require_urlencoded = __commonJS({
           }));
           return;
         }
-        read(req, res, next, parse3, debug, {
+        read2(req, res, next, parse3, debug, {
           debug,
           encoding: charset,
           inflate,
@@ -62897,11 +63038,11 @@ var require_view = __commonJS({
     var debug = require_src3()("express:view");
     var path = require("path");
     var fs = require("fs");
-    var dirname5 = path.dirname;
-    var basename = path.basename;
+    var dirname4 = path.dirname;
+    var basename2 = path.basename;
     var extname = path.extname;
-    var join9 = path.join;
-    var resolve2 = path.resolve;
+    var join7 = path.join;
+    var resolve3 = path.resolve;
     module2.exports = View2;
     function View2(name, options) {
       var opts = options || {};
@@ -62935,9 +63076,9 @@ var require_view = __commonJS({
       debug('lookup "%s"', name);
       for (var i = 0; i < roots.length && !path2; i++) {
         var root = roots[i];
-        var loc = resolve2(root, name);
-        var dir = dirname5(loc);
-        var file = basename(loc);
+        var loc = resolve3(root, name);
+        var dir = dirname4(loc);
+        var file = basename2(loc);
         path2 = this.resolve(dir, file);
       }
       return path2;
@@ -62946,14 +63087,14 @@ var require_view = __commonJS({
       debug('render "%s"', this.path);
       this.engine(this.path, options, callback);
     };
-    View2.prototype.resolve = function resolve3(dir, file) {
+    View2.prototype.resolve = function resolve4(dir, file) {
       var ext = this.ext;
-      var path2 = join9(dir, file);
+      var path2 = join7(dir, file);
       var stat = tryStat(path2);
       if (stat && stat.isFile()) {
         return path2;
       }
-      path2 = join9(dir, basename(file, ext), "index" + ext);
+      path2 = join7(dir, basename2(file, ext), "index" + ext);
       stat = tryStat(path2);
       if (stat && stat.isFile()) {
         return path2;
@@ -63034,7 +63175,7 @@ var require_content_disposition = __commonJS({
     "use strict";
     module2.exports = contentDisposition;
     module2.exports.parse = parse3;
-    var basename = require("path").basename;
+    var basename2 = require("path").basename;
     var Buffer3 = require_safe_buffer().Buffer;
     var ENCODE_URL_ATTR_CHAR_REGEXP = /[\x00-\x20"'()*,/:;<=>?@[\\\]{}\x7f]/g;
     var HEX_ESCAPE_REGEXP = /%[0-9A-Fa-f]{2}/;
@@ -63070,9 +63211,9 @@ var require_content_disposition = __commonJS({
       if (typeof fallback === "string" && NON_LATIN1_REGEXP.test(fallback)) {
         throw new TypeError("fallback must be ISO-8859-1 string");
       }
-      var name = basename(filename);
+      var name = basename2(filename);
       var isQuotedString = TEXT_REGEXP.test(name);
-      var fallbackName = typeof fallback !== "string" ? fallback && getlatin1(name) : basename(fallback);
+      var fallbackName = typeof fallback !== "string" ? fallback && getlatin1(name) : basename2(fallback);
       var hasFallback = typeof fallbackName === "string" && fallbackName !== name;
       if (hasFallback || !isQuotedString || HEX_ESCAPE_REGEXP.test(name)) {
         params["filename*"] = name;
@@ -64010,10 +64151,10 @@ var require_send = __commonJS({
     var Stream2 = require("stream");
     var util2 = require("util");
     var extname = path.extname;
-    var join9 = path.join;
+    var join7 = path.join;
     var normalize = path.normalize;
-    var resolve2 = path.resolve;
-    var sep2 = path.sep;
+    var resolve3 = path.resolve;
+    var sep3 = path.sep;
     var BYTES_RANGE_REGEXP = /^ *bytes=/;
     var MAX_MAXAGE = 60 * 60 * 24 * 365 * 1e3;
     var UP_PATH_REGEXP = /(?:^|[\\/])\.\.(?:[\\/]|$)/;
@@ -64049,7 +64190,7 @@ var require_send = __commonJS({
       this._maxage = opts.maxAge || opts.maxage;
       this._maxage = typeof this._maxage === "string" ? ms(this._maxage) : Number(this._maxage);
       this._maxage = !isNaN(this._maxage) ? Math.min(Math.max(0, this._maxage), MAX_MAXAGE) : 0;
-      this._root = opts.root ? resolve2(opts.root) : null;
+      this._root = opts.root ? resolve3(opts.root) : null;
       if (!this._root && opts.from) {
         this.from(opts.from);
       }
@@ -64073,7 +64214,7 @@ var require_send = __commonJS({
       return this;
     }, "send.index: pass index as option");
     SendStream.prototype.root = function root(path2) {
-      this._root = resolve2(String(path2));
+      this._root = resolve3(String(path2));
       debug("root %s", this._root);
       return this;
     };
@@ -64221,23 +64362,23 @@ var require_send = __commonJS({
       var parts;
       if (root !== null) {
         if (path2) {
-          path2 = normalize("." + sep2 + path2);
+          path2 = normalize("." + sep3 + path2);
         }
         if (UP_PATH_REGEXP.test(path2)) {
           debug('malicious path "%s"', path2);
           this.error(403);
           return res;
         }
-        parts = path2.split(sep2);
-        path2 = normalize(join9(root, path2));
+        parts = path2.split(sep3);
+        path2 = normalize(join7(root, path2));
       } else {
         if (UP_PATH_REGEXP.test(path2)) {
           debug('malicious path "%s"', path2);
           this.error(403);
           return res;
         }
-        parts = normalize(path2).split(sep2);
-        path2 = resolve2(path2);
+        parts = normalize(path2).split(sep3);
+        path2 = resolve3(path2);
       }
       if (containsDotFile(parts)) {
         var access = this._dotfiles;
@@ -64334,7 +64475,7 @@ var require_send = __commonJS({
       var self = this;
       debug('stat "%s"', path2);
       fs.stat(path2, function onstat(err, stat) {
-        if (err && err.code === "ENOENT" && !extname(path2) && path2[path2.length - 1] !== sep2) {
+        if (err && err.code === "ENOENT" && !extname(path2) && path2[path2.length - 1] !== sep3) {
           return next(err);
         }
         if (err) return self.onStatError(err);
@@ -64364,7 +64505,7 @@ var require_send = __commonJS({
           if (err) return self.onStatError(err);
           return self.error(404);
         }
-        var p = join9(path2, self._index[i]);
+        var p = join7(path2, self._index[i]);
         debug('stat "%s"', p);
         fs.stat(p, function(err2, stat) {
           if (err2) return next(err2);
@@ -65517,7 +65658,7 @@ var require_application = __commonJS({
     var deprecate = require_depd()("express");
     var flatten = require_array_flatten();
     var merge2 = require_utils_merge();
-    var resolve2 = require("path").resolve;
+    var resolve3 = require("path").resolve;
     var setPrototypeOf = require_setprototypeof();
     var hasOwnProperty = Object.prototype.hasOwnProperty;
     var slice = Array.prototype.slice;
@@ -65556,7 +65697,7 @@ var require_application = __commonJS({
       this.mountpath = "/";
       this.locals.settings = this.settings;
       this.set("view", View2);
-      this.set("views", resolve2("views"));
+      this.set("views", resolve3("views"));
       this.set("jsonp callback name", "callback");
       if (env === "production") {
         this.enable("view cache");
@@ -66227,11 +66368,11 @@ var require_negotiator = __commonJS({
     var preferredMediaTypes = require_mediaType();
     module2.exports = Negotiator;
     module2.exports.Negotiator = Negotiator;
-    function Negotiator(request) {
+    function Negotiator(request2) {
       if (!(this instanceof Negotiator)) {
-        return new Negotiator(request);
+        return new Negotiator(request2);
       }
-      this.request = request;
+      this.request = request2;
     }
     Negotiator.prototype.charset = function charset(available) {
       var set = this.charsets(available);
@@ -66788,7 +66929,7 @@ var require_response = __commonJS({
     var encodeUrl = require_encodeurl();
     var escapeHtml = require_escape_html();
     var http = require("http");
-    var isAbsolute2 = require_utils3().isAbsolute;
+    var isAbsolute3 = require_utils3().isAbsolute;
     var onFinished = require_on_finished();
     var path = require("path");
     var statuses = require_statuses();
@@ -66801,7 +66942,7 @@ var require_response = __commonJS({
     var send = require_send();
     var extname = path.extname;
     var mime = send.mime;
-    var resolve2 = path.resolve;
+    var resolve3 = path.resolve;
     var vary = require_vary();
     var res = Object.create(http.ServerResponse.prototype);
     module2.exports = res;
@@ -66994,7 +67135,7 @@ var require_response = __commonJS({
         done = options;
         opts = {};
       }
-      if (!opts.root && !isAbsolute2(path2)) {
+      if (!opts.root && !isAbsolute3(path2)) {
         throw new TypeError("path must be absolute or specify root to res.sendFile");
       }
       var pathname = encodeURI(path2);
@@ -67060,7 +67201,7 @@ var require_response = __commonJS({
       }
       opts = Object.create(opts);
       opts.headers = headers;
-      var fullPath = !opts.root ? resolve2(path2) : path2;
+      var fullPath = !opts.root ? resolve3(path2) : path2;
       return this.sendFile(fullPath, opts, done);
     };
     res.contentType = res.type = function contentType2(type) {
@@ -67326,7 +67467,7 @@ var require_serve_static = __commonJS({
     var encodeUrl = require_encodeurl();
     var escapeHtml = require_escape_html();
     var parseUrl = require_parseurl();
-    var resolve2 = require("path").resolve;
+    var resolve3 = require("path").resolve;
     var send = require_send();
     var url = require("url");
     module2.exports = serveStatic;
@@ -67346,7 +67487,7 @@ var require_serve_static = __commonJS({
         throw new TypeError("option setHeaders must be function");
       }
       opts.maxage = opts.maxage || opts.maxAge || 0;
-      opts.root = resolve2(root);
+      opts.root = resolve3(root);
       var onDirectory = redirect ? createRedirectDirectoryListener() : createNotFoundDirectoryListener();
       return function serveStatic2(req, res, next) {
         if (req.method !== "GET" && req.method !== "HEAD") {
@@ -71267,10 +71408,10 @@ var require_raw_body2 = __commonJS({
       if (done) {
         return readStream(stream, encoding, length, limit, wrap(done));
       }
-      return new Promise(function executor(resolve2, reject) {
+      return new Promise(function executor(resolve3, reject) {
         readStream(stream, encoding, length, limit, function onRead(err, buf) {
           if (err) return reject(err);
-          resolve2(buf);
+          resolve3(buf);
         });
       });
     }
@@ -71631,7 +71772,7 @@ function apiKeyMiddleware(apiKey) {
       return;
     }
     const given = Buffer.from(header, "utf8");
-    const ok = given.length === expected.length && (0, import_crypto6.timingSafeEqual)(given, expected);
+    const ok = given.length === expected.length && (0, import_crypto7.timingSafeEqual)(given, expected);
     if (!ok) {
       res.setHeader("WWW-Authenticate", "Bearer");
       res.status(401).end();
@@ -71673,11 +71814,11 @@ function hostGuardMiddleware(allowedHosts, port) {
     next();
   };
 }
-var import_crypto6;
+var import_crypto7;
 var init_middleware = __esm({
   "src/http/middleware.ts"() {
     "use strict";
-    import_crypto6 = require("crypto");
+    import_crypto7 = require("crypto");
     init_config2();
   }
 });
@@ -71724,9 +71865,9 @@ async function startHttpServer(server, db) {
       if (!res.headersSent) res.status(500).json({ error: "Internal server error" });
     }
   });
-  await new Promise((resolve2) => app.listen(config2.port, config2.host, () => resolve2()));
+  await new Promise((resolve3) => app.listen(config2.port, config2.host, () => resolve3()));
   process.stderr.write(
-    `Chron HTTP server listening on ${config2.host}:${config2.port} (v${import_package3.version}), authentication required
+    `Chron HTTP server listening on ${config2.host}:${config2.port} (v${version4}), authentication required
 `
   );
   if (config2.remote) {
@@ -71735,7 +71876,7 @@ async function startHttpServer(server, db) {
     );
   }
 }
-var import_express, import_package3;
+var import_express;
 var init_server4 = __esm({
   "src/http/server.ts"() {
     "use strict";
@@ -71744,7 +71885,7 @@ var init_server4 = __esm({
     init_middleware();
     init_config2();
     init_server3();
-    import_package3 = __toESM(require_package());
+    init_package();
   }
 });
 
@@ -71845,73 +71986,47 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve2) => {
+    return new Promise((resolve3) => {
       const json = serializeMessage(message);
       if (this._stdout.write(json)) {
-        resolve2();
+        resolve3();
       } else {
-        this._stdout.once("drain", resolve2);
+        this._stdout.once("drain", resolve3);
       }
     });
   }
 };
 
 // src/index.ts
-var import_os7 = require("os");
-var import_path8 = require("path");
+var import_os6 = require("os");
+var import_path6 = require("path");
 init_db2();
 init_server3();
-var import_package4 = __toESM(require_package());
+init_package();
 if (process.argv[2] === "--version" || process.argv[2] === "-v") {
-  process.stdout.write(`chron-mcp ${import_package4.version}
+  process.stdout.write(`chron-mcp ${version4}
 `);
   process.exit(0);
 }
 async function main() {
-  const dbPath = process.env.CHRON_DB_PATH ?? (0, import_path8.join)((0, import_os7.homedir)(), ".chron", "chron.db");
-  if (process.stdin.isTTY) {
-    process.stdout.write(`chron-mcp ${import_package4.version}
-
-`);
-    const { runSetup: runSetup2 } = await Promise.resolve().then(() => (init_setup(), setup_exports));
-    const results = await runSetup2();
-    const added = results.filter((r) => r.status === "added");
-    const already = results.filter((r) => r.status === "already");
-    const errors = results.filter((r) => r.status === "error");
-    for (const r of added) process.stdout.write(`  \u2713 ${r.tool} \u2014 configured
-`);
-    for (const r of already) process.stdout.write(`  \xB7 ${r.tool} \u2014 already set up
-`);
-    for (const r of errors) process.stdout.write(`  \u2717 ${r.tool} \u2014 ${r.error}
-`);
-    if (results.length === 0) {
-      process.stdout.write(`  No supported MCP clients detected.
-`);
-      process.stdout.write(`  See README: https://github.com/SirinivasK/chron
-`);
-    } else if (added.length > 0) {
-      process.stdout.write(`
-Restart ${added.map((r) => r.tool).join(", ")} to activate chron.
-`);
-    } else if (added.length === 0 && errors.length === 0) {
-      process.stdout.write(`
-All detected clients already have chron. You're good to go.
-`);
-    }
-    process.stdout.write("\n");
-    process.exit(0);
+  const dbPath = process.env.CHRON_DB_PATH ?? (0, import_path6.join)((0, import_os6.homedir)(), ".chron", "chron.db");
+  if (process.argv[2] === "--setup") {
+    const { runConfiguration: runConfiguration2 } = await Promise.resolve().then(() => (init_configuration(), configuration_exports));
+    await runConfiguration2(process.argv.slice(3));
+    return;
   }
-  process.stderr.write(`chron-mcp ${import_package4.version} starting
+  if (process.stdin.isTTY) {
+    process.stdout.write(`chron-mcp ${version4}
+MCP server uses stdio. To preview agent configuration: chron setup
+`);
+    return;
+  }
+  process.stderr.write(`chron-mcp ${version4} starting
 `);
   process.stderr.write(`database: ${dbPath}
 `);
   const db = await initDb();
   const server = createServer(db);
-  try {
-    const { bootstrapProjectLogging: bootstrapProjectLogging2 } = await Promise.resolve().then(() => (init_bootstrap(), bootstrap_exports));
-    bootstrapProjectLogging2();
-  } catch {
-  }
   if (process.env.CHRON_TRANSPORT === "http") {
     const { startHttpServer: startHttpServer2 } = await Promise.resolve().then(() => (init_server4(), server_exports));
     await startHttpServer2(server, db);

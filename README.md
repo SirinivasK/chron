@@ -96,18 +96,100 @@ every hash. Chron signs sessions and bundles; it does not yet sign journal heads
 
 ---
 
+## Native Claude Code hooks — `chron-hook`
+
+`chron-hook claude-code` records a client hook payload from stdin through the
+same durable journal writer as `chron hook claude-code`. Its separate executable
+avoids loading the general CLI bundle for every event. Both commands accept the
+same options; existing configurations continue to work.
+
+For the tested Claude Code 2.1.311 print configuration, configure the events in
+an explicit settings file:
+
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "chron-hook claude-code --client-version=2.1.311" }] }
+    ],
+    "MessageDisplay": [
+      { "hooks": [{ "type": "command", "command": "chron-hook claude-code --client-version=2.1.311" }] }
+    ]
+  }
+}
+```
+
+This is **automatic observation, unenforced**. These hooks do not establish that
+recording preceded every model request or that a failed recording withheld the
+reply. A hook that is not configured or never fires leaves nothing marking its
+place. Capture errors leave marker files beside the journal; inspect them with
+`chron doctor`. Claude can suppress hook stderr, so an immediate terminal
+warning is not guaranteed.
+
+```bash
+chron verify --journal
+chron project
+chron history
+chron verify <session-id>
+```
+
+Projection appends closed messages as `source: native_hook` and
+`capture_mode: unenforced`. A final display message can remain journal-only until
+its final signal or a later message establishes its end. Session verification
+checks its native binding and projected content against the journal; it does
+not certify completeness or the conversation identity supplied by the client.
+Use `chron run` for the narrower forwarding guarantee over the channels it controls.
+
+---
+
 ## Install
 
 **CLI + MCP server:**
 
 ```bash
 npm install -g chron-mcp
-chron doctor --fix
+chron setup --client=claude          # preview exact files
+chron setup --client=claude --apply  # explicitly apply that configuration
 ```
 
 > `npx chron-mcp` starts the MCP server only — it does not put the `chron` CLI command in your PATH. You need a global install for the CLI.
 
-`chron doctor --fix` adds Chron to supported AI clients automatically: Claude Desktop, Claude Code, Cursor, Gemini CLI, Windsurf, and Codex. Restart your AI client after it runs.
+Installation and ordinary MCP-server startup do not edit agent configuration,
+instruction files or shell profiles. `chron setup`, client `chron connect`
+commands, `chron bootstrap` and `chron doctor --fix` preview changes by default;
+`--apply` is required to write them. Select `--client=claude|codex|cursor|gemini|all`.
+Project instructions additionally require `--project` (or `chron bootstrap
+--apply`). Review the printed paths before applying, then restart your client.
+MCP logging depends on client tool invocation; configuration does not prove capture.
+
+Shell interception is excluded from ordinary setup. `--shell-wrapper` separately
+selects a Codex wrapper for `.zshrc` and `.bashrc`; it invokes preview-only
+`chron bootstrap`, and does not authorize future project writes. No SessionStart
+instruction hook is installed. Native hooks are separately configured observation,
+and do not establish fail-closed capture.
+
+To undo the most recent applied setup, from its original working directory:
+
+```bash
+chron unsetup          # preview restoration
+chron unsetup --apply  # restore exact prior files, refusing subsequent edits
+```
+
+Private recovery receipts (including previous file contents) are stored with mode
+0600 in `~/.chron/configuration-receipts/`. Undo refuses changed files rather than
+overwriting your edits. Close other configuration writers while applying or undoing.
+A failed apply may leave partial changes; retain the printed paths and receipts
+for inspection instead of repeatedly applying blindly.
+
+For configuration installed by older versions, `chron unsetup --legacy` previews
+removal of exact recognized instruction/wrapper blocks, MCP entries and the old
+Claude SessionStart command. Add `--apply` only after reviewing. Customized,
+unbounded or credential-bearing entries are refused for manual review. Recognition
+is limited to exact known generated content; older instruction wording may require
+manual cleanup. This does
+not recover content overwritten by older releases. No journal, database, signing
+keys or SIEM settings are removed. Run cleanup before `npm uninstall -g chron-mcp`;
+package uninstall does not run configuration cleanup automatically.
 
 First run creates `~/.chron/chron.db` automatically. No database setup, no env vars, no migrations.
 
@@ -402,7 +484,7 @@ Then add the skill hook to `~/.claude/settings.json`:
 Run:
 
 ```bash
-chron connect cursor
+chron connect cursor --apply
 chron doctor --verify-logging cursor
 ```
 
@@ -432,7 +514,7 @@ Manual MCP config:
 Run:
 
 ```bash
-chron connect gemini
+chron connect gemini --apply
 ```
 
 Or edit `~/.gemini/settings.json`:
@@ -676,7 +758,7 @@ Settings → **Data Inputs** → **HTTP Event Collector** → **New Token** → 
 npm install -g chron-mcp
 chron connect splunk
 # For local Docker: URL = https://localhost:8088, Token = chron-test-token
-# TLS verification is skipped automatically for localhost (self-signed cert)
+# For a self-signed local receiver only: chron connect splunk --insecure
 ```
 
 **3. Add env vars to your MCP client config**
@@ -700,6 +782,10 @@ The wizard prints the exact block to paste. For Claude Code, add to `~/.claude.j
 ```
 
 > Remove `CHRON_SPLUNK_INSECURE` for production Splunk instances with valid TLS certificates.
+> Certificate verification is enabled by default, including localhost.
+> An explicit `chron connect splunk --insecure` choice or saved insecure setting
+> applies only to that Splunk destination; it never changes process-wide TLS policy.
+> Splunk redirects are refused, so credentials and the exception are not forwarded.
 
 Restart your AI tool to pick up the new env vars.
 
@@ -720,7 +806,7 @@ Full guide with dashboard templates and alert setup: [dashboards/splunk/README.m
 |---|---|
 | `CHRON_SPLUNK_URL` | Splunk HEC base URL, e.g. `https://localhost:8088` or `https://your-host:8088` |
 | `CHRON_SPLUNK_TOKEN` | HEC ingest token |
-| `CHRON_SPLUNK_INSECURE` | Set to `1` to skip TLS verification (local Docker with self-signed cert) |
+| `CHRON_SPLUNK_INSECURE` | Set to `1` to skip certificate verification only for the configured Splunk request; other HTTPS requests retain their own certificate policy |
 
 `CHRON_SPLUNK_URL` and `CHRON_SPLUNK_TOKEN` must both be set for events to flow.
 
@@ -849,7 +935,7 @@ All six must be set for events to flow. Token refresh is automatic (1-hour Azure
 | `CHRON_SENTINEL_STREAM` | _(none)_ | Stream name (e.g. `Custom-ChronEvents_CL`) |
 | `CHRON_SPLUNK_URL` | _(none)_ | Splunk HEC base URL (enables Splunk integration) |
 | `CHRON_SPLUNK_TOKEN` | _(none)_ | Splunk HEC ingest token |
-| `CHRON_SPLUNK_INSECURE` | _(none)_ | Set to `1` to skip TLS verification for local Splunk/self-signed certs |
+| `CHRON_SPLUNK_INSECURE` | _(none)_ | Set to `1` for a request-scoped Splunk certificate exception (self-signed receiver only) |
 | `CHRON_RELAY_URL` | _(none)_ | Generic relay endpoint (any SIEM or webhook) |
 | `CHRON_RELAY_TOKEN` | _(none)_ | Bearer token for generic relay |
 
