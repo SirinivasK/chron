@@ -2,7 +2,7 @@
 "use strict";
 
 // src/cli/hook.ts
-var import_path5 = require("path");
+var import_path6 = require("path");
 var import_os = require("os");
 
 // src/utils/config-path.ts
@@ -30,14 +30,48 @@ function isContainedBy(candidate, root) {
   return rel !== ".." && !rel.startsWith(`..${import_path.sep}`);
 }
 
+// src/native/launch-notices.ts
+var import_fs = require("fs");
+var import_path2 = require("path");
+var import_crypto = require("crypto");
+var LAUNCH_DIR = "CHRON_CODEX_LAUNCH_DIR";
+var LAUNCH_TOKEN = "CHRON_CODEX_LAUNCH_TOKEN";
+var NOTICE_SCHEMA = "chron.codex-launch-notice/v1";
+function beginLaunchNotice(env = process.env) {
+  const dir = env[LAUNCH_DIR], token = env[LAUNCH_TOKEN];
+  if (!dir || !token || !/^[a-f0-9]{64}$/.test(token)) return null;
+  const id = (0, import_crypto.randomUUID)();
+  const publish = (state) => {
+    let tmp;
+    try {
+      guardTestRoot("a Codex launch notification", dir, LAUNCH_DIR);
+      const stat = (0, import_fs.lstatSync)(dir);
+      if (!stat.isDirectory() || stat.isSymbolicLink()) return;
+      const manifest = JSON.parse((0, import_fs.readFileSync)((0, import_path2.join)(dir, "launch.json"), "utf8"));
+      if (manifest.token !== token) return;
+      tmp = (0, import_path2.join)(dir, `${id}.${(0, import_crypto.randomUUID)()}.tmp`);
+      (0, import_fs.writeFileSync)(tmp, JSON.stringify({ schema: NOTICE_SCHEMA, token, id, state }), { flag: "wx", mode: 384 });
+      (0, import_fs.renameSync)(tmp, (0, import_path2.join)(dir, `${id}.json`));
+    } catch {
+    } finally {
+      if (tmp) try {
+        (0, import_fs.unlinkSync)(tmp);
+      } catch {
+      }
+    }
+  };
+  publish("started");
+  return { finish: (state) => publish(state) };
+}
+
 // src/native/record.ts
-var import_fs4 = require("fs");
-var import_crypto2 = require("crypto");
-var import_path4 = require("path");
+var import_fs5 = require("fs");
+var import_crypto3 = require("crypto");
+var import_path5 = require("path");
 
 // src/journal/writer.ts
-var import_fs3 = require("fs");
-var import_path3 = require("path");
+var import_fs4 = require("fs");
+var import_path4 = require("path");
 
 // src/utils/time.ts
 function localISOString() {
@@ -58,7 +92,7 @@ function localISOString() {
 }
 
 // src/journal/format.ts
-var import_crypto = require("crypto");
+var import_crypto2 = require("crypto");
 
 // src/utils/content.ts
 var UNREPRESENTABLE = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
@@ -94,7 +128,7 @@ function journalRecordHash(r) {
     canonicalJson(r.data),
     r.prev ?? ""
   ].join("|");
-  return (0, import_crypto.createHash)("sha256").update(input, "utf8").digest("hex");
+  return (0, import_crypto2.createHash)("sha256").update(input, "utf8").digest("hex");
 }
 function serializeRecord(r) {
   return `{"v":${r.v},"seq":${r.seq},"at":${JSON.stringify(canonicalContent(r.at))},"kind":${JSON.stringify(canonicalContent(r.kind))},"data":${canonicalJson(r.data)},"prev":${r.prev === null ? "null" : JSON.stringify(r.prev)},"hash":${JSON.stringify(r.hash)}}
@@ -111,7 +145,7 @@ function isRecordShaped(x) {
 }
 
 // src/journal/verify.ts
-var import_fs = require("fs");
+var import_fs2 = require("fs");
 function verifyJournalBytes(bytes, expectedFirstPrev = null) {
   const text = bytes.toString("utf8");
   if (text.length === 0) {
@@ -204,7 +238,7 @@ function verifyJournalBytes(bytes, expectedFirstPrev = null) {
   };
 }
 function verifyJournalFile(path, expectedFirstPrev = null) {
-  if (!(0, import_fs.existsSync)(path)) {
+  if (!(0, import_fs2.existsSync)(path)) {
     return {
       status: "empty",
       records: [],
@@ -213,15 +247,15 @@ function verifyJournalFile(path, expectedFirstPrev = null) {
       coverage: expectedFirstPrev === null ? "whole_chain" : "segment"
     };
   }
-  return verifyJournalBytes((0, import_fs.readFileSync)(path), expectedFirstPrev);
+  return verifyJournalBytes((0, import_fs2.readFileSync)(path), expectedFirstPrev);
 }
 function lastHashOf(verdict) {
   return verdict.records.length ? verdict.records[verdict.records.length - 1].hash : null;
 }
 
 // src/journal/runs.ts
-var import_fs2 = require("fs");
-var import_path2 = require("path");
+var import_fs3 = require("fs");
+var import_path3 = require("path");
 
 // src/journal/scope.ts
 var CAPTURE_SCOPE_VERSION = 3;
@@ -284,11 +318,11 @@ var CAPTURE_SCOPE = captureScope("durable");
 
 // src/journal/runs.ts
 function journalSegmentPaths(activePath, options = {}) {
-  const dir = (0, import_path2.dirname)(activePath);
-  const name = (0, import_path2.basename)(activePath);
+  const dir = (0, import_path3.dirname)(activePath);
+  const name = (0, import_path3.basename)(activePath);
   let entries;
   try {
-    entries = (0, import_fs2.readdirSync)(dir);
+    entries = (0, import_fs3.readdirSync)(dir);
   } catch (e) {
     if (options.strict) throw e;
     return [activePath];
@@ -300,7 +334,7 @@ function journalSegmentPaths(activePath, options = {}) {
     if (e.slice(name.length + 1).startsWith("unterminated-")) continue;
     const m = /\.(\d+)$/.exec(e);
     if (!m) continue;
-    rotated.push({ path: (0, import_path2.join)(dir, e), seq: Number(m[1]) });
+    rotated.push({ path: (0, import_path3.join)(dir, e), seq: Number(m[1]) });
   }
   rotated.sort((a, b) => a.seq - b.seq);
   return [...rotated.map((r) => r.path), activePath];
@@ -318,21 +352,21 @@ function configuredRotateBytes() {
 }
 function fsyncDirDefault(dir) {
   if (!DIRECTORY_SYNC_SUPPORTED) return false;
-  const fd = (0, import_fs3.openSync)(dir, "r");
+  const fd = (0, import_fs4.openSync)(dir, "r");
   try {
-    (0, import_fs3.fsyncSync)(fd);
+    (0, import_fs4.fsyncSync)(fd);
   } finally {
-    (0, import_fs3.closeSync)(fd);
+    (0, import_fs4.closeSync)(fd);
   }
   return true;
 }
 var defaultFsOps = {
-  openSync: import_fs3.openSync,
-  writeSync: (fd, data) => (0, import_fs3.writeSync)(fd, data),
-  fsyncSync: import_fs3.fsyncSync,
-  closeSync: import_fs3.closeSync,
+  openSync: import_fs4.openSync,
+  writeSync: (fd, data) => (0, import_fs4.writeSync)(fd, data),
+  fsyncSync: import_fs4.fsyncSync,
+  closeSync: import_fs4.closeSync,
   fsyncDirSync: fsyncDirDefault,
-  renameSync: import_fs3.renameSync
+  renameSync: import_fs4.renameSync
 };
 function requireDirectorySyncCapability(opts) {
   if (DIRECTORY_SYNC_SUPPORTED) return;
@@ -348,20 +382,20 @@ function acquireJournalLock(lockPath, now) {
     path: lockPath,
     release: () => {
       try {
-        (0, import_fs3.unlinkSync)(lockPath);
+        (0, import_fs4.unlinkSync)(lockPath);
       } catch {
       }
     }
   };
   try {
-    (0, import_fs3.writeFileSync)(lockPath, mine, { flag: "wx" });
+    (0, import_fs4.writeFileSync)(lockPath, mine, { flag: "wx" });
     return lock;
   } catch (e) {
     if (e.code !== "EEXIST") throw e;
   }
   let holder = {};
   try {
-    holder = JSON.parse((0, import_fs3.readFileSync)(lockPath, "utf8"));
+    holder = JSON.parse((0, import_fs4.readFileSync)(lockPath, "utf8"));
   } catch {
     throw new JournalBrokenError(`journal lock ${lockPath} is unreadable; not stealing it`);
   }
@@ -380,8 +414,8 @@ function acquireJournalLock(lockPath, now) {
       throw new JournalBrokenError(`journal is locked by process ${holder.pid}`);
     }
   }
-  (0, import_fs3.unlinkSync)(lockPath);
-  (0, import_fs3.writeFileSync)(lockPath, mine, { flag: "wx" });
+  (0, import_fs4.unlinkSync)(lockPath);
+  (0, import_fs4.writeFileSync)(lockPath, mine, { flag: "wx" });
   return lock;
 }
 var JournalBrokenError = class extends Error {
@@ -398,7 +432,7 @@ function freeBytesFor(path) {
   const fs = require("fs");
   if (typeof fs.statfsSync !== "function") return null;
   try {
-    const s = fs.statfsSync((0, import_path3.dirname)(path));
+    const s = fs.statfsSync((0, import_path4.dirname)(path));
     return s.bsize * s.bavail;
   } catch {
     return null;
@@ -453,7 +487,7 @@ var JournalWriter = class _JournalWriter {
    */
   static open(path, opts = {}, heldLock) {
     const w = new _JournalWriter(path, opts);
-    (0, import_fs3.mkdirSync)((0, import_path3.dirname)(path), { recursive: true });
+    (0, import_fs4.mkdirSync)((0, import_path4.dirname)(path), { recursive: true });
     requireDirectorySyncCapability(opts);
     if (heldLock) w.lock = heldLock;
     else w.acquireLock();
@@ -478,7 +512,7 @@ var JournalWriter = class _JournalWriter {
       w.prev = lastHashOf(verdict);
       w.bytesOnDisk = verdict.validPrefixBytes;
       w.fd = w.ops.openSync(path, "a");
-      w.established = w.syncDirOrStop((0, import_path3.dirname)(path));
+      w.established = w.syncDirOrStop((0, import_path4.dirname)(path));
       opts.inspectVerifiedPrefix?.(verdict.records);
       return w;
     } catch (e) {
@@ -689,20 +723,20 @@ var JournalWriter = class _JournalWriter {
     const stamp = this.now().replace(/[:.]/g, "-");
     const rotated = `${this.path}.${stamp}.${this.seq}`;
     this.ops.fsyncSync(this.fd);
-    this.syncDirOrStop((0, import_path3.dirname)(this.path));
+    this.syncDirOrStop((0, import_path4.dirname)(this.path));
     this.ops.closeSync(this.fd);
     this.fd = null;
     this.ops.renameSync(this.path, rotated);
     this.fd = this.ops.openSync(this.path, "a");
     this.bytesOnDisk = 0;
-    this.syncDirOrStop((0, import_path3.dirname)(this.path));
+    this.syncDirOrStop((0, import_path4.dirname)(this.path));
     const marker = makeRecord(this.seq, this.now(), CONTINUATION_KIND, { rotated_to: rotated }, this.prev);
     this.seq++;
     this.prev = marker.hash;
     const line = Buffer.from(serializeRecord(marker), "utf8");
     this.writeAll(this.fd, line);
     this.ops.fsyncSync(this.fd);
-    this.syncDirOrStop((0, import_path3.dirname)(this.path));
+    this.syncDirOrStop((0, import_path4.dirname)(this.path));
     this.bytesOnDisk += line.length;
   }
   /**
@@ -741,6 +775,7 @@ var JournalWriter = class _JournalWriter {
 // src/native/events.ts
 var NATIVE_SCOPE_VERSION = 1;
 var NATIVE_CLIENT = "claude-code";
+var CODEX_CLIENT = "codex";
 var UserPromptSubmit = {
   client: NATIVE_CLIENT,
   event: "UserPromptSubmit",
@@ -782,11 +817,60 @@ var CLAUDE_CODE_EVENTS = Object.freeze({
   UserPromptSubmit,
   MessageDisplay
 });
-function nativeEventSpec(event) {
-  const known = CLAUDE_CODE_EVENTS[event];
+var CodexUserPromptSubmit = {
+  client: CODEX_CLIENT,
+  event: "UserPromptSubmit",
+  boundary: "model_request",
+  content_field: "prompt",
+  // cwd, model and permission_mode were observed in the payload alongside the
+  // prompt, but none of them changes what the prompt itself means, which is
+  // the same position taken for Claude Code's own UserPromptSubmit.
+  metadata_fields: [],
+  blocking_exit_code: 2,
+  measured: {
+    client_version: "0.169.0-alpha.11.1",
+    invocation_mode: "codex exec",
+    measured_at: "2026-11-19",
+    content_precedes_hook: false,
+    gate: "inconsistent",
+    evidence: "two seven-case sets: on a healthy run the exact prompt was recorded 160 ms before the request reached the fixture, so the hook ran first; an explicit exit-2 failure report stopped that request from reaching the fixture at all, but a bare exit 1 and an externally confirmed SIGKILL of the handler each let the exact prompt cross afterward, and two configured-timeout injections could not be attributed to timeout handling"
+  }
+};
+var CodexStop = {
+  client: CODEX_CLIENT,
+  event: "Stop",
+  boundary: "display",
+  content_field: "last_assistant_message",
+  // `stop_hook_active` tells a reader whether this invocation is itself a
+  // continuation of an earlier Stop decision, which frames what the reply
+  // means without being part of it.
+  metadata_fields: ["stop_hook_active"],
+  // Not 2: exit 2 at Stop asks the client to keep working and does not block
+  // or retract anything that already crossed, so there is no blocking code to
+  // offer here, the same position taken for MessageDisplay.
+  blocking_exit_code: null,
+  measured: {
+    client_version: "0.169.0-alpha.11.1",
+    invocation_mode: "codex exec",
+    measured_at: "2026-11-19",
+    content_precedes_hook: true,
+    gate: "fails_open",
+    evidence: "two seven-case sets, plain exec and JSON-mode controls alike: the exact final reply was recorded in Stop's payload only after the CLI had already emitted it, in every case including the repeated-failure continuation run that reached the fixture's request cap; exit 2 at Stop requests continuation and does not retract what was already emitted"
+  }
+};
+var CODEX_EVENTS = Object.freeze({
+  UserPromptSubmit: CodexUserPromptSubmit,
+  Stop: CodexStop
+});
+var EVENTS_BY_CLIENT = Object.freeze({
+  [NATIVE_CLIENT]: CLAUDE_CODE_EVENTS,
+  [CODEX_CLIENT]: CODEX_EVENTS
+});
+function nativeEventSpec(event, client = NATIVE_CLIENT) {
+  const known = EVENTS_BY_CLIENT[client]?.[event];
   if (known) return known;
   return {
-    client: NATIVE_CLIENT,
+    client,
     event,
     // Null, not `display`. The boundary of an unmeasured event is not known
     // either, and a default here would travel into every record as a fact.
@@ -859,6 +943,11 @@ function nativeCaptureScope(spec, durability) {
         `that blocking the action protects the content. The block was measured honoured on ${m.client_version} in ${m.invocation_mode} on ${m.measured_at}, and it stops the request the hook gates, which is not the request that carried the content`
       );
     }
+    if (m.gate === "inconsistent") {
+      doesNot.push(
+        `that a failure reported from this handler has one effect on the action. Measured on ${m.client_version} in ${m.invocation_mode} on ${m.measured_at}, it did not: ${m.evidence}. No capture-before-release guarantee is claimed across these failure modes`
+      );
+    }
   }
   if (!durableNames) {
     doesNot.push(
@@ -886,11 +975,11 @@ function nativeCaptureScope(spec, durability) {
     does_not_establish: doesNot,
     measured: m,
     known_limitations: [
-      "these records are not projected into the database yet. They exist in the journal, which is authoritative; read them with `chron verify --journal`",
-      "a capture failure is reported on the handler's stderr and appended to a failure marker file beside the journal. Nothing reads that file automatically yet, so a gap is visible to an operator who looks and not to one who does not",
+      "the journal is authoritative. `chron project` projects closed native messages into the database; projection does not establish that the conversation was completely captured",
+      "a capture failure is reported on the handler's stderr and appended to a failure marker file beside the journal. `chron doctor` reports failed capture attempts when inspected; a client may hide hook stderr, and the opt-in Codex launcher only reports statuses observed during its own launch",
       "the failure marker is a plain append, not a chain. It carries no hashes, an earlier attempt that could not finish its line leaves that line unreadable, and the entry written after it says so rather than repairing it",
       "a mark is written under an exclusive lock on the file it goes into, and a writer that cannot take that lock marks its own file instead. So counting a recurring gap means reading every native-capture-failures file beside the journal, not only the one with the plain name",
-      "one client is supported, and each event is scoped to the version and mode it was measured on"
+      "each event is scoped to its recorded client, version and invocation mode; a measurement for one client or mode is not evidence about another"
     ]
   };
 }
@@ -902,11 +991,11 @@ var NATIVE_FAILURE_MARKER_NAME = "native-capture-failures.jsonl";
 var NATIVE_ROTATE_BYTES_CEILING = 16 * 1024;
 function fsyncDirDefault2(dir) {
   if (!DIRECTORY_SYNC_SUPPORTED) return false;
-  const fd = (0, import_fs4.openSync)(dir, "r");
+  const fd = (0, import_fs5.openSync)(dir, "r");
   try {
-    (0, import_fs4.fsyncSync)(fd);
+    (0, import_fs5.fsyncSync)(fd);
   } finally {
-    (0, import_fs4.closeSync)(fd);
+    (0, import_fs5.closeSync)(fd);
   }
   return true;
 }
@@ -929,14 +1018,14 @@ function clientIdsOf(payload) {
 }
 function endsMidLine(path) {
   try {
-    const size = (0, import_fs4.statSync)(path).size;
+    const size = (0, import_fs5.statSync)(path).size;
     if (size === 0) return false;
-    const fd = (0, import_fs4.openSync)(path, "r");
+    const fd = (0, import_fs5.openSync)(path, "r");
     try {
       const last = Buffer.alloc(1);
-      return (0, import_fs4.readSync)(fd, last, 0, 1, size - 1) === 1 && last[0] !== 10;
+      return (0, import_fs5.readSync)(fd, last, 0, 1, size - 1) === 1 && last[0] !== 10;
     } finally {
-      (0, import_fs4.closeSync)(fd);
+      (0, import_fs5.closeSync)(fd);
     }
   } catch {
     return false;
@@ -944,14 +1033,14 @@ function endsMidLine(path) {
 }
 function markerIdPart(invocationId) {
   const cleaned = invocationId.replace(/[^A-Za-z0-9_-]+/g, "-").replace(/-{2,}/g, "-").replace(/^-+|-+$/g, "").slice(0, 64);
-  return cleaned.length > 0 ? cleaned : (0, import_crypto2.randomUUID)();
+  return cleaned.length > 0 ? cleaned : (0, import_crypto3.randomUUID)();
 }
 function ownMarkerPath(sharedPath, invocationId) {
-  const name = (0, import_path4.basename)(sharedPath);
+  const name = (0, import_path5.basename)(sharedPath);
   const dot = name.lastIndexOf(".");
   const stem = dot > 0 ? name.slice(0, dot) : name;
   const ext = dot > 0 ? name.slice(dot) : "";
-  return (0, import_path4.join)((0, import_path4.dirname)(sharedPath), `${stem}.${markerIdPart(invocationId)}${ext}`);
+  return (0, import_path5.join)((0, import_path5.dirname)(sharedPath), `${stem}.${markerIdPart(invocationId)}${ext}`);
 }
 function tryMarkerLock(path, now) {
   try {
@@ -961,19 +1050,19 @@ function tryMarkerLock(path, now) {
   }
 }
 function markFailure(sharedPath, entry, ops, opts) {
-  const openIt = ops.openSync ?? import_fs4.openSync;
-  const writeIt = ops.writeSync ?? ((fd, data) => (0, import_fs4.writeSync)(fd, data));
-  const syncIt = ops.fsyncSync ?? import_fs4.fsyncSync;
-  const closeIt = ops.closeSync ?? import_fs4.closeSync;
+  const openIt = ops.openSync ?? import_fs5.openSync;
+  const writeIt = ops.writeSync ?? ((fd, data) => (0, import_fs5.writeSync)(fd, data));
+  const syncIt = ops.fsyncSync ?? import_fs5.fsyncSync;
+  const closeIt = ops.closeSync ?? import_fs5.closeSync;
   const syncDir = ops.fsyncDirSync ?? fsyncDirDefault2;
   let lock = null;
   let path = sharedPath;
   try {
-    (0, import_fs4.mkdirSync)((0, import_path4.dirname)(sharedPath), { recursive: true });
+    (0, import_fs5.mkdirSync)((0, import_path5.dirname)(sharedPath), { recursive: true });
     for (const candidate of [
       sharedPath,
       ownMarkerPath(sharedPath, opts.invocationId),
-      ownMarkerPath(sharedPath, (0, import_crypto2.randomUUID)())
+      ownMarkerPath(sharedPath, (0, import_crypto3.randomUUID)())
     ]) {
       lock = tryMarkerLock(candidate, opts.now);
       if (lock !== null) {
@@ -1004,7 +1093,7 @@ function markFailure(sharedPath, entry, ops, opts) {
     } finally {
       closeIt(fd);
     }
-    const nameDurable = syncDir((0, import_path4.dirname)(path));
+    const nameDurable = syncDir((0, import_path5.dirname)(path));
     return { path, name_durable: nameDurable, shared: path === sharedPath };
   } catch {
     return null;
@@ -1012,12 +1101,12 @@ function markFailure(sharedPath, entry, ops, opts) {
     lock?.release();
   }
 }
-function scopeAlreadyWritten(records, event, sessionId, scopeVersion, durability) {
+function scopeAlreadyWritten(records, client, event, sessionId, scopeVersion, durability) {
   return records.some((r) => {
     if (r.kind !== NATIVE_SCOPE_KIND) return false;
     const d = r.data;
     const ids = d.client_ids ?? {};
-    return d.event === event && d.scope_version === scopeVersion && d.durability === durability && (ids.session_id ?? null) === sessionId;
+    return d.client === client && d.event === event && d.scope_version === scopeVersion && d.durability === durability && (ids.session_id ?? null) === sessionId;
   });
 }
 function metadataOf(payload, fields) {
@@ -1032,8 +1121,9 @@ function metadataOf(payload, fields) {
 }
 function recordNativeEvent(input) {
   const now = input.now ?? localISOString;
-  const invocationId = input.invocationId ?? (0, import_crypto2.randomUUID)();
-  const markerPath = input.failureMarkerPath ?? (0, import_path4.join)((0, import_path4.dirname)(input.journalPath), NATIVE_FAILURE_MARKER_NAME);
+  const client = input.client ?? NATIVE_CLIENT;
+  const invocationId = input.invocationId ?? (0, import_crypto3.randomUUID)();
+  const markerPath = input.failureMarkerPath ?? (0, import_path5.join)((0, import_path5.dirname)(input.journalPath), NATIVE_FAILURE_MARKER_NAME);
   const base = {
     recorded: false,
     event: null,
@@ -1067,12 +1157,12 @@ function recordNativeEvent(input) {
       }
     };
   }
-  const spec = nativeEventSpec(event);
+  const spec = nativeEventSpec(event, client);
   const ids = clientIdsOf(payload);
   const scope_version = nativeCaptureScope(spec, "durable").scope_version;
   const markEntry = (stage, reason) => ({
     at: now(),
-    client: NATIVE_CLIENT,
+    client,
     client_version: input.clientVersion ?? null,
     event,
     invocation_id: invocationId,
@@ -1089,7 +1179,7 @@ function recordNativeEvent(input) {
   let lock = null;
   let writer = null;
   try {
-    (0, import_fs4.mkdirSync)((0, import_path4.dirname)(input.journalPath), { recursive: true });
+    (0, import_fs5.mkdirSync)((0, import_path5.dirname)(input.journalPath), { recursive: true });
     lock = acquireJournalLock(`${input.journalPath}.lock`, now);
     let existing = [];
     writer = JournalWriter.open(input.journalPath, {
@@ -1110,6 +1200,7 @@ function recordNativeEvent(input) {
     const durability = writer.namesDurable ? "durable" : "names_not_durable";
     const needsScope = !scopeAlreadyWritten(
       existing,
+      client,
       event,
       ids.session_id,
       scope_version,
@@ -1125,7 +1216,7 @@ function recordNativeEvent(input) {
       scopeWritten = true;
     }
     const record = writer.appendDurable(NATIVE_EVENT_KIND, {
-      client: NATIVE_CLIENT,
+      client,
       client_version: input.clientVersion ?? null,
       event,
       boundary: spec.boundary,
@@ -1188,7 +1279,7 @@ function recordNativeEvent(input) {
 // src/cli/hook.ts
 var HOOK_CAPTURE_FAILED_EXIT = 1;
 function defaultJournalPath() {
-  return guardedJournalPath(process.env.CHRON_JOURNAL_PATH ?? (0, import_path5.join)(process.env.CHRON_HOME ?? (0, import_path5.join)((0, import_os.homedir)(), ".chron"), "capture.jsonl"));
+  return guardedJournalPath(process.env.CHRON_JOURNAL_PATH ?? (0, import_path6.join)(process.env.CHRON_HOME ?? (0, import_path6.join)((0, import_os.homedir)(), ".chron"), "capture.jsonl"));
 }
 async function readAllStdin() {
   const chunks = [];
@@ -1204,44 +1295,62 @@ function flagValue(args, name) {
 }
 function hookUsage() {
   return [
-    "usage: chron-hook claude-code [--journal <path>] [--client-version <v>]",
+    "usage: chron-hook <claude-code|codex> [--journal <path>] [--client-version <v>]",
     "                             [--invocation-id <id>] [--on-capture-failure report|block]",
     "",
     "Reads one hook payload on stdin and records it in the capture journal.",
-    "Equivalent compatibility command: chron hook claude-code [the same options].",
-    `Measured events: ${Object.keys(CLAUDE_CODE_EVENTS).join(", ")}. Any other event is recorded`,
-    "with no ordering claim, because this build has not measured it.",
+    "Equivalent compatibility command: chron hook <claude-code|codex> [the same options].",
+    `Measured claude-code events: ${Object.keys(CLAUDE_CODE_EVENTS).join(", ")}.`,
+    `Measured codex events: ${Object.keys(CODEX_EVENTS).join(", ")}.`,
+    "Any other event is recorded with no ordering claim, because this build has not measured it.",
     "",
     "It records. It does not withhold: a hook is invoked by the client and cannot hold",
     "back content the client has already sent or shown. `block` is available where the",
-    "vendor documents a blocking exit code, and stops the action the hook gates, which",
-    "on UserPromptSubmit is not the request that already carried the prompt.",
+    "vendor documents a blocking exit code; its effect is specific to the client and event.",
+    "For Claude Code, the measured UserPromptSubmit gates a different request from the one that already carried the prompt.",
+    "For Codex, the healthy UserPromptSubmit ran before the observed request; failure effects differed across failure modes.",
+    "--on-capture-failure=block makes no unconditional capture-before-release guarantee for either client.",
     "",
     "Configure it as a command hook in the client's settings, for example:",
     '  "hooks": { "UserPromptSubmit": [ { "hooks": [',
     '    { "type": "command", "command": "chron-hook claude-code" } ] } ] }',
+    "or, for Codex:",
+    '  "hooks": { "UserPromptSubmit": [ { "hooks": [',
+    '    { "type": "command", "command": "chron-hook codex" } ] } ] }',
     ""
   ].join("\n");
 }
 async function hookCommand(args, deps = {}) {
+  const notice = args[0] === CODEX_CLIENT ? beginLaunchNotice() : null;
+  try {
+    const code = await executeHook(args, deps);
+    notice?.finish(code === 0 ? "recorded" : "failed");
+    return code;
+  } catch (error) {
+    notice?.finish("unknown");
+    throw error;
+  }
+}
+async function executeHook(args, deps) {
   const stdout = deps.stdout ?? ((s) => {
     process.stdout.write(s);
   });
   const stderr = deps.stderr ?? ((s) => {
     process.stderr.write(s);
   });
-  const client = args[0] ?? "";
-  if (client === "" || client === "--help" || client === "-h") {
+  const clientArg = args[0] ?? "";
+  if (clientArg === "" || clientArg === "--help" || clientArg === "-h") {
     stdout(hookUsage());
-    return client === "" ? 64 : 0;
+    return clientArg === "" ? 64 : 0;
   }
-  if (client !== NATIVE_CLIENT) {
+  if (clientArg !== NATIVE_CLIENT && clientArg !== CODEX_CLIENT) {
     stderr(
-      `chron hook: only ${NATIVE_CLIENT} is supported, not '${client}'. A client this build has not measured would have its events recorded under claims taken from another client, which is the one thing a per-event table exists to prevent.
+      `chron hook: only ${NATIVE_CLIENT} or ${CODEX_CLIENT} is supported, not '${clientArg}'. A client this build has not measured would have its events recorded under claims taken from another client, which is the one thing a per-event table exists to prevent.
 `
     );
     return HOOK_CAPTURE_FAILED_EXIT;
   }
+  const client = clientArg;
   const modeRaw = flagValue(args, "on-capture-failure") ?? "report";
   if (modeRaw !== "report" && modeRaw !== "block") {
     stderr(
@@ -1275,6 +1384,7 @@ async function hookCommand(args, deps = {}) {
   }
   const result = recordNativeEvent({
     journalPath,
+    client,
     payload,
     ...invocationId ? { invocationId } : {},
     ...clientVersion ? { clientVersion } : {},
@@ -1283,8 +1393,8 @@ async function hookCommand(args, deps = {}) {
   if (result.recorded) {
     return 0;
   }
-  const spec = nativeEventSpec(result.event ?? "");
-  const marker = result.failure_marker === null ? "the failure could not be marked beside the journal either, so this message is the only record of it" : result.failure_marker_durability === "durable" ? `marked in ${(0, import_path5.basename)(result.failure_marker)} beside the journal` : `marked in ${(0, import_path5.basename)(result.failure_marker)} beside the journal, but that file's own name is not durable on this filesystem: its bytes were fsynced and the directory entry naming them could not be, so a crash can leave the mark with no name to reach it by`;
+  const spec = nativeEventSpec(result.event ?? "", client);
+  const marker = result.failure_marker === null ? "the failure could not be marked beside the journal either, so this message is the only record of it" : result.failure_marker_durability === "durable" ? `marked in ${(0, import_path6.basename)(result.failure_marker)} beside the journal` : `marked in ${(0, import_path6.basename)(result.failure_marker)} beside the journal, but that file's own name is not durable on this filesystem: its bytes were fsynced and the directory entry naming them could not be, so a crash can leave the mark with no name to reach it by`;
   stderr(
     `chron: capture failed \u2014 could not confirm capture of ${result.event ?? "an unreadable event"} (${result.failure?.stage}: ${result.failure?.reason}). ${marker}.
 `
@@ -1297,8 +1407,10 @@ async function hookCommand(args, deps = {}) {
     );
     return HOOK_CAPTURE_FAILED_EXIT;
   }
+  const m = spec.measured;
+  const blockNote = m === null ? "This build has not measured what this client does when this handler exits with that code." : m.content_precedes_hook ? `It does not recover anything that already crossed: on ${m.client_version} in ${m.invocation_mode}, measured ${m.measured_at}, the content this event carries had already crossed its boundary before this handler was invoked.` : m.gate === "inconsistent" ? `Exiting with this code was measured stopping the request on ${m.client_version} in ${m.invocation_mode}, measured ${m.measured_at}; a different failure of this handler, such as a crash or a kill, was measured not stopping it. This does not establish that blocking stops the request on every way this handler can fail.` : `This exit code was measured stopping the request on ${m.client_version} in ${m.invocation_mode}, measured ${m.measured_at}.`;
   stderr(
-    `chron: blocking the action, as --on-capture-failure=block asked. This stops the request this hook gates. It does not recover anything that already crossed: on the measured version the prompt reached the model before this hook was invoked.
+    `chron: blocking the action, as --on-capture-failure=block asked. This stops the request this hook gates. ${blockNote}
 `
   );
   return spec.blocking_exit_code;

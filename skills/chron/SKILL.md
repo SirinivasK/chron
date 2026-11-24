@@ -36,7 +36,7 @@ Chron requires the MCP server to be running. If not yet configured:
 
 ```bash
 # Claude Code
-claude mcp add chron -- npx -y chron-mcp@0.1.69
+claude mcp add chron -- npx -y chron-mcp@0.1.70
 ```
 
 For other tools, add to your MCP config:
@@ -45,7 +45,7 @@ For other tools, add to your MCP config:
   "mcpServers": {
     "chron": {
       "command": "npx",
-      "args": ["-y", "chron-mcp@0.1.69"]
+      "args": ["-y", "chron-mcp@0.1.70"]
     }
   }
 }

@@ -38,7 +38,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.69",
+      version: "0.1.70",
       mcpName: "io.github.SirinivasK/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
@@ -1281,7 +1281,7 @@ var init_sql = __esm({
         return new SQL([new StringChunk(str3)]);
       }
       sql22.raw = raw;
-      function join22(chunks, separator) {
+      function join24(chunks, separator) {
         const result = [];
         for (const [i, chunk2] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -1291,7 +1291,7 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql22.join = join22;
+      sql22.join = join24;
       function identifier(value) {
         return new Name(value);
       }
@@ -3122,7 +3122,7 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync20 = (path) => fs.readFileSync(path, "utf-8");
+    var readFileSync22 = (path) => fs.readFileSync(path, "utf-8");
     var readFile = (path) => new Promise((resolve6, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
@@ -3134,7 +3134,7 @@ var require_filesystem = __commonJS({
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync20,
+      readFileSync: readFileSync22,
       readFile
     };
   }
@@ -3146,7 +3146,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync20 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync22 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command2 = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
@@ -3227,7 +3227,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync20(LDD_PATH);
+        const lddContent = readFileSync22(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -3284,7 +3284,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync20(LDD_PATH);
+        const lddContent = readFileSync22(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -6466,7 +6466,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash: createHash21 } = require("crypto");
+    var { randomBytes: randomBytes2, createHash: createHash21 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -7004,7 +7004,7 @@ var require_websocket = __commonJS({
         }
       }
       const defaultPort = isSecure ? 443 : 80;
-      const key = randomBytes(16).toString("base64");
+      const key = randomBytes2(16).toString("base64");
       const request2 = isSecure ? https.request : http.request;
       const protocolSet = /* @__PURE__ */ new Set();
       let perMessageDeflate;
@@ -14524,7 +14524,7 @@ var init_select2 = __esm({
           const baseTableName = this.tableName;
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table)) this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join22) => join22.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join24) => join24.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -15410,7 +15410,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join22) => join22.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join24) => join24.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -16928,6 +16928,7 @@ var init_schema = __esm({
 var config_path_exports = {};
 __export(config_path_exports, {
   configPath: () => configPath,
+  guardTestRoot: () => guardTestRoot,
   guardedDbPath: () => guardedDbPath,
   guardedJournalPath: () => guardedJournalPath,
   guardedKeysDir: () => guardedKeysDir
@@ -25156,11 +25157,11 @@ var init_enforcement = __esm({
 });
 
 // src/native/events.ts
-function nativeEventSpec(event) {
-  const known = CLAUDE_CODE_EVENTS[event];
+function nativeEventSpec(event, client = NATIVE_CLIENT) {
+  const known = EVENTS_BY_CLIENT[client]?.[event];
   if (known) return known;
   return {
-    client: NATIVE_CLIENT,
+    client,
     event,
     // Null, not `display`. The boundary of an unmeasured event is not known
     // either, and a default here would travel into every record as a fact.
@@ -25171,12 +25172,13 @@ function nativeEventSpec(event) {
     measured: null
   };
 }
-var NATIVE_SCOPE_VERSION, NATIVE_CLIENT, UserPromptSubmit, MessageDisplay, CLAUDE_CODE_EVENTS;
+var NATIVE_SCOPE_VERSION, NATIVE_CLIENT, CODEX_CLIENT, UserPromptSubmit, MessageDisplay, CLAUDE_CODE_EVENTS, CodexUserPromptSubmit, CodexStop, CODEX_EVENTS, EVENTS_BY_CLIENT;
 var init_events = __esm({
   "src/native/events.ts"() {
     "use strict";
     NATIVE_SCOPE_VERSION = 1;
     NATIVE_CLIENT = "claude-code";
+    CODEX_CLIENT = "codex";
     UserPromptSubmit = {
       client: NATIVE_CLIENT,
       event: "UserPromptSubmit",
@@ -25217,6 +25219,55 @@ var init_events = __esm({
     CLAUDE_CODE_EVENTS = Object.freeze({
       UserPromptSubmit,
       MessageDisplay
+    });
+    CodexUserPromptSubmit = {
+      client: CODEX_CLIENT,
+      event: "UserPromptSubmit",
+      boundary: "model_request",
+      content_field: "prompt",
+      // cwd, model and permission_mode were observed in the payload alongside the
+      // prompt, but none of them changes what the prompt itself means, which is
+      // the same position taken for Claude Code's own UserPromptSubmit.
+      metadata_fields: [],
+      blocking_exit_code: 2,
+      measured: {
+        client_version: "0.169.0-alpha.11.1",
+        invocation_mode: "codex exec",
+        measured_at: "2026-11-19",
+        content_precedes_hook: false,
+        gate: "inconsistent",
+        evidence: "two seven-case sets: on a healthy run the exact prompt was recorded 160 ms before the request reached the fixture, so the hook ran first; an explicit exit-2 failure report stopped that request from reaching the fixture at all, but a bare exit 1 and an externally confirmed SIGKILL of the handler each let the exact prompt cross afterward, and two configured-timeout injections could not be attributed to timeout handling"
+      }
+    };
+    CodexStop = {
+      client: CODEX_CLIENT,
+      event: "Stop",
+      boundary: "display",
+      content_field: "last_assistant_message",
+      // `stop_hook_active` tells a reader whether this invocation is itself a
+      // continuation of an earlier Stop decision, which frames what the reply
+      // means without being part of it.
+      metadata_fields: ["stop_hook_active"],
+      // Not 2: exit 2 at Stop asks the client to keep working and does not block
+      // or retract anything that already crossed, so there is no blocking code to
+      // offer here, the same position taken for MessageDisplay.
+      blocking_exit_code: null,
+      measured: {
+        client_version: "0.169.0-alpha.11.1",
+        invocation_mode: "codex exec",
+        measured_at: "2026-11-19",
+        content_precedes_hook: true,
+        gate: "fails_open",
+        evidence: "two seven-case sets, plain exec and JSON-mode controls alike: the exact final reply was recorded in Stop's payload only after the CLI had already emitted it, in every case including the repeated-failure continuation run that reached the fixture's request cap; exit 2 at Stop requests continuation and does not retract what was already emitted"
+      }
+    };
+    CODEX_EVENTS = Object.freeze({
+      UserPromptSubmit: CodexUserPromptSubmit,
+      Stop: CodexStop
+    });
+    EVENTS_BY_CLIENT = Object.freeze({
+      [NATIVE_CLIENT]: CLAUDE_CODE_EVENTS,
+      [CODEX_CLIENT]: CODEX_EVENTS
     });
   }
 });
@@ -25282,6 +25333,11 @@ function nativeCaptureScope(spec, durability) {
         `that blocking the action protects the content. The block was measured honoured on ${m.client_version} in ${m.invocation_mode} on ${m.measured_at}, and it stops the request the hook gates, which is not the request that carried the content`
       );
     }
+    if (m.gate === "inconsistent") {
+      doesNot.push(
+        `that a failure reported from this handler has one effect on the action. Measured on ${m.client_version} in ${m.invocation_mode} on ${m.measured_at}, it did not: ${m.evidence}. No capture-before-release guarantee is claimed across these failure modes`
+      );
+    }
   }
   if (!durableNames) {
     doesNot.push(
@@ -25309,11 +25365,11 @@ function nativeCaptureScope(spec, durability) {
     does_not_establish: doesNot,
     measured: m,
     known_limitations: [
-      "these records are not projected into the database yet. They exist in the journal, which is authoritative; read them with `chron verify --journal`",
-      "a capture failure is reported on the handler's stderr and appended to a failure marker file beside the journal. Nothing reads that file automatically yet, so a gap is visible to an operator who looks and not to one who does not",
+      "the journal is authoritative. `chron project` projects closed native messages into the database; projection does not establish that the conversation was completely captured",
+      "a capture failure is reported on the handler's stderr and appended to a failure marker file beside the journal. `chron doctor` reports failed capture attempts when inspected; a client may hide hook stderr, and the opt-in Codex launcher only reports statuses observed during its own launch",
       "the failure marker is a plain append, not a chain. It carries no hashes, an earlier attempt that could not finish its line leaves that line unreadable, and the entry written after it says so rather than repairing it",
       "a mark is written under an exclusive lock on the file it goes into, and a writer that cannot take that lock marks its own file instead. So counting a recurring gap means reading every native-capture-failures file beside the journal, not only the one with the plain name",
-      "one client is supported, and each event is scoped to the version and mode it was measured on"
+      "each event is scoped to its recorded client, version and invocation mode; a measurement for one client or mode is not evidence about another"
     ]
   };
 }
@@ -25437,12 +25493,12 @@ function markFailure(sharedPath, entry, ops, opts) {
     lock?.release();
   }
 }
-function scopeAlreadyWritten(records, event, sessionId, scopeVersion, durability) {
+function scopeAlreadyWritten(records, client, event, sessionId, scopeVersion, durability) {
   return records.some((r) => {
     if (r.kind !== NATIVE_SCOPE_KIND) return false;
     const d = r.data;
     const ids = d.client_ids ?? {};
-    return d.event === event && d.scope_version === scopeVersion && d.durability === durability && (ids.session_id ?? null) === sessionId;
+    return d.client === client && d.event === event && d.scope_version === scopeVersion && d.durability === durability && (ids.session_id ?? null) === sessionId;
   });
 }
 function metadataOf(payload, fields) {
@@ -25457,6 +25513,7 @@ function metadataOf(payload, fields) {
 }
 function recordNativeEvent(input) {
   const now = input.now ?? localISOString;
+  const client = input.client ?? NATIVE_CLIENT;
   const invocationId = input.invocationId ?? (0, import_crypto13.randomUUID)();
   const markerPath = input.failureMarkerPath ?? (0, import_path14.join)((0, import_path14.dirname)(input.journalPath), NATIVE_FAILURE_MARKER_NAME);
   const base = {
@@ -25492,12 +25549,12 @@ function recordNativeEvent(input) {
       }
     };
   }
-  const spec = nativeEventSpec(event);
+  const spec = nativeEventSpec(event, client);
   const ids = clientIdsOf(payload);
   const scope_version = nativeCaptureScope(spec, "durable").scope_version;
   const markEntry = (stage, reason) => ({
     at: now(),
-    client: NATIVE_CLIENT,
+    client,
     client_version: input.clientVersion ?? null,
     event,
     invocation_id: invocationId,
@@ -25535,6 +25592,7 @@ function recordNativeEvent(input) {
     const durability = writer.namesDurable ? "durable" : "names_not_durable";
     const needsScope = !scopeAlreadyWritten(
       existing,
+      client,
       event,
       ids.session_id,
       scope_version,
@@ -25550,7 +25608,7 @@ function recordNativeEvent(input) {
       scopeWritten = true;
     }
     const record = writer.appendDurable(NATIVE_EVENT_KIND, {
-      client: NATIVE_CLIENT,
+      client,
       client_version: input.clientVersion ?? null,
       event,
       boundary: spec.boundary,
@@ -25628,6 +25686,9 @@ var init_record = __esm({
 });
 
 // src/projection/native.ts
+function nativeAiTool(client) {
+  return client === "claude-code" ? NATIVE_AI_TOOL : `${client}-hook`;
+}
 function nativeSessionId(client, clientSessionId) {
   const h = (0, import_crypto14.createHash)("sha256").update(`chron.native_hook.v1|${client}|${clientSessionId}`, "utf8").digest("hex");
   return `native-${h.slice(0, 32)}`;
@@ -25704,6 +25765,9 @@ function finalFlag(r) {
   if (typeof m !== "object" || m === null || Array.isArray(m)) return false;
   return m.final === true;
 }
+function wholeAssistantMessage(r) {
+  return r.data.client === "codex" && r.data.event === "Stop" && r.data.content_field === "last_assistant_message";
+}
 function projectNativeMessages(records) {
   const out = [];
   let withoutContent = 0;
@@ -25723,7 +25787,7 @@ function projectNativeMessages(records) {
       withoutContent += 1;
       continue;
     }
-    const mergeable = role === "assistant";
+    const mergeable = role === "assistant" && !wholeAssistantMessage(r);
     const key = mergeable ? str(idsOf(r).message_id) : null;
     const last = groups[groups.length - 1];
     const continues = last !== void 0 && !last.closed && mergeable && last.role === role && key !== null && last.key === key;
@@ -25747,8 +25811,8 @@ function projectNativeMessages(records) {
       seq: r.seq,
       lastSeq: r.seq,
       count: 1,
-      // A prompt is whole in one record. A display message is closed only by
-      // its own end-of-message signal or by what follows it.
+      // Prompts and Codex Stop replies are whole in one record. A delta-style
+      // display message needs its own final signal or a following message.
       closed: !mergeable || finalFlag(r),
       closedBy: null,
       records: [r]
@@ -25867,7 +25931,7 @@ async function projectNativeEvents(db, activeJournalPath) {
         await db.insert(sessions).values({
           id: group.session_id,
           title: projectedNativeTitle(group),
-          ai_tool: NATIVE_AI_TOOL,
+          ai_tool: nativeAiTool(group.client),
           created_at: group.first_at,
           updated_at: group.last_at,
           metadata: JSON.stringify(projectedNativeMetadata(group, binding))
@@ -26096,7 +26160,7 @@ var init_native_provenance = __esm({
     NATIVE_PROVENANCE_LIMITS = [
       "The conversation id comes from the client's payload, so this establishes that these records are Chron's and unedited, not that the id names the conversation it claims to.",
       "A turn taken while no hook was configured leaves no record and nothing marking its place, so this is never evidence that the conversation is complete.",
-      "Nothing required these events to be recorded. The prompt had already reached the model when the prompt hook was invoked, and displayed output is shown whatever the hook reports."
+      "Nothing required every event to be recorded. This provenance check verifies the recorded projection; it does not establish that capture was unavoidable or that content was withheld until its record was durable. Client-specific historical measurements are carried by the journal scope records."
     ];
   }
 });
@@ -26210,10 +26274,10 @@ ${BOLD8}Signature${RESET9}
 }
 async function runVerifyJournal(pathArg) {
   const { journalStatus: journalStatus2 } = await Promise.resolve().then(() => (init_writer(), writer_exports));
-  const { join: join22 } = await import("path");
+  const { join: join24 } = await import("path");
   const { homedir: homedir15 } = await import("os");
   const { guardedJournalPath: guardedJournalPath2 } = await Promise.resolve().then(() => (init_config_path(), config_path_exports));
-  const path = guardedJournalPath2(pathArg || process.env.CHRON_JOURNAL_PATH || join22(process.env.CHRON_HOME ?? join22(homedir15(), ".chron"), "capture.jsonl"));
+  const path = guardedJournalPath2(pathArg || process.env.CHRON_JOURNAL_PATH || join24(process.env.CHRON_HOME ?? join24(homedir15(), ".chron"), "capture.jsonl"));
   process.stdout.write(`
 ${BOLD8}Verifying journal${RESET9} ${path}
 
@@ -34350,7 +34414,7 @@ async function runWrapped(argv, deps = {}) {
   const releaseErr = deps.releaseErr ?? ((b) => {
     process.stderr.write(b);
   });
-  const diagnostic = deps.diagnostic ?? ((s) => {
+  const diagnostic2 = deps.diagnostic ?? ((s) => {
     process.stderr.write(s);
   });
   const [cmd, ...args2] = argv;
@@ -34416,7 +34480,7 @@ async function runWrapped(argv, deps = {}) {
       child.kill("SIGKILL");
     } catch {
     }
-    diagnostic(
+    diagnostic2(
       `
 ${RED17}chron run: capture failed \u2014 output withheld${RESET23}
   ${captureError}
@@ -34427,7 +34491,7 @@ ${RED17}chron run: capture failed \u2014 output withheld${RESET23}
   };
   const durability = writer.namesDurable ? "durable" : "names_not_durable";
   if (durability !== "durable") {
-    diagnostic(
+    diagnostic2(
       `${DIM21}chron run: reduced durability \u2014 record contents are fsynced, their file name is not.
   A record can survive a crash without a name to reach it by. Recorded in this run's scope.${RESET23}
 `
@@ -34485,7 +34549,7 @@ ${RED17}chron run: capture failed \u2014 output withheld${RESET23}
   input.on("end", onInputEnd);
   child.stdin.on("error", (e) => {
     if (e.code === "EPIPE" || e.code === "ERR_STREAM_DESTROYED") return;
-    diagnostic(
+    diagnostic2(
       `${DIM21}chron run: could not forward input to the child (${e.code ?? e.message}).
   It was recorded before the attempt, so the journal holds it.${RESET23}
 `
@@ -34629,6 +34693,201 @@ var init_run = __esm({
     RESET23 = "\x1B[0m";
     RED17 = "\x1B[31m";
     DIM21 = "\x1B[2m";
+  }
+});
+
+// src/native/launch-notices.ts
+function beginLaunchNotice(env = process.env) {
+  const dir = env[LAUNCH_DIR], token = env[LAUNCH_TOKEN];
+  if (!dir || !token || !/^[a-f0-9]{64}$/.test(token)) return null;
+  const id = (0, import_crypto26.randomUUID)();
+  const publish = (state) => {
+    let tmp;
+    try {
+      guardTestRoot("a Codex launch notification", dir, LAUNCH_DIR);
+      const stat = (0, import_fs34.lstatSync)(dir);
+      if (!stat.isDirectory() || stat.isSymbolicLink()) return;
+      const manifest = JSON.parse((0, import_fs34.readFileSync)((0, import_path25.join)(dir, "launch.json"), "utf8"));
+      if (manifest.token !== token) return;
+      tmp = (0, import_path25.join)(dir, `${id}.${(0, import_crypto26.randomUUID)()}.tmp`);
+      (0, import_fs34.writeFileSync)(tmp, JSON.stringify({ schema: NOTICE_SCHEMA, token, id, state }), { flag: "wx", mode: 384 });
+      (0, import_fs34.renameSync)(tmp, (0, import_path25.join)(dir, `${id}.json`));
+    } catch {
+    } finally {
+      if (tmp) try {
+        (0, import_fs34.unlinkSync)(tmp);
+      } catch {
+      }
+    }
+  };
+  publish("started");
+  return { finish: (state) => publish(state) };
+}
+var import_fs34, import_path25, import_crypto26, LAUNCH_DIR, LAUNCH_TOKEN, NOTICE_SCHEMA;
+var init_launch_notices = __esm({
+  "src/native/launch-notices.ts"() {
+    "use strict";
+    import_fs34 = require("fs");
+    import_path25 = require("path");
+    import_crypto26 = require("crypto");
+    init_config_path();
+    LAUNCH_DIR = "CHRON_CODEX_LAUNCH_DIR";
+    LAUNCH_TOKEN = "CHRON_CODEX_LAUNCH_TOKEN";
+    NOTICE_SCHEMA = "chron.codex-launch-notice/v1";
+  }
+});
+
+// src/cli/codex.ts
+var codex_exports = {};
+__export(codex_exports, {
+  CAPTURE_WARNING: () => CAPTURE_WARNING,
+  LaunchObserver: () => LaunchObserver,
+  UNKNOWN_WARNING: () => UNKNOWN_WARNING,
+  codexUsage: () => codexUsage,
+  launchCodex: () => launchCodex
+});
+function diagnostic(text2) {
+  const bytes2 = Buffer.from(text2);
+  try {
+    let offset = 0;
+    while (offset < bytes2.length) {
+      const written = (0, import_fs35.writeSync)(2, bytes2, offset, bytes2.length - offset);
+      if (written <= 0) return;
+      offset += written;
+    }
+  } catch {
+  }
+}
+function codexUsage() {
+  return "Usage: chron codex [--codex <executable>] [--journal <path>] -- [Codex arguments]\nExplicitly launch Codex with visible Chron capture-failure notices on stderr.\nCodex stdout bytes, numeric exit status and terminating signal are preserved.\nExisting chron-hook codex hooks must be configured and trusted separately.\nThis command does not configure hooks, edit shell files or establish capture completeness.\nNo hook status observed is reported as unknown, never as successful capture.\n";
+}
+async function launchCodex(args2) {
+  if (args2.length === 1 && ["--help", "-h"].includes(args2[0])) {
+    process.stdout.write(codexUsage());
+    return { code: 0, signal: null };
+  }
+  const separator = args2.indexOf("--");
+  let executable = "codex";
+  const env = { ...process.env };
+  try {
+    if (separator < 0) throw new Error("separator");
+    for (let i = 0; i < separator; i++) {
+      const option = args2[i];
+      if (!["--codex", "--journal"].includes(option) || i + 1 >= separator || !args2[i + 1]) throw new Error("option");
+      const value = args2[++i];
+      if (option === "--codex") executable = value;
+      else env.CHRON_JOURNAL_PATH = guardedJournalPath(value);
+    }
+  } catch {
+    diagnostic(codexUsage());
+    return { code: 64, signal: null };
+  }
+  let dir, observer;
+  delete env[LAUNCH_DIR];
+  delete env[LAUNCH_TOKEN];
+  try {
+    dir = (0, import_fs35.mkdtempSync)((0, import_path26.join)(process.env.CHRON_TEST_ROOT || (0, import_os19.tmpdir)(), "chron-codex-launch-"));
+    (0, import_fs35.chmodSync)(dir, 448);
+    const token = (0, import_crypto27.randomBytes)(32).toString("hex");
+    (0, import_fs35.writeFileSync)((0, import_path26.join)(dir, "launch.json"), JSON.stringify({ token }), { flag: "wx", mode: 384 });
+    env[LAUNCH_DIR] = dir;
+    env[LAUNCH_TOKEN] = token;
+    observer = new LaunchObserver(dir, token, diagnostic);
+  } catch {
+    diagnostic(UNKNOWN_WARNING);
+  }
+  let timer;
+  const forwards = /* @__PURE__ */ new Map();
+  try {
+    const result = await new Promise((resolve6) => {
+      const child = (0, import_child_process7.spawn)(executable, args2.slice(separator + 1), { env, stdio: "inherit", shell: false });
+      for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
+        const handler = () => {
+          child.kill(signal);
+        };
+        forwards.set(signal, handler);
+        process.on(signal, handler);
+      }
+      timer = setInterval(() => observer?.scan(), 100);
+      child.once("error", (error) => {
+        diagnostic("Chron: could not start the requested Codex executable.\n");
+        resolve6({ code: error.code === "ENOENT" ? 127 : 126, signal: null });
+      });
+      child.once("close", (code, signal) => resolve6({ code, signal }));
+    });
+    await new Promise((resolve6) => setTimeout(resolve6, 250));
+    observer?.scan(true);
+    return result;
+  } finally {
+    if (timer) clearInterval(timer);
+    for (const [signal, handler] of forwards) process.removeListener(signal, handler);
+    if (dir) try {
+      (0, import_fs35.rmSync)(dir, { recursive: true, force: true });
+    } catch {
+    }
+  }
+}
+var import_child_process7, import_fs35, import_crypto27, import_path26, import_os19, CAPTURE_WARNING, UNKNOWN_WARNING, LaunchObserver;
+var init_codex = __esm({
+  "src/cli/codex.ts"() {
+    "use strict";
+    import_child_process7 = require("child_process");
+    import_fs35 = require("fs");
+    import_crypto27 = require("crypto");
+    import_path26 = require("path");
+    import_os19 = require("os");
+    init_config_path();
+    init_launch_notices();
+    CAPTURE_WARNING = "Chron: capture hook reported failure. Recording status is unconfirmed. This warning makes no claim about delivery or withholding. Inspect failed attempts with chron doctor using the same journal configuration.\n";
+    UNKNOWN_WARNING = "Chron: capture notification status is unknown for this launch. At least one hook status is unavailable or unresolved. This does not establish missing evidence or withholding.\n";
+    LaunchObserver = class {
+      constructor(dir, token, diagnostic2) {
+        this.dir = dir;
+        this.token = token;
+        this.diagnostic = diagnostic2;
+      }
+      warned = /* @__PURE__ */ new Set();
+      states = /* @__PURE__ */ new Map();
+      unreadable = false;
+      warn(text2) {
+        try {
+          this.diagnostic(text2);
+        } catch {
+          this.unreadable = true;
+        }
+      }
+      scan(final = false) {
+        try {
+          for (const name2 of (0, import_fs35.readdirSync)(this.dir)) {
+            if (name2 === "launch.json" || name2.endsWith(".tmp")) continue;
+            if (!/^[a-f0-9-]{36}\.json$/.test(name2)) {
+              this.unreadable = true;
+              continue;
+            }
+            try {
+              const path = (0, import_path26.join)(this.dir, name2), stat = (0, import_fs35.lstatSync)(path);
+              if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 2048) throw new Error("unreadable");
+              const notice = JSON.parse((0, import_fs35.readFileSync)(path, "utf8"));
+              if (notice.schema !== NOTICE_SCHEMA || notice.token !== this.token || `${notice.id}.json` !== name2 || !["started", "recorded", "failed", "unknown"].includes(notice.state)) throw new Error("unattributed");
+              const before = this.states.get(notice.id);
+              if (before && before !== "started" && before !== notice.state) this.unreadable = true;
+              this.states.set(notice.id, notice.state);
+              if (notice.state === "failed" && !this.warned.has(notice.id)) {
+                this.warned.add(notice.id);
+                this.warn(CAPTURE_WARNING);
+              }
+            } catch {
+              this.unreadable = true;
+            }
+          }
+        } catch {
+          this.unreadable = true;
+        }
+        if (final && (this.unreadable || this.states.size === 0 || [...this.states.values()].some((state) => state === "started" || state === "unknown"))) {
+          this.warn(UNKNOWN_WARNING);
+        }
+      }
+    };
   }
 });
 
@@ -35007,7 +35266,7 @@ __export(hook_exports, {
   hookUsage: () => hookUsage
 });
 function defaultJournalPath() {
-  return guardedJournalPath(process.env.CHRON_JOURNAL_PATH ?? (0, import_path25.join)(process.env.CHRON_HOME ?? (0, import_path25.join)((0, import_os19.homedir)(), ".chron"), "capture.jsonl"));
+  return guardedJournalPath(process.env.CHRON_JOURNAL_PATH ?? (0, import_path27.join)(process.env.CHRON_HOME ?? (0, import_path27.join)((0, import_os20.homedir)(), ".chron"), "capture.jsonl"));
 }
 async function readAllStdin() {
   const chunks = [];
@@ -35023,44 +35282,62 @@ function flagValue(args2, name2) {
 }
 function hookUsage() {
   return [
-    "usage: chron-hook claude-code [--journal <path>] [--client-version <v>]",
+    "usage: chron-hook <claude-code|codex> [--journal <path>] [--client-version <v>]",
     "                             [--invocation-id <id>] [--on-capture-failure report|block]",
     "",
     "Reads one hook payload on stdin and records it in the capture journal.",
-    "Equivalent compatibility command: chron hook claude-code [the same options].",
-    `Measured events: ${Object.keys(CLAUDE_CODE_EVENTS).join(", ")}. Any other event is recorded`,
-    "with no ordering claim, because this build has not measured it.",
+    "Equivalent compatibility command: chron hook <claude-code|codex> [the same options].",
+    `Measured claude-code events: ${Object.keys(CLAUDE_CODE_EVENTS).join(", ")}.`,
+    `Measured codex events: ${Object.keys(CODEX_EVENTS).join(", ")}.`,
+    "Any other event is recorded with no ordering claim, because this build has not measured it.",
     "",
     "It records. It does not withhold: a hook is invoked by the client and cannot hold",
     "back content the client has already sent or shown. `block` is available where the",
-    "vendor documents a blocking exit code, and stops the action the hook gates, which",
-    "on UserPromptSubmit is not the request that already carried the prompt.",
+    "vendor documents a blocking exit code; its effect is specific to the client and event.",
+    "For Claude Code, the measured UserPromptSubmit gates a different request from the one that already carried the prompt.",
+    "For Codex, the healthy UserPromptSubmit ran before the observed request; failure effects differed across failure modes.",
+    "--on-capture-failure=block makes no unconditional capture-before-release guarantee for either client.",
     "",
     "Configure it as a command hook in the client's settings, for example:",
     '  "hooks": { "UserPromptSubmit": [ { "hooks": [',
     '    { "type": "command", "command": "chron-hook claude-code" } ] } ] }',
+    "or, for Codex:",
+    '  "hooks": { "UserPromptSubmit": [ { "hooks": [',
+    '    { "type": "command", "command": "chron-hook codex" } ] } ] }',
     ""
   ].join("\n");
 }
 async function hookCommand(args2, deps = {}) {
+  const notice = args2[0] === CODEX_CLIENT ? beginLaunchNotice() : null;
+  try {
+    const code = await executeHook(args2, deps);
+    notice?.finish(code === 0 ? "recorded" : "failed");
+    return code;
+  } catch (error) {
+    notice?.finish("unknown");
+    throw error;
+  }
+}
+async function executeHook(args2, deps) {
   const stdout = deps.stdout ?? ((s) => {
     process.stdout.write(s);
   });
   const stderr = deps.stderr ?? ((s) => {
     process.stderr.write(s);
   });
-  const client = args2[0] ?? "";
-  if (client === "" || client === "--help" || client === "-h") {
+  const clientArg = args2[0] ?? "";
+  if (clientArg === "" || clientArg === "--help" || clientArg === "-h") {
     stdout(hookUsage());
-    return client === "" ? 64 : 0;
+    return clientArg === "" ? 64 : 0;
   }
-  if (client !== NATIVE_CLIENT) {
+  if (clientArg !== NATIVE_CLIENT && clientArg !== CODEX_CLIENT) {
     stderr(
-      `chron hook: only ${NATIVE_CLIENT} is supported, not '${client}'. A client this build has not measured would have its events recorded under claims taken from another client, which is the one thing a per-event table exists to prevent.
+      `chron hook: only ${NATIVE_CLIENT} or ${CODEX_CLIENT} is supported, not '${clientArg}'. A client this build has not measured would have its events recorded under claims taken from another client, which is the one thing a per-event table exists to prevent.
 `
     );
     return HOOK_CAPTURE_FAILED_EXIT;
   }
+  const client = clientArg;
   const modeRaw = flagValue(args2, "on-capture-failure") ?? "report";
   if (modeRaw !== "report" && modeRaw !== "block") {
     stderr(
@@ -35094,6 +35371,7 @@ async function hookCommand(args2, deps = {}) {
   }
   const result = recordNativeEvent({
     journalPath: journalPath3,
+    client,
     payload,
     ...invocationId ? { invocationId } : {},
     ...clientVersion ? { clientVersion } : {},
@@ -35102,8 +35380,8 @@ async function hookCommand(args2, deps = {}) {
   if (result.recorded) {
     return 0;
   }
-  const spec = nativeEventSpec(result.event ?? "");
-  const marker = result.failure_marker === null ? "the failure could not be marked beside the journal either, so this message is the only record of it" : result.failure_marker_durability === "durable" ? `marked in ${(0, import_path25.basename)(result.failure_marker)} beside the journal` : `marked in ${(0, import_path25.basename)(result.failure_marker)} beside the journal, but that file's own name is not durable on this filesystem: its bytes were fsynced and the directory entry naming them could not be, so a crash can leave the mark with no name to reach it by`;
+  const spec = nativeEventSpec(result.event ?? "", client);
+  const marker = result.failure_marker === null ? "the failure could not be marked beside the journal either, so this message is the only record of it" : result.failure_marker_durability === "durable" ? `marked in ${(0, import_path27.basename)(result.failure_marker)} beside the journal` : `marked in ${(0, import_path27.basename)(result.failure_marker)} beside the journal, but that file's own name is not durable on this filesystem: its bytes were fsynced and the directory entry naming them could not be, so a crash can leave the mark with no name to reach it by`;
   stderr(
     `chron: capture failed \u2014 could not confirm capture of ${result.event ?? "an unreadable event"} (${result.failure?.stage}: ${result.failure?.reason}). ${marker}.
 `
@@ -35116,19 +35394,22 @@ async function hookCommand(args2, deps = {}) {
     );
     return HOOK_CAPTURE_FAILED_EXIT;
   }
+  const m = spec.measured;
+  const blockNote = m === null ? "This build has not measured what this client does when this handler exits with that code." : m.content_precedes_hook ? `It does not recover anything that already crossed: on ${m.client_version} in ${m.invocation_mode}, measured ${m.measured_at}, the content this event carries had already crossed its boundary before this handler was invoked.` : m.gate === "inconsistent" ? `Exiting with this code was measured stopping the request on ${m.client_version} in ${m.invocation_mode}, measured ${m.measured_at}; a different failure of this handler, such as a crash or a kill, was measured not stopping it. This does not establish that blocking stops the request on every way this handler can fail.` : `This exit code was measured stopping the request on ${m.client_version} in ${m.invocation_mode}, measured ${m.measured_at}.`;
   stderr(
-    `chron: blocking the action, as --on-capture-failure=block asked. This stops the request this hook gates. It does not recover anything that already crossed: on the measured version the prompt reached the model before this hook was invoked.
+    `chron: blocking the action, as --on-capture-failure=block asked. This stops the request this hook gates. ${blockNote}
 `
   );
   return spec.blocking_exit_code;
 }
-var import_path25, import_os19, HOOK_CAPTURE_FAILED_EXIT, HOOK_BLOCKED_EXIT;
+var import_path27, import_os20, HOOK_CAPTURE_FAILED_EXIT, HOOK_BLOCKED_EXIT;
 var init_hook = __esm({
   "src/cli/hook.ts"() {
     "use strict";
-    import_path25 = require("path");
-    import_os19 = require("os");
+    import_path27 = require("path");
+    import_os20 = require("os");
     init_config_path();
+    init_launch_notices();
     init_record();
     init_events();
     HOOK_CAPTURE_FAILED_EXIT = 1;
@@ -35404,14 +35685,22 @@ async function main() {
       await runRun2(args);
       break;
     }
+    case "codex": {
+      const { launchCodex: launchCodex2 } = await Promise.resolve().then(() => (init_codex(), codex_exports));
+      const result = await launchCodex2(args);
+      if (result.signal) {
+        process.kill(process.pid, result.signal);
+      } else process.exitCode = result.code ?? 1;
+      break;
+    }
     case "attach": {
       const { runAttach: runAttach2 } = await Promise.resolve().then(() => (init_attach(), attach_exports));
       await runAttach2(args);
       break;
     }
-    // One hook event in, one durable journal record out. The exit code is the
-    // only channel the client reads, so the command returns one rather than
-    // printing anything, and this is where it becomes the process's.
+    // One hook event in, one journal result out. The hook reports its exit
+    // status independently of whether a client displays diagnostics. The
+    // opt-in Codex launcher has its own notification channel.
     case "hook": {
       const { hookCommand: hookCommand2 } = await Promise.resolve().then(() => (init_hook(), hook_exports));
       process.exit(await hookCommand2(args));
@@ -35475,6 +35764,7 @@ Commands:
   update          Update chron to the latest version
   run             Run a command with fail-closed capture \u2014 output is withheld until recorded
   hook            Record one native client hook event in the capture journal (observation, not withholding)
+  codex           Opt-in Codex launcher; capture-failure notices on stderr, stdout/status preserved
   project         Replay the capture journal into the database (idempotent)
   reconcile       Read-only: what your client records that Chron cannot account for
   attach          Start recording a conversation already in progress (partial evidence)

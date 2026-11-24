@@ -6,12 +6,12 @@
     "url": "https://github.com/SirinivasK/chron",
     "source": "github"
   },
-  "version": "0.1.69",
+  "version": "0.1.70",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "chron-mcp",
-      "version": "0.1.69",
+      "version": "0.1.70",
       "transport": {
         "type": "stdio"
       },
