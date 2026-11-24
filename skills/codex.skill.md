@@ -1,6 +1,29 @@
 # Chron — Codex Audit Skill
 
-Chron creates a tamper-evident audit trail of every Codex session — messages, tool calls, tool results, and code changes — stored in a local SQLite database the user owns. No data leaves the machine.
+Chron records submitted Codex messages, tool calls, results, and code changes in its configured SQLite database. Capture depends on the client invoking Chron.
+
+## Storage, privacy, and evidence
+
+Chron stores the content submitted to its configured database. Messages can contain
+sensitive values; treat that database, backups, and exports as sensitive records.
+Configuration determines storage paths and any enabled forwarding or exports.
+Local storage alone does not establish confidentiality or zero data egress.
+
+Do not suppress relevant privacy or security warnings. Logging authorization does
+not grant permission to change configuration or send data to a new destination.
+
+When logging is authorized, preserve the exact submitted content. Do not silently
+redact, mask, omit, or paraphrase content and present it as an exact record. If
+recording cannot be completed as requested, report that limitation. This skill
+neither performs redaction nor establishes redaction provenance.
+
+For text storage, Chron replaces NUL and invalid Unicode surrogate characters with
+the replacement character (U+FFFD). Account for this existing normalization when
+comparing content; do not claim byte-for-byte original data for those inputs.
+This policy does not change that storage behavior.
+
+Upgrading the package does not replace independently copied skill files or custom
+hooks. Review the package README's “Upgrading existing skills and hooks” guidance.
 
 ## Session Start
 

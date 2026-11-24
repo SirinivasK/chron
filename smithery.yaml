@@ -14,7 +14,7 @@ configSchema:
 commandFunction: |-
   (config) => ({
     command: 'npx',
-    args: ['-y', 'chron-mcp'],
+    args: ['-y', 'chron-mcp@0.1.68'],
     env: {
       ...(config.dbPath ? { CHRON_DB_PATH: config.dbPath } : {}),
       ...(config.apiKey ? { CHRON_API_KEY: config.apiKey } : {}),

@@ -147,12 +147,12 @@ Use `chron run` for the narrower forwarding guarantee over the channels it contr
 **CLI + MCP server:**
 
 ```bash
-npm install -g chron-mcp
+npm install -g chron-mcp@0.1.68
 chron setup --client=claude          # preview exact files
 chron setup --client=claude --apply  # explicitly apply that configuration
 ```
 
-> `npx chron-mcp` starts the MCP server only — it does not put the `chron` CLI command in your PATH. You need a global install for the CLI.
+> `npx chron-mcp@0.1.68` starts the MCP server only — it does not put the `chron` CLI command in your PATH. You need a global install for the CLI.
 
 Installation and ordinary MCP-server startup do not edit agent configuration,
 instruction files or shell profiles. `chron setup`, client `chron connect`
@@ -212,7 +212,7 @@ Manual MCP config, if you need it:
   "mcpServers": {
     "chron": {
       "command": "npx",
-      "args": ["-y", "chron-mcp"]
+      "args": ["-y", "chron-mcp@0.1.68"]
     }
   }
 }
@@ -222,7 +222,7 @@ Manual MCP config, if you need it:
 
 ## CLI
 
-After `npm install -g chron-mcp`, the `chron` command is available globally:
+After `npm install -g chron-mcp@0.1.68`, the `chron` command is available globally:
 
 ```
 Usage: chron <command> [options]
@@ -437,6 +437,39 @@ The gap between user and assistant timestamps is real generation time. Both are 
 
 ---
 
+## Upgrading existing skills and hooks
+
+Upgrading the package does not update independently copied instructions or custom
+hooks. A loader can continue supplying old wording from `~/.chron/chron.skill.md`,
+a copied skill directory, or another path even after a package upgrade. A local
+file's location does not establish who installed it.
+
+1. Inspect the actual skill paths and commands configured in your client. Compare
+   the loaded file with the reviewed packaged sources, `skills/chron.skill.md` and
+   `skills/chron/SKILL.md`. The revised instructions allow relevant privacy/security
+   warnings and describe sensitive stored content and configuration-dependent egress.
+2. Review locally edited copies and custom hooks manually. Preserve unrelated
+   commands, matchers, options and instructions; do not replace an entire settings
+   file or silently overwrite a customized skill. This release does not authorize
+   automatic edits to user configuration or any redaction of existing records.
+3. For an exact legacy configuration, `chron unsetup --legacy` previews recognized
+   removals. Its plan can include MCP entries and shell/instruction blocks, not
+   just a skill hook: inspect every listed change. Add `--apply` only if you intend
+   those changes. Customized or unrecognized entries are preserved/refused for
+   manual review; independently copied skill files are not rewritten by cleanup.
+4. After any changes you approve, inspect the instructions loaded in a fresh session.
+   A package upgrade alone does not demonstrate that an existing agent stopped
+   using previously loaded text. Neither skill invocation nor successful setup
+   establishes that a complete conversation was captured.
+
+The skill is separate from the MCP server's initialization instructions. The server
+advertises its logging lifecycle; it does not load these skill files automatically.
+
+Examples here pin npm resolution to `chron-mcp@0.1.68`. Review the selected release
+before running it. Pins select a version, not a security certification. Changing
+the package version requires updating these recipes; regression tests check the
+skills, README examples and Smithery launcher against `package.json`.
+
 ## Config by tool
 
 ### Claude Desktop
@@ -460,24 +493,10 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o
 claude mcp add chron -- /absolute/path/to/chron-mcp
 ```
 
-Then add the skill hook to `~/.claude/settings.json`:
-
-```json
-{
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cat ~/.chron/chron.skill.md"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+Load the reviewed companion skill explicitly if you want its logging workflow.
+A SessionStart skill loader is optional; installation and setup do not add one.
+An existing loader may still read an independently copied `~/.chron/chron.skill.md`.
+See “Upgrading existing skills and hooks” when reviewing it, and preserve custom hooks.
 
 ### Cursor
 
@@ -676,7 +695,7 @@ https://<your-cluster>.humio.com/api/v1/ingest/humio-structured
 **2. Install the CLI and run the onboarding wizard**
 
 ```bash
-npm install -g chron-mcp
+npm install -g chron-mcp@0.1.68
 chron connect crowdstrike
 # Paste your ingest URL and token when prompted
 # The wizard sends a test event and confirms before saving
@@ -691,7 +710,7 @@ The wizard prints the exact block to paste. For Claude Code, add to the `chron` 
   "mcpServers": {
     "chron": {
       "command": "npx",
-      "args": ["-y", "chron-mcp"],
+      "args": ["-y", "chron-mcp@0.1.68"],
       "env": {
         "CHRON_LOGSCALE_URL": "https://<your-cluster>.humio.com/api/v1/ingest/humio-structured",
         "CHRON_LOGSCALE_TOKEN": "<your-ingest-token>"
@@ -755,7 +774,7 @@ Settings → **Data Inputs** → **HTTP Event Collector** → **New Token** → 
 **2. Install the CLI and run the onboarding wizard**
 
 ```bash
-npm install -g chron-mcp
+npm install -g chron-mcp@0.1.68
 chron connect splunk
 # For local Docker: URL = https://localhost:8088, Token = chron-test-token
 # For a self-signed local receiver only: chron connect splunk --insecure
@@ -770,7 +789,7 @@ The wizard prints the exact block to paste. For Claude Code, add to `~/.claude.j
   "mcpServers": {
     "chron": {
       "command": "npx",
-      "args": ["-y", "chron-mcp"],
+      "args": ["-y", "chron-mcp@0.1.68"],
       "env": {
         "CHRON_SPLUNK_URL": "https://localhost:8088",
         "CHRON_SPLUNK_TOKEN": "chron-test-token",
@@ -857,7 +876,7 @@ Open the DCR → **Overview** → **JSON view** → copy the `immutableId` field
 **5. Install the CLI and run the onboarding wizard**
 
 ```bash
-npm install -g chron-mcp
+npm install -g chron-mcp@0.1.68
 chron connect sentinel
 # Enter tenant ID, client ID, client secret, DCE URL, DCR immutable ID, and stream name
 # The wizard authenticates with Azure AD and sends a test event before saving
@@ -872,7 +891,7 @@ The wizard prints the exact block to paste. For Claude Code, add to `~/.claude.j
   "mcpServers": {
     "chron": {
       "command": "npx",
-      "args": ["-y", "chron-mcp"],
+      "args": ["-y", "chron-mcp@0.1.68"],
       "env": {
         "CHRON_SENTINEL_TENANT_ID": "<your-tenant-id>",
         "CHRON_SENTINEL_CLIENT_ID": "<your-client-id>",
@@ -946,7 +965,7 @@ All six must be set for events to flow. Token refresh is automatic (1-hour Azure
 For teams or remote use, run Chron as an HTTP server:
 
 ```bash
-CHRON_TRANSPORT=http CHRON_API_KEY=your-key PORT=3001 npx chron-mcp
+CHRON_TRANSPORT=http CHRON_API_KEY=your-key PORT=3001 npx chron-mcp@0.1.68
 ```
 
 Point your MCP config at the URL:
