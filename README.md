@@ -147,12 +147,12 @@ Use `chron run` for the narrower forwarding guarantee over the channels it contr
 **CLI + MCP server:**
 
 ```bash
-npm install -g chron-mcp@0.1.68
+npm install -g chron-mcp@0.1.69
 chron setup --client=claude          # preview exact files
 chron setup --client=claude --apply  # explicitly apply that configuration
 ```
 
-> `npx chron-mcp@0.1.68` starts the MCP server only — it does not put the `chron` CLI command in your PATH. You need a global install for the CLI.
+> `npx chron-mcp@0.1.69` starts the MCP server only — it does not put the `chron` CLI command in your PATH. You need a global install for the CLI.
 
 Installation and ordinary MCP-server startup do not edit agent configuration,
 instruction files or shell profiles. `chron setup`, client `chron connect`
@@ -212,7 +212,7 @@ Manual MCP config, if you need it:
   "mcpServers": {
     "chron": {
       "command": "npx",
-      "args": ["-y", "chron-mcp@0.1.68"]
+      "args": ["-y", "chron-mcp@0.1.69"]
     }
   }
 }
@@ -222,7 +222,7 @@ Manual MCP config, if you need it:
 
 ## CLI
 
-After `npm install -g chron-mcp@0.1.68`, the `chron` command is available globally:
+After `npm install -g chron-mcp@0.1.69`, the `chron` command is available globally:
 
 ```
 Usage: chron <command> [options]
@@ -465,7 +465,7 @@ file's location does not establish who installed it.
 The skill is separate from the MCP server's initialization instructions. The server
 advertises its logging lifecycle; it does not load these skill files automatically.
 
-Examples here pin npm resolution to `chron-mcp@0.1.68`. Review the selected release
+Examples here pin npm resolution to `chron-mcp@0.1.69`. Review the selected release
 before running it. Pins select a version, not a security certification. Changing
 the package version requires updating these recipes; regression tests check the
 skills, README examples and Smithery launcher against `package.json`.
@@ -695,7 +695,7 @@ https://<your-cluster>.humio.com/api/v1/ingest/humio-structured
 **2. Install the CLI and run the onboarding wizard**
 
 ```bash
-npm install -g chron-mcp@0.1.68
+npm install -g chron-mcp@0.1.69
 chron connect crowdstrike
 # Paste your ingest URL and token when prompted
 # The wizard sends a test event and confirms before saving
@@ -710,7 +710,7 @@ The wizard prints the exact block to paste. For Claude Code, add to the `chron` 
   "mcpServers": {
     "chron": {
       "command": "npx",
-      "args": ["-y", "chron-mcp@0.1.68"],
+      "args": ["-y", "chron-mcp@0.1.69"],
       "env": {
         "CHRON_LOGSCALE_URL": "https://<your-cluster>.humio.com/api/v1/ingest/humio-structured",
         "CHRON_LOGSCALE_TOKEN": "<your-ingest-token>"
@@ -774,7 +774,7 @@ Settings → **Data Inputs** → **HTTP Event Collector** → **New Token** → 
 **2. Install the CLI and run the onboarding wizard**
 
 ```bash
-npm install -g chron-mcp@0.1.68
+npm install -g chron-mcp@0.1.69
 chron connect splunk
 # For local Docker: URL = https://localhost:8088, Token = chron-test-token
 # For a self-signed local receiver only: chron connect splunk --insecure
@@ -789,7 +789,7 @@ The wizard prints the exact block to paste. For Claude Code, add to `~/.claude.j
   "mcpServers": {
     "chron": {
       "command": "npx",
-      "args": ["-y", "chron-mcp@0.1.68"],
+      "args": ["-y", "chron-mcp@0.1.69"],
       "env": {
         "CHRON_SPLUNK_URL": "https://localhost:8088",
         "CHRON_SPLUNK_TOKEN": "chron-test-token",
@@ -876,7 +876,7 @@ Open the DCR → **Overview** → **JSON view** → copy the `immutableId` field
 **5. Install the CLI and run the onboarding wizard**
 
 ```bash
-npm install -g chron-mcp@0.1.68
+npm install -g chron-mcp@0.1.69
 chron connect sentinel
 # Enter tenant ID, client ID, client secret, DCE URL, DCR immutable ID, and stream name
 # The wizard authenticates with Azure AD and sends a test event before saving
@@ -891,7 +891,7 @@ The wizard prints the exact block to paste. For Claude Code, add to `~/.claude.j
   "mcpServers": {
     "chron": {
       "command": "npx",
-      "args": ["-y", "chron-mcp@0.1.68"],
+      "args": ["-y", "chron-mcp@0.1.69"],
       "env": {
         "CHRON_SENTINEL_TENANT_ID": "<your-tenant-id>",
         "CHRON_SENTINEL_CLIENT_ID": "<your-client-id>",
@@ -965,7 +965,7 @@ All six must be set for events to flow. Token refresh is automatic (1-hour Azure
 For teams or remote use, run Chron as an HTTP server:
 
 ```bash
-CHRON_TRANSPORT=http CHRON_API_KEY=your-key PORT=3001 npx chron-mcp@0.1.68
+CHRON_TRANSPORT=http CHRON_API_KEY=your-key PORT=3001 npx chron-mcp@0.1.69
 ```
 
 Point your MCP config at the URL:

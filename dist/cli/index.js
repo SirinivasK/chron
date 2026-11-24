@@ -38,12 +38,12 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.68",
-      mcpName: "io.github.sirinivask/chron",
+      version: "0.1.69",
+      mcpName: "io.github.SirinivasK/chron",
       description: "Audit-grade timestamped logs for every AI conversation",
       repository: {
         type: "git",
-        url: "https://github.com/sirinivask/chron.git"
+        url: "https://github.com/SirinivasK/chron.git"
       },
       main: "dist/index.js",
       vitest: {

@@ -3,15 +3,15 @@
   "name": "io.github.SirinivasK/chron",
   "description": "Timestamped audit log for every AI conversation — stored locally in SQLite, owned by you.",
   "repository": {
-    "url": "https://github.com/sirinivask/chron",
+    "url": "https://github.com/SirinivasK/chron",
     "source": "github"
   },
-  "version": "0.1.12",
+  "version": "0.1.69",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "chron-mcp",
-      "version": "0.1.12",
+      "version": "0.1.69",
       "transport": {
         "type": "stdio"
       },
