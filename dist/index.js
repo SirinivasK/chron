@@ -33,6 +33,558 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
+// src/utils/detect.ts
+var detect_exports = {};
+__export(detect_exports, {
+  MAX_MATCH_CHARS: () => MAX_MATCH_CHARS,
+  OWNED_CHARS: () => OWNED_CHARS,
+  scanForSecrets: () => scanForSecrets,
+  scanForSecretsWithoutBlocking: () => scanForSecretsWithoutBlocking
+});
+function luhnCheck(value) {
+  const digits = value.replace(/\D/g, "");
+  let sum = 0;
+  let alt = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let n = parseInt(digits[i], 10);
+    if (alt) {
+      n *= 2;
+      if (n > 9) n -= 9;
+    }
+    sum += n;
+    alt = !alt;
+  }
+  return sum % 10 === 0;
+}
+function ibanCheck(value) {
+  const normalized = value.replace(/\s/g, "").toUpperCase();
+  if (normalized.length < 15 || normalized.length > 34) return false;
+  const rearranged = normalized.slice(4) + normalized.slice(0, 4);
+  const numeric2 = rearranged.replace(/[A-Z]/g, (c) => String(c.charCodeAt(0) - 55));
+  let remainder = 0;
+  for (const ch of numeric2) {
+    remainder = (remainder * 10 + parseInt(ch, 10)) % 97;
+  }
+  return remainder === 1;
+}
+function contextMatches(kw, input, idx) {
+  const lo = Math.max(0, idx - CONTEXT_WINDOW);
+  const hi = Math.min(input.length, idx + CONTEXT_WINDOW);
+  return kw.test(input.slice(lo, hi));
+}
+function emailRegex() {
+  return new RegExp(EMAIL_SOURCE, "g");
+}
+function annotate(s) {
+  return {
+    ...s,
+    severity: SEVERITY[s.type] ?? "low",
+    category: CATEGORY[s.type] ?? "other"
+  };
+}
+function scanForSecrets(input) {
+  const withPriority = [];
+  for (let i = 0; i < PATTERNS.length; i++) {
+    const { type, regex, validate: validate2 } = PATTERNS[i];
+    regex.lastIndex = 0;
+    let match;
+    while ((match = regex.exec(input)) !== null) {
+      if (validate2 && !validate2(match[0], input, match.index)) continue;
+      withPriority.push({
+        type,
+        value: match[0],
+        start: match.index,
+        end: match.index + match[0].length,
+        priority: i
+      });
+    }
+  }
+  withPriority.sort((a, b) => a.priority - b.priority || a.start - b.start);
+  let deduped = deduplicateOverlaps(withPriority);
+  const pairs = detectCredentialPairs(input, deduped);
+  if (pairs.length > 0) {
+    for (const pair of pairs) {
+      deduped.push({ ...pair, priority: -1 });
+    }
+    deduped.sort((a, b) => a.priority - b.priority || a.start - b.start);
+    deduped = deduplicateOverlaps(deduped);
+  }
+  const possible = detectPossibleSecrets(input);
+  if (possible.length > 0) {
+    for (const s of possible) {
+      deduped.push({ ...s, priority: PATTERNS.length + 1 });
+    }
+    deduped.sort((a, b) => a.priority - b.priority || a.start - b.start);
+    deduped = deduplicateOverlaps(deduped);
+  }
+  deduped.sort((a, b) => a.start - b.start);
+  return deduped.map(({ priority: _p, ...s }) => annotate(s));
+}
+function looksLikePassword(s) {
+  if (s.length < 8) return false;
+  const hasUpper = /[A-Z]/.test(s);
+  const hasLower = /[a-z]/.test(s);
+  const hasDigit = /[0-9]/.test(s);
+  const hasSpecial = /[@!#$%^&*\-_+=?]/.test(s);
+  const score = [hasUpper, hasLower, hasDigit, hasSpecial].filter(Boolean).length;
+  return score >= 3;
+}
+function detectCredentialPairs(input, _existing) {
+  const results = [];
+  EMAIL_RE.lastIndex = 0;
+  let match;
+  while ((match = EMAIL_RE.exec(input)) !== null) {
+    const emailStart = match.index;
+    const emailEnd = match.index + match[0].length;
+    const charBefore = emailStart > 0 ? input[emailStart - 1] : "";
+    if (charBefore === "@" || charBefore === ":") continue;
+    const windowStart = Math.max(0, emailStart - PAIR_WINDOW);
+    const windowEnd = Math.min(input.length, emailEnd + PAIR_WINDOW);
+    const surrounding = input.slice(windowStart, windowEnd);
+    const tokens = surrounding.match(/\S+/g) ?? [];
+    for (const token of tokens) {
+      if (token === match[0]) continue;
+      if (!looksLikePassword(token)) continue;
+      const tokenAbsoluteStart = windowStart + surrounding.indexOf(token);
+      const pairStart = Math.min(emailStart, tokenAbsoluteStart);
+      const pairEnd = Math.max(emailEnd, tokenAbsoluteStart + token.length);
+      results.push({
+        type: "credential_pair",
+        value: input.slice(pairStart, pairEnd),
+        start: pairStart,
+        end: pairEnd
+      });
+      break;
+    }
+  }
+  return results;
+}
+function detectPossibleSecrets(input) {
+  const results = [];
+  POSSIBLE_SECRET_RE.lastIndex = 0;
+  let match;
+  while ((match = POSSIBLE_SECRET_RE.exec(input)) !== null) {
+    const value = match[1];
+    if (!value) continue;
+    const valueStart = match.index + match[0].lastIndexOf(value);
+    results.push({
+      type: "possible_secret",
+      value,
+      start: valueStart,
+      end: valueStart + value.length
+    });
+  }
+  return results;
+}
+function deduplicateOverlaps(secrets) {
+  const kept = [];
+  for (const candidate of secrets) {
+    const overlaps = kept.some((k) => candidate.start < k.end && candidate.end > k.start);
+    if (!overlaps) kept.push(candidate);
+  }
+  return kept;
+}
+async function scanForSecretsWithoutBlocking(input, yieldNow = () => new Promise((resolve3) => setImmediate(resolve3))) {
+  if (input.length <= OWNED_CHARS) return scanForSecrets(input);
+  const byStart = /* @__PURE__ */ new Map();
+  for (let owned = 0; owned < input.length; owned += OWNED_CHARS) {
+    const ownedEnd = Math.min(owned + OWNED_CHARS, input.length);
+    const from = Math.max(0, owned - CONTEXT_CHARS);
+    const to = Math.min(input.length, ownedEnd + CONTEXT_CHARS);
+    const slice = input.slice(from, to);
+    for (const found of scanForSecrets(slice)) {
+      const start = found.start + from;
+      if (start < owned || start >= ownedEnd) continue;
+      byStart.set(`${found.type}:${start}`, { ...found, start, end: found.end + from });
+    }
+    if (ownedEnd < input.length) await yieldNow();
+  }
+  return [...byStart.values()].sort((a, b) => a.start - b.start);
+}
+var CONTEXT_WINDOW, DOB_KEYWORDS, PASS_KEYWORDS, SSN_KEYWORDS, EMAIL_SOURCE, PATTERNS, SEVERITY, CATEGORY, EMAIL_RE, PAIR_WINDOW, POSSIBLE_SECRET_RE, MAX_MATCH_CHARS, CONTEXT_CHARS, OWNED_CHARS;
+var init_detect = __esm({
+  "src/utils/detect.ts"() {
+    "use strict";
+    CONTEXT_WINDOW = 120;
+    DOB_KEYWORDS = /\b(?:dob|date\s+of\s+birth|birth\s+date|born\s+on|birthday)\b/i;
+    PASS_KEYWORDS = /\b(?:passport|travel\s+document|document\s+no(?:\.|\b))\b/i;
+    SSN_KEYWORDS = /\b(?:ssn|social\s+security|tin\b)\b/i;
+    EMAIL_SOURCE = "[a-zA-Z0-9._%+\\-]{1,64}@[a-zA-Z0-9.\\-]{1,255}\\.[a-zA-Z]{2,24}";
+    PATTERNS = [
+      // Private key blocks (must come first — multiline, unambiguous)
+      // Bounded so the longest possible match is a known number, which the
+      // windowed scan below needs in order to size its overlap. A PEM private key
+      // is a few KiB even at RSA-16384, so 16KiB is generous.
+      { type: "private_key", regex: /-----BEGIN [A-Z ]+ PRIVATE KEY-----[\s\S]{1,65536}?-----END [A-Z ]+ PRIVATE KEY-----/g },
+      // Cloud / AI provider keys
+      { type: "aws_access_key", regex: /AKIA[0-9A-Z]{16}/g },
+      { type: "anthropic_api_key", regex: /sk-ant-api\d{2}-[a-zA-Z0-9\-_]{40,512}/g },
+      { type: "openai_api_key", regex: /sk-proj-[a-zA-Z0-9\-_]{20,512}/g },
+      { type: "google_api_key", regex: /AIza[0-9A-Za-z\-_]{35}/g },
+      // SaaS API keys
+      { type: "github_token", regex: /gh[pousr]_[a-zA-Z0-9]{30,512}/g },
+      { type: "slack_token", regex: /xox[bpas]-[0-9]{8,13}-[0-9]{8,13}-[a-zA-Z0-9]{20,512}/g },
+      { type: "stripe_key", regex: /sk_(live|test)_[a-zA-Z0-9]{24,512}/g },
+      { type: "sendgrid_key", regex: /SG\.[a-zA-Z0-9\-_]{22,512}\.[a-zA-Z0-9\-_]{22,512}/g },
+      { type: "huggingface_token", regex: /hf_[a-zA-Z0-9]{30,512}/g },
+      // Auth / session tokens
+      // Bounded for the same reason as `private_key`. A JWT past 8KiB per segment
+      // is not a credential anybody is pasting.
+      { type: "jwt", regex: /eyJ[A-Za-z0-9\-_]{1,8192}\.[A-Za-z0-9\-_]{1,8192}\.[A-Za-z0-9\-_]{1,8192}/g },
+      // Credentials in URLs (before env_value so it wins on connection strings)
+      // Same shape as `email` above: `\w+` before the required `://` was 12.7s on
+      // 128KiB. No scheme is 32 characters, and a password field past 256 is not
+      // one.
+      { type: "url_credentials", regex: /\w{1,32}:\/\/[^:@\s\/]{1,64}:[^@\s]{4,256}@[^\s]/g },
+      // Passwords in key=value and JSON
+      { type: "password", regex: /(?:password|passwd|pwd)["']?\s*[=:]\s*["']?([^\s"',]{6,512})/gi },
+      // PII — financial
+      {
+        type: "credit_card",
+        regex: /\b\d{4}[\s\-]\d{4}[\s\-]\d{4}[\s\-]\d{4}\b/g,
+        validate: (v) => luhnCheck(v)
+      },
+      {
+        type: "iban",
+        regex: /\b[A-Z]{2}\d{2}[A-Z0-9]{4,30}\b/g,
+        validate: (v) => ibanCheck(v)
+      },
+      // PII — identity (context-aware)
+      {
+        type: "ssn",
+        regex: /\b\d{3}-\d{2}-\d{4}\b/g,
+        validate: (_v, input, idx) => {
+          if (contextMatches(SSN_KEYWORDS, input, idx)) return true;
+          const surrounding = input.slice(Math.max(0, idx - 20), idx + 20);
+          if (/(?:19|20)\d{2}/.test(surrounding)) return false;
+          return true;
+        }
+      },
+      {
+        type: "dob",
+        regex: /\b(?:0?[1-9]|1[0-2])[-\/](?:0?[1-9]|[12]\d|3[01])[-\/](?:19|20)\d{2}\b/g,
+        validate: (_v, input, idx) => contextMatches(DOB_KEYWORDS, input, idx)
+      },
+      {
+        type: "passport",
+        regex: /\b[A-Z]\d{8}\b/g,
+        validate: (_v, input, idx) => contextMatches(PASS_KEYWORDS, input, idx)
+      },
+      // PII — contact
+      // Quantifiers bounded, not decorative. `[class]+` before a required literal
+      // re-scans from every start position, which is quadratic: measured at 15.6
+      // SECONDS for this pattern alone on 128KiB of one repeated character, and
+      // ~256x that at 2MiB — the stall that held the 0.1.64 candidate. RFC 5321
+      // caps a local part at 64 characters and a domain at 255, so the bounds cost
+      // no real address.
+      { type: "email", regex: emailRegex() },
+      {
+        type: "phone_us",
+        // Requires area code starting 2-9 (excludes version numbers, dates, plain 7-digit numbers)
+        regex: /\b(?:\+?1[-.\s]?)?\(?([2-9][0-9]{2})\)?[-.\s]([2-9][0-9]{2})[-.\s]([0-9]{4})\b/g
+      },
+      {
+        type: "phone_e164",
+        // E.164 international (non-US, min 8 digits after +)
+        regex: /\+(?!1[^0-9])(?:[2-9][0-9]{1}|[1][^1])[0-9]{6,12}\b/g
+      },
+      // Network — internal RFC-1918 addresses
+      {
+        type: "internal_ip",
+        regex: /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b/g
+      },
+      // Generic env assignment (lowest priority — catches remaining secrets)
+      { type: "env_value", regex: /\b[A-Z][A-Z0-9_]{2,128}=[^\s]{8,8192}/g }
+    ];
+    SEVERITY = {
+      private_key: "critical",
+      credit_card: "critical",
+      ssn: "critical",
+      iban: "critical",
+      aws_access_key: "high",
+      anthropic_api_key: "high",
+      openai_api_key: "high",
+      google_api_key: "high",
+      github_token: "high",
+      slack_token: "high",
+      stripe_key: "high",
+      sendgrid_key: "high",
+      huggingface_token: "high",
+      jwt: "high",
+      url_credentials: "high",
+      password: "high",
+      credential_pair: "high",
+      possible_secret: "low",
+      passport: "high",
+      dob: "high",
+      email: "medium",
+      phone_us: "medium",
+      phone_e164: "medium",
+      internal_ip: "low",
+      env_value: "low"
+    };
+    CATEGORY = {
+      private_key: "credential",
+      credit_card: "financial",
+      ssn: "identity",
+      iban: "financial",
+      passport: "identity",
+      dob: "identity",
+      aws_access_key: "credential",
+      anthropic_api_key: "credential",
+      openai_api_key: "credential",
+      google_api_key: "credential",
+      github_token: "credential",
+      slack_token: "credential",
+      stripe_key: "credential",
+      sendgrid_key: "credential",
+      huggingface_token: "credential",
+      jwt: "credential",
+      url_credentials: "credential",
+      password: "credential",
+      credential_pair: "credential",
+      possible_secret: "credential",
+      email: "contact",
+      phone_us: "contact",
+      phone_e164: "contact",
+      internal_ip: "network",
+      env_value: "credential"
+    };
+    EMAIL_RE = emailRegex();
+    PAIR_WINDOW = 100;
+    POSSIBLE_SECRET_RE = /\b(?:api[_\s-]?key|access[_\s-]?key|secret|token|credential|password)\b\s*(?:is\s*:?|[=:])?\s*["']?([A-Za-z0-9][A-Za-z0-9._\-]{11,127})["']?/gi;
+    MAX_MATCH_CHARS = 72 * 1024;
+    CONTEXT_CHARS = MAX_MATCH_CHARS;
+    OWNED_CHARS = 128 * 1024;
+  }
+});
+
+// src/utils/content.ts
+function canonicalContent(content) {
+  return content.replace(UNREPRESENTABLE, "\uFFFD");
+}
+var UNREPRESENTABLE;
+var init_content = __esm({
+  "src/utils/content.ts"() {
+    "use strict";
+    UNREPRESENTABLE = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
+  }
+});
+
+// src/privacy/policy.ts
+function contentPolicy() {
+  const mode = process.env.CHRON_CONTENT_POLICY;
+  if (!mode && (process.env.CHRON_CONTENT_POLICY_KEY || process.env.CHRON_CONTENT_POLICY_KEY_FILE || process.env.CHRON_CONTENT_POLICY_LITERALS))
+    throw new ContentPolicyError();
+  if (!mode || mode === "raw")
+    return { mode: "raw", key: Buffer.alloc(0), literals: [], maxBytes: 65536, budgetMs: 25, id: "legacy-raw" };
+  try {
+    if (mode !== "redact" && mode !== "skip")
+      throw Error();
+    let key = process.env.CHRON_CONTENT_POLICY_KEY;
+    if (process.env.CHRON_CONTENT_POLICY_KEY_FILE) {
+      if (key)
+        throw Error();
+      const file = process.env.CHRON_CONTENT_POLICY_KEY_FILE;
+      const st = (0, import_fs.statSync)(file);
+      if (!st.isFile() || (st.mode & 63) !== 0)
+        throw Error();
+      key = (0, import_fs.readFileSync)(file, "utf8").trim();
+    }
+    if (!key || !/^[a-fA-F0-9]{64}$/.test(key))
+      throw Error();
+    const literals = JSON.parse(process.env.CHRON_CONTENT_POLICY_LITERALS ?? "[]");
+    if (!Array.isArray(literals) || literals.length > 32 || literals.some((s) => typeof s !== "string" || !s.length || s.length > 256 || MASK.includes(s)))
+      throw Error();
+    const budgetMs = Number(process.env.CHRON_CONTENT_POLICY_BUDGET_MS ?? "25");
+    if (!Number.isFinite(budgetMs) || budgetMs < 1 || budgetMs > 1e3)
+      throw Error();
+    const bytes = Buffer.from(key, "hex");
+    const id = (0, import_crypto.createHmac)("sha256", bytes).update(JSON.stringify({ mode, literals, maxBytes: 65536, budgetMs, version: 1 })).digest("hex");
+    return { mode, key: bytes, literals, maxBytes: 65536, budgetMs, id };
+  } catch {
+    throw new ContentPolicyError();
+  }
+}
+function privacyEnabled() {
+  return contentPolicy().mode !== "raw";
+}
+function signingKey(p) {
+  return (0, import_crypto.createPrivateKey)({ key: Buffer.concat([Buffer.from("302e020100300506032b657004220420", "hex"), p.key]), format: "der", type: "pkcs8" });
+}
+function privateIdentifier(value) {
+  const p = contentPolicy();
+  if (p.mode === "raw")
+    return value;
+  const m = /^chron-id-v1:([a-f0-9]{64}):([a-f0-9]{64})$/.exec(value);
+  if (m && (0, import_crypto.createHmac)("sha256", p.key).update("tag:" + m[1]).digest("hex") === m[2])
+    return value;
+  const digest = (0, import_crypto.createHmac)("sha256", p.key).update("identity:" + value).digest("hex");
+  return "chron-id-v1:" + digest + ":" + (0, import_crypto.createHmac)("sha256", p.key).update("tag:" + digest).digest("hex");
+}
+function redactPlain(text2, p, scanner = scanForSecrets) {
+  let out = text2;
+  for (const literal2 of [...p.literals, p.key.toString("hex"), p.key.toString("hex").toUpperCase()])
+    out = out.split(literal2).join(MASK);
+  const hits = scanner(out).sort((a, b) => a.start - b.start || b.end - a.end);
+  let cursor = 0, masked = "";
+  for (const h of hits) {
+    if (!Number.isInteger(h.start) || !Number.isInteger(h.end) || h.start < 0 || h.end > out.length || h.end <= h.start)
+      throw new ContentPolicyError();
+    if (h.start < cursor)
+      continue;
+    masked += out.slice(cursor, h.start) + MASK;
+    cursor = h.end;
+  }
+  return masked + out.slice(cursor);
+}
+function redactText(text2, p, scanner = scanForSecrets) {
+  let nodes = 0;
+  const walk = (x, depth) => {
+    if (++nodes > 2048 || depth > 16)
+      throw new ContentPolicyError();
+    if (typeof x === "string")
+      return redactPlain(x, p, scanner);
+    if (Array.isArray(x))
+      return x.map((v) => walk(v, depth + 1));
+    if (x && typeof x === "object") {
+      const out = /* @__PURE__ */ Object.create(null);
+      for (const [k, v] of Object.entries(x))
+        out[redactPlain(k, p, scanner)] = SENSITIVE_KEY.test(k) ? MASK : walk(v, depth + 1);
+      return out;
+    }
+    return x;
+  };
+  let parsed;
+  try {
+    parsed = JSON.parse(text2);
+  } catch {
+    return redactPlain(text2, p, scanner);
+  }
+  const result = walk(parsed, 0);
+  return JSON.stringify(result) === JSON.stringify(parsed) ? redactPlain(text2, p, scanner) : JSON.stringify(result);
+}
+function seal(content, receipt, p) {
+  const key = signingKey(p);
+  const data = JSON.stringify({ chron_policy: receipt, content });
+  return JSON.stringify({ chron_policy: receipt, content, public_key: (0, import_crypto.createPublicKey)(key).export({ format: "pem", type: "spki" }).toString(), signature: (0, import_crypto.sign)(null, Buffer.from(data), key).toString("base64") });
+}
+function policyEnvelope(text2) {
+  try {
+    const x = JSON.parse(text2);
+    if (!x || Object.keys(x).sort().join(",") !== "chron_policy,content,public_key,signature" || typeof x.content !== "string" || typeof x.public_key !== "string" || typeof x.signature !== "string" || x.chron_policy?.schema !== SCHEMA)
+      return null;
+    const r = x.chron_policy;
+    if (Object.keys(r).sort().join(",") !== "action,mode,policy_id,reason,schema" || !["redact", "skip"].includes(r.mode) || !["as_supplied", "redacted", "omitted", "failed"].includes(r.action) || !["checked", "patterns", "skip", "size_limit", "budget_exceeded", "scanner_failure", "stream_omitted", "composite"].includes(r.reason) || !/^[a-f0-9]{64}$/.test(r.policy_id))
+      return null;
+    if (Buffer.from(x.signature, "base64").toString("base64") !== x.signature) return null;
+    if (!(0, import_crypto.verify)(null, Buffer.from(JSON.stringify({ chron_policy: r, content: x.content })), x.public_key, Buffer.from(x.signature, "base64")))
+      return null;
+    if (["omitted", "failed"].includes(r.action) && x.content !== "")
+      return null;
+    return x;
+  } catch {
+    return null;
+  }
+}
+function assertPreparedContent(text2) {
+  const p = contentPolicy();
+  if (p.mode === "raw")
+    return text2;
+  const x = policyEnvelope(text2);
+  if (!x || x.chron_policy.policy_id !== p.id || x.chron_policy.mode !== p.mode || x.public_key !== (0, import_crypto.createPublicKey)(signingKey(p)).export({ format: "pem", type: "spki" }).toString())
+    throw new ContentPolicyError();
+  if (p.mode === "skip" && x.content !== "")
+    throw new ContentPolicyError();
+  return text2;
+}
+function storedContent(input, options = {}) {
+  const p = contentPolicy();
+  if (p.mode === "raw")
+    return canonicalContent(input);
+  const now = options.now ?? Date.now;
+  const start = now();
+  let content = "", action = "omitted", reason = "skip";
+  if (options.stream)
+    reason = "stream_omitted";
+  else if (p.mode === "redact") {
+    if (Buffer.byteLength(input) > p.maxBytes)
+      reason = "size_limit";
+    else {
+      try {
+        content = canonicalContent(redactText(input, p, options.scanner));
+        if (now() - start > p.budgetMs) {
+          content = "";
+          action = "failed";
+          reason = "budget_exceeded";
+        } else {
+          action = content === canonicalContent(input) ? "as_supplied" : "redacted";
+          reason = action === "redacted" ? "patterns" : "checked";
+        }
+      } catch {
+        content = "";
+        action = "failed";
+        reason = "scanner_failure";
+      }
+    }
+  }
+  return seal(content, { schema: SCHEMA, policy_id: p.id, mode: p.mode, action, reason }, p);
+}
+function metadataText(text2) {
+  const p = contentPolicy();
+  if (p.mode === "raw")
+    return text2;
+  if (p.mode === "skip")
+    return "[OMITTED]";
+  const envelope = policyEnvelope(storedContent(text2));
+  return envelope?.content || "[OMITTED]";
+}
+function safeReference(value) {
+  if (!privacyEnabled() || /^(?:[a-f0-9-]{36}|(?:native|claude|imported|chatgpt)[a-z-]*-[a-f0-9]{16,64})$/.test(value))
+    return value;
+  return privateIdentifier(value);
+}
+function policyErrorText(error2) {
+  try {
+    if (privacyEnabled())
+      return "Chron operation failed under the configured content policy; input and driver details are not repeated.";
+  } catch {
+    return "Chron content policy could not be loaded; input is not repeated.";
+  }
+  return error2 instanceof Error ? error2.message : String(error2);
+}
+function verifyPolicyContent(text2) {
+  if (!privacyEnabled())
+    throw new ContentPolicyError();
+  assertPreparedContent(text2);
+  return policyEnvelope(text2);
+}
+function claimsPolicy(text2) {
+  try {
+    return JSON.parse(text2)?.chron_policy?.schema === SCHEMA;
+  } catch {
+    return false;
+  }
+}
+var import_crypto, import_fs, ContentPolicyError, MASK, SCHEMA, SENSITIVE_KEY;
+var init_policy = __esm({
+  "src/privacy/policy.ts"() {
+    "use strict";
+    import_crypto = require("crypto");
+    import_fs = require("fs");
+    init_detect();
+    init_content();
+    ContentPolicyError = class extends Error {
+      constructor() {
+        super("Chron content policy refused this operation; raw persistence was not authorized as a fallback.");
+      }
+    };
+    MASK = "[REDACTED]";
+    SCHEMA = "chron.content-policy.v1";
+    SENSITIVE_KEY = /^(?:password|passwd|secret|api[_-]?key|access[_-]?token|refresh[_-]?token|authorization|cookie|private[_-]?key|credential)$/i;
+  }
+});
+
 // node_modules/zod/v4/core/util.js
 var util_exports = {};
 __export(util_exports, {
@@ -9026,7 +9578,7 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync5 = (path) => fs.readFileSync(path, "utf-8");
+    var readFileSync7 = (path) => fs.readFileSync(path, "utf-8");
     var readFile = (path) => new Promise((resolve3, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
@@ -9038,7 +9590,7 @@ var require_filesystem = __commonJS({
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync5,
+      readFileSync: readFileSync7,
       readFile
     };
   }
@@ -9050,7 +9602,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync5 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync7 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
@@ -9131,7 +9683,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync5(LDD_PATH);
+        const lddContent = readFileSync7(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -9188,7 +9740,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync5(LDD_PATH);
+        const lddContent = readFileSync7(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -24801,6 +25353,57 @@ var init_libsql = __esm({
   }
 });
 
+// src/privacy/metadata.ts
+function metadataJSON(text2) {
+  const p = contentPolicy();
+  if (p.mode === "raw")
+    return text2;
+  const walk = (value, key = "", depth = 0) => {
+    if (depth > 16)
+      throw new ContentPolicyError();
+    if (Array.isArray(value))
+      return value.map((v) => walk(v, key, depth + 1));
+    if (value && typeof value === "object") {
+      const out = {};
+      for (const [k, v] of Object.entries(value))
+        if (KEYS.has(k))
+          out[k] = walk(v, k, depth + 1);
+      return out;
+    }
+    if (typeof value !== "string")
+      return value;
+    if (key === "journal_path") {
+      if (redactText(value, p) !== value)
+        throw new ContentPolicyError();
+      return value;
+    }
+    if (PUBLIC.has(value) || key === "last_record_hash" && /^[a-f0-9]{64}$/.test(value) || key === "clock_checked_at" && /^\d{4}-\d\d-\d\dT[\d:.+-]+Z?$/.test(value))
+      return value;
+    if (key === "run_id" && /^[a-f0-9-]{36}$/.test(value))
+      return value;
+    if (key === "client_session_id")
+      return privateIdentifier(value);
+    return metadataText(value);
+  };
+  try {
+    return JSON.stringify(walk(JSON.parse(text2)));
+  } catch {
+    throw new ContentPolicyError();
+  }
+}
+function clientLabel(value) {
+  return contentPolicy().mode === "raw" || PUBLIC.has(value) ? value : privateIdentifier(value);
+}
+var PUBLIC, KEYS;
+var init_metadata = __esm({
+  "src/privacy/metadata.ts"() {
+    "use strict";
+    init_policy();
+    PUBLIC = /* @__PURE__ */ new Set(["witnessed", "imported", "live_attach", "transcript_backfill", "native_hook", "unenforced", "enforced:wrapper", "enforced:policy", "durable", "names_not_durable", "mixed", "unknown", "disabled", "synchronized", "not_synchronized", "claude-code", "codex", "claude", "cursor", "gemini", "windsurf", "copilot", "chatgpt", "claudeai", "claude-code-jsonl"]);
+    KEYS = new Set("source partial attach_reason client capture_mode journal native kind run_id client_session_id event_count last_record_hash record_count message_count events_without_content durability journal_path clock_sync_status clock_offset_ms clock_checked_at clock_check_error clock_server clock_round_trip_ms import_format source_event_count source_exclusions source_out_of_order_timestamps public_key_generation_error key_generation_error source_sequence scope_version version".split(" "));
+  }
+});
+
 // src/db/schema.ts
 var schema_exports = {};
 __export(schema_exports, {
@@ -24814,31 +25417,44 @@ __export(schema_exports, {
   secrets_detected: () => secrets_detected,
   sessions: () => sessions
 });
-var sessions, messages, secrets_detected, review_findings, evidence_documents, review_requirements, evidence_links, export_receipts, export_receipt_events;
+var protectedContent, privateLabel, privateNote, privateMetadata, privateClient, privateReference, privateTimestamp, privateMask, sessions, messages, secrets_detected, review_findings, evidence_documents, review_requirements, evidence_links, export_receipts, export_receipt_events;
 var init_schema = __esm({
   "src/db/schema.ts"() {
     "use strict";
     init_sqlite_core();
+    init_policy();
+    init_metadata();
+    protectedContent = customType({ dataType: () => "text", toDriver: assertPreparedContent });
+    privateLabel = customType({ dataType: () => "text", toDriver: privateIdentifier });
+    privateNote = customType({ dataType: () => "text", toDriver: metadataText });
+    privateMetadata = customType({ dataType: () => "text", toDriver: metadataJSON });
+    privateClient = customType({ dataType: () => "text", toDriver: clientLabel });
+    privateReference = customType({ dataType: () => "text", toDriver: safeReference });
+    privateTimestamp = customType({ dataType: () => "text", toDriver: (v) => {
+      if (contentPolicy().mode !== "raw" && !/^\d{4}-\d\d-\d\dT[0-9:.+Z-]+$/.test(v)) throw new ContentPolicyError();
+      return v;
+    } });
+    privateMask = customType({ dataType: () => "text", toDriver: (v) => contentPolicy().mode === "raw" ? v : "[REDACTED]" });
     sessions = sqliteTable("sessions", {
-      id: text("id").primaryKey(),
-      title: text("title").notNull(),
-      ai_tool: text("ai_tool"),
-      created_at: text("created_at").notNull(),
-      updated_at: text("updated_at").notNull(),
-      parent_session_id: text("parent_session_id"),
-      external_ref: text("external_ref"),
+      id: privateReference("id").primaryKey(),
+      title: privateLabel("title").notNull(),
+      ai_tool: privateClient("ai_tool"),
+      created_at: privateTimestamp("created_at").notNull(),
+      updated_at: privateTimestamp("updated_at").notNull(),
+      parent_session_id: privateReference("parent_session_id"),
+      external_ref: privateLabel("external_ref"),
       public_key: text("public_key"),
       signature: text("signature"),
-      metadata: text("metadata")
+      metadata: privateMetadata("metadata")
     });
     messages = sqliteTable("messages", {
-      id: text("id").primaryKey(),
-      session_id: text("session_id").notNull().references(() => sessions.id),
+      id: privateReference("id").primaryKey(),
+      session_id: privateReference("session_id").notNull().references(() => sessions.id),
       // 'system' is reserved for events that belong to neither participant, such as
       // compaction_boundary, which marks where a client transcript lost continuity.
       role: text("role", { enum: ["user", "assistant", "system"] }).notNull(),
-      content: text("content").notNull(),
-      created_at: text("created_at").notNull(),
+      content: protectedContent("content").notNull(),
+      created_at: privateTimestamp("created_at").notNull(),
       prev_hash: text("prev_hash"),
       content_hash: text("content_hash"),
       // NULL = pre-migration row (treated as 'message'); set for all new rows
@@ -24849,60 +25465,60 @@ var init_schema = __esm({
       source_sequence: integer2("source_sequence")
     });
     secrets_detected = sqliteTable("secrets_detected", {
-      id: text("id").primaryKey(),
-      session_id: text("session_id").notNull().references(() => sessions.id),
+      id: privateReference("id").primaryKey(),
+      session_id: privateReference("session_id").notNull().references(() => sessions.id),
       message_id: text("message_id").notNull().references(() => messages.id),
       type: text("type").notNull(),
-      masked_value: text("masked_value").notNull(),
-      detected_at: text("detected_at").notNull()
+      masked_value: privateMask("masked_value").notNull(),
+      detected_at: privateTimestamp("detected_at").notNull()
     });
     review_findings = sqliteTable("review_findings", {
-      id: text("id").primaryKey(),
+      id: privateReference("id").primaryKey(),
       rule_id: text("rule_id").notNull(),
-      session_id: text("session_id").notNull().references(() => sessions.id),
+      session_id: privateReference("session_id").notNull().references(() => sessions.id),
       status: text("status", { enum: ["open", "accepted", "dismissed", "resolved"] }).notNull(),
-      note: text("note"),
-      reviewed_at: text("reviewed_at"),
-      created_at: text("created_at").notNull(),
-      updated_at: text("updated_at").notNull()
+      note: privateNote("note"),
+      reviewed_at: privateTimestamp("reviewed_at"),
+      created_at: privateTimestamp("created_at").notNull(),
+      updated_at: privateTimestamp("updated_at").notNull()
     });
     evidence_documents = sqliteTable("evidence_documents", {
-      id: text("id").primaryKey(),
-      title: text("title").notNull(),
-      file_path: text("file_path").notNull(),
+      id: privateReference("id").primaryKey(),
+      title: privateLabel("title").notNull(),
+      file_path: privateLabel("file_path").notNull(),
       sha256: text("sha256").notNull(),
       size_bytes: integer2("size_bytes").notNull(),
-      imported_at: text("imported_at").notNull(),
-      metadata: text("metadata")
+      imported_at: privateTimestamp("imported_at").notNull(),
+      metadata: privateMetadata("metadata")
     });
     review_requirements = sqliteTable("review_requirements", {
-      id: text("id").primaryKey(),
-      session_id: text("session_id").notNull().references(() => sessions.id),
+      id: privateReference("id").primaryKey(),
+      session_id: privateReference("session_id").notNull().references(() => sessions.id),
       reason: text("reason", { enum: ["secrets_detected", "auth_code_change", "infra_code_change", "high_attention", "critical_finding"] }).notNull(),
       severity: text("severity", { enum: ["high", "critical"] }).notNull(),
       required_by: text("required_by").notNull(),
       status: text("status", { enum: ["pending", "reviewed", "expired"] }).notNull(),
-      reviewer: text("reviewer"),
-      reviewed_at: text("reviewed_at"),
-      created_at: text("created_at").notNull()
+      reviewer: privateNote("reviewer"),
+      reviewed_at: privateTimestamp("reviewed_at"),
+      created_at: privateTimestamp("created_at").notNull()
     });
     evidence_links = sqliteTable("evidence_links", {
-      id: text("id").primaryKey(),
+      id: privateReference("id").primaryKey(),
       evidence_id: text("evidence_id").notNull().references(() => evidence_documents.id),
       target_type: text("target_type", { enum: ["control", "finding"] }).notNull(),
       target_id: text("target_id").notNull(),
-      note: text("note"),
-      created_at: text("created_at").notNull()
+      note: privateNote("note"),
+      created_at: privateTimestamp("created_at").notNull()
     });
     export_receipts = sqliteTable("export_receipts", {
-      id: text("id").primaryKey(),
-      created_at: text("created_at").notNull(),
+      id: privateReference("id").primaryKey(),
+      created_at: privateTimestamp("created_at").notNull(),
       /** Recognisable destination with userinfo and query stripped. Never the raw URL. */
       destination_label: text("destination_label").notNull(),
       /** SHA-256 of the sanitised label — never of anything credential-bearing. */
       destination_digest: text("destination_digest").notNull(),
       /** The selector as the operator typed it, e.g. --since=7d. */
-      scope_selector: text("scope_selector"),
+      scope_selector: privateLabel("scope_selector"),
       /** JSON array of the session ids the selector resolved to at export time. */
       scope_session_ids: text("scope_session_ids").notNull(),
       session_count: integer2("session_count").notNull(),
@@ -24914,7 +25530,7 @@ var init_schema = __esm({
       chron_version: text("chron_version").notNull()
     });
     export_receipt_events = sqliteTable("export_receipt_events", {
-      id: text("id").primaryKey(),
+      id: privateReference("id").primaryKey(),
       receipt_id: text("receipt_id").notNull().references(() => export_receipts.id),
       sequence: integer2("sequence").notNull(),
       event_type: text("event_type", { enum: ["prepared", "batch_started", "batch_finished", "finalized"] }).notNull(),
@@ -24926,7 +25542,7 @@ var init_schema = __esm({
        * does not prevent.
        */
       logical_key: text("logical_key").notNull(),
-      created_at: text("created_at").notNull(),
+      created_at: privateTimestamp("created_at").notNull(),
       /** Deterministic JSON, so the hash is reproducible from the stored row. */
       canonical_payload: text("canonical_payload").notNull(),
       prev_hash: text("prev_hash"),
@@ -24982,11 +25598,63 @@ function getDbPath() {
   return (0, import_path2.join)((0, import_os2.homedir)(), ".chron", "chron.db");
 }
 async function initDb(dbPath) {
+  const policy = contentPolicy();
   const path = guardedDbPath(dbPath ?? getDbPath());
+  const profilePath = path + ".content-policy.json";
+  if (policy.mode !== "raw" && !path.startsWith(":") && (0, import_fs2.existsSync)(path)) {
+    try {
+      assertPreparedContent((0, import_fs2.readFileSync)(profilePath, "utf8"));
+    } catch {
+      throw new ContentPolicyError();
+    }
+  }
   if (!path.startsWith(":")) {
-    (0, import_fs.mkdirSync)((0, import_path2.dirname)(path), { recursive: true });
+    (0, import_fs2.mkdirSync)((0, import_path2.dirname)(path), { recursive: true });
+  }
+  if (policy.mode !== "raw" && !path.startsWith(":")) {
+    if ((0, import_fs2.existsSync)(profilePath)) assertPreparedContent((0, import_fs2.readFileSync)(profilePath, "utf8"));
+    else {
+      try {
+        const fd = (0, import_fs2.openSync)(profilePath, "wx", 384);
+        try {
+          (0, import_fs2.writeFileSync)(fd, storedContent(""));
+          (0, import_fs2.fsyncSync)(fd);
+        } finally {
+          (0, import_fs2.closeSync)(fd);
+        }
+      } catch {
+        throw new ContentPolicyError();
+      }
+    }
   }
   const client = createClient({ url: path.startsWith(":") ? path : `file:${path}` });
+  if (policy.mode !== "raw") {
+    try {
+      const existing = await client.execute("select name from sqlite_master where type='table' and name in ('messages','sessions')");
+      const profile = await client.execute("select name from sqlite_master where type='table' and name='chron_content_profile'");
+      if (existing.rows.length && !profile.rows.length) throw new ContentPolicyError();
+      if (profile.rows.length) {
+        const rows = await client.execute("select policy_id from chron_content_profile");
+        if (rows.rows.length !== 1 || rows.rows[0]?.policy_id !== policy.id) throw new ContentPolicyError();
+      }
+      const table = await client.execute("select name from sqlite_master where type='table' and name='messages'");
+      if (table.rows.length) {
+        const old = await client.execute("select content from messages");
+        for (const row of old.rows) {
+          if (typeof row.content !== "string") throw new ContentPolicyError();
+          assertPreparedContent(row.content);
+        }
+      }
+    } catch (e) {
+      client.close();
+      throw e instanceof ContentPolicyError ? e : new ContentPolicyError();
+    }
+  }
+  if (policy.mode !== "raw") {
+    await client.execute("create table if not exists chron_content_profile (policy_id text not null)");
+    const profile = await client.execute("select policy_id from chron_content_profile");
+    if (!profile.rows.length) await client.execute({ sql: "insert into chron_content_profile values (?)", args: [policy.id] });
+  }
   await client.execute("PRAGMA journal_mode = WAL");
   await client.execute("PRAGMA wal_checkpoint(PASSIVE)");
   await client.execute("PRAGMA busy_timeout = 5000");
@@ -25160,14 +25828,15 @@ async function initDb(dbPath) {
   }
   return drizzle(client, { schema: schema_exports });
 }
-var import_os2, import_fs, import_path2, CREATE_SQL;
+var import_os2, import_fs2, import_path2, CREATE_SQL;
 var init_db2 = __esm({
   "src/db/index.ts"() {
     "use strict";
+    init_policy();
     init_node2();
     init_libsql();
     import_os2 = require("os");
-    import_fs = require("fs");
+    import_fs2 = require("fs");
     import_path2 = require("path");
     init_schema();
     init_config_path();
@@ -26041,7 +26710,7 @@ function custom2(check, _params = {}, fatal) {
     });
   return ZodAny.create();
 }
-var ParseInputLazyPath, handleResult, ZodType2, cuidRegex, cuid2Regex, ulidRegex, uuidRegex, nanoidRegex, jwtRegex, durationRegex, emailRegex, _emojiRegex, emojiRegex, ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex, base64Regex, base64urlRegex, dateRegexSource, dateRegex, ZodString2, ZodNumber2, ZodBigInt, ZodBoolean2, ZodDate, ZodSymbol, ZodUndefined, ZodNull2, ZodAny, ZodUnknown2, ZodNever2, ZodVoid, ZodArray2, ZodObject2, ZodUnion2, getDiscriminator, ZodDiscriminatedUnion2, ZodIntersection2, ZodTuple, ZodRecord2, ZodMap, ZodSet, ZodFunction, ZodLazy, ZodLiteral2, ZodEnum2, ZodNativeEnum, ZodPromise, ZodEffects, ZodOptional2, ZodNullable2, ZodDefault2, ZodCatch2, ZodNaN, BRAND, ZodBranded, ZodPipeline, ZodReadonly2, late, ZodFirstPartyTypeKind2, instanceOfType, stringType, numberType, nanType, bigIntType, booleanType, dateType, symbolType, undefinedType, nullType, anyType, unknownType, neverType, voidType, arrayType, objectType, strictObjectType, unionType, discriminatedUnionType, intersectionType, tupleType, recordType, mapType, setType, functionType, lazyType, literalType, enumType, nativeEnumType, promiseType, effectsType, optionalType, nullableType, preprocessType, pipelineType, ostring, onumber, oboolean, coerce, NEVER;
+var ParseInputLazyPath, handleResult, ZodType2, cuidRegex, cuid2Regex, ulidRegex, uuidRegex, nanoidRegex, jwtRegex, durationRegex, emailRegex2, _emojiRegex, emojiRegex, ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex, base64Regex, base64urlRegex, dateRegexSource, dateRegex, ZodString2, ZodNumber2, ZodBigInt, ZodBoolean2, ZodDate, ZodSymbol, ZodUndefined, ZodNull2, ZodAny, ZodUnknown2, ZodNever2, ZodVoid, ZodArray2, ZodObject2, ZodUnion2, getDiscriminator, ZodDiscriminatedUnion2, ZodIntersection2, ZodTuple, ZodRecord2, ZodMap, ZodSet, ZodFunction, ZodLazy, ZodLiteral2, ZodEnum2, ZodNativeEnum, ZodPromise, ZodEffects, ZodOptional2, ZodNullable2, ZodDefault2, ZodCatch2, ZodNaN, BRAND, ZodBranded, ZodPipeline, ZodReadonly2, late, ZodFirstPartyTypeKind2, instanceOfType, stringType, numberType, nanType, bigIntType, booleanType, dateType, symbolType, undefinedType, nullType, anyType, unknownType, neverType, voidType, arrayType, objectType, strictObjectType, unionType, discriminatedUnionType, intersectionType, tupleType, recordType, mapType, setType, functionType, lazyType, literalType, enumType, nativeEnumType, promiseType, effectsType, optionalType, nullableType, preprocessType, pipelineType, ostring, onumber, oboolean, coerce, NEVER;
 var init_types2 = __esm({
   "node_modules/zod/v3/types.js"() {
     init_ZodError();
@@ -26377,7 +27046,7 @@ var init_types2 = __esm({
     nanoidRegex = /^[a-z0-9_-]{21}$/i;
     jwtRegex = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/;
     durationRegex = /^[-+]?P(?!$)(?:(?:[-+]?\d+Y)|(?:[-+]?\d+[.,]\d+Y$))?(?:(?:[-+]?\d+M)|(?:[-+]?\d+[.,]\d+M$))?(?:(?:[-+]?\d+W)|(?:[-+]?\d+[.,]\d+W$))?(?:(?:[-+]?\d+D)|(?:[-+]?\d+[.,]\d+D$))?(?:T(?=[\d+-])(?:(?:[-+]?\d+H)|(?:[-+]?\d+[.,]\d+H$))?(?:(?:[-+]?\d+M)|(?:[-+]?\d+[.,]\d+M$))?(?:[-+]?\d+(?:[.,]\d+)?S)?)??$/;
-    emailRegex = /^(?!\.)(?!.*\.\.)([A-Z0-9_'+\-\.]*)[A-Z0-9_+-]@([A-Z0-9][A-Z0-9\-]*\.)+[A-Z]{2,}$/i;
+    emailRegex2 = /^(?!\.)(?!.*\.\.)([A-Z0-9_'+\-\.]*)[A-Z0-9_+-]@([A-Z0-9][A-Z0-9\-]*\.)+[A-Z]{2,}$/i;
     _emojiRegex = `^[\\p{Extended_Pictographic}\\p{Emoji_Component}]+$`;
     ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$/;
     ipv4CidrRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\/(3[0-2]|[12]?[0-9])$/;
@@ -26458,7 +27127,7 @@ var init_types2 = __esm({
               status.dirty();
             }
           } else if (check.kind === "email") {
-            if (!emailRegex.test(input.data)) {
+            if (!emailRegex2.test(input.data)) {
               ctx = this._getOrReturnCtx(input, ctx);
               addIssueToContext(ctx, {
                 validation: "email",
@@ -40945,26 +41614,26 @@ var init_stringify = __esm({
 // node_modules/uuid/dist/esm/rng.js
 function rng() {
   if (poolPtr > rnds8Pool.length - 16) {
-    (0, import_crypto.randomFillSync)(rnds8Pool);
+    (0, import_crypto2.randomFillSync)(rnds8Pool);
     poolPtr = 0;
   }
   return rnds8Pool.slice(poolPtr, poolPtr += 16);
 }
-var import_crypto, rnds8Pool, poolPtr;
+var import_crypto2, rnds8Pool, poolPtr;
 var init_rng = __esm({
   "node_modules/uuid/dist/esm/rng.js"() {
-    import_crypto = require("crypto");
+    import_crypto2 = require("crypto");
     rnds8Pool = new Uint8Array(256);
     poolPtr = rnds8Pool.length;
   }
 });
 
 // node_modules/uuid/dist/esm/native.js
-var import_crypto2, native_default;
+var import_crypto3, native_default;
 var init_native = __esm({
   "node_modules/uuid/dist/esm/native.js"() {
-    import_crypto2 = require("crypto");
-    native_default = { randomUUID: import_crypto2.randomUUID };
+    import_crypto3 = require("crypto");
+    native_default = { randomUUID: import_crypto3.randomUUID };
   }
 });
 
@@ -41013,7 +41682,7 @@ var init_esm2 = __esm({
 function localISOString() {
   const d = /* @__PURE__ */ new Date();
   const offsetMin = -d.getTimezoneOffset();
-  const sign = offsetMin >= 0 ? "+" : "-";
+  const sign2 = offsetMin >= 0 ? "+" : "-";
   const absMin = Math.abs(offsetMin);
   const hh = String(Math.floor(absMin / 60)).padStart(2, "0");
   const mm = String(absMin % 60).padStart(2, "0");
@@ -41024,7 +41693,7 @@ function localISOString() {
   const minutes = String(d.getMinutes()).padStart(2, "0");
   const seconds = String(d.getSeconds()).padStart(2, "0");
   const ms = String(d.getMilliseconds()).padStart(3, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}${sign}${hh}:${mm}`;
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}${sign2}${hh}:${mm}`;
 }
 var init_time = __esm({
   "src/utils/time.ts"() {
@@ -41036,7 +41705,7 @@ var init_time = __esm({
 var version4;
 var init_package = __esm({
   "package.json"() {
-    version4 = "0.1.70";
+    version4 = "0.1.72";
   }
 });
 
@@ -41123,7 +41792,7 @@ function getSplunkConfig() {
   _splunkCacheExpiry = now + 1e4;
   _splunkCachePath = path;
   try {
-    const cfg = JSON.parse((0, import_fs2.readFileSync)(path, "utf8"));
+    const cfg = JSON.parse((0, import_fs3.readFileSync)(path, "utf8"));
     const s = cfg?.splunk;
     _splunkCache = s?.url && s?.token ? { url: s.url, token: s.token, insecure: s.insecure ?? false } : null;
   } catch {
@@ -41147,7 +41816,7 @@ function getSentinelConfig() {
   _sentinelCacheExpiry = now + 1e4;
   _sentinelCachePath = path;
   try {
-    const cfg = JSON.parse((0, import_fs2.readFileSync)(path, "utf8"));
+    const cfg = JSON.parse((0, import_fs3.readFileSync)(path, "utf8"));
     const s = cfg?.sentinel;
     _sentinelCache = s?.dce && s?.dcrId && s?.stream && s?.tenantId && s?.clientId && s?.clientSecret ? { dce: s.dce, dcrId: s.dcrId, stream: s.stream, tenantId: s.tenantId, clientId: s.clientId, clientSecret: s.clientSecret } : null;
   } catch {
@@ -41195,7 +41864,7 @@ async function getAzureToken(tenantId, clientId, clientSecret) {
 }
 function getMachineId() {
   if (!_machineId) {
-    _machineId = "sha256:" + (0, import_crypto3.createHash)("sha256").update((0, import_os3.hostname)()).digest("hex").slice(0, 16);
+    _machineId = "sha256:" + (0, import_crypto4.createHash)("sha256").update((0, import_os3.hostname)()).digest("hex").slice(0, 16);
   }
   return _machineId;
 }
@@ -41313,6 +41982,7 @@ function emitToLogScale(payload) {
   );
 }
 function emitEvent(payload) {
+  if (privacyEnabled()) return;
   const url = process.env.CHRON_RELAY_URL;
   const token = process.env.CHRON_RELAY_TOKEN;
   if (url && token) {
@@ -41338,12 +42008,13 @@ function emitEvent(payload) {
   emitToSentinel(payload);
   emitToSplunk(payload);
 }
-var import_fs2, import_crypto3, import_os3, _splunkCache, _splunkCacheExpiry, _splunkCachePath, _sentinelCache, _sentinelCacheExpiry, _sentinelCachePath, _azureTokenCache, _machineId;
+var import_fs3, import_crypto4, import_os3, _splunkCache, _splunkCacheExpiry, _splunkCachePath, _sentinelCache, _sentinelCacheExpiry, _sentinelCachePath, _azureTokenCache, _machineId;
 var init_relay = __esm({
   "src/utils/relay.ts"() {
     "use strict";
-    import_fs2 = require("fs");
-    import_crypto3 = require("crypto");
+    init_policy();
+    import_fs3 = require("fs");
+    import_crypto4 = require("crypto");
     import_os3 = require("os");
     init_package();
     init_config_path();
@@ -41372,35 +42043,35 @@ function pubKeyPath(sessionId) {
   return (0, import_path3.join)(keysDir(), `${sessionId}.pub`);
 }
 function generateSessionKeypair(sessionId) {
-  const { privateKey, publicKey } = (0, import_crypto4.generateKeyPairSync)("ed25519", {
+  const { privateKey, publicKey } = (0, import_crypto5.generateKeyPairSync)("ed25519", {
     privateKeyEncoding: { type: "pkcs8", format: "pem" },
     publicKeyEncoding: { type: "spki", format: "pem" }
   });
   const dir = keysDir();
-  (0, import_fs3.mkdirSync)(dir, { recursive: true });
-  (0, import_fs3.writeFileSync)(privKeyPath(sessionId), privateKey, { mode: 384 });
-  (0, import_fs3.writeFileSync)(pubKeyPath(sessionId), publicKey);
+  (0, import_fs4.mkdirSync)(dir, { recursive: true });
+  (0, import_fs4.writeFileSync)(privKeyPath(sessionId), privateKey, { mode: 384 });
+  (0, import_fs4.writeFileSync)(pubKeyPath(sessionId), publicKey);
   return publicKey;
 }
 function sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt) {
   const input = `${sessionId}|${finalContentHash}|${messageCount}|${firstCreatedAt}`;
-  return (0, import_crypto4.createHash)("sha256").update(input).digest();
+  return (0, import_crypto5.createHash)("sha256").update(input).digest();
 }
 function verifySignature(publicKeyPem, signatureB64, sessionId, finalContentHash, messageCount, firstCreatedAt) {
   try {
     const digest = sessionDigest(sessionId, finalContentHash, messageCount, firstCreatedAt);
     const sigBuf = Buffer.from(signatureB64, "base64");
-    return (0, import_crypto4.verify)(null, digest, publicKeyPem, sigBuf);
+    return (0, import_crypto5.verify)(null, digest, publicKeyPem, sigBuf);
   } catch {
     return false;
   }
 }
-var import_crypto4, import_fs3, import_path3, import_os4;
+var import_crypto5, import_fs4, import_path3, import_os4;
 var init_signing = __esm({
   "src/utils/signing.ts"() {
     "use strict";
-    import_crypto4 = require("crypto");
-    import_fs3 = require("fs");
+    import_crypto5 = require("crypto");
+    import_fs4 = require("fs");
     import_path3 = require("path");
     import_os4 = require("os");
     init_config_path();
@@ -41497,7 +42168,7 @@ function terminalAudit(message, level = "message") {
   const mode = resolvedLevel();
   if (mode === "off") return;
   if (mode === "summary" && level === "message") return;
-  process.stderr.write(`[chron] ${message}
+  process.stderr.write(privacyEnabled() ? "[chron] protected capture operation; inspect authenticated policy records for details.\n" : `[chron] ${message}
 `);
 }
 function formatDuration(ms) {
@@ -41511,6 +42182,7 @@ var DISABLE_VALUES;
 var init_terminal = __esm({
   "src/utils/terminal.ts"() {
     "use strict";
+    init_policy();
     DISABLE_VALUES = /* @__PURE__ */ new Set(["0", "false", "off", "no"]);
   }
 });
@@ -41684,6 +42356,8 @@ function rejectPlaceholderTool(aiTool) {
 }
 function startSession(db) {
   return async (args) => {
+    contentPolicy();
+    if (privacyEnabled()) args = { ...args, title: privateIdentifier(args.title), ai_tool: args.ai_tool ? clientLabel(args.ai_tool) : void 0, external_ref: args.external_ref ? privateIdentifier(args.external_ref) : void 0, ..."metadata" in args && args.metadata ? { metadata: JSON.parse(metadataJSON(JSON.stringify(args.metadata))) } : {} };
     const rejection = rejectPlaceholderTool(args.ai_tool);
     if (rejection) return rejection;
     const id = v4_default();
@@ -41756,6 +42430,8 @@ function resolveEvidenceMetadata(attach, metadata) {
 }
 function initSession(db) {
   return async (args) => {
+    contentPolicy();
+    if (privacyEnabled()) args = { ...args, title: privateIdentifier(args.title), ai_tool: args.ai_tool ? clientLabel(args.ai_tool) : void 0, external_ref: args.external_ref ? privateIdentifier(args.external_ref) : void 0, ..."metadata" in args && args.metadata ? { metadata: JSON.parse(metadataJSON(JSON.stringify(args.metadata))) } : {} };
     const rejection = rejectPlaceholderTool(args.ai_tool);
     if (rejection) return rejection;
     const id = v4_default();
@@ -41922,6 +42598,8 @@ function deleteSession(db) {
 var init_sessions = __esm({
   "src/tools/sessions.ts"() {
     "use strict";
+    init_policy();
+    init_metadata();
     init_drizzle_orm();
     init_esm2();
     init_schema();
@@ -41939,351 +42617,13 @@ var init_sessions = __esm({
 function computeContentHash(sessionId, role, content, createdAt, prevHash, eventType) {
   const base = `${sessionId}|${role}|${content}|${createdAt}|${prevHash ?? ""}`;
   const input = eventType != null ? `${base}|${eventType}` : base;
-  return (0, import_crypto5.createHash)("sha256").update(input).digest("hex");
+  return (0, import_crypto6.createHash)("sha256").update(input).digest("hex");
 }
-var import_crypto5;
+var import_crypto6;
 var init_hash = __esm({
   "src/utils/hash.ts"() {
     "use strict";
-    import_crypto5 = require("crypto");
-  }
-});
-
-// src/utils/content.ts
-function canonicalContent(content) {
-  return content.replace(UNREPRESENTABLE, "\uFFFD");
-}
-var UNREPRESENTABLE;
-var init_content = __esm({
-  "src/utils/content.ts"() {
-    "use strict";
-    UNREPRESENTABLE = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
-  }
-});
-
-// src/utils/detect.ts
-var detect_exports = {};
-__export(detect_exports, {
-  MAX_MATCH_CHARS: () => MAX_MATCH_CHARS,
-  OWNED_CHARS: () => OWNED_CHARS,
-  scanForSecrets: () => scanForSecrets,
-  scanForSecretsWithoutBlocking: () => scanForSecretsWithoutBlocking
-});
-function luhnCheck(value) {
-  const digits = value.replace(/\D/g, "");
-  let sum = 0;
-  let alt = false;
-  for (let i = digits.length - 1; i >= 0; i--) {
-    let n = parseInt(digits[i], 10);
-    if (alt) {
-      n *= 2;
-      if (n > 9) n -= 9;
-    }
-    sum += n;
-    alt = !alt;
-  }
-  return sum % 10 === 0;
-}
-function ibanCheck(value) {
-  const normalized = value.replace(/\s/g, "").toUpperCase();
-  if (normalized.length < 15 || normalized.length > 34) return false;
-  const rearranged = normalized.slice(4) + normalized.slice(0, 4);
-  const numeric2 = rearranged.replace(/[A-Z]/g, (c) => String(c.charCodeAt(0) - 55));
-  let remainder = 0;
-  for (const ch of numeric2) {
-    remainder = (remainder * 10 + parseInt(ch, 10)) % 97;
-  }
-  return remainder === 1;
-}
-function contextMatches(kw, input, idx) {
-  const lo = Math.max(0, idx - CONTEXT_WINDOW);
-  const hi = Math.min(input.length, idx + CONTEXT_WINDOW);
-  return kw.test(input.slice(lo, hi));
-}
-function emailRegex2() {
-  return new RegExp(EMAIL_SOURCE, "g");
-}
-function annotate(s) {
-  return {
-    ...s,
-    severity: SEVERITY[s.type] ?? "low",
-    category: CATEGORY[s.type] ?? "other"
-  };
-}
-function scanForSecrets(input) {
-  const withPriority = [];
-  for (let i = 0; i < PATTERNS.length; i++) {
-    const { type, regex, validate: validate2 } = PATTERNS[i];
-    regex.lastIndex = 0;
-    let match;
-    while ((match = regex.exec(input)) !== null) {
-      if (validate2 && !validate2(match[0], input, match.index)) continue;
-      withPriority.push({
-        type,
-        value: match[0],
-        start: match.index,
-        end: match.index + match[0].length,
-        priority: i
-      });
-    }
-  }
-  withPriority.sort((a, b) => a.priority - b.priority || a.start - b.start);
-  let deduped = deduplicateOverlaps(withPriority);
-  const pairs = detectCredentialPairs(input, deduped);
-  if (pairs.length > 0) {
-    for (const pair of pairs) {
-      deduped.push({ ...pair, priority: -1 });
-    }
-    deduped.sort((a, b) => a.priority - b.priority || a.start - b.start);
-    deduped = deduplicateOverlaps(deduped);
-  }
-  const possible = detectPossibleSecrets(input);
-  if (possible.length > 0) {
-    for (const s of possible) {
-      deduped.push({ ...s, priority: PATTERNS.length + 1 });
-    }
-    deduped.sort((a, b) => a.priority - b.priority || a.start - b.start);
-    deduped = deduplicateOverlaps(deduped);
-  }
-  deduped.sort((a, b) => a.start - b.start);
-  return deduped.map(({ priority: _p, ...s }) => annotate(s));
-}
-function looksLikePassword(s) {
-  if (s.length < 8) return false;
-  const hasUpper = /[A-Z]/.test(s);
-  const hasLower = /[a-z]/.test(s);
-  const hasDigit = /[0-9]/.test(s);
-  const hasSpecial = /[@!#$%^&*\-_+=?]/.test(s);
-  const score = [hasUpper, hasLower, hasDigit, hasSpecial].filter(Boolean).length;
-  return score >= 3;
-}
-function detectCredentialPairs(input, _existing) {
-  const results = [];
-  EMAIL_RE.lastIndex = 0;
-  let match;
-  while ((match = EMAIL_RE.exec(input)) !== null) {
-    const emailStart = match.index;
-    const emailEnd = match.index + match[0].length;
-    const charBefore = emailStart > 0 ? input[emailStart - 1] : "";
-    if (charBefore === "@" || charBefore === ":") continue;
-    const windowStart = Math.max(0, emailStart - PAIR_WINDOW);
-    const windowEnd = Math.min(input.length, emailEnd + PAIR_WINDOW);
-    const surrounding = input.slice(windowStart, windowEnd);
-    const tokens = surrounding.match(/\S+/g) ?? [];
-    for (const token of tokens) {
-      if (token === match[0]) continue;
-      if (!looksLikePassword(token)) continue;
-      const tokenAbsoluteStart = windowStart + surrounding.indexOf(token);
-      const pairStart = Math.min(emailStart, tokenAbsoluteStart);
-      const pairEnd = Math.max(emailEnd, tokenAbsoluteStart + token.length);
-      results.push({
-        type: "credential_pair",
-        value: input.slice(pairStart, pairEnd),
-        start: pairStart,
-        end: pairEnd
-      });
-      break;
-    }
-  }
-  return results;
-}
-function detectPossibleSecrets(input) {
-  const results = [];
-  POSSIBLE_SECRET_RE.lastIndex = 0;
-  let match;
-  while ((match = POSSIBLE_SECRET_RE.exec(input)) !== null) {
-    const value = match[1];
-    if (!value) continue;
-    const valueStart = match.index + match[0].lastIndexOf(value);
-    results.push({
-      type: "possible_secret",
-      value,
-      start: valueStart,
-      end: valueStart + value.length
-    });
-  }
-  return results;
-}
-function deduplicateOverlaps(secrets) {
-  const kept = [];
-  for (const candidate of secrets) {
-    const overlaps = kept.some((k) => candidate.start < k.end && candidate.end > k.start);
-    if (!overlaps) kept.push(candidate);
-  }
-  return kept;
-}
-async function scanForSecretsWithoutBlocking(input, yieldNow = () => new Promise((resolve3) => setImmediate(resolve3))) {
-  if (input.length <= OWNED_CHARS) return scanForSecrets(input);
-  const byStart = /* @__PURE__ */ new Map();
-  for (let owned = 0; owned < input.length; owned += OWNED_CHARS) {
-    const ownedEnd = Math.min(owned + OWNED_CHARS, input.length);
-    const from = Math.max(0, owned - CONTEXT_CHARS);
-    const to = Math.min(input.length, ownedEnd + CONTEXT_CHARS);
-    const slice = input.slice(from, to);
-    for (const found of scanForSecrets(slice)) {
-      const start = found.start + from;
-      if (start < owned || start >= ownedEnd) continue;
-      byStart.set(`${found.type}:${start}`, { ...found, start, end: found.end + from });
-    }
-    if (ownedEnd < input.length) await yieldNow();
-  }
-  return [...byStart.values()].sort((a, b) => a.start - b.start);
-}
-var CONTEXT_WINDOW, DOB_KEYWORDS, PASS_KEYWORDS, SSN_KEYWORDS, EMAIL_SOURCE, PATTERNS, SEVERITY, CATEGORY, EMAIL_RE, PAIR_WINDOW, POSSIBLE_SECRET_RE, MAX_MATCH_CHARS, CONTEXT_CHARS, OWNED_CHARS;
-var init_detect = __esm({
-  "src/utils/detect.ts"() {
-    "use strict";
-    CONTEXT_WINDOW = 120;
-    DOB_KEYWORDS = /\b(?:dob|date\s+of\s+birth|birth\s+date|born\s+on|birthday)\b/i;
-    PASS_KEYWORDS = /\b(?:passport|travel\s+document|document\s+no(?:\.|\b))\b/i;
-    SSN_KEYWORDS = /\b(?:ssn|social\s+security|tin\b)\b/i;
-    EMAIL_SOURCE = "[a-zA-Z0-9._%+\\-]{1,64}@[a-zA-Z0-9.\\-]{1,255}\\.[a-zA-Z]{2,24}";
-    PATTERNS = [
-      // Private key blocks (must come first — multiline, unambiguous)
-      // Bounded so the longest possible match is a known number, which the
-      // windowed scan below needs in order to size its overlap. A PEM private key
-      // is a few KiB even at RSA-16384, so 16KiB is generous.
-      { type: "private_key", regex: /-----BEGIN [A-Z ]+ PRIVATE KEY-----[\s\S]{1,65536}?-----END [A-Z ]+ PRIVATE KEY-----/g },
-      // Cloud / AI provider keys
-      { type: "aws_access_key", regex: /AKIA[0-9A-Z]{16}/g },
-      { type: "anthropic_api_key", regex: /sk-ant-api\d{2}-[a-zA-Z0-9\-_]{40,512}/g },
-      { type: "openai_api_key", regex: /sk-proj-[a-zA-Z0-9\-_]{20,512}/g },
-      { type: "google_api_key", regex: /AIza[0-9A-Za-z\-_]{35}/g },
-      // SaaS API keys
-      { type: "github_token", regex: /gh[pousr]_[a-zA-Z0-9]{30,512}/g },
-      { type: "slack_token", regex: /xox[bpas]-[0-9]{8,13}-[0-9]{8,13}-[a-zA-Z0-9]{20,512}/g },
-      { type: "stripe_key", regex: /sk_(live|test)_[a-zA-Z0-9]{24,512}/g },
-      { type: "sendgrid_key", regex: /SG\.[a-zA-Z0-9\-_]{22,512}\.[a-zA-Z0-9\-_]{22,512}/g },
-      { type: "huggingface_token", regex: /hf_[a-zA-Z0-9]{30,512}/g },
-      // Auth / session tokens
-      // Bounded for the same reason as `private_key`. A JWT past 8KiB per segment
-      // is not a credential anybody is pasting.
-      { type: "jwt", regex: /eyJ[A-Za-z0-9\-_]{1,8192}\.[A-Za-z0-9\-_]{1,8192}\.[A-Za-z0-9\-_]{1,8192}/g },
-      // Credentials in URLs (before env_value so it wins on connection strings)
-      // Same shape as `email` above: `\w+` before the required `://` was 12.7s on
-      // 128KiB. No scheme is 32 characters, and a password field past 256 is not
-      // one.
-      { type: "url_credentials", regex: /\w{1,32}:\/\/[^:@\s\/]{1,64}:[^@\s]{4,256}@[^\s]/g },
-      // Passwords in key=value and JSON
-      { type: "password", regex: /(?:password|passwd|pwd)["']?\s*[=:]\s*["']?([^\s"',]{6,512})/gi },
-      // PII — financial
-      {
-        type: "credit_card",
-        regex: /\b\d{4}[\s\-]\d{4}[\s\-]\d{4}[\s\-]\d{4}\b/g,
-        validate: (v) => luhnCheck(v)
-      },
-      {
-        type: "iban",
-        regex: /\b[A-Z]{2}\d{2}[A-Z0-9]{4,30}\b/g,
-        validate: (v) => ibanCheck(v)
-      },
-      // PII — identity (context-aware)
-      {
-        type: "ssn",
-        regex: /\b\d{3}-\d{2}-\d{4}\b/g,
-        validate: (_v, input, idx) => {
-          if (contextMatches(SSN_KEYWORDS, input, idx)) return true;
-          const surrounding = input.slice(Math.max(0, idx - 20), idx + 20);
-          if (/(?:19|20)\d{2}/.test(surrounding)) return false;
-          return true;
-        }
-      },
-      {
-        type: "dob",
-        regex: /\b(?:0?[1-9]|1[0-2])[-\/](?:0?[1-9]|[12]\d|3[01])[-\/](?:19|20)\d{2}\b/g,
-        validate: (_v, input, idx) => contextMatches(DOB_KEYWORDS, input, idx)
-      },
-      {
-        type: "passport",
-        regex: /\b[A-Z]\d{8}\b/g,
-        validate: (_v, input, idx) => contextMatches(PASS_KEYWORDS, input, idx)
-      },
-      // PII — contact
-      // Quantifiers bounded, not decorative. `[class]+` before a required literal
-      // re-scans from every start position, which is quadratic: measured at 15.6
-      // SECONDS for this pattern alone on 128KiB of one repeated character, and
-      // ~256x that at 2MiB — the stall that held the 0.1.64 candidate. RFC 5321
-      // caps a local part at 64 characters and a domain at 255, so the bounds cost
-      // no real address.
-      { type: "email", regex: emailRegex2() },
-      {
-        type: "phone_us",
-        // Requires area code starting 2-9 (excludes version numbers, dates, plain 7-digit numbers)
-        regex: /\b(?:\+?1[-.\s]?)?\(?([2-9][0-9]{2})\)?[-.\s]([2-9][0-9]{2})[-.\s]([0-9]{4})\b/g
-      },
-      {
-        type: "phone_e164",
-        // E.164 international (non-US, min 8 digits after +)
-        regex: /\+(?!1[^0-9])(?:[2-9][0-9]{1}|[1][^1])[0-9]{6,12}\b/g
-      },
-      // Network — internal RFC-1918 addresses
-      {
-        type: "internal_ip",
-        regex: /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b/g
-      },
-      // Generic env assignment (lowest priority — catches remaining secrets)
-      { type: "env_value", regex: /\b[A-Z][A-Z0-9_]{2,128}=[^\s]{8,8192}/g }
-    ];
-    SEVERITY = {
-      private_key: "critical",
-      credit_card: "critical",
-      ssn: "critical",
-      iban: "critical",
-      aws_access_key: "high",
-      anthropic_api_key: "high",
-      openai_api_key: "high",
-      google_api_key: "high",
-      github_token: "high",
-      slack_token: "high",
-      stripe_key: "high",
-      sendgrid_key: "high",
-      huggingface_token: "high",
-      jwt: "high",
-      url_credentials: "high",
-      password: "high",
-      credential_pair: "high",
-      possible_secret: "low",
-      passport: "high",
-      dob: "high",
-      email: "medium",
-      phone_us: "medium",
-      phone_e164: "medium",
-      internal_ip: "low",
-      env_value: "low"
-    };
-    CATEGORY = {
-      private_key: "credential",
-      credit_card: "financial",
-      ssn: "identity",
-      iban: "financial",
-      passport: "identity",
-      dob: "identity",
-      aws_access_key: "credential",
-      anthropic_api_key: "credential",
-      openai_api_key: "credential",
-      google_api_key: "credential",
-      github_token: "credential",
-      slack_token: "credential",
-      stripe_key: "credential",
-      sendgrid_key: "credential",
-      huggingface_token: "credential",
-      jwt: "credential",
-      url_credentials: "credential",
-      password: "credential",
-      credential_pair: "credential",
-      possible_secret: "credential",
-      email: "contact",
-      phone_us: "contact",
-      phone_e164: "contact",
-      internal_ip: "network",
-      env_value: "credential"
-    };
-    EMAIL_RE = emailRegex2();
-    PAIR_WINDOW = 100;
-    POSSIBLE_SECRET_RE = /\b(?:api[_\s-]?key|access[_\s-]?key|secret|token|credential|password)\b\s*(?:is\s*:?|[=:])?\s*["']?([A-Za-z0-9][A-Za-z0-9._\-]{11,127})["']?/gi;
-    MAX_MATCH_CHARS = 72 * 1024;
-    CONTEXT_CHARS = MAX_MATCH_CHARS;
-    OWNED_CHARS = 128 * 1024;
+    import_crypto6 = require("crypto");
   }
 });
 
@@ -42364,6 +42704,7 @@ function maskValue(v) {
   return v.length > 8 ? v.slice(0, 4) + "****" + v.slice(-4) : "****";
 }
 async function writeDetections(db, session_id, message_id, content) {
+  if (privacyEnabled()) return;
   const found = await scanForSecretsWithoutBlocking(content);
   if (found.length === 0) return;
   const now = localISOString();
@@ -42403,7 +42744,7 @@ function isFkError(e) {
   return e?.message?.includes("FOREIGN KEY constraint failed") || e?.code === "SQLITE_CONSTRAINT_FOREIGNKEY" || e?.cause?.message?.includes("FOREIGN KEY constraint failed") || e?.cause?.extendedCode === "SQLITE_CONSTRAINT_FOREIGNKEY";
 }
 async function insertMessage(db, session_id, role, content, event_type) {
-  const stored = canonicalContent(content);
+  const stored = storedContent(content);
   return db.transaction(async (tx) => {
     const last = await tx.select({ content_hash: messages.content_hash, created_at: messages.created_at }).from(messages).where(eq(messages.session_id, session_id)).orderBy(desc(messages.created_at), desc(sql`rowid`)).limit(1);
     const ts = localISOString();
@@ -42517,8 +42858,8 @@ function logExchange(db) {
         const aNow = localISOString();
         const aId = v4_default();
         const prevHash = last[0]?.content_hash ?? null;
-        const userStored = canonicalContent(args.user_content);
-        const assistantStored = canonicalContent(args.assistant_content);
+        const userStored = storedContent(args.user_content);
+        const assistantStored = storedContent(args.assistant_content);
         const uHash = computeContentHash(args.session_id, "user", userStored, uNow, prevHash, "message");
         const aHash = computeContentHash(args.session_id, "assistant", assistantStored, aNow, uHash, "message");
         await tx.insert(messages).values({
@@ -42610,7 +42951,7 @@ var init_messages = __esm({
     init_schema();
     init_time();
     init_hash();
-    init_content();
+    init_policy();
     init_detect();
     init_failure();
     init_relay();
@@ -42671,6 +43012,14 @@ function verifySession(db) {
   return async (args) => {
     const [sessionRow] = await db.select().from(sessions).where(eq(sessions.id, args.session_id)).limit(1);
     const rows = await db.select().from(messages).where(eq(messages.session_id, args.session_id)).orderBy(...messageOrderAsc());
+    const retention = rows.filter((r) => claimsPolicy(r.content)).map((r) => {
+      try {
+        return { authenticated: true, ...verifyPolicyContent(r.content).chron_policy };
+      } catch {
+        return { authenticated: false, reason: "Configured policy key does not authenticate this content-policy claim." };
+      }
+    });
+    const privacyOk = retention.every((r) => r.authenticated);
     const chained = rows.filter((r) => r.content_hash !== null);
     if (chained.length === 0) {
       const emptyMeta = parseSessionMetadata(sessionRow?.metadata ?? null);
@@ -42678,7 +43027,8 @@ function verifySession(db) {
         content: [{
           type: "text",
           text: JSON.stringify({
-            valid: true,
+            valid: privacyOk,
+            ...retention.length ? { content_retention: retention, retention_scope: "Retained representation only; no original-content, complete-detection or withholding claim." } : {},
             messages: rows.length,
             chained: 0,
             note: rows.length === 0 ? "No messages logged yet \u2014 nothing to chain" : "No chained messages \u2014 pre-dates hash chaining",
@@ -42729,7 +43079,8 @@ function verifySession(db) {
       content: [{
         type: "text",
         text: JSON.stringify({
-          valid: true,
+          valid: privacyOk,
+          ...retention.length ? { content_retention: retention, retention_scope: "Retained representation only; no original-content, complete-detection or withholding claim." } : {},
           messages: rows.length,
           chained: chained.length,
           signature_valid,
@@ -42746,6 +43097,7 @@ function verifySession(db) {
 var init_verify = __esm({
   "src/tools/verify.ts"() {
     "use strict";
+    init_policy();
     init_drizzle_orm();
     init_schema();
     init_chain();
@@ -43071,7 +43423,17 @@ var init_instructions = __esm({
 
 // src/server.ts
 function registerTool(server, name, description, shape, handler) {
-  server.tool(name, description, shape, handler);
+  server.tool(name, description, shape, async (args) => {
+    try {
+      contentPolicy();
+      const result = await handler(args);
+      if (privacyEnabled() && result.isError) return { isError: true, content: [{ type: "text", text: "Chron refused the operation under the configured content policy; input details are not repeated." }] };
+      return result;
+    } catch (e) {
+      if (process.env.CHRON_CONTENT_POLICY && process.env.CHRON_CONTENT_POLICY !== "raw" || process.env.CHRON_CONTENT_POLICY_KEY || process.env.CHRON_CONTENT_POLICY_KEY_FILE) return { isError: true, content: [{ type: "text", text: "Chron protected operation failed; input and driver details are not repeated." }] };
+      throw e;
+    }
+  });
 }
 function createServer(db) {
   const server = new McpServer({
@@ -43252,6 +43614,7 @@ var MAX_TOOL_INPUT_ELEMENTS, roleEnum;
 var init_server3 = __esm({
   "src/server.ts"() {
     "use strict";
+    init_policy();
     init_mcp();
     init_v3();
     init_sessions();
@@ -43277,15 +43640,15 @@ function resolveChronMcpServer(pathValue = process.env.PATH ?? "", platform = pr
   for (const dir of pathValue.split(import_path4.delimiter).filter(Boolean)) {
     for (const name of executableNames(platform)) {
       const candidate = (0, import_path4.join)(dir, name);
-      if ((0, import_fs4.existsSync)(candidate)) return { command: candidate, args: [] };
+      if ((0, import_fs5.existsSync)(candidate)) return { command: candidate, args: [] };
     }
   }
   let packageDir = __dirname;
   while ((0, import_path4.dirname)(packageDir) !== packageDir) {
     const packageJson = (0, import_path4.join)(packageDir, "package.json");
-    if ((0, import_fs4.existsSync)(packageJson)) {
+    if ((0, import_fs5.existsSync)(packageJson)) {
       try {
-        const pkg = JSON.parse((0, import_fs4.readFileSync)(packageJson, "utf8"));
+        const pkg = JSON.parse((0, import_fs5.readFileSync)(packageJson, "utf8"));
         if (pkg.name === "chron-mcp") {
           return { command: (0, import_path4.join)(packageDir, "dist", "index.js"), args: [] };
         }
@@ -43370,11 +43733,11 @@ ${argsLine}
 ` : "") + codexMcpBlock(server);
   return { content: updated, changed: true };
 }
-var import_fs4, import_path4, CHRON_MCP_SERVER;
+var import_fs5, import_path4, CHRON_MCP_SERVER;
 var init_mcp_config = __esm({
   "src/cli/mcp-config.ts"() {
     "use strict";
-    import_fs4 = require("fs");
+    import_fs5 = require("fs");
     import_path4 = require("path");
     CHRON_MCP_SERVER = resolveChronMcpServer();
   }
@@ -43397,7 +43760,7 @@ function safePath(path) {
   if (!anchors.length) throw new Error("Configuration target is outside the selected home/project roots");
   for (let p = path; ; p = (0, import_path5.dirname)(p)) {
     try {
-      if ((0, import_fs5.lstatSync)(p).isSymbolicLink()) throw new Error(`Refusing symbolic link: ${p}`);
+      if ((0, import_fs6.lstatSync)(p).isSymbolicLink()) throw new Error(`Refusing symbolic link: ${p}`);
     } catch (e) {
       if (e.code !== "ENOENT") throw e;
     }
@@ -43408,7 +43771,7 @@ function safePath(path) {
 function read(path) {
   safePath(path);
   try {
-    const bytes = (0, import_fs5.readFileSync)(path), text2 = bytes.toString("utf8");
+    const bytes = (0, import_fs6.readFileSync)(path), text2 = bytes.toString("utf8");
     if (!Buffer.from(text2, "utf8").equals(bytes)) throw new Error(`Refusing non-UTF-8 configuration: ${path}`);
     return text2;
   } catch (e) {
@@ -43487,7 +43850,7 @@ function change(path, description, transform2) {
     before,
     after,
     description,
-    mode: before === null ? 384 : (0, import_fs5.lstatSync)(path).mode & 511
+    mode: before === null ? 384 : (0, import_fs6.lstatSync)(path).mode & 511
   };
 }
 function allowedPaths(cwd) {
@@ -43512,7 +43875,7 @@ function configurationPlan(args, cwd = process.cwd()) {
       if (c.name.includes("(project)")) continue;
       const selected = client === "all" || { claude: ["Claude Code", "Claude Desktop"], codex: ["Codex (global)"], cursor: ["Cursor (global)"], gemini: ["Gemini CLI"] }[client]?.includes(c.name);
       if (!selected) continue;
-      if (!["Claude Code", "Codex (global)", "Cursor (global)", "Gemini CLI"].includes(c.name) && !(0, import_fs5.existsSync)(c.path) && !(0, import_fs5.existsSync)((0, import_path5.dirname)(c.path))) continue;
+      if (!["Claude Code", "Codex (global)", "Cursor (global)", "Gemini CLI"].includes(c.name) && !(0, import_fs6.existsSync)(c.path) && !(0, import_fs6.existsSync)((0, import_path5.dirname)(c.path))) continue;
       add(c.path, `${c.name} MCP server entry`, (text2) => configureMcp(text2, c.type));
     }
     for (const [name, path, tool] of [
@@ -43546,21 +43909,21 @@ ${buildChronInstructions("cursor")}`;
 }
 function atomicWrite(path, value, mode) {
   safePath(path);
-  (0, import_fs5.mkdirSync)((0, import_path5.dirname)(path), { recursive: true, mode: 448 });
+  (0, import_fs6.mkdirSync)((0, import_path5.dirname)(path), { recursive: true, mode: 448 });
   safePath(path);
-  const temp = `${path}.chron-${(0, import_crypto6.randomUUID)()}`;
-  const fd = (0, import_fs5.openSync)(temp, import_fs5.constants.O_CREAT | import_fs5.constants.O_EXCL | import_fs5.constants.O_WRONLY | import_fs5.constants.O_NOFOLLOW, 384);
+  const temp = `${path}.chron-${(0, import_crypto7.randomUUID)()}`;
+  const fd = (0, import_fs6.openSync)(temp, import_fs6.constants.O_CREAT | import_fs6.constants.O_EXCL | import_fs6.constants.O_WRONLY | import_fs6.constants.O_NOFOLLOW, 384);
   try {
-    (0, import_fs5.writeFileSync)(fd, value);
-    (0, import_fs5.fsyncSync)(fd);
-    (0, import_fs5.fchmodSync)(fd, mode);
+    (0, import_fs6.writeFileSync)(fd, value);
+    (0, import_fs6.fsyncSync)(fd);
+    (0, import_fs6.fchmodSync)(fd, mode);
   } finally {
-    (0, import_fs5.closeSync)(fd);
+    (0, import_fs6.closeSync)(fd);
   }
   try {
-    (0, import_fs5.renameSync)(temp, path);
+    (0, import_fs6.renameSync)(temp, path);
   } finally {
-    if ((0, import_fs5.existsSync)(temp)) (0, import_fs5.unlinkSync)(temp);
+    if ((0, import_fs6.existsSync)(temp)) (0, import_fs6.unlinkSync)(temp);
   }
 }
 function stateDir() {
@@ -43586,7 +43949,7 @@ async function runConfiguration(args, undo = false) {
   const dir = stateDir(), cwd = process.cwd();
   let receiptPath, changes;
   if (undo && !args.includes("--legacy")) {
-    const files = (0, import_fs5.existsSync)(dir) ? (0, import_fs5.readdirSync)(dir).filter((x) => /^\d+-[0-9a-f-]+\.json$/.test(x)).sort() : [];
+    const files = (0, import_fs6.existsSync)(dir) ? (0, import_fs6.readdirSync)(dir).filter((x) => /^\d+-[0-9a-f-]+\.json$/.test(x)).sort() : [];
     receiptPath = files.length ? (0, import_path5.join)(dir, files[files.length - 1]) : void 0;
     if (!receiptPath) {
       process.stdout.write("No tracked setup to undo. To inspect older installations: chron unsetup --legacy\n");
@@ -43599,7 +43962,7 @@ async function runConfiguration(args, undo = false) {
       if (!allowed.has(c.path) || typeof c.after !== "string" || !(c.before === null || typeof c.before === "string") || !Number.isInteger(c.mode) || c.mode < 0 || c.mode > 511) throw new Error("Invalid configuration receipt");
       const current = read(c.path);
       if (current === c.before) return [];
-      if (current !== c.after || ((0, import_fs5.lstatSync)(c.path).mode & 511) !== c.mode) throw new Error(`Modified since setup; preserving ${c.path}`);
+      if (current !== c.after || ((0, import_fs6.lstatSync)(c.path).mode & 511) !== c.mode) throw new Error(`Modified since setup; preserving ${c.path}`);
       return [{ ...c, before: c.after, after: c.before, description: "restore state before tracked setup" }];
     });
   } else changes = undo ? legacyRemoval(cwd) : configurationPlan(args, cwd);
@@ -43609,30 +43972,30 @@ async function runConfiguration(args, undo = false) {
     return;
   }
   if (!changes.length) {
-    if (receiptPath) (0, import_fs5.renameSync)(receiptPath, receiptPath + ".undone");
+    if (receiptPath) (0, import_fs6.renameSync)(receiptPath, receiptPath + ".undone");
     return;
   }
-  (0, import_fs5.mkdirSync)(dir, { recursive: true, mode: 448 });
+  (0, import_fs6.mkdirSync)(dir, { recursive: true, mode: 448 });
   safePath(dir);
   const lock = (0, import_path5.join)(dir, ".lock");
-  const fd = (0, import_fs5.openSync)(lock, import_fs5.constants.O_CREAT | import_fs5.constants.O_EXCL | import_fs5.constants.O_WRONLY | import_fs5.constants.O_NOFOLLOW, 384);
+  const fd = (0, import_fs6.openSync)(lock, import_fs6.constants.O_CREAT | import_fs6.constants.O_EXCL | import_fs6.constants.O_WRONLY | import_fs6.constants.O_NOFOLLOW, 384);
   try {
     for (const c of changes) if (read(c.path) !== c.before) throw new Error(`Changed during preview; preserving ${c.path}`);
     if (!undo) {
-      const receipt = { schema: 1, id: (0, import_crypto6.randomUUID)(), cwd, changes };
-      const prior = (0, import_fs5.readdirSync)(dir).map((n) => Number(n.match(/^(\d+)-/)?.[1] ?? 0));
+      const receipt = { schema: 1, id: (0, import_crypto7.randomUUID)(), cwd, changes };
+      const prior = (0, import_fs6.readdirSync)(dir).map((n) => Number(n.match(/^(\d+)-/)?.[1] ?? 0));
       const sequence = Math.max(Date.now(), ...prior.map((n) => n + 1));
       atomicWrite((0, import_path5.join)(dir, `${sequence}-${receipt.id}.json`), JSON.stringify(receipt), 384);
     }
     for (const c of changes) {
-      if (c.after === null) (0, import_fs5.unlinkSync)(safePath(c.path));
+      if (c.after === null) (0, import_fs6.unlinkSync)(safePath(c.path));
       else atomicWrite(c.path, c.after, c.mode);
     }
-    if (receiptPath) (0, import_fs5.renameSync)(receiptPath, receiptPath + ".undone");
+    if (receiptPath) (0, import_fs6.renameSync)(receiptPath, receiptPath + ".undone");
     process.stdout.write("Applied the listed changes. Restart the configured client to load changes.\n");
   } finally {
-    (0, import_fs5.closeSync)(fd);
-    (0, import_fs5.unlinkSync)(lock);
+    (0, import_fs6.closeSync)(fd);
+    (0, import_fs6.unlinkSync)(lock);
   }
 }
 function legacyRemoval(cwd) {
@@ -43704,16 +44067,16 @@ ${CHRON_BLOCK_END}`))
         after = text2.replace(section[0], "");
       }
     }
-    if (after !== text2) changes.push({ path, before: text2, after, mode: (0, import_fs5.lstatSync)(path).mode & 511, description: "remove exact recognized legacy Chron block; keep surrounding content" });
+    if (after !== text2) changes.push({ path, before: text2, after, mode: (0, import_fs6.lstatSync)(path).mode & 511, description: "remove exact recognized legacy Chron block; keep surrounding content" });
   }
   return changes;
 }
-var import_fs5, import_crypto6, import_os5, import_path5, SHELL_START, SHELL_END, shellBlock;
+var import_fs6, import_crypto7, import_os5, import_path5, SHELL_START, SHELL_END, shellBlock;
 var init_configuration = __esm({
   "src/cli/configuration.ts"() {
     "use strict";
-    import_fs5 = require("fs");
-    import_crypto6 = require("crypto");
+    import_fs6 = require("fs");
+    import_crypto7 = require("crypto");
     import_os5 = require("os");
     import_path5 = require("path");
     init_instructions();
@@ -48958,7 +49321,7 @@ var require_read = __commonJS({
       var stream;
       req._body = true;
       var encoding = opts.encoding !== null ? opts.encoding : null;
-      var verify = opts.verify;
+      var verify2 = opts.verify;
       try {
         stream = contentstream(req, debug, opts.inflate);
         length = stream.length;
@@ -48967,7 +49330,7 @@ var require_read = __commonJS({
         return next(err);
       }
       opts.length = length;
-      opts.encoding = verify ? null : encoding;
+      opts.encoding = verify2 ? null : encoding;
       if (opts.encoding === null && encoding !== null && !iconv.encodingExists(encoding)) {
         return next(createError(415, 'unsupported charset "' + encoding.toUpperCase() + '"', {
           charset: encoding.toLowerCase(),
@@ -48995,10 +49358,10 @@ var require_read = __commonJS({
           });
           return;
         }
-        if (verify) {
+        if (verify2) {
           try {
             debug("verify body");
-            verify(req, res, body, encoding);
+            verify2(req, res, body, encoding);
           } catch (err) {
             next(createError(403, err, {
               body,
@@ -57939,11 +58302,11 @@ var require_json = __commonJS({
       var reviver = opts.reviver;
       var strict = opts.strict !== false;
       var type = opts.type || "application/json";
-      var verify = opts.verify || false;
+      var verify2 = opts.verify || false;
       if (limit === null) {
         throw new TypeError('option limit "' + String(opts.limit) + '" is invalid');
       }
-      if (verify !== false && typeof verify !== "function") {
+      if (verify2 !== false && typeof verify2 !== "function") {
         throw new TypeError("option verify must be function");
       }
       var shouldParse = typeof type !== "function" ? typeChecker(type) : type;
@@ -57999,7 +58362,7 @@ var require_json = __commonJS({
           encoding: charset,
           inflate,
           limit,
-          verify
+          verify: verify2
         });
       };
     }
@@ -58066,11 +58429,11 @@ var require_raw = __commonJS({
       var inflate = opts.inflate !== false;
       var limit = typeof opts.limit === "undefined" || opts.limit === null ? 102400 : bytes.parse(opts.limit);
       var type = opts.type || "application/octet-stream";
-      var verify = opts.verify || false;
+      var verify2 = opts.verify || false;
       if (limit === null) {
         throw new TypeError('option limit "' + String(opts.limit) + '" is invalid');
       }
-      if (verify !== false && typeof verify !== "function") {
+      if (verify2 !== false && typeof verify2 !== "function") {
         throw new TypeError("option verify must be function");
       }
       var shouldParse = typeof type !== "function" ? typeChecker(type) : type;
@@ -58099,7 +58462,7 @@ var require_raw = __commonJS({
           encoding: null,
           inflate,
           limit,
-          verify
+          verify: verify2
         });
       };
     }
@@ -58127,11 +58490,11 @@ var require_text = __commonJS({
       var inflate = opts.inflate !== false;
       var limit = typeof opts.limit === "undefined" || opts.limit === null ? 102400 : bytes.parse(opts.limit);
       var type = opts.type || "text/plain";
-      var verify = opts.verify || false;
+      var verify2 = opts.verify || false;
       if (limit === null) {
         throw new TypeError('option limit "' + String(opts.limit) + '" is invalid');
       }
-      if (verify !== false && typeof verify !== "function") {
+      if (verify2 !== false && typeof verify2 !== "function") {
         throw new TypeError("option verify must be function");
       }
       var shouldParse = typeof type !== "function" ? typeChecker(type) : type;
@@ -58161,7 +58524,7 @@ var require_text = __commonJS({
           encoding: charset,
           inflate,
           limit,
-          verify
+          verify: verify2
         });
       };
     }
@@ -58938,7 +59301,7 @@ var require_sign = __commonJS({
   "node_modules/math-intrinsics/sign.js"(exports2, module2) {
     "use strict";
     var $isNaN = require_isNaN();
-    module2.exports = function sign(number4) {
+    module2.exports = function sign2(number4) {
       if ($isNaN(number4) || number4 === 0) {
         return number4;
       }
@@ -59302,7 +59665,7 @@ var require_get_intrinsic = __commonJS({
     var min = require_min();
     var pow = require_pow();
     var round = require_round();
-    var sign = require_sign();
+    var sign2 = require_sign();
     var $Function = Function;
     var getEvalledConstructor = function(expressionSyntax) {
       try {
@@ -59416,7 +59779,7 @@ var require_get_intrinsic = __commonJS({
       "%Math.min%": min,
       "%Math.pow%": pow,
       "%Math.round%": round,
-      "%Math.sign%": sign,
+      "%Math.sign%": sign2,
       "%Reflect.getPrototypeOf%": $ReflectGPO
     };
     if (getProto) {
@@ -60788,11 +61151,11 @@ var require_urlencoded = __commonJS({
       var inflate = opts.inflate !== false;
       var limit = typeof opts.limit === "undefined" || opts.limit === null ? 102400 : bytes.parse(opts.limit);
       var type = opts.type || "application/x-www-form-urlencoded";
-      var verify = opts.verify || false;
+      var verify2 = opts.verify || false;
       if (limit === null) {
         throw new TypeError('option limit "' + String(opts.limit) + '" is invalid');
       }
-      if (verify !== false && typeof verify !== "function") {
+      if (verify2 !== false && typeof verify2 !== "function") {
         throw new TypeError("option verify must be function");
       }
       var queryparse = extended2 ? extendedparser(opts) : simpleparser(opts);
@@ -60832,7 +61195,7 @@ var require_urlencoded = __commonJS({
           encoding: charset,
           inflate,
           limit,
-          verify
+          verify: verify2
         });
       };
     }
@@ -66934,7 +67297,7 @@ var require_response = __commonJS({
     var path = require("path");
     var statuses = require_statuses();
     var merge2 = require_utils_merge();
-    var sign = require_cookie_signature().sign;
+    var sign2 = require_cookie_signature().sign;
     var normalizeType = require_utils3().normalizeType;
     var normalizeTypes = require_utils3().normalizeTypes;
     var setCharset = require_utils3().setCharset;
@@ -67289,7 +67652,7 @@ var require_response = __commonJS({
       }
       var val = typeof value === "object" ? "j:" + JSON.stringify(value) : String(value);
       if (signed) {
-        val = "s:" + sign(val, secret);
+        val = "s:" + sign2(val, secret);
       }
       if (opts.maxAge != null) {
         var maxAge = opts.maxAge - 0;
@@ -71772,7 +72135,7 @@ function apiKeyMiddleware(apiKey) {
       return;
     }
     const given = Buffer.from(header, "utf8");
-    const ok = given.length === expected.length && (0, import_crypto7.timingSafeEqual)(given, expected);
+    const ok = given.length === expected.length && (0, import_crypto8.timingSafeEqual)(given, expected);
     if (!ok) {
       res.setHeader("WWW-Authenticate", "Bearer");
       res.status(401).end();
@@ -71814,11 +72177,11 @@ function hostGuardMiddleware(allowedHosts, port) {
     next();
   };
 }
-var import_crypto7;
+var import_crypto8;
 var init_middleware = __esm({
   "src/http/middleware.ts"() {
     "use strict";
-    import_crypto7 = require("crypto");
+    import_crypto8 = require("crypto");
     init_config2();
   }
 });
@@ -71845,7 +72208,7 @@ async function startHttpServer(server, db) {
       transport.onclose = () => transports.delete(transport.sessionId);
       await instanceServer.connect(transport);
     } catch (err) {
-      process.stderr.write(`SSE error: ${err}
+      process.stderr.write(`SSE error: ${policyErrorText(err)}
 `);
       if (!res.headersSent) res.status(500).json({ error: "Internal server error" });
     }
@@ -71860,7 +72223,7 @@ async function startHttpServer(server, db) {
       }
       await entry.transport.handlePostMessage(req, res);
     } catch (err) {
-      process.stderr.write(`Messages error: ${err}
+      process.stderr.write(`Messages error: ${policyErrorText(err)}
 `);
       if (!res.headersSent) res.status(500).json({ error: "Internal server error" });
     }
@@ -71880,6 +72243,7 @@ var import_express;
 var init_server4 = __esm({
   "src/http/server.ts"() {
     "use strict";
+    init_policy();
     import_express = __toESM(require_express2());
     init_sse();
     init_middleware();
@@ -71888,6 +72252,9 @@ var init_server4 = __esm({
     init_package();
   }
 });
+
+// src/index.ts
+init_policy();
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js
 var import_node_process = __toESM(require("node:process"), 1);
@@ -72009,8 +72376,10 @@ if (process.argv[2] === "--version" || process.argv[2] === "-v") {
   process.exit(0);
 }
 async function main() {
+  contentPolicy();
   const dbPath = process.env.CHRON_DB_PATH ?? (0, import_path6.join)((0, import_os6.homedir)(), ".chron", "chron.db");
   if (process.argv[2] === "--setup") {
+    if (privacyEnabled()) throw new ContentPolicyError();
     const { runConfiguration: runConfiguration2 } = await Promise.resolve().then(() => (init_configuration(), configuration_exports));
     await runConfiguration2(process.argv.slice(3));
     return;
@@ -72023,7 +72392,7 @@ MCP server uses stdio. To preview agent configuration: chron setup
   }
   process.stderr.write(`chron-mcp ${version4} starting
 `);
-  process.stderr.write(`database: ${dbPath}
+  process.stderr.write(`database: ${privacyEnabled() ? "[protected profile]" : dbPath}
 `);
   const db = await initDb();
   const server = createServer(db);
@@ -72037,7 +72406,7 @@ MCP server uses stdio. To preview agent configuration: chron setup
   }
 }
 main().catch((err) => {
-  process.stderr.write(`Failed to start chron: ${err}
+  process.stderr.write(`Failed to start chron: ${policyErrorText(err)}
 `);
   process.exit(1);
 });

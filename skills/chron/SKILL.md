@@ -1,6 +1,6 @@
 ---
 name: chron
-description: Use Chron to log every AI conversation with precise timestamps to a local SQLite database. Invoke at session start and on every exchange.
+description: Record authorized AI interactions through Chron with local timestamps. Invoke at session start and on each exchange; configuration and invocation determine capture.
 ---
 
 # Chron — AI Audit Log Skill
@@ -36,7 +36,7 @@ Chron requires the MCP server to be running. If not yet configured:
 
 ```bash
 # Claude Code
-claude mcp add chron -- npx -y chron-mcp@0.1.70
+claude mcp add chron -- npx -y chron-mcp@0.1.72
 ```
 
 For other tools, add to your MCP config:
@@ -45,7 +45,7 @@ For other tools, add to your MCP config:
   "mcpServers": {
     "chron": {
       "command": "npx",
-      "args": ["-y", "chron-mcp@0.1.70"]
+      "args": ["-y", "chron-mcp@0.1.72"]
     }
   }
 }

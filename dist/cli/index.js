@@ -33,14 +33,560 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
+// src/utils/detect.ts
+function luhnCheck(value) {
+  const digits = value.replace(/\D/g, "");
+  let sum2 = 0;
+  let alt = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let n = parseInt(digits[i], 10);
+    if (alt) {
+      n *= 2;
+      if (n > 9) n -= 9;
+    }
+    sum2 += n;
+    alt = !alt;
+  }
+  return sum2 % 10 === 0;
+}
+function ibanCheck(value) {
+  const normalized = value.replace(/\s/g, "").toUpperCase();
+  if (normalized.length < 15 || normalized.length > 34) return false;
+  const rearranged = normalized.slice(4) + normalized.slice(0, 4);
+  const numeric2 = rearranged.replace(/[A-Z]/g, (c) => String(c.charCodeAt(0) - 55));
+  let remainder = 0;
+  for (const ch of numeric2) {
+    remainder = (remainder * 10 + parseInt(ch, 10)) % 97;
+  }
+  return remainder === 1;
+}
+function contextMatches(kw, input, idx) {
+  const lo = Math.max(0, idx - CONTEXT_WINDOW);
+  const hi = Math.min(input.length, idx + CONTEXT_WINDOW);
+  return kw.test(input.slice(lo, hi));
+}
+function emailRegex() {
+  return new RegExp(EMAIL_SOURCE, "g");
+}
+function annotate(s) {
+  return {
+    ...s,
+    severity: SEVERITY[s.type] ?? "low",
+    category: CATEGORY[s.type] ?? "other"
+  };
+}
+function scanForSecrets(input) {
+  const withPriority = [];
+  for (let i = 0; i < PATTERNS.length; i++) {
+    const { type, regex, validate } = PATTERNS[i];
+    regex.lastIndex = 0;
+    let match;
+    while ((match = regex.exec(input)) !== null) {
+      if (validate && !validate(match[0], input, match.index)) continue;
+      withPriority.push({
+        type,
+        value: match[0],
+        start: match.index,
+        end: match.index + match[0].length,
+        priority: i
+      });
+    }
+  }
+  withPriority.sort((a, b) => a.priority - b.priority || a.start - b.start);
+  let deduped = deduplicateOverlaps(withPriority);
+  const pairs = detectCredentialPairs(input, deduped);
+  if (pairs.length > 0) {
+    for (const pair of pairs) {
+      deduped.push({ ...pair, priority: -1 });
+    }
+    deduped.sort((a, b) => a.priority - b.priority || a.start - b.start);
+    deduped = deduplicateOverlaps(deduped);
+  }
+  const possible = detectPossibleSecrets(input);
+  if (possible.length > 0) {
+    for (const s of possible) {
+      deduped.push({ ...s, priority: PATTERNS.length + 1 });
+    }
+    deduped.sort((a, b) => a.priority - b.priority || a.start - b.start);
+    deduped = deduplicateOverlaps(deduped);
+  }
+  deduped.sort((a, b) => a.start - b.start);
+  return deduped.map(({ priority: _p, ...s }) => annotate(s));
+}
+function looksLikePassword(s) {
+  if (s.length < 8) return false;
+  const hasUpper = /[A-Z]/.test(s);
+  const hasLower = /[a-z]/.test(s);
+  const hasDigit = /[0-9]/.test(s);
+  const hasSpecial = /[@!#$%^&*\-_+=?]/.test(s);
+  const score = [hasUpper, hasLower, hasDigit, hasSpecial].filter(Boolean).length;
+  return score >= 3;
+}
+function detectCredentialPairs(input, _existing) {
+  const results = [];
+  EMAIL_RE.lastIndex = 0;
+  let match;
+  while ((match = EMAIL_RE.exec(input)) !== null) {
+    const emailStart = match.index;
+    const emailEnd = match.index + match[0].length;
+    const charBefore = emailStart > 0 ? input[emailStart - 1] : "";
+    if (charBefore === "@" || charBefore === ":") continue;
+    const windowStart = Math.max(0, emailStart - PAIR_WINDOW);
+    const windowEnd = Math.min(input.length, emailEnd + PAIR_WINDOW);
+    const surrounding = input.slice(windowStart, windowEnd);
+    const tokens = surrounding.match(/\S+/g) ?? [];
+    for (const token of tokens) {
+      if (token === match[0]) continue;
+      if (!looksLikePassword(token)) continue;
+      const tokenAbsoluteStart = windowStart + surrounding.indexOf(token);
+      const pairStart = Math.min(emailStart, tokenAbsoluteStart);
+      const pairEnd = Math.max(emailEnd, tokenAbsoluteStart + token.length);
+      results.push({
+        type: "credential_pair",
+        value: input.slice(pairStart, pairEnd),
+        start: pairStart,
+        end: pairEnd
+      });
+      break;
+    }
+  }
+  return results;
+}
+function detectPossibleSecrets(input) {
+  const results = [];
+  POSSIBLE_SECRET_RE.lastIndex = 0;
+  let match;
+  while ((match = POSSIBLE_SECRET_RE.exec(input)) !== null) {
+    const value = match[1];
+    if (!value) continue;
+    const valueStart = match.index + match[0].lastIndexOf(value);
+    results.push({
+      type: "possible_secret",
+      value,
+      start: valueStart,
+      end: valueStart + value.length
+    });
+  }
+  return results;
+}
+function deduplicateOverlaps(secrets) {
+  const kept = [];
+  for (const candidate of secrets) {
+    const overlaps = kept.some((k) => candidate.start < k.end && candidate.end > k.start);
+    if (!overlaps) kept.push(candidate);
+  }
+  return kept;
+}
+var CONTEXT_WINDOW, DOB_KEYWORDS, PASS_KEYWORDS, SSN_KEYWORDS, EMAIL_SOURCE, PATTERNS, SEVERITY, CATEGORY, EMAIL_RE, PAIR_WINDOW, POSSIBLE_SECRET_RE, MAX_MATCH_CHARS, OWNED_CHARS;
+var init_detect = __esm({
+  "src/utils/detect.ts"() {
+    "use strict";
+    CONTEXT_WINDOW = 120;
+    DOB_KEYWORDS = /\b(?:dob|date\s+of\s+birth|birth\s+date|born\s+on|birthday)\b/i;
+    PASS_KEYWORDS = /\b(?:passport|travel\s+document|document\s+no(?:\.|\b))\b/i;
+    SSN_KEYWORDS = /\b(?:ssn|social\s+security|tin\b)\b/i;
+    EMAIL_SOURCE = "[a-zA-Z0-9._%+\\-]{1,64}@[a-zA-Z0-9.\\-]{1,255}\\.[a-zA-Z]{2,24}";
+    PATTERNS = [
+      // Private key blocks (must come first — multiline, unambiguous)
+      // Bounded so the longest possible match is a known number, which the
+      // windowed scan below needs in order to size its overlap. A PEM private key
+      // is a few KiB even at RSA-16384, so 16KiB is generous.
+      { type: "private_key", regex: /-----BEGIN [A-Z ]+ PRIVATE KEY-----[\s\S]{1,65536}?-----END [A-Z ]+ PRIVATE KEY-----/g },
+      // Cloud / AI provider keys
+      { type: "aws_access_key", regex: /AKIA[0-9A-Z]{16}/g },
+      { type: "anthropic_api_key", regex: /sk-ant-api\d{2}-[a-zA-Z0-9\-_]{40,512}/g },
+      { type: "openai_api_key", regex: /sk-proj-[a-zA-Z0-9\-_]{20,512}/g },
+      { type: "google_api_key", regex: /AIza[0-9A-Za-z\-_]{35}/g },
+      // SaaS API keys
+      { type: "github_token", regex: /gh[pousr]_[a-zA-Z0-9]{30,512}/g },
+      { type: "slack_token", regex: /xox[bpas]-[0-9]{8,13}-[0-9]{8,13}-[a-zA-Z0-9]{20,512}/g },
+      { type: "stripe_key", regex: /sk_(live|test)_[a-zA-Z0-9]{24,512}/g },
+      { type: "sendgrid_key", regex: /SG\.[a-zA-Z0-9\-_]{22,512}\.[a-zA-Z0-9\-_]{22,512}/g },
+      { type: "huggingface_token", regex: /hf_[a-zA-Z0-9]{30,512}/g },
+      // Auth / session tokens
+      // Bounded for the same reason as `private_key`. A JWT past 8KiB per segment
+      // is not a credential anybody is pasting.
+      { type: "jwt", regex: /eyJ[A-Za-z0-9\-_]{1,8192}\.[A-Za-z0-9\-_]{1,8192}\.[A-Za-z0-9\-_]{1,8192}/g },
+      // Credentials in URLs (before env_value so it wins on connection strings)
+      // Same shape as `email` above: `\w+` before the required `://` was 12.7s on
+      // 128KiB. No scheme is 32 characters, and a password field past 256 is not
+      // one.
+      { type: "url_credentials", regex: /\w{1,32}:\/\/[^:@\s\/]{1,64}:[^@\s]{4,256}@[^\s]/g },
+      // Passwords in key=value and JSON
+      { type: "password", regex: /(?:password|passwd|pwd)["']?\s*[=:]\s*["']?([^\s"',]{6,512})/gi },
+      // PII — financial
+      {
+        type: "credit_card",
+        regex: /\b\d{4}[\s\-]\d{4}[\s\-]\d{4}[\s\-]\d{4}\b/g,
+        validate: (v) => luhnCheck(v)
+      },
+      {
+        type: "iban",
+        regex: /\b[A-Z]{2}\d{2}[A-Z0-9]{4,30}\b/g,
+        validate: (v) => ibanCheck(v)
+      },
+      // PII — identity (context-aware)
+      {
+        type: "ssn",
+        regex: /\b\d{3}-\d{2}-\d{4}\b/g,
+        validate: (_v, input, idx) => {
+          if (contextMatches(SSN_KEYWORDS, input, idx)) return true;
+          const surrounding = input.slice(Math.max(0, idx - 20), idx + 20);
+          if (/(?:19|20)\d{2}/.test(surrounding)) return false;
+          return true;
+        }
+      },
+      {
+        type: "dob",
+        regex: /\b(?:0?[1-9]|1[0-2])[-\/](?:0?[1-9]|[12]\d|3[01])[-\/](?:19|20)\d{2}\b/g,
+        validate: (_v, input, idx) => contextMatches(DOB_KEYWORDS, input, idx)
+      },
+      {
+        type: "passport",
+        regex: /\b[A-Z]\d{8}\b/g,
+        validate: (_v, input, idx) => contextMatches(PASS_KEYWORDS, input, idx)
+      },
+      // PII — contact
+      // Quantifiers bounded, not decorative. `[class]+` before a required literal
+      // re-scans from every start position, which is quadratic: measured at 15.6
+      // SECONDS for this pattern alone on 128KiB of one repeated character, and
+      // ~256x that at 2MiB — the stall that held the 0.1.64 candidate. RFC 5321
+      // caps a local part at 64 characters and a domain at 255, so the bounds cost
+      // no real address.
+      { type: "email", regex: emailRegex() },
+      {
+        type: "phone_us",
+        // Requires area code starting 2-9 (excludes version numbers, dates, plain 7-digit numbers)
+        regex: /\b(?:\+?1[-.\s]?)?\(?([2-9][0-9]{2})\)?[-.\s]([2-9][0-9]{2})[-.\s]([0-9]{4})\b/g
+      },
+      {
+        type: "phone_e164",
+        // E.164 international (non-US, min 8 digits after +)
+        regex: /\+(?!1[^0-9])(?:[2-9][0-9]{1}|[1][^1])[0-9]{6,12}\b/g
+      },
+      // Network — internal RFC-1918 addresses
+      {
+        type: "internal_ip",
+        regex: /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b/g
+      },
+      // Generic env assignment (lowest priority — catches remaining secrets)
+      { type: "env_value", regex: /\b[A-Z][A-Z0-9_]{2,128}=[^\s]{8,8192}/g }
+    ];
+    SEVERITY = {
+      private_key: "critical",
+      credit_card: "critical",
+      ssn: "critical",
+      iban: "critical",
+      aws_access_key: "high",
+      anthropic_api_key: "high",
+      openai_api_key: "high",
+      google_api_key: "high",
+      github_token: "high",
+      slack_token: "high",
+      stripe_key: "high",
+      sendgrid_key: "high",
+      huggingface_token: "high",
+      jwt: "high",
+      url_credentials: "high",
+      password: "high",
+      credential_pair: "high",
+      possible_secret: "low",
+      passport: "high",
+      dob: "high",
+      email: "medium",
+      phone_us: "medium",
+      phone_e164: "medium",
+      internal_ip: "low",
+      env_value: "low"
+    };
+    CATEGORY = {
+      private_key: "credential",
+      credit_card: "financial",
+      ssn: "identity",
+      iban: "financial",
+      passport: "identity",
+      dob: "identity",
+      aws_access_key: "credential",
+      anthropic_api_key: "credential",
+      openai_api_key: "credential",
+      google_api_key: "credential",
+      github_token: "credential",
+      slack_token: "credential",
+      stripe_key: "credential",
+      sendgrid_key: "credential",
+      huggingface_token: "credential",
+      jwt: "credential",
+      url_credentials: "credential",
+      password: "credential",
+      credential_pair: "credential",
+      possible_secret: "credential",
+      email: "contact",
+      phone_us: "contact",
+      phone_e164: "contact",
+      internal_ip: "network",
+      env_value: "credential"
+    };
+    EMAIL_RE = emailRegex();
+    PAIR_WINDOW = 100;
+    POSSIBLE_SECRET_RE = /\b(?:api[_\s-]?key|access[_\s-]?key|secret|token|credential|password)\b\s*(?:is\s*:?|[=:])?\s*["']?([A-Za-z0-9][A-Za-z0-9._\-]{11,127})["']?/gi;
+    MAX_MATCH_CHARS = 72 * 1024;
+    OWNED_CHARS = 128 * 1024;
+  }
+});
+
+// src/utils/content.ts
+function canonicalContent(content) {
+  return content.replace(UNREPRESENTABLE, "\uFFFD");
+}
+var UNREPRESENTABLE;
+var init_content = __esm({
+  "src/utils/content.ts"() {
+    "use strict";
+    UNREPRESENTABLE = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
+  }
+});
+
+// src/privacy/policy.ts
+function contentPolicy() {
+  const mode = process.env.CHRON_CONTENT_POLICY;
+  if (!mode && (process.env.CHRON_CONTENT_POLICY_KEY || process.env.CHRON_CONTENT_POLICY_KEY_FILE || process.env.CHRON_CONTENT_POLICY_LITERALS))
+    throw new ContentPolicyError();
+  if (!mode || mode === "raw")
+    return { mode: "raw", key: Buffer.alloc(0), literals: [], maxBytes: 65536, budgetMs: 25, id: "legacy-raw" };
+  try {
+    if (mode !== "redact" && mode !== "skip")
+      throw Error();
+    let key = process.env.CHRON_CONTENT_POLICY_KEY;
+    if (process.env.CHRON_CONTENT_POLICY_KEY_FILE) {
+      if (key)
+        throw Error();
+      const file = process.env.CHRON_CONTENT_POLICY_KEY_FILE;
+      const st = (0, import_fs.statSync)(file);
+      if (!st.isFile() || (st.mode & 63) !== 0)
+        throw Error();
+      key = (0, import_fs.readFileSync)(file, "utf8").trim();
+    }
+    if (!key || !/^[a-fA-F0-9]{64}$/.test(key))
+      throw Error();
+    const literals = JSON.parse(process.env.CHRON_CONTENT_POLICY_LITERALS ?? "[]");
+    if (!Array.isArray(literals) || literals.length > 32 || literals.some((s) => typeof s !== "string" || !s.length || s.length > 256 || MASK.includes(s)))
+      throw Error();
+    const budgetMs = Number(process.env.CHRON_CONTENT_POLICY_BUDGET_MS ?? "25");
+    if (!Number.isFinite(budgetMs) || budgetMs < 1 || budgetMs > 1e3)
+      throw Error();
+    const bytes2 = Buffer.from(key, "hex");
+    const id = (0, import_crypto.createHmac)("sha256", bytes2).update(JSON.stringify({ mode, literals, maxBytes: 65536, budgetMs, version: 1 })).digest("hex");
+    return { mode, key: bytes2, literals, maxBytes: 65536, budgetMs, id };
+  } catch {
+    throw new ContentPolicyError();
+  }
+}
+function privacyEnabled() {
+  return contentPolicy().mode !== "raw";
+}
+function signingKey(p) {
+  return (0, import_crypto.createPrivateKey)({ key: Buffer.concat([Buffer.from("302e020100300506032b657004220420", "hex"), p.key]), format: "der", type: "pkcs8" });
+}
+function privateIdentifier(value) {
+  const p = contentPolicy();
+  if (p.mode === "raw")
+    return value;
+  const m = /^chron-id-v1:([a-f0-9]{64}):([a-f0-9]{64})$/.exec(value);
+  if (m && (0, import_crypto.createHmac)("sha256", p.key).update("tag:" + m[1]).digest("hex") === m[2])
+    return value;
+  const digest = (0, import_crypto.createHmac)("sha256", p.key).update("identity:" + value).digest("hex");
+  return "chron-id-v1:" + digest + ":" + (0, import_crypto.createHmac)("sha256", p.key).update("tag:" + digest).digest("hex");
+}
+function redactPlain(text2, p, scanner = scanForSecrets) {
+  let out = text2;
+  for (const literal of [...p.literals, p.key.toString("hex"), p.key.toString("hex").toUpperCase()])
+    out = out.split(literal).join(MASK);
+  const hits = scanner(out).sort((a, b) => a.start - b.start || b.end - a.end);
+  let cursor = 0, masked = "";
+  for (const h of hits) {
+    if (!Number.isInteger(h.start) || !Number.isInteger(h.end) || h.start < 0 || h.end > out.length || h.end <= h.start)
+      throw new ContentPolicyError();
+    if (h.start < cursor)
+      continue;
+    masked += out.slice(cursor, h.start) + MASK;
+    cursor = h.end;
+  }
+  return masked + out.slice(cursor);
+}
+function redactText(text2, p, scanner = scanForSecrets) {
+  let nodes = 0;
+  const walk = (x, depth) => {
+    if (++nodes > 2048 || depth > 16)
+      throw new ContentPolicyError();
+    if (typeof x === "string")
+      return redactPlain(x, p, scanner);
+    if (Array.isArray(x))
+      return x.map((v) => walk(v, depth + 1));
+    if (x && typeof x === "object") {
+      const out = /* @__PURE__ */ Object.create(null);
+      for (const [k, v] of Object.entries(x))
+        out[redactPlain(k, p, scanner)] = SENSITIVE_KEY.test(k) ? MASK : walk(v, depth + 1);
+      return out;
+    }
+    return x;
+  };
+  let parsed;
+  try {
+    parsed = JSON.parse(text2);
+  } catch {
+    return redactPlain(text2, p, scanner);
+  }
+  const result = walk(parsed, 0);
+  return JSON.stringify(result) === JSON.stringify(parsed) ? redactPlain(text2, p, scanner) : JSON.stringify(result);
+}
+function seal(content, receipt, p) {
+  const key = signingKey(p);
+  const data = JSON.stringify({ chron_policy: receipt, content });
+  return JSON.stringify({ chron_policy: receipt, content, public_key: (0, import_crypto.createPublicKey)(key).export({ format: "pem", type: "spki" }).toString(), signature: (0, import_crypto.sign)(null, Buffer.from(data), key).toString("base64") });
+}
+function policyEnvelope(text2) {
+  try {
+    const x = JSON.parse(text2);
+    if (!x || Object.keys(x).sort().join(",") !== "chron_policy,content,public_key,signature" || typeof x.content !== "string" || typeof x.public_key !== "string" || typeof x.signature !== "string" || x.chron_policy?.schema !== SCHEMA)
+      return null;
+    const r = x.chron_policy;
+    if (Object.keys(r).sort().join(",") !== "action,mode,policy_id,reason,schema" || !["redact", "skip"].includes(r.mode) || !["as_supplied", "redacted", "omitted", "failed"].includes(r.action) || !["checked", "patterns", "skip", "size_limit", "budget_exceeded", "scanner_failure", "stream_omitted", "composite"].includes(r.reason) || !/^[a-f0-9]{64}$/.test(r.policy_id))
+      return null;
+    if (Buffer.from(x.signature, "base64").toString("base64") !== x.signature) return null;
+    if (!(0, import_crypto.verify)(null, Buffer.from(JSON.stringify({ chron_policy: r, content: x.content })), x.public_key, Buffer.from(x.signature, "base64")))
+      return null;
+    if (["omitted", "failed"].includes(r.action) && x.content !== "")
+      return null;
+    return x;
+  } catch {
+    return null;
+  }
+}
+function assertPreparedContent(text2) {
+  const p = contentPolicy();
+  if (p.mode === "raw")
+    return text2;
+  const x = policyEnvelope(text2);
+  if (!x || x.chron_policy.policy_id !== p.id || x.chron_policy.mode !== p.mode || x.public_key !== (0, import_crypto.createPublicKey)(signingKey(p)).export({ format: "pem", type: "spki" }).toString())
+    throw new ContentPolicyError();
+  if (p.mode === "skip" && x.content !== "")
+    throw new ContentPolicyError();
+  return text2;
+}
+function storedContent(input, options = {}) {
+  const p = contentPolicy();
+  if (p.mode === "raw")
+    return canonicalContent(input);
+  const now = options.now ?? Date.now;
+  const start = now();
+  let content = "", action = "omitted", reason = "skip";
+  if (options.stream)
+    reason = "stream_omitted";
+  else if (p.mode === "redact") {
+    if (Buffer.byteLength(input) > p.maxBytes)
+      reason = "size_limit";
+    else {
+      try {
+        content = canonicalContent(redactText(input, p, options.scanner));
+        if (now() - start > p.budgetMs) {
+          content = "";
+          action = "failed";
+          reason = "budget_exceeded";
+        } else {
+          action = content === canonicalContent(input) ? "as_supplied" : "redacted";
+          reason = action === "redacted" ? "patterns" : "checked";
+        }
+      } catch {
+        content = "";
+        action = "failed";
+        reason = "scanner_failure";
+      }
+    }
+  }
+  return seal(content, { schema: SCHEMA, policy_id: p.id, mode: p.mode, action, reason }, p);
+}
+function mergeStoredParts(parts) {
+  const text2 = parts.map((p2) => p2.toString("utf8"));
+  const envelopes = text2.map(policyEnvelope);
+  if (envelopes.every((x) => !x))
+    return canonicalContent(Buffer.concat(parts).toString("utf8"));
+  if (envelopes.some((x) => !x))
+    throw new ContentPolicyError();
+  const p = contentPolicy();
+  if (p.mode === "raw") {
+    if (parts.length === 1)
+      return text2[0];
+    throw new ContentPolicyError();
+  }
+  for (const t of text2)
+    assertPreparedContent(t);
+  const content = envelopes.map((x) => x.content).join("");
+  const action = envelopes.some((x) => x.chron_policy.action === "failed") ? "failed" : envelopes.every((x) => x.chron_policy.action === "omitted") ? "omitted" : envelopes.some((x) => ["redacted", "omitted"].includes(x.chron_policy.action)) ? "redacted" : "as_supplied";
+  return seal(action === "failed" ? "" : content, { schema: SCHEMA, policy_id: p.id, mode: p.mode, action, reason: "composite" }, p);
+}
+function metadataText(text2) {
+  const p = contentPolicy();
+  if (p.mode === "raw")
+    return text2;
+  if (p.mode === "skip")
+    return "[OMITTED]";
+  const envelope = policyEnvelope(storedContent(text2));
+  return envelope?.content || "[OMITTED]";
+}
+function safeReference(value) {
+  if (!privacyEnabled() || /^(?:[a-f0-9-]{36}|(?:native|claude|imported|chatgpt)[a-z-]*-[a-f0-9]{16,64})$/.test(value))
+    return value;
+  return privateIdentifier(value);
+}
+function policyErrorText(error) {
+  try {
+    if (privacyEnabled())
+      return "Chron operation failed under the configured content policy; input and driver details are not repeated.";
+  } catch {
+    return "Chron content policy could not be loaded; input is not repeated.";
+  }
+  return error instanceof Error ? error.message : String(error);
+}
+function verifyPolicyContent(text2) {
+  if (!privacyEnabled())
+    throw new ContentPolicyError();
+  assertPreparedContent(text2);
+  return policyEnvelope(text2);
+}
+function claimsPolicy(text2) {
+  try {
+    return JSON.parse(text2)?.chron_policy?.schema === SCHEMA;
+  } catch {
+    return false;
+  }
+}
+var import_crypto, import_fs, ContentPolicyError, MASK, SCHEMA, SENSITIVE_KEY;
+var init_policy = __esm({
+  "src/privacy/policy.ts"() {
+    "use strict";
+    import_crypto = require("crypto");
+    import_fs = require("fs");
+    init_detect();
+    init_content();
+    ContentPolicyError = class extends Error {
+      constructor() {
+        super("Chron content policy refused this operation; raw persistence was not authorized as a fallback.");
+      }
+    };
+    MASK = "[REDACTED]";
+    SCHEMA = "chron.content-policy.v1";
+    SENSITIVE_KEY = /^(?:password|passwd|secret|api[_-]?key|access[_-]?token|refresh[_-]?token|authorization|cookie|private[_-]?key|credential)$/i;
+  }
+});
+
 // package.json
 var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "chron-mcp",
-      version: "0.1.70",
+      version: "0.1.72",
       mcpName: "io.github.SirinivasK/chron",
-      description: "Audit-grade timestamped logs for every AI conversation",
+      description: "Local timestamped audit logs for recorded AI interactions",
       repository: {
         type: "git",
         url: "https://github.com/SirinivasK/chron.git"
@@ -3122,7 +3668,7 @@ var require_filesystem = __commonJS({
     "use strict";
     var fs = require("fs");
     var LDD_PATH = "/usr/bin/ldd";
-    var readFileSync22 = (path) => fs.readFileSync(path, "utf-8");
+    var readFileSync24 = (path) => fs.readFileSync(path, "utf-8");
     var readFile = (path) => new Promise((resolve6, reject) => {
       fs.readFile(path, "utf-8", (err, data) => {
         if (err) {
@@ -3134,7 +3680,7 @@ var require_filesystem = __commonJS({
     });
     module2.exports = {
       LDD_PATH,
-      readFileSync: readFileSync22,
+      readFileSync: readFileSync24,
       readFile
     };
   }
@@ -3146,7 +3692,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, readFile, readFileSync: readFileSync22 } = require_filesystem();
+    var { LDD_PATH, readFile, readFileSync: readFileSync24 } = require_filesystem();
     var cachedFamilyFilesystem;
     var cachedVersionFilesystem;
     var command2 = "getconf GNU_LIBC_VERSION 2>&1 || true; ldd --version 2>&1 || true";
@@ -3227,7 +3773,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync22(LDD_PATH);
+        const lddContent = readFileSync24(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -3284,7 +3830,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync22(LDD_PATH);
+        const lddContent = readFileSync24(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -16790,6 +17336,57 @@ var init_libsql = __esm({
   }
 });
 
+// src/privacy/metadata.ts
+function metadataJSON(text2) {
+  const p = contentPolicy();
+  if (p.mode === "raw")
+    return text2;
+  const walk = (value, key = "", depth = 0) => {
+    if (depth > 16)
+      throw new ContentPolicyError();
+    if (Array.isArray(value))
+      return value.map((v) => walk(v, key, depth + 1));
+    if (value && typeof value === "object") {
+      const out = {};
+      for (const [k, v] of Object.entries(value))
+        if (KEYS.has(k))
+          out[k] = walk(v, k, depth + 1);
+      return out;
+    }
+    if (typeof value !== "string")
+      return value;
+    if (key === "journal_path") {
+      if (redactText(value, p) !== value)
+        throw new ContentPolicyError();
+      return value;
+    }
+    if (PUBLIC.has(value) || key === "last_record_hash" && /^[a-f0-9]{64}$/.test(value) || key === "clock_checked_at" && /^\d{4}-\d\d-\d\dT[\d:.+-]+Z?$/.test(value))
+      return value;
+    if (key === "run_id" && /^[a-f0-9-]{36}$/.test(value))
+      return value;
+    if (key === "client_session_id")
+      return privateIdentifier(value);
+    return metadataText(value);
+  };
+  try {
+    return JSON.stringify(walk(JSON.parse(text2)));
+  } catch {
+    throw new ContentPolicyError();
+  }
+}
+function clientLabel(value) {
+  return contentPolicy().mode === "raw" || PUBLIC.has(value) ? value : privateIdentifier(value);
+}
+var PUBLIC, KEYS;
+var init_metadata = __esm({
+  "src/privacy/metadata.ts"() {
+    "use strict";
+    init_policy();
+    PUBLIC = /* @__PURE__ */ new Set(["witnessed", "imported", "live_attach", "transcript_backfill", "native_hook", "unenforced", "enforced:wrapper", "enforced:policy", "durable", "names_not_durable", "mixed", "unknown", "disabled", "synchronized", "not_synchronized", "claude-code", "codex", "claude", "cursor", "gemini", "windsurf", "copilot", "chatgpt", "claudeai", "claude-code-jsonl"]);
+    KEYS = new Set("source partial attach_reason client capture_mode journal native kind run_id client_session_id event_count last_record_hash record_count message_count events_without_content durability journal_path clock_sync_status clock_offset_ms clock_checked_at clock_check_error clock_server clock_round_trip_ms import_format source_event_count source_exclusions source_out_of_order_timestamps public_key_generation_error key_generation_error source_sequence scope_version version".split(" "));
+  }
+});
+
 // src/db/schema.ts
 var schema_exports = {};
 __export(schema_exports, {
@@ -16803,31 +17400,44 @@ __export(schema_exports, {
   secrets_detected: () => secrets_detected,
   sessions: () => sessions
 });
-var sessions, messages, secrets_detected, review_findings, evidence_documents, review_requirements, evidence_links, export_receipts, export_receipt_events;
+var protectedContent, privateLabel, privateNote, privateMetadata, privateClient, privateReference, privateTimestamp, privateMask, sessions, messages, secrets_detected, review_findings, evidence_documents, review_requirements, evidence_links, export_receipts, export_receipt_events;
 var init_schema = __esm({
   "src/db/schema.ts"() {
     "use strict";
     init_sqlite_core();
+    init_policy();
+    init_metadata();
+    protectedContent = customType({ dataType: () => "text", toDriver: assertPreparedContent });
+    privateLabel = customType({ dataType: () => "text", toDriver: privateIdentifier });
+    privateNote = customType({ dataType: () => "text", toDriver: metadataText });
+    privateMetadata = customType({ dataType: () => "text", toDriver: metadataJSON });
+    privateClient = customType({ dataType: () => "text", toDriver: clientLabel });
+    privateReference = customType({ dataType: () => "text", toDriver: safeReference });
+    privateTimestamp = customType({ dataType: () => "text", toDriver: (v) => {
+      if (contentPolicy().mode !== "raw" && !/^\d{4}-\d\d-\d\dT[0-9:.+Z-]+$/.test(v)) throw new ContentPolicyError();
+      return v;
+    } });
+    privateMask = customType({ dataType: () => "text", toDriver: (v) => contentPolicy().mode === "raw" ? v : "[REDACTED]" });
     sessions = sqliteTable("sessions", {
-      id: text("id").primaryKey(),
-      title: text("title").notNull(),
-      ai_tool: text("ai_tool"),
-      created_at: text("created_at").notNull(),
-      updated_at: text("updated_at").notNull(),
-      parent_session_id: text("parent_session_id"),
-      external_ref: text("external_ref"),
+      id: privateReference("id").primaryKey(),
+      title: privateLabel("title").notNull(),
+      ai_tool: privateClient("ai_tool"),
+      created_at: privateTimestamp("created_at").notNull(),
+      updated_at: privateTimestamp("updated_at").notNull(),
+      parent_session_id: privateReference("parent_session_id"),
+      external_ref: privateLabel("external_ref"),
       public_key: text("public_key"),
       signature: text("signature"),
-      metadata: text("metadata")
+      metadata: privateMetadata("metadata")
     });
     messages = sqliteTable("messages", {
-      id: text("id").primaryKey(),
-      session_id: text("session_id").notNull().references(() => sessions.id),
+      id: privateReference("id").primaryKey(),
+      session_id: privateReference("session_id").notNull().references(() => sessions.id),
       // 'system' is reserved for events that belong to neither participant, such as
       // compaction_boundary, which marks where a client transcript lost continuity.
       role: text("role", { enum: ["user", "assistant", "system"] }).notNull(),
-      content: text("content").notNull(),
-      created_at: text("created_at").notNull(),
+      content: protectedContent("content").notNull(),
+      created_at: privateTimestamp("created_at").notNull(),
       prev_hash: text("prev_hash"),
       content_hash: text("content_hash"),
       // NULL = pre-migration row (treated as 'message'); set for all new rows
@@ -16838,60 +17448,60 @@ var init_schema = __esm({
       source_sequence: integer("source_sequence")
     });
     secrets_detected = sqliteTable("secrets_detected", {
-      id: text("id").primaryKey(),
-      session_id: text("session_id").notNull().references(() => sessions.id),
+      id: privateReference("id").primaryKey(),
+      session_id: privateReference("session_id").notNull().references(() => sessions.id),
       message_id: text("message_id").notNull().references(() => messages.id),
       type: text("type").notNull(),
-      masked_value: text("masked_value").notNull(),
-      detected_at: text("detected_at").notNull()
+      masked_value: privateMask("masked_value").notNull(),
+      detected_at: privateTimestamp("detected_at").notNull()
     });
     review_findings = sqliteTable("review_findings", {
-      id: text("id").primaryKey(),
+      id: privateReference("id").primaryKey(),
       rule_id: text("rule_id").notNull(),
-      session_id: text("session_id").notNull().references(() => sessions.id),
+      session_id: privateReference("session_id").notNull().references(() => sessions.id),
       status: text("status", { enum: ["open", "accepted", "dismissed", "resolved"] }).notNull(),
-      note: text("note"),
-      reviewed_at: text("reviewed_at"),
-      created_at: text("created_at").notNull(),
-      updated_at: text("updated_at").notNull()
+      note: privateNote("note"),
+      reviewed_at: privateTimestamp("reviewed_at"),
+      created_at: privateTimestamp("created_at").notNull(),
+      updated_at: privateTimestamp("updated_at").notNull()
     });
     evidence_documents = sqliteTable("evidence_documents", {
-      id: text("id").primaryKey(),
-      title: text("title").notNull(),
-      file_path: text("file_path").notNull(),
+      id: privateReference("id").primaryKey(),
+      title: privateLabel("title").notNull(),
+      file_path: privateLabel("file_path").notNull(),
       sha256: text("sha256").notNull(),
       size_bytes: integer("size_bytes").notNull(),
-      imported_at: text("imported_at").notNull(),
-      metadata: text("metadata")
+      imported_at: privateTimestamp("imported_at").notNull(),
+      metadata: privateMetadata("metadata")
     });
     review_requirements = sqliteTable("review_requirements", {
-      id: text("id").primaryKey(),
-      session_id: text("session_id").notNull().references(() => sessions.id),
+      id: privateReference("id").primaryKey(),
+      session_id: privateReference("session_id").notNull().references(() => sessions.id),
       reason: text("reason", { enum: ["secrets_detected", "auth_code_change", "infra_code_change", "high_attention", "critical_finding"] }).notNull(),
       severity: text("severity", { enum: ["high", "critical"] }).notNull(),
       required_by: text("required_by").notNull(),
       status: text("status", { enum: ["pending", "reviewed", "expired"] }).notNull(),
-      reviewer: text("reviewer"),
-      reviewed_at: text("reviewed_at"),
-      created_at: text("created_at").notNull()
+      reviewer: privateNote("reviewer"),
+      reviewed_at: privateTimestamp("reviewed_at"),
+      created_at: privateTimestamp("created_at").notNull()
     });
     evidence_links = sqliteTable("evidence_links", {
-      id: text("id").primaryKey(),
+      id: privateReference("id").primaryKey(),
       evidence_id: text("evidence_id").notNull().references(() => evidence_documents.id),
       target_type: text("target_type", { enum: ["control", "finding"] }).notNull(),
       target_id: text("target_id").notNull(),
-      note: text("note"),
-      created_at: text("created_at").notNull()
+      note: privateNote("note"),
+      created_at: privateTimestamp("created_at").notNull()
     });
     export_receipts = sqliteTable("export_receipts", {
-      id: text("id").primaryKey(),
-      created_at: text("created_at").notNull(),
+      id: privateReference("id").primaryKey(),
+      created_at: privateTimestamp("created_at").notNull(),
       /** Recognisable destination with userinfo and query stripped. Never the raw URL. */
       destination_label: text("destination_label").notNull(),
       /** SHA-256 of the sanitised label — never of anything credential-bearing. */
       destination_digest: text("destination_digest").notNull(),
       /** The selector as the operator typed it, e.g. --since=7d. */
-      scope_selector: text("scope_selector"),
+      scope_selector: privateLabel("scope_selector"),
       /** JSON array of the session ids the selector resolved to at export time. */
       scope_session_ids: text("scope_session_ids").notNull(),
       session_count: integer("session_count").notNull(),
@@ -16903,7 +17513,7 @@ var init_schema = __esm({
       chron_version: text("chron_version").notNull()
     });
     export_receipt_events = sqliteTable("export_receipt_events", {
-      id: text("id").primaryKey(),
+      id: privateReference("id").primaryKey(),
       receipt_id: text("receipt_id").notNull().references(() => export_receipts.id),
       sequence: integer("sequence").notNull(),
       event_type: text("event_type", { enum: ["prepared", "batch_started", "batch_finished", "finalized"] }).notNull(),
@@ -16915,7 +17525,7 @@ var init_schema = __esm({
        * does not prevent.
        */
       logical_key: text("logical_key").notNull(),
-      created_at: text("created_at").notNull(),
+      created_at: privateTimestamp("created_at").notNull(),
       /** Deterministic JSON, so the hash is reproducible from the stored row. */
       canonical_payload: text("canonical_payload").notNull(),
       prev_hash: text("prev_hash"),
@@ -16991,11 +17601,63 @@ function getDbPath() {
   return (0, import_path2.join)((0, import_os2.homedir)(), ".chron", "chron.db");
 }
 async function initDb(dbPath3) {
+  const policy = contentPolicy();
   const path = guardedDbPath(dbPath3 ?? getDbPath());
+  const profilePath = path + ".content-policy.json";
+  if (policy.mode !== "raw" && !path.startsWith(":") && (0, import_fs2.existsSync)(path)) {
+    try {
+      assertPreparedContent((0, import_fs2.readFileSync)(profilePath, "utf8"));
+    } catch {
+      throw new ContentPolicyError();
+    }
+  }
   if (!path.startsWith(":")) {
-    (0, import_fs.mkdirSync)((0, import_path2.dirname)(path), { recursive: true });
+    (0, import_fs2.mkdirSync)((0, import_path2.dirname)(path), { recursive: true });
+  }
+  if (policy.mode !== "raw" && !path.startsWith(":")) {
+    if ((0, import_fs2.existsSync)(profilePath)) assertPreparedContent((0, import_fs2.readFileSync)(profilePath, "utf8"));
+    else {
+      try {
+        const fd = (0, import_fs2.openSync)(profilePath, "wx", 384);
+        try {
+          (0, import_fs2.writeFileSync)(fd, storedContent(""));
+          (0, import_fs2.fsyncSync)(fd);
+        } finally {
+          (0, import_fs2.closeSync)(fd);
+        }
+      } catch {
+        throw new ContentPolicyError();
+      }
+    }
   }
   const client = createClient({ url: path.startsWith(":") ? path : `file:${path}` });
+  if (policy.mode !== "raw") {
+    try {
+      const existing = await client.execute("select name from sqlite_master where type='table' and name in ('messages','sessions')");
+      const profile = await client.execute("select name from sqlite_master where type='table' and name='chron_content_profile'");
+      if (existing.rows.length && !profile.rows.length) throw new ContentPolicyError();
+      if (profile.rows.length) {
+        const rows = await client.execute("select policy_id from chron_content_profile");
+        if (rows.rows.length !== 1 || rows.rows[0]?.policy_id !== policy.id) throw new ContentPolicyError();
+      }
+      const table = await client.execute("select name from sqlite_master where type='table' and name='messages'");
+      if (table.rows.length) {
+        const old = await client.execute("select content from messages");
+        for (const row of old.rows) {
+          if (typeof row.content !== "string") throw new ContentPolicyError();
+          assertPreparedContent(row.content);
+        }
+      }
+    } catch (e) {
+      client.close();
+      throw e instanceof ContentPolicyError ? e : new ContentPolicyError();
+    }
+  }
+  if (policy.mode !== "raw") {
+    await client.execute("create table if not exists chron_content_profile (policy_id text not null)");
+    const profile = await client.execute("select policy_id from chron_content_profile");
+    if (!profile.rows.length) await client.execute({ sql: "insert into chron_content_profile values (?)", args: [policy.id] });
+  }
   await client.execute("PRAGMA journal_mode = WAL");
   await client.execute("PRAGMA wal_checkpoint(PASSIVE)");
   await client.execute("PRAGMA busy_timeout = 5000");
@@ -17169,14 +17831,15 @@ async function initDb(dbPath3) {
   }
   return drizzle(client, { schema: schema_exports });
 }
-var import_os2, import_fs, import_path2, CREATE_SQL;
+var import_os2, import_fs2, import_path2, CREATE_SQL;
 var init_db2 = __esm({
   "src/db/index.ts"() {
     "use strict";
+    init_policy();
     init_node2();
     init_libsql();
     import_os2 = require("os");
-    import_fs = require("fs");
+    import_fs2 = require("fs");
     import_path2 = require("path");
     init_schema();
     init_config_path();
@@ -18332,7 +18995,7 @@ async function queryIntegrity(db) {
 async function dbFingerprint(db) {
   const rows = await q(db, `SELECT COUNT(*) AS n, MAX(created_at) AS latest FROM messages`);
   const row = rows[0];
-  const h = (0, import_crypto.createHash)("sha256").update(`${row?.n ?? 0}:${row?.latest ?? ""}`).digest("hex");
+  const h = (0, import_crypto2.createHash)("sha256").update(`${row?.n ?? 0}:${row?.latest ?? ""}`).digest("hex");
   return h.slice(0, 16);
 }
 function esc(s) {
@@ -18343,7 +19006,7 @@ function fmtDate2(iso) {
   return iso.slice(0, 10);
 }
 function severityBadge(type) {
-  const level = SEVERITY[type] ?? "Low";
+  const level = SEVERITY2[type] ?? "Low";
   const color = level === "Critical" ? "#dc2626" : level === "High" ? "#d97706" : level === "Medium" ? "#2563eb" : "#6b7280";
   return `<span style="background:${color};color:#fff;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600">${level}</span>`;
 }
@@ -18526,17 +19189,17 @@ async function buildSoc2Report(outputPath) {
     integrity,
     generatedAt
   });
-  (0, import_fs2.writeFileSync)(outputPath, html, "utf8");
+  (0, import_fs3.writeFileSync)(outputPath, html, "utf8");
 }
-var import_fs2, import_os3, import_crypto, SEVERITY, CSS;
+var import_fs3, import_os3, import_crypto2, SEVERITY2, CSS;
 var init_soc2 = __esm({
   "src/cli/soc2.ts"() {
     "use strict";
-    import_fs2 = require("fs");
+    import_fs3 = require("fs");
     import_os3 = require("os");
-    import_crypto = require("crypto");
+    import_crypto2 = require("crypto");
     init_db2();
-    SEVERITY = {
+    SEVERITY2 = {
       private_key: "Critical",
       credit_card: "Critical",
       ssn: "Critical",
@@ -18806,7 +19469,7 @@ function matchesSignal2(content, patterns) {
   }
 }
 function reqId(sessionId, reason) {
-  return (0, import_crypto2.createHash)("sha256").update(`${sessionId}:${reason}`).digest("hex");
+  return (0, import_crypto3.createHash)("sha256").update(`${sessionId}:${reason}`).digest("hex");
 }
 function addHours(iso, hours) {
   return new Date(Date.parse(iso) + hours * 36e5).toISOString();
@@ -18929,11 +19592,11 @@ function computeStats(requirements, now, scannedCount = 0) {
   }
   return { pending, overdue, reviewed, expired, withinSla, scanned: scannedCount, flagged, flagRate, highFlagRate, reasonBreakdown };
 }
-var import_crypto2, SEVERITY_MAP2, AUTH_SIGNAL, INFRA_SIGNAL;
+var import_crypto3, SEVERITY_MAP2, AUTH_SIGNAL, INFRA_SIGNAL;
 var init_queue2 = __esm({
   "src/review/queue.ts"() {
     "use strict";
-    import_crypto2 = require("crypto");
+    import_crypto3 = require("crypto");
     init_drizzle_orm();
     init_schema();
     init_risk();
@@ -20431,7 +21094,7 @@ async function buildIntelligenceReport(outputPath, since, sinceArg) {
     buildCoverageSection(),
     buildDisclaimer()
   );
-  (0, import_fs3.writeFileSync)(outputPath, html, "utf8");
+  (0, import_fs4.writeFileSync)(outputPath, html, "utf8");
   process.stdout.write(
     `
 \x1B[1mChron Intelligence Report\x1B[0m  \u2192  ${outputPath}
@@ -20443,11 +21106,11 @@ async function buildIntelligenceReport(outputPath, since, sinceArg) {
 `
   );
 }
-var import_fs3, FW_LABELS2, RULE_META2, INTEL_CSS;
+var import_fs4, FW_LABELS2, RULE_META2, INTEL_CSS;
 var init_intelligence_report = __esm({
   "src/cli/intelligence-report.ts"() {
     "use strict";
-    import_fs3 = require("fs");
+    import_fs4 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -20833,60 +21496,60 @@ function pubKeyPath(sessionId) {
   return (0, import_path3.join)(keysDir(), `${sessionId}.pub`);
 }
 function generateSessionKeypair(sessionId) {
-  const { privateKey, publicKey } = (0, import_crypto3.generateKeyPairSync)("ed25519", {
+  const { privateKey, publicKey } = (0, import_crypto4.generateKeyPairSync)("ed25519", {
     privateKeyEncoding: { type: "pkcs8", format: "pem" },
     publicKeyEncoding: { type: "spki", format: "pem" }
   });
   const dir = keysDir();
-  (0, import_fs4.mkdirSync)(dir, { recursive: true });
-  (0, import_fs4.writeFileSync)(privKeyPath(sessionId), privateKey, { mode: 384 });
-  (0, import_fs4.writeFileSync)(pubKeyPath(sessionId), publicKey);
+  (0, import_fs5.mkdirSync)(dir, { recursive: true });
+  (0, import_fs5.writeFileSync)(privKeyPath(sessionId), privateKey, { mode: 384 });
+  (0, import_fs5.writeFileSync)(pubKeyPath(sessionId), publicKey);
   return publicKey;
 }
 function sessionDigest(sessionId, finalContentHash2, messageCount, firstCreatedAt) {
   const input = `${sessionId}|${finalContentHash2}|${messageCount}|${firstCreatedAt}`;
-  return (0, import_crypto3.createHash)("sha256").update(input).digest();
+  return (0, import_crypto4.createHash)("sha256").update(input).digest();
 }
 function signSession(sessionId, finalContentHash2, messageCount, firstCreatedAt) {
   const privPath = privKeyPath(sessionId);
-  if (!(0, import_fs4.existsSync)(privPath)) {
+  if (!(0, import_fs5.existsSync)(privPath)) {
     throw new Error(`Private key not found: ${privPath}`);
   }
-  const privateKey = (0, import_fs4.readFileSync)(privPath, "utf8");
+  const privateKey = (0, import_fs5.readFileSync)(privPath, "utf8");
   const digest = sessionDigest(sessionId, finalContentHash2, messageCount, firstCreatedAt);
-  const sig = (0, import_crypto3.sign)(null, digest, privateKey);
+  const sig = (0, import_crypto4.sign)(null, digest, privateKey);
   return sig.toString("base64");
 }
 function verifySignature(publicKeyPem, signatureB64, sessionId, finalContentHash2, messageCount, firstCreatedAt) {
   try {
     const digest = sessionDigest(sessionId, finalContentHash2, messageCount, firstCreatedAt);
     const sigBuf = Buffer.from(signatureB64, "base64");
-    return (0, import_crypto3.verify)(null, digest, publicKeyPem, sigBuf);
+    return (0, import_crypto4.verify)(null, digest, publicKeyPem, sigBuf);
   } catch {
     return false;
   }
 }
 function signBuffer(sessionId, data) {
-  const privateKey = (0, import_fs4.readFileSync)(privKeyPath(sessionId), "utf8");
-  const digest = (0, import_crypto3.createHash)("sha256").update(data).digest();
-  const sig = (0, import_crypto3.sign)(null, digest, privateKey);
+  const privateKey = (0, import_fs5.readFileSync)(privKeyPath(sessionId), "utf8");
+  const digest = (0, import_crypto4.createHash)("sha256").update(data).digest();
+  const sig = (0, import_crypto4.sign)(null, digest, privateKey);
   return sig.toString("base64");
 }
 function verifyBufferSignature(publicKeyPem, signatureB64, data) {
   try {
-    const digest = (0, import_crypto3.createHash)("sha256").update(data).digest();
+    const digest = (0, import_crypto4.createHash)("sha256").update(data).digest();
     const sigBuf = Buffer.from(signatureB64, "base64");
-    return (0, import_crypto3.verify)(null, digest, publicKeyPem, sigBuf);
+    return (0, import_crypto4.verify)(null, digest, publicKeyPem, sigBuf);
   } catch {
     return false;
   }
 }
-var import_crypto3, import_fs4, import_path3, import_os4;
+var import_crypto4, import_fs5, import_path3, import_os4;
 var init_signing = __esm({
   "src/utils/signing.ts"() {
     "use strict";
-    import_crypto3 = require("crypto");
-    import_fs4 = require("fs");
+    import_crypto4 = require("crypto");
+    import_fs5 = require("fs");
     import_path3 = require("path");
     import_os4 = require("os");
     init_config_path();
@@ -20899,8 +21562,8 @@ __export(export_bundle_exports, {
   runExportBundle: () => runExportBundle
 });
 function sha256file(filePath) {
-  const content = (0, import_fs5.readFileSync)(filePath);
-  return (0, import_crypto4.createHash)("sha256").update(content).digest("hex");
+  const content = (0, import_fs6.readFileSync)(filePath);
+  return (0, import_crypto5.createHash)("sha256").update(content).digest("hex");
 }
 function parseSince2(s) {
   if (s.endsWith("d")) {
@@ -20912,6 +21575,7 @@ function parseSince2(s) {
   return s;
 }
 async function runExportBundle(args2) {
+  if (privacyEnabled()) throw new ContentPolicyError();
   const sessionArg = args2.find((a) => a.startsWith("--session="))?.split("=").slice(1).join("=");
   const sinceArg = args2.find((a) => a.startsWith("--since="))?.split("=").slice(1).join("=");
   const outputPath = args2.find((a) => a.startsWith("--output="))?.split("=").slice(1).join("=") ?? "bundle.chron.tar.gz";
@@ -20935,22 +21599,22 @@ async function runExportBundle(args2) {
     process.exit(1);
   }
   const sessionIds = filtered.map((s) => s.id);
-  const tempDir = (0, import_fs5.mkdtempSync)((0, import_path4.resolve)((0, import_os5.tmpdir)(), "chron-bundle-"));
+  const tempDir = (0, import_fs6.mkdtempSync)((0, import_path4.resolve)((0, import_os5.tmpdir)(), "chron-bundle-"));
   const absOutput = (0, import_path4.resolve)(outputPath);
-  const tempOutput = `${absOutput}.tmp-${process.pid}-${(0, import_crypto4.randomUUID)()}`;
+  const tempOutput = `${absOutput}.tmp-${process.pid}-${(0, import_crypto5.randomUUID)()}`;
   const pubkeysDir = (0, import_path4.join)(tempDir, "pubkeys");
-  (0, import_fs5.mkdirSync)(pubkeysDir);
+  (0, import_fs6.mkdirSync)(pubkeysDir);
   try {
-    (0, import_fs5.writeFileSync)((0, import_path4.join)(tempDir, "sessions.json"), JSON.stringify(filtered, null, 2));
+    (0, import_fs6.writeFileSync)((0, import_path4.join)(tempDir, "sessions.json"), JSON.stringify(filtered, null, 2));
     const msgsPath = (0, import_path4.join)(tempDir, "messages.jsonl");
-    const msgsStream = (0, import_fs5.createWriteStream)(msgsPath);
+    const msgsStream = (0, import_fs6.createWriteStream)(msgsPath);
     for (const sid of sessionIds) {
       const msgs = await db.select().from(messages).where(eq(messages.session_id, sid)).orderBy(...messageOrderAsc());
       for (const m of msgs) msgsStream.write(JSON.stringify(m) + "\n");
     }
     await new Promise((resolve6) => msgsStream.end(resolve6));
     const secretsPath = (0, import_path4.join)(tempDir, "secrets.jsonl");
-    const secretsStream = (0, import_fs5.createWriteStream)(secretsPath);
+    const secretsStream = (0, import_fs6.createWriteStream)(secretsPath);
     for (const sid of sessionIds) {
       const secs = await db.select().from(secrets_detected).where(eq(secrets_detected.session_id, sid));
       for (const s of secs) secretsStream.write(JSON.stringify(s) + "\n");
@@ -20958,7 +21622,7 @@ async function runExportBundle(args2) {
     await new Promise((resolve6) => secretsStream.end(resolve6));
     for (const s of filtered) {
       if (s.public_key) {
-        (0, import_fs5.writeFileSync)((0, import_path4.join)(pubkeysDir, `${s.id}.pub`), s.public_key);
+        (0, import_fs6.writeFileSync)((0, import_path4.join)(pubkeysDir, `${s.id}.pub`), s.public_key);
       }
     }
     const fileHashes = {
@@ -20980,7 +21644,7 @@ async function runExportBundle(args2) {
       files: fileHashes
     };
     const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2));
-    (0, import_fs5.writeFileSync)((0, import_path4.join)(tempDir, "manifest.json"), manifestBytes);
+    (0, import_fs6.writeFileSync)((0, import_path4.join)(tempDir, "manifest.json"), manifestBytes);
     if (filtered.length !== 1) {
       throw new BundleError(
         `--signed covers a single session, and this selection has ${filtered.length}.
@@ -20997,7 +21661,7 @@ async function runExportBundle(args2) {
 ` : "") + absent.next.map((l) => `  ${l}`).join("\n")
       );
     }
-    if (!(0, import_fs5.existsSync)(privKeyPath(only.id))) {
+    if (!(0, import_fs6.existsSync)(privKeyPath(only.id))) {
       throw new BundleError(
         `The private key for session ${only.id.slice(0, 8)} is not on this machine.
   Keys live in ${privKeyPath(only.id).replace(/\/[^/]+$/, "")} and are never copied by Chron,
@@ -21006,7 +21670,7 @@ async function runExportBundle(args2) {
     }
     try {
       const sig = signBuffer(only.id, manifestBytes);
-      (0, import_fs5.writeFileSync)((0, import_path4.join)(tempDir, "manifest.sig"), JSON.stringify({
+      (0, import_fs6.writeFileSync)((0, import_path4.join)(tempDir, "manifest.sig"), JSON.stringify({
         chron_sig: "v1",
         session_id: only.id,
         algorithm: "Ed25519-SHA256",
@@ -21016,7 +21680,7 @@ async function runExportBundle(args2) {
       throw new BundleError(`Signing failed: ${e instanceof Error ? e.message : String(e)}`);
     }
     (0, import_child_process.execFileSync)("tar", ["-czf", tempOutput, "-C", tempDir, "."]);
-    (0, import_fs5.renameSync)(tempOutput, absOutput);
+    (0, import_fs6.renameSync)(tempOutput, absOutput);
     const sessionWord = filtered.length === 1 ? "session" : "sessions";
     process.stdout.write(`Bundle: ${absOutput}
 `);
@@ -21035,19 +21699,20 @@ ${RED2}\u2717 Bundle not created.${RESET3} ${e.message}
     }
     throw e;
   } finally {
-    (0, import_fs5.rmSync)(tempOutput, { force: true });
-    (0, import_fs5.rmSync)(tempDir, { recursive: true, force: true });
+    (0, import_fs6.rmSync)(tempOutput, { force: true });
+    (0, import_fs6.rmSync)(tempDir, { recursive: true, force: true });
   }
 }
-var import_fs5, import_path4, import_os5, import_crypto4, import_child_process, import_package, RED2, RESET3, BundleError;
+var import_fs6, import_path4, import_os5, import_crypto5, import_child_process, import_package, RED2, RESET3, BundleError;
 var init_export_bundle = __esm({
   "src/cli/export-bundle.ts"() {
     "use strict";
-    import_fs5 = require("fs");
+    init_policy();
+    import_fs6 = require("fs");
     init_evidence();
     import_path4 = require("path");
     import_os5 = require("os");
-    import_crypto4 = require("crypto");
+    import_crypto5 = require("crypto");
     import_child_process = require("child_process");
     init_drizzle_orm();
     init_db2();
@@ -21400,15 +22065,15 @@ function resolveChronMcpServer(pathValue = process.env.PATH ?? "", platform3 = p
   for (const dir of pathValue.split(import_path6.delimiter).filter(Boolean)) {
     for (const name2 of executableNames(platform3)) {
       const candidate = (0, import_path6.join)(dir, name2);
-      if ((0, import_fs6.existsSync)(candidate)) return { command: candidate, args: [] };
+      if ((0, import_fs7.existsSync)(candidate)) return { command: candidate, args: [] };
     }
   }
   let packageDir = __dirname;
   while ((0, import_path6.dirname)(packageDir) !== packageDir) {
     const packageJson = (0, import_path6.join)(packageDir, "package.json");
-    if ((0, import_fs6.existsSync)(packageJson)) {
+    if ((0, import_fs7.existsSync)(packageJson)) {
       try {
-        const pkg = JSON.parse((0, import_fs6.readFileSync)(packageJson, "utf8"));
+        const pkg = JSON.parse((0, import_fs7.readFileSync)(packageJson, "utf8"));
         if (pkg.name === "chron-mcp") {
           return { command: (0, import_path6.join)(packageDir, "dist", "index.js"), args: [] };
         }
@@ -21504,9 +22169,9 @@ ${argsLine}
 }
 function commandExists(command2, pathValue = process.env.PATH ?? "") {
   if (!command2) return false;
-  if (command2.includes("/") || command2.includes("\\")) return (0, import_fs6.existsSync)(command2);
+  if (command2.includes("/") || command2.includes("\\")) return (0, import_fs7.existsSync)(command2);
   const candidates = process.platform === "win32" ? [command2, `${command2}.cmd`, `${command2}.exe`, `${command2}.bat`] : [command2];
-  return pathValue.split(import_path6.delimiter).filter(Boolean).some((dir) => candidates.some((name2) => (0, import_fs6.existsSync)((0, import_path6.join)(dir, name2))));
+  return pathValue.split(import_path6.delimiter).filter(Boolean).some((dir) => candidates.some((name2) => (0, import_fs7.existsSync)((0, import_path6.join)(dir, name2))));
 }
 function sameCommand(a, b) {
   return a.command === b.command && JSON.stringify(a.args ?? []) === JSON.stringify(b.args ?? []);
@@ -21552,11 +22217,11 @@ function inspectChronLauncher(content, type, expected = CHRON_MCP_SERVER) {
     reason: storedExists ? void 0 : `${stored.command} is configured but not present on this machine`
   };
 }
-var import_fs6, import_path6, CHRON_MCP_SERVER;
+var import_fs7, import_path6, CHRON_MCP_SERVER;
 var init_mcp_config = __esm({
   "src/cli/mcp-config.ts"() {
     "use strict";
-    import_fs6 = require("fs");
+    import_fs7 = require("fs");
     import_path6 = require("path");
     CHRON_MCP_SERVER = resolveChronMcpServer();
   }
@@ -21579,7 +22244,7 @@ function safePath(path) {
   if (!anchors.length) throw new Error("Configuration target is outside the selected home/project roots");
   for (let p = path; ; p = (0, import_path7.dirname)(p)) {
     try {
-      if ((0, import_fs7.lstatSync)(p).isSymbolicLink()) throw new Error(`Refusing symbolic link: ${p}`);
+      if ((0, import_fs8.lstatSync)(p).isSymbolicLink()) throw new Error(`Refusing symbolic link: ${p}`);
     } catch (e) {
       if (e.code !== "ENOENT") throw e;
     }
@@ -21590,7 +22255,7 @@ function safePath(path) {
 function read(path) {
   safePath(path);
   try {
-    const bytes2 = (0, import_fs7.readFileSync)(path), text2 = bytes2.toString("utf8");
+    const bytes2 = (0, import_fs8.readFileSync)(path), text2 = bytes2.toString("utf8");
     if (!Buffer.from(text2, "utf8").equals(bytes2)) throw new Error(`Refusing non-UTF-8 configuration: ${path}`);
     return text2;
   } catch (e) {
@@ -21669,7 +22334,7 @@ function change(path, description, transform) {
     before,
     after,
     description,
-    mode: before === null ? 384 : (0, import_fs7.lstatSync)(path).mode & 511
+    mode: before === null ? 384 : (0, import_fs8.lstatSync)(path).mode & 511
   };
 }
 function allowedPaths(cwd) {
@@ -21694,7 +22359,7 @@ function configurationPlan(args2, cwd = process.cwd()) {
       if (c.name.includes("(project)")) continue;
       const selected = client === "all" || { claude: ["Claude Code", "Claude Desktop"], codex: ["Codex (global)"], cursor: ["Cursor (global)"], gemini: ["Gemini CLI"] }[client]?.includes(c.name);
       if (!selected) continue;
-      if (!["Claude Code", "Codex (global)", "Cursor (global)", "Gemini CLI"].includes(c.name) && !(0, import_fs7.existsSync)(c.path) && !(0, import_fs7.existsSync)((0, import_path7.dirname)(c.path))) continue;
+      if (!["Claude Code", "Codex (global)", "Cursor (global)", "Gemini CLI"].includes(c.name) && !(0, import_fs8.existsSync)(c.path) && !(0, import_fs8.existsSync)((0, import_path7.dirname)(c.path))) continue;
       add(c.path, `${c.name} MCP server entry`, (text2) => configureMcp(text2, c.type));
     }
     for (const [name2, path, tool] of [
@@ -21728,21 +22393,21 @@ ${buildChronInstructions("cursor")}`;
 }
 function atomicWrite(path, value, mode) {
   safePath(path);
-  (0, import_fs7.mkdirSync)((0, import_path7.dirname)(path), { recursive: true, mode: 448 });
+  (0, import_fs8.mkdirSync)((0, import_path7.dirname)(path), { recursive: true, mode: 448 });
   safePath(path);
-  const temp = `${path}.chron-${(0, import_crypto5.randomUUID)()}`;
-  const fd = (0, import_fs7.openSync)(temp, import_fs7.constants.O_CREAT | import_fs7.constants.O_EXCL | import_fs7.constants.O_WRONLY | import_fs7.constants.O_NOFOLLOW, 384);
+  const temp = `${path}.chron-${(0, import_crypto6.randomUUID)()}`;
+  const fd = (0, import_fs8.openSync)(temp, import_fs8.constants.O_CREAT | import_fs8.constants.O_EXCL | import_fs8.constants.O_WRONLY | import_fs8.constants.O_NOFOLLOW, 384);
   try {
-    (0, import_fs7.writeFileSync)(fd, value);
-    (0, import_fs7.fsyncSync)(fd);
-    (0, import_fs7.fchmodSync)(fd, mode);
+    (0, import_fs8.writeFileSync)(fd, value);
+    (0, import_fs8.fsyncSync)(fd);
+    (0, import_fs8.fchmodSync)(fd, mode);
   } finally {
-    (0, import_fs7.closeSync)(fd);
+    (0, import_fs8.closeSync)(fd);
   }
   try {
-    (0, import_fs7.renameSync)(temp, path);
+    (0, import_fs8.renameSync)(temp, path);
   } finally {
-    if ((0, import_fs7.existsSync)(temp)) (0, import_fs7.unlinkSync)(temp);
+    if ((0, import_fs8.existsSync)(temp)) (0, import_fs8.unlinkSync)(temp);
   }
 }
 function stateDir() {
@@ -21768,7 +22433,7 @@ async function runConfiguration(args2, undo = false) {
   const dir = stateDir(), cwd = process.cwd();
   let receiptPath, changes;
   if (undo && !args2.includes("--legacy")) {
-    const files = (0, import_fs7.existsSync)(dir) ? (0, import_fs7.readdirSync)(dir).filter((x) => /^\d+-[0-9a-f-]+\.json$/.test(x)).sort() : [];
+    const files = (0, import_fs8.existsSync)(dir) ? (0, import_fs8.readdirSync)(dir).filter((x) => /^\d+-[0-9a-f-]+\.json$/.test(x)).sort() : [];
     receiptPath = files.length ? (0, import_path7.join)(dir, files[files.length - 1]) : void 0;
     if (!receiptPath) {
       process.stdout.write("No tracked setup to undo. To inspect older installations: chron unsetup --legacy\n");
@@ -21781,7 +22446,7 @@ async function runConfiguration(args2, undo = false) {
       if (!allowed.has(c.path) || typeof c.after !== "string" || !(c.before === null || typeof c.before === "string") || !Number.isInteger(c.mode) || c.mode < 0 || c.mode > 511) throw new Error("Invalid configuration receipt");
       const current = read(c.path);
       if (current === c.before) return [];
-      if (current !== c.after || ((0, import_fs7.lstatSync)(c.path).mode & 511) !== c.mode) throw new Error(`Modified since setup; preserving ${c.path}`);
+      if (current !== c.after || ((0, import_fs8.lstatSync)(c.path).mode & 511) !== c.mode) throw new Error(`Modified since setup; preserving ${c.path}`);
       return [{ ...c, before: c.after, after: c.before, description: "restore state before tracked setup" }];
     });
   } else changes = undo ? legacyRemoval(cwd) : configurationPlan(args2, cwd);
@@ -21791,30 +22456,30 @@ async function runConfiguration(args2, undo = false) {
     return;
   }
   if (!changes.length) {
-    if (receiptPath) (0, import_fs7.renameSync)(receiptPath, receiptPath + ".undone");
+    if (receiptPath) (0, import_fs8.renameSync)(receiptPath, receiptPath + ".undone");
     return;
   }
-  (0, import_fs7.mkdirSync)(dir, { recursive: true, mode: 448 });
+  (0, import_fs8.mkdirSync)(dir, { recursive: true, mode: 448 });
   safePath(dir);
   const lock = (0, import_path7.join)(dir, ".lock");
-  const fd = (0, import_fs7.openSync)(lock, import_fs7.constants.O_CREAT | import_fs7.constants.O_EXCL | import_fs7.constants.O_WRONLY | import_fs7.constants.O_NOFOLLOW, 384);
+  const fd = (0, import_fs8.openSync)(lock, import_fs8.constants.O_CREAT | import_fs8.constants.O_EXCL | import_fs8.constants.O_WRONLY | import_fs8.constants.O_NOFOLLOW, 384);
   try {
     for (const c of changes) if (read(c.path) !== c.before) throw new Error(`Changed during preview; preserving ${c.path}`);
     if (!undo) {
-      const receipt = { schema: 1, id: (0, import_crypto5.randomUUID)(), cwd, changes };
-      const prior = (0, import_fs7.readdirSync)(dir).map((n) => Number(n.match(/^(\d+)-/)?.[1] ?? 0));
+      const receipt = { schema: 1, id: (0, import_crypto6.randomUUID)(), cwd, changes };
+      const prior = (0, import_fs8.readdirSync)(dir).map((n) => Number(n.match(/^(\d+)-/)?.[1] ?? 0));
       const sequence = Math.max(Date.now(), ...prior.map((n) => n + 1));
       atomicWrite((0, import_path7.join)(dir, `${sequence}-${receipt.id}.json`), JSON.stringify(receipt), 384);
     }
     for (const c of changes) {
-      if (c.after === null) (0, import_fs7.unlinkSync)(safePath(c.path));
+      if (c.after === null) (0, import_fs8.unlinkSync)(safePath(c.path));
       else atomicWrite(c.path, c.after, c.mode);
     }
-    if (receiptPath) (0, import_fs7.renameSync)(receiptPath, receiptPath + ".undone");
+    if (receiptPath) (0, import_fs8.renameSync)(receiptPath, receiptPath + ".undone");
     process.stdout.write("Applied the listed changes. Restart the configured client to load changes.\n");
   } finally {
-    (0, import_fs7.closeSync)(fd);
-    (0, import_fs7.unlinkSync)(lock);
+    (0, import_fs8.closeSync)(fd);
+    (0, import_fs8.unlinkSync)(lock);
   }
 }
 function legacyRemoval(cwd) {
@@ -21886,16 +22551,16 @@ ${CHRON_BLOCK_END}`))
         after = text2.replace(section2[0], "");
       }
     }
-    if (after !== text2) changes.push({ path, before: text2, after, mode: (0, import_fs7.lstatSync)(path).mode & 511, description: "remove exact recognized legacy Chron block; keep surrounding content" });
+    if (after !== text2) changes.push({ path, before: text2, after, mode: (0, import_fs8.lstatSync)(path).mode & 511, description: "remove exact recognized legacy Chron block; keep surrounding content" });
   }
   return changes;
 }
-var import_fs7, import_crypto5, import_os7, import_path7, SHELL_START, SHELL_END, shellBlock;
+var import_fs8, import_crypto6, import_os7, import_path7, SHELL_START, SHELL_END, shellBlock;
 var init_configuration = __esm({
   "src/cli/configuration.ts"() {
     "use strict";
-    import_fs7 = require("fs");
-    import_crypto5 = require("crypto");
+    import_fs8 = require("fs");
+    import_crypto6 = require("crypto");
     import_os7 = require("os");
     import_path7 = require("path");
     init_instructions();
@@ -21927,15 +22592,15 @@ function configPath2() {
 }
 function loadConfig() {
   try {
-    return JSON.parse((0, import_fs8.readFileSync)(configPath2(), "utf8"));
+    return JSON.parse((0, import_fs9.readFileSync)(configPath2(), "utf8"));
   } catch {
     return {};
   }
 }
 function saveConfig(data) {
   const dir = (0, import_path8.join)((0, import_os8.homedir)(), ".chron");
-  (0, import_fs8.mkdirSync)(dir, { recursive: true });
-  (0, import_fs8.writeFileSync)(configPath2(), JSON.stringify(data, null, 2), "utf8");
+  (0, import_fs9.mkdirSync)(dir, { recursive: true });
+  (0, import_fs9.writeFileSync)(configPath2(), JSON.stringify(data, null, 2), "utf8");
 }
 async function connectCrowdStrike() {
   process.stdout.write(`
@@ -22334,14 +22999,14 @@ Integrations:
     }
   }
 }
-var import_readline, import_os8, import_path8, import_fs8, RESET6, BOLD5, DIM4, CYAN4, GREEN2, RED3, YELLOW3, CHRON_INSTRUCTION_SENTINEL, CHRON_INSTRUCTION_BLOCK_START;
+var import_readline, import_os8, import_path8, import_fs9, RESET6, BOLD5, DIM4, CYAN4, GREEN2, RED3, YELLOW3, CHRON_INSTRUCTION_SENTINEL, CHRON_INSTRUCTION_BLOCK_START;
 var init_connect = __esm({
   "src/cli/connect.ts"() {
     "use strict";
     import_readline = require("readline");
     import_os8 = require("os");
     import_path8 = require("path");
-    import_fs8 = require("fs");
+    import_fs9 = require("fs");
     init_config_path();
     init_splunk_request();
     init_instructions();
@@ -22528,7 +23193,7 @@ var init_summary = __esm({
 
 // src/db/readonly.ts
 function openReadOnly(path) {
-  if (!path.startsWith(":") && !(0, import_fs9.existsSync)(path)) return null;
+  if (!path.startsWith(":") && !(0, import_fs10.existsSync)(path)) return null;
   const client = createClient({ url: path.startsWith(":") ? path : `file:${path}` });
   return {
     db: drizzle(client, { schema: schema_exports }),
@@ -22544,14 +23209,15 @@ async function enforceReadOnly(handle) {
   await handle.db.run(sql.raw("PRAGMA query_only = ON"));
 }
 function openUntouched(path) {
-  if (!(0, import_fs9.existsSync)(path)) return null;
+  if (privacyEnabled()) throw new ContentPolicyError();
+  if (!(0, import_fs10.existsSync)(path)) return null;
   const scratch = `${path}.read-copy-${process.pid}-${Date.now()}`;
   const discard = () => {
-    for (const s of ["", ...SIDECARS]) (0, import_fs9.rmSync)(`${scratch}${s}`, { force: true });
+    for (const s of ["", ...SIDECARS]) (0, import_fs10.rmSync)(`${scratch}${s}`, { force: true });
   };
   try {
-    (0, import_fs9.copyFileSync)(path, scratch);
-    if ((0, import_fs9.existsSync)(`${path}-wal`)) (0, import_fs9.copyFileSync)(`${path}-wal`, `${scratch}-wal`);
+    (0, import_fs10.copyFileSync)(path, scratch);
+    if ((0, import_fs10.existsSync)(`${path}-wal`)) (0, import_fs10.copyFileSync)(`${path}-wal`, `${scratch}-wal`);
   } catch {
     discard();
     return null;
@@ -22566,14 +23232,15 @@ function openUntouched(path) {
     discard();
   } };
 }
-var import_fs9, SIDECARS;
+var import_fs10, SIDECARS;
 var init_readonly = __esm({
   "src/db/readonly.ts"() {
     "use strict";
+    init_policy();
     init_node2();
     init_drizzle_orm();
     init_libsql();
-    import_fs9 = require("fs");
+    import_fs10 = require("fs");
     init_schema();
     SIDECARS = ["-wal", "-shm"];
   }
@@ -22583,7 +23250,7 @@ var init_readonly = __esm({
 function localISOString() {
   const d = /* @__PURE__ */ new Date();
   const offsetMin = -d.getTimezoneOffset();
-  const sign = offsetMin >= 0 ? "+" : "-";
+  const sign2 = offsetMin >= 0 ? "+" : "-";
   const absMin = Math.abs(offsetMin);
   const hh = String(Math.floor(absMin / 60)).padStart(2, "0");
   const mm = String(absMin % 60).padStart(2, "0");
@@ -22594,7 +23261,7 @@ function localISOString() {
   const minutes = String(d.getMinutes()).padStart(2, "0");
   const seconds = String(d.getSeconds()).padStart(2, "0");
   const ms = String(d.getMilliseconds()).padStart(3, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}${sign}${hh}:${mm}`;
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}${sign2}${hh}:${mm}`;
 }
 var init_time = __esm({
   "src/utils/time.ts"() {
@@ -22606,13 +23273,13 @@ var init_time = __esm({
 function computeContentHash(sessionId, role, content, createdAt, prevHash, eventType) {
   const base = `${sessionId}|${role}|${content}|${createdAt}|${prevHash ?? ""}`;
   const input = eventType != null ? `${base}|${eventType}` : base;
-  return (0, import_crypto6.createHash)("sha256").update(input).digest("hex");
+  return (0, import_crypto7.createHash)("sha256").update(input).digest("hex");
 }
-var import_crypto6;
+var import_crypto7;
 var init_hash = __esm({
   "src/utils/hash.ts"() {
     "use strict";
-    import_crypto6 = require("crypto");
+    import_crypto7 = require("crypto");
   }
 });
 
@@ -22668,26 +23335,26 @@ var init_stringify = __esm({
 // node_modules/uuid/dist/esm/rng.js
 function rng() {
   if (poolPtr > rnds8Pool.length - 16) {
-    (0, import_crypto7.randomFillSync)(rnds8Pool);
+    (0, import_crypto8.randomFillSync)(rnds8Pool);
     poolPtr = 0;
   }
   return rnds8Pool.slice(poolPtr, poolPtr += 16);
 }
-var import_crypto7, rnds8Pool, poolPtr;
+var import_crypto8, rnds8Pool, poolPtr;
 var init_rng = __esm({
   "node_modules/uuid/dist/esm/rng.js"() {
-    import_crypto7 = require("crypto");
+    import_crypto8 = require("crypto");
     rnds8Pool = new Uint8Array(256);
     poolPtr = rnds8Pool.length;
   }
 });
 
 // node_modules/uuid/dist/esm/native.js
-var import_crypto8, native_default;
+var import_crypto9, native_default;
 var init_native = __esm({
   "node_modules/uuid/dist/esm/native.js"() {
-    import_crypto8 = require("crypto");
-    native_default = { randomUUID: import_crypto8.randomUUID };
+    import_crypto9 = require("crypto");
+    native_default = { randomUUID: import_crypto9.randomUUID };
   }
 });
 
@@ -22750,13 +23417,13 @@ function sanitizeEndpoint(endpoint) {
 }
 function fingerprintDestination(endpoint) {
   const label = sanitizeEndpoint(endpoint);
-  return { label, digest: (0, import_crypto9.createHash)("sha256").update(label).digest("hex") };
+  return { label, digest: (0, import_crypto10.createHash)("sha256").update(label).digest("hex") };
 }
-var import_crypto9, UNPARSEABLE, REDACTED_PATH, SAFE_PATH_SEGMENTS;
+var import_crypto10, UNPARSEABLE, REDACTED_PATH, SAFE_PATH_SEGMENTS;
 var init_destination = __esm({
   "src/otel/destination.ts"() {
     "use strict";
-    import_crypto9 = require("crypto");
+    import_crypto10 = require("crypto");
     UNPARSEABLE = "<unparseable endpoint>";
     REDACTED_PATH = "/<redacted path>";
     SAFE_PATH_SEGMENTS = /* @__PURE__ */ new Set([
@@ -22782,10 +23449,10 @@ function canonicalJson(value) {
   return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`).join(",")}}`;
 }
 function computeHeaderHash(header) {
-  return (0, import_crypto10.createHash)("sha256").update(canonicalJson(header)).digest("hex");
+  return (0, import_crypto11.createHash)("sha256").update(canonicalJson(header)).digest("hex");
 }
 function computeEventHash(receiptId, sequence, eventType, logicalKey, createdAt, canonicalPayload, prevHash) {
-  return (0, import_crypto10.createHash)("sha256").update([receiptId, sequence, eventType, logicalKey, createdAt, canonicalPayload, prevHash ?? ""].join("|")).digest("hex");
+  return (0, import_crypto11.createHash)("sha256").update([receiptId, sequence, eventType, logicalKey, createdAt, canonicalPayload, prevHash ?? ""].join("|")).digest("hex");
 }
 async function appendEventTx(tx, receiptId, event) {
   const existing = await tx.select().from(export_receipt_events).where(and(eq(export_receipt_events.receipt_id, receiptId), eq(export_receipt_events.logical_key, event.logicalKey))).limit(1);
@@ -23105,12 +23772,12 @@ async function listReceipts(db, limit) {
   }
   return readings;
 }
-var import_crypto10, BATCH_STATUSES, RECEIPT_STATES, isInt, isDigest;
+var import_crypto11, BATCH_STATUSES, RECEIPT_STATES, isInt, isDigest;
 var init_receipts = __esm({
   "src/otel/receipts.ts"() {
     "use strict";
     init_drizzle_orm();
-    import_crypto10 = require("crypto");
+    import_crypto11 = require("crypto");
     init_esm();
     init_schema();
     init_time();
@@ -23217,7 +23884,7 @@ function manifestPathFor(snapshot) {
   return `${snapshot}${MANIFEST_SUFFIX}`;
 }
 function sha256File(path) {
-  return (0, import_crypto11.createHash)("sha256").update((0, import_fs10.readFileSync)(path)).digest("hex");
+  return (0, import_crypto12.createHash)("sha256").update((0, import_fs11.readFileSync)(path)).digest("hex");
 }
 async function countEvidence(dbFile) {
   const client = createClient({ url: `file:${dbFile}` });
@@ -23237,14 +23904,15 @@ async function countEvidence(dbFile) {
   };
 }
 async function createBackup(sourceDb, output) {
-  if (!(0, import_fs10.existsSync)(sourceDb)) {
+  if (privacyEnabled()) throw new ContentPolicyError();
+  if (!(0, import_fs11.existsSync)(sourceDb)) {
     throw new BackupError(`No database at ${sourceDb}. Nothing to back up.`);
   }
-  (0, import_fs10.mkdirSync)((0, import_path9.dirname)((0, import_path9.resolve)(output)), { recursive: true });
-  if ((0, import_fs10.existsSync)(output)) {
+  (0, import_fs11.mkdirSync)((0, import_path9.dirname)((0, import_path9.resolve)(output)), { recursive: true });
+  if ((0, import_fs11.existsSync)(output)) {
     throw new BackupError(`${output} already exists. Choose another path rather than overwriting a backup.`);
   }
-  if ((0, import_fs10.existsSync)(manifestPathFor(output))) {
+  if ((0, import_fs11.existsSync)(manifestPathFor(output))) {
     throw new BackupError(`${manifestPathFor(output)} already exists. Choose another path rather than overwriting a backup manifest.`);
   }
   const client = createClient({ url: `file:${sourceDb}` });
@@ -23256,7 +23924,7 @@ async function createBackup(sourceDb, output) {
     chron_version: import_package2.version,
     schema_version: counts.schema_version,
     snapshot_sha256: sha256File(output),
-    snapshot_bytes: (0, import_fs10.statSync)(output).size,
+    snapshot_bytes: (0, import_fs11.statSync)(output).size,
     evidence: {
       sessions: counts.sessions,
       messages: counts.messages,
@@ -23264,7 +23932,7 @@ async function createBackup(sourceDb, output) {
       secrets: counts.secrets
     }
   };
-  (0, import_fs10.writeFileSync)(manifestPathFor(output), JSON.stringify(manifest, null, 2) + "\n");
+  (0, import_fs11.writeFileSync)(manifestPathFor(output), JSON.stringify(manifest, null, 2) + "\n");
   return manifest;
 }
 async function verifyBackup(snapshot, manifest) {
@@ -23274,7 +23942,7 @@ async function verifyBackup(snapshot, manifest) {
     problems.push("snapshot does not match the digest in its manifest \u2014 the file changed after the backup was taken");
   }
   let manifestFieldsMatch = true;
-  const actualBytes = (0, import_fs10.statSync)(snapshot).size;
+  const actualBytes = (0, import_fs11.statSync)(snapshot).size;
   if (actualBytes !== manifest.snapshot_bytes) {
     manifestFieldsMatch = false;
     problems.push(`snapshot is ${actualBytes} bytes, manifest says ${manifest.snapshot_bytes}`);
@@ -23325,9 +23993,10 @@ async function verifyBackup(snapshot, manifest) {
   return { manifestDigestMatches, manifestFieldsMatch, integrityOk, schemaCompatible, sessions: sessions2, receipts, problems };
 }
 async function restoreBackup(snapshot, target, opts, deps = {}) {
+  if (privacyEnabled()) throw new ContentPolicyError();
   const manifestPath = manifestPathFor(snapshot);
-  if (!(0, import_fs10.existsSync)(snapshot)) throw new BackupError(`No backup at ${snapshot}.`);
-  if (!(0, import_fs10.existsSync)(manifestPath)) {
+  if (!(0, import_fs11.existsSync)(snapshot)) throw new BackupError(`No backup at ${snapshot}.`);
+  if (!(0, import_fs11.existsSync)(manifestPath)) {
     throw new BackupError(
       `No manifest beside the snapshot (expected ${manifestPath}).
   Without it there is nothing binding this file to a backup Chron took.`
@@ -23335,7 +24004,7 @@ async function restoreBackup(snapshot, target, opts, deps = {}) {
   }
   let manifest;
   try {
-    manifest = JSON.parse((0, import_fs10.readFileSync)(manifestPath, "utf8"));
+    manifest = JSON.parse((0, import_fs11.readFileSync)(manifestPath, "utf8"));
   } catch (e) {
     throw new BackupError(`Manifest is not readable JSON: ${e instanceof Error ? e.message : String(e)}`);
   }
@@ -23352,11 +24021,11 @@ async function restoreBackup(snapshot, target, opts, deps = {}) {
     );
   }
   const staged = `${target}.restore-staged`;
-  (0, import_fs10.rmSync)(staged, { force: true });
+  (0, import_fs11.rmSync)(staged, { force: true });
   (deps.stageFile ?? defaultStage)(snapshot, staged);
   const stagedDigest = sha256File(staged);
   if (stagedDigest !== manifest.snapshot_sha256) {
-    (0, import_fs10.rmSync)(staged, { force: true });
+    (0, import_fs11.rmSync)(staged, { force: true });
     throw new BackupError(
       `The staged copy does not match the backup it came from.
   expected ${manifest.snapshot_sha256}
@@ -23371,7 +24040,7 @@ async function restoreBackup(snapshot, target, opts, deps = {}) {
     const restored = [];
     for (const { from, to } of [...moved].reverse()) {
       try {
-        (0, import_fs10.renameSync)(to, from);
+        (0, import_fs11.renameSync)(to, from);
         restored.push(from);
       } catch (e) {
         failure ??= e instanceof Error ? e.message : String(e);
@@ -23382,9 +24051,9 @@ async function restoreBackup(snapshot, target, opts, deps = {}) {
   try {
     for (const suffix of ["", ...SIDECARS2]) {
       const from = `${target}${suffix}`;
-      if (!(0, import_fs10.existsSync)(from)) continue;
+      if (!(0, import_fs11.existsSync)(from)) continue;
       const to = `${displacedPrefix}${suffix}`;
-      (0, import_fs10.renameSync)(from, to);
+      (0, import_fs11.renameSync)(from, to);
       moved.push({ from, to });
     }
     (deps.promote ?? defaultPromote)(staged, target);
@@ -23392,7 +24061,7 @@ async function restoreBackup(snapshot, target, opts, deps = {}) {
     const cause = e instanceof Error ? e.message : String(e);
     const { failure } = undo();
     if (failure === null) {
-      (0, import_fs10.rmSync)(staged, { force: true });
+      (0, import_fs11.rmSync)(staged, { force: true });
       throw new BackupError(
         `Could not complete the restore: ${cause}
 ` + (moved.length === 0 ? `  Nothing had been displaced yet, so the configured path is as it was.
@@ -23432,7 +24101,7 @@ function inventoryAfterFailedUndo(target, displacedPrefix, staged) {
   const add = (path, what, where) => {
     let st;
     try {
-      st = (0, import_fs10.lstatSync)(path);
+      st = (0, import_fs11.lstatSync)(path);
     } catch {
       return;
     }
@@ -23476,7 +24145,7 @@ async function measureGap(liveDb, snapshot, manifest) {
   };
 }
 async function sessionIdsIn(file) {
-  if (!(0, import_fs10.existsSync)(file)) return /* @__PURE__ */ new Set();
+  if (!(0, import_fs11.existsSync)(file)) return /* @__PURE__ */ new Set();
   const handle = openReadOnly(file);
   if (!handle) return /* @__PURE__ */ new Set();
   try {
@@ -23490,7 +24159,7 @@ async function sessionIdsIn(file) {
   }
 }
 async function sessionIdsOfLive(file) {
-  if (!(0, import_fs10.existsSync)(file)) return /* @__PURE__ */ new Set();
+  if (!(0, import_fs11.existsSync)(file)) return /* @__PURE__ */ new Set();
   const handle = openUntouched(file);
   if (!handle) return null;
   try {
@@ -23629,13 +24298,14 @@ ${BOLD7}What this backup does not contain${RESET8}
 `);
   }
 }
-var import_crypto11, import_fs10, import_path9, import_package2, RESET8, BOLD7, DIM6, GREEN4, RED5, YELLOW5, MANIFEST_SUFFIX, BackupError, REQUIRED_TABLES, defaultStage, defaultPromote, SIDECARS2;
+var import_crypto12, import_fs11, import_path9, import_package2, RESET8, BOLD7, DIM6, GREEN4, RED5, YELLOW5, MANIFEST_SUFFIX, BackupError, REQUIRED_TABLES, defaultStage, defaultPromote, SIDECARS2;
 var init_backup = __esm({
   "src/cli/backup.ts"() {
     "use strict";
-    import_crypto11 = require("crypto");
+    init_policy();
+    import_crypto12 = require("crypto");
     init_node2();
-    import_fs10 = require("fs");
+    import_fs11 = require("fs");
     import_path9 = require("path");
     init_drizzle_orm();
     init_db2();
@@ -23652,8 +24322,8 @@ var init_backup = __esm({
     BackupError = class extends Error {
     };
     REQUIRED_TABLES = ["sessions", "messages"];
-    defaultStage = (source, staged) => (0, import_fs10.writeFileSync)(staged, (0, import_fs10.readFileSync)(source));
-    defaultPromote = (staged, target) => (0, import_fs10.renameSync)(staged, target);
+    defaultStage = (source, staged) => (0, import_fs11.writeFileSync)(staged, (0, import_fs11.readFileSync)(source));
+    defaultPromote = (staged, target) => (0, import_fs11.renameSync)(staged, target);
     SIDECARS2 = ["-wal", "-shm"];
   }
 });
@@ -23665,9 +24335,9 @@ __export(prune_exports, {
 });
 function configRetentionDays() {
   const path = configPath();
-  if (!(0, import_fs11.existsSync)(path)) return null;
+  if (!(0, import_fs12.existsSync)(path)) return null;
   try {
-    const cfg = JSON.parse((0, import_fs11.readFileSync)(path, "utf8"));
+    const cfg = JSON.parse((0, import_fs12.readFileSync)(path, "utf8"));
     const v = Number(cfg.retention_days);
     return isNaN(v) ? null : v;
   } catch {
@@ -23773,12 +24443,12 @@ Sessions to prune (last active before ${cutoff}):
   process.stdout.write(`Pruned ${stale.length} session(s) and ${totalMsgs} message(s).
 `);
 }
-var import_fs11;
+var import_fs12;
 var init_prune = __esm({
   "src/cli/prune.ts"() {
     "use strict";
     init_drizzle_orm();
-    import_fs11 = require("fs");
+    import_fs12 = require("fs");
     init_db2();
     init_schema();
     init_config_path();
@@ -23814,7 +24484,7 @@ async function runSign(args2) {
 `);
     process.exit(1);
   }
-  if (!(0, import_fs13.existsSync)(privKeyPath(session.id))) {
+  if (!(0, import_fs14.existsSync)(privKeyPath(session.id))) {
     process.stderr.write(`Private key not found: ${privKeyPath(session.id)}
 `);
     process.stderr.write("The key is stored on the machine where the session was created.\n");
@@ -23856,7 +24526,7 @@ async function runSign(args2) {
     signed_at: (/* @__PURE__ */ new Date()).toISOString()
   };
   const sigFile = (0, import_path10.join)(process.cwd(), `${session.id.slice(0, 8)}.chron.sig`);
-  (0, import_fs12.writeFileSync)(sigFile, JSON.stringify(sigData, null, 2));
+  (0, import_fs13.writeFileSync)(sigFile, JSON.stringify(sigData, null, 2));
   process.stdout.write(`Signed session ${session.id.slice(0, 8)}
 `);
   process.stdout.write(`  messages : ${messageCount}
@@ -23866,31 +24536,19 @@ async function runSign(args2) {
   process.stdout.write(`  sig file : ${sigFile}
 `);
 }
-var import_fs12, import_path10, import_fs13;
+var import_fs13, import_path10, import_fs14;
 var init_sign = __esm({
   "src/cli/sign.ts"() {
     "use strict";
     init_drizzle_orm();
     init_evidence();
-    import_fs12 = require("fs");
+    import_fs13 = require("fs");
     import_path10 = require("path");
     init_db2();
     init_schema();
     init_signing();
-    import_fs13 = require("fs");
+    import_fs14 = require("fs");
     init_message_order();
-  }
-});
-
-// src/utils/content.ts
-function canonicalContent(content) {
-  return content.replace(UNREPRESENTABLE, "\uFFFD");
-}
-var UNREPRESENTABLE;
-var init_content = __esm({
-  "src/utils/content.ts"() {
-    "use strict";
-    UNREPRESENTABLE = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
   }
 });
 
@@ -23920,7 +24578,7 @@ function journalRecordHash(r) {
     canonicalJson2(r.data),
     r.prev ?? ""
   ].join("|");
-  return (0, import_crypto12.createHash)("sha256").update(input, "utf8").digest("hex");
+  return (0, import_crypto13.createHash)("sha256").update(input, "utf8").digest("hex");
 }
 function serializeRecord(r) {
   return `{"v":${r.v},"seq":${r.seq},"at":${JSON.stringify(canonicalContent(r.at))},"kind":${JSON.stringify(canonicalContent(r.kind))},"data":${canonicalJson2(r.data)},"prev":${r.prev === null ? "null" : JSON.stringify(r.prev)},"hash":${JSON.stringify(r.hash)}}
@@ -23935,1224 +24593,14 @@ function isRecordShaped(x) {
   const r = x;
   return typeof r.v === "number" && typeof r.seq === "number" && typeof r.at === "string" && typeof r.kind === "string" && typeof r.data === "object" && r.data !== null && !Array.isArray(r.data) && (r.prev === null || typeof r.prev === "string") && typeof r.hash === "string";
 }
-var import_crypto12, JOURNAL_FORMAT_VERSION, CONTINUATION_KIND;
+var import_crypto13, JOURNAL_FORMAT_VERSION, CONTINUATION_KIND;
 var init_format = __esm({
   "src/journal/format.ts"() {
     "use strict";
-    import_crypto12 = require("crypto");
+    import_crypto13 = require("crypto");
     init_content();
     JOURNAL_FORMAT_VERSION = 1;
     CONTINUATION_KIND = "journal.continued";
-  }
-});
-
-// src/journal/verify.ts
-var verify_exports = {};
-__export(verify_exports, {
-  lastHashOf: () => lastHashOf,
-  verifyJournalBytes: () => verifyJournalBytes,
-  verifyJournalFile: () => verifyJournalFile,
-  verifyJournalSequence: () => verifyJournalSequence
-});
-function verifyJournalBytes(bytes2, expectedFirstPrev = null) {
-  const text2 = bytes2.toString("utf8");
-  if (text2.length === 0) {
-    return {
-      status: "empty",
-      records: [],
-      validPrefixBytes: 0,
-      discardableBytes: 0,
-      coverage: expectedFirstPrev === null ? "whole_chain" : "segment"
-    };
-  }
-  const records = [];
-  let validPrefixBytes = 0;
-  let prev = expectedFirstPrev;
-  let expectedSeq = null;
-  let line = 0;
-  let continuesFrom;
-  const coverageSoFar = () => continuesFrom !== void 0 || expectedFirstPrev !== null ? "segment" : "whole_chain";
-  let firstRecordPending = true;
-  let cursor = 0;
-  while (cursor < text2.length) {
-    const nl = text2.indexOf("\n", cursor);
-    if (nl === -1) break;
-    line++;
-    const raw = text2.slice(cursor, nl);
-    const lineBytes = Buffer.byteLength(text2.slice(cursor, nl + 1), "utf8");
-    const fail3 = (reason, seq) => ({
-      status: "corrupt",
-      continuesFrom,
-      coverage: coverageSoFar(),
-      records,
-      validPrefixBytes,
-      discardableBytes: bytes2.length - validPrefixBytes,
-      problem: { line, seq, reason }
-    });
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      return fail3("line is terminated but not valid JSON");
-    }
-    if (!isRecordShaped(parsed)) return fail3("line is JSON but not a journal record");
-    const rec = parsed;
-    if (journalRecordHash(rec) !== rec.hash) {
-      return fail3("record does not match its own hash", rec.seq);
-    }
-    if (rec.prev !== prev) {
-      const opensAsContinuation = firstRecordPending && expectedFirstPrev === null && rec.kind === CONTINUATION_KIND && typeof rec.prev === "string";
-      if (opensAsContinuation) {
-        continuesFrom = rec.prev;
-      } else {
-        return fail3(
-          prev === null ? "first record should not link to a predecessor" : "prev_hash does not match the preceding record",
-          rec.seq
-        );
-      }
-    }
-    if (expectedSeq !== null && rec.seq !== expectedSeq) {
-      return fail3(`sequence jumped from ${expectedSeq - 1} to ${rec.seq}`, rec.seq);
-    }
-    records.push(rec);
-    firstRecordPending = false;
-    validPrefixBytes += lineBytes;
-    prev = rec.hash;
-    expectedSeq = rec.seq + 1;
-    cursor = nl + 1;
-  }
-  const tail = text2.slice(cursor);
-  if (tail.length === 0) {
-    return {
-      status: "ok",
-      continuesFrom,
-      coverage: coverageSoFar(),
-      records,
-      validPrefixBytes,
-      discardableBytes: 0
-    };
-  }
-  return {
-    status: "unterminated_tail",
-    continuesFrom,
-    coverage: coverageSoFar(),
-    records,
-    validPrefixBytes,
-    discardableBytes: bytes2.length - validPrefixBytes,
-    problem: {
-      line: line + 1,
-      reason: "final line is not newline-terminated: consistent with an interrupted write, and equally with deliberate truncation"
-    }
-  };
-}
-function verifyJournalFile(path, expectedFirstPrev = null) {
-  if (!(0, import_fs14.existsSync)(path)) {
-    return {
-      status: "empty",
-      records: [],
-      validPrefixBytes: 0,
-      discardableBytes: 0,
-      coverage: expectedFirstPrev === null ? "whole_chain" : "segment"
-    };
-  }
-  return verifyJournalBytes((0, import_fs14.readFileSync)(path), expectedFirstPrev);
-}
-function verifyJournalSequence(paths) {
-  const files = [];
-  const records = [];
-  let expected = null;
-  for (let i = 0; i < paths.length; i++) {
-    const path = paths[i];
-    const last = i === paths.length - 1;
-    const verdict = verifyJournalFile(path, expected);
-    files.push({ path, verdict });
-    records.push(...verdict.records);
-    if (verdict.status === "corrupt") {
-      return { status: "corrupt", files, records, problem: { ...verdict.problem, path } };
-    }
-    if (verdict.status === "unterminated_tail" && !last) {
-      return {
-        status: "corrupt",
-        files,
-        records,
-        problem: { path, line: verdict.problem?.line ?? 0, reason: "a rotated file ends mid-record" }
-      };
-    }
-    if (verdict.status === "unterminated_tail") {
-      return { status: "unterminated_tail", files, records, problem: { ...verdict.problem, path } };
-    }
-    expected = lastHashOf(verdict) ?? expected;
-  }
-  return { status: records.length ? "ok" : "empty", files, records };
-}
-function lastHashOf(verdict) {
-  return verdict.records.length ? verdict.records[verdict.records.length - 1].hash : null;
-}
-var import_fs14;
-var init_verify = __esm({
-  "src/journal/verify.ts"() {
-    "use strict";
-    import_fs14 = require("fs");
-    init_format();
-  }
-});
-
-// src/journal/scope.ts
-function captureScope(durability) {
-  const durableNames = durability === "durable";
-  return {
-    scope_version: CAPTURE_SCOPE_VERSION,
-    durability,
-    covered: [
-      "bytes written by the operator to this process stdin, recorded before being forwarded to the child",
-      "bytes written by the child to stdout, recorded and made durable before being released to the terminal",
-      "bytes written by the child to stderr, on the same terms as stdout, because stderr can carry interaction content",
-      "the child command line, its exit status, and the time each of those was recorded"
-    ],
-    not_covered: [
-      "files the child reads or writes",
-      "subprocesses the child spawns, and anything those do",
-      "network requests the child makes, including the model API call itself",
-      "any terminal the child opens directly rather than through the inherited pipes",
-      "side effects already committed before the wrapper observed the output describing them"
-    ],
-    establishes: [
-      durableNames ? "no byte was released to the terminal before the journal write covering it was flushed and fsynced" : "no byte was released to the terminal before the journal write covering it was flushed and fsynced \u2014 but see durability below: the file holding those records does not have a durable name",
-      "the order of releases within a single stream matches the order in which they were recorded",
-      "a journal write failure stopped forwarding in both directions and terminated the child"
-    ],
-    does_not_establish: [
-      "that the child performed no work that went unrecorded",
-      "that a person read what was released",
-      "that the interleaving of stdout and stderr matches what an unwrapped run would have produced",
-      "that the wrapper was used at all for any other invocation \u2014 that needs a control outside Chron (enforced:policy)",
-      ...durableNames ? [] : [
-        "that a released record still exists after a system crash. Its contents were fsynced; its file name was not, because this platform cannot sync a directory entry and an operator accepted that trade-off. The record can survive without a name to reach it by.",
-        "the durability guarantee a fully durable run makes. A run recorded under this capability must not be classified as `enforced:wrapper` on the same terms."
-      ]
-    ],
-    // Version 2 of this list said there was no database projection and that no
-    // session could be marked `enforced:wrapper`. Both were true when written
-    // and both became false when v0.1.62 shipped projection and the
-    // enforcement verifier — and this text is written into the journal as the
-    // run's first record, so every wrapped run since has carried limitations
-    // its own build had already lifted, contradicting what `chron verify`
-    // reported for that same run.
-    //
-    // Records already written are left exactly as they are. A journal states
-    // what was claimed when it was written, and editing that to be more
-    // flattering would destroy the one property the journal exists for. The
-    // version is bumped instead, so a reader can tell which vocabulary a
-    // record carries, and version 2 stays readable.
-    known_limitations: [
-      "`chron run` attempts projection itself when the run completes, so a successful run normally appears in `chron history` and `chron verify <session-id>` without a further command. Before that attempt, and if it fails, the run exists in the journal alone \u2014 inspect it with `chron verify --journal`.",
-      "projection is a separate step that can fail independently of capture, and a failure there changes nothing about what was captured. `chron project` is the retry: it replays the journal and is idempotent, so running it again after a failure or at any later time is safe.",
-      "`enforced:wrapper` is reported for a projected run only when `chron verify <session-id>` has followed its binding to the journal records and compared them field by field. The claim is checked on read, never taken from the session row.",
-      "nothing here establishes that the wrapper was used for any other invocation. Running the client directly bypasses it, and preventing that needs a control outside Chron (`enforced:policy`).",
-      "one client shape is supported: a child that speaks through inherited stdio pipes."
-    ]
-  };
-}
-function formatCaptureScope(durability = "durable") {
-  const scope = captureScope(durability);
-  const bullet = (s) => `  - ${s}`;
-  return [
-    "chron run \u2014 capture scope",
-    "",
-    `Storage durability: ${durability === "durable" ? "record contents and file names both survive a crash" : "contents are fsynced; file names are NOT \u2014 a record can outlive the name that reaches it"}`,
-    "",
-    "Covered, and therefore withheld until durable:",
-    ...scope.covered.map(bullet),
-    "",
-    "Not covered. The wrapper never sees these:",
-    ...scope.not_covered.map(bullet),
-    "",
-    "What a completed run establishes:",
-    ...scope.establishes.map(bullet),
-    "",
-    "What it does not establish:",
-    ...scope.does_not_establish.map(bullet),
-    "",
-    // Was 'Not built yet:'. The list below now includes things that are built
-    // — projection, and enforcement checked on read — so the heading denied
-    // what its own items described.
-    "Limitations and what they need:",
-    ...scope.known_limitations.map(bullet),
-    ""
-  ].join("\n");
-}
-var CAPTURE_SCOPE_VERSION, CAPTURE_SCOPE;
-var init_scope = __esm({
-  "src/journal/scope.ts"() {
-    "use strict";
-    CAPTURE_SCOPE_VERSION = 3;
-    CAPTURE_SCOPE = captureScope("durable");
-  }
-});
-
-// src/journal/runs.ts
-var runs_exports = {};
-__export(runs_exports, {
-  INTERACTION_INPUT: () => INTERACTION_INPUT,
-  INTERACTION_OUTPUT: () => INTERACTION_OUTPUT,
-  RUN_COMPLETED: () => RUN_COMPLETED,
-  RUN_STARTED: () => RUN_STARTED,
-  SUPPORTED_SCOPE_VERSIONS: () => SUPPORTED_SCOPE_VERSIONS,
-  collectRuns: () => collectRuns,
-  journalSegmentPaths: () => journalSegmentPaths
-});
-function runIdOf(r) {
-  const id = r.data.run_id;
-  return typeof id === "string" && id.length > 0 ? id : null;
-}
-function collectRuns(records) {
-  const byRun = /* @__PURE__ */ new Map();
-  for (const r of records) {
-    const id = runIdOf(r);
-    if (!id) continue;
-    const list = byRun.get(id);
-    if (list) list.push(r);
-    else byRun.set(id, [r]);
-  }
-  const runs = [];
-  for (const [run_id, rs] of byRun) {
-    const starts = rs.filter((r) => r.kind === RUN_STARTED);
-    const completions = rs.filter((r) => r.kind === RUN_COMPLETED);
-    const started = starts[0];
-    if (!started) continue;
-    const problems = [];
-    if (starts.length !== 1) problems.push(`${starts.length} start records; a run has exactly one`);
-    if (completions.length > 1) {
-      problems.push(`${completions.length} completion records; a run has at most one`);
-    }
-    const completed = completions[0] ?? null;
-    const interactions = rs.filter((r) => r.kind === INTERACTION_INPUT || r.kind === INTERACTION_OUTPUT);
-    for (const i of interactions) {
-      if (i.seq <= started.seq) {
-        problems.push(`interaction at seq ${i.seq} precedes the run's start at ${started.seq}`);
-      }
-      if (completed && i.seq >= completed.seq) {
-        problems.push(`interaction at seq ${i.seq} follows the run's completion at ${completed.seq}`);
-      }
-    }
-    if (completed && completed.seq <= started.seq) {
-      problems.push("the completion record precedes the start record");
-    }
-    const scope = started.data.scope;
-    let durability = "unknown";
-    if (!scope || typeof scope !== "object") {
-      problems.push("the start record carries no capture scope");
-    } else if (typeof scope.scope_version !== "number" || !SUPPORTED_SCOPE_VERSIONS.includes(scope.scope_version)) {
-      problems.push(`unsupported capture scope version ${String(scope.scope_version)}`);
-    } else if (scope.durability === "durable" || scope.durability === "names_not_durable") {
-      durability = scope.durability;
-    } else {
-      problems.push(`unrecognised durability ${JSON.stringify(scope.durability)}`);
-    }
-    runs.push({
-      run_id,
-      command: String(started.data.command ?? ""),
-      args: Array.isArray(started.data.args) ? started.data.args.map(String) : [],
-      durability,
-      started,
-      completed,
-      interactions,
-      records: rs,
-      last_record_hash: rs[rs.length - 1].hash,
-      record_count: rs.length,
-      problems
-    });
-  }
-  runs.sort((a, b) => a.started.seq - b.started.seq);
-  return runs;
-}
-function journalSegmentPaths(activePath, options = {}) {
-  const dir = (0, import_path11.dirname)(activePath);
-  const name2 = (0, import_path11.basename)(activePath);
-  let entries;
-  try {
-    entries = (0, import_fs15.readdirSync)(dir);
-  } catch (e) {
-    if (options.strict) throw e;
-    return [activePath];
-  }
-  const rotated = [];
-  for (const e of entries) {
-    if (!e.startsWith(`${name2}.`)) continue;
-    if (e.endsWith(".lock")) continue;
-    if (e.slice(name2.length + 1).startsWith("unterminated-")) continue;
-    const m = /\.(\d+)$/.exec(e);
-    if (!m) continue;
-    rotated.push({ path: (0, import_path11.join)(dir, e), seq: Number(m[1]) });
-  }
-  rotated.sort((a, b) => a.seq - b.seq);
-  return [...rotated.map((r) => r.path), activePath];
-}
-var import_fs15, import_path11, RUN_STARTED, RUN_COMPLETED, INTERACTION_INPUT, INTERACTION_OUTPUT, SUPPORTED_SCOPE_VERSIONS;
-var init_runs = __esm({
-  "src/journal/runs.ts"() {
-    "use strict";
-    import_fs15 = require("fs");
-    import_path11 = require("path");
-    init_scope();
-    RUN_STARTED = "run.started";
-    RUN_COMPLETED = "run.completed";
-    INTERACTION_INPUT = "interaction.input";
-    INTERACTION_OUTPUT = "interaction.output";
-    SUPPORTED_SCOPE_VERSIONS = [CAPTURE_SCOPE_VERSION, 2];
-  }
-});
-
-// src/journal/writer.ts
-var writer_exports = {};
-__export(writer_exports, {
-  ACCEPT_UNSYNCED_DIRECTORIES_ENV: () => ACCEPT_UNSYNCED_DIRECTORIES_ENV,
-  DIRECTORY_SYNC_SUPPORTED: () => DIRECTORY_SYNC_SUPPORTED,
-  JournalBrokenError: () => JournalBrokenError,
-  JournalWriter: () => JournalWriter,
-  ROTATE_BYTES_ENV: () => ROTATE_BYTES_ENV,
-  __internals: () => __internals,
-  acquireJournalLock: () => acquireJournalLock,
-  journalStatus: () => journalStatus,
-  recoverUnterminatedTail: () => recoverUnterminatedTail,
-  requireDirectorySyncCapability: () => requireDirectorySyncCapability
-});
-function configuredRotateBytes() {
-  const raw = process.env[ROTATE_BYTES_ENV];
-  if (raw === void 0) return null;
-  const n = Number(raw);
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
-}
-function fsyncDirDefault(dir) {
-  if (!DIRECTORY_SYNC_SUPPORTED) return false;
-  const fd = (0, import_fs16.openSync)(dir, "r");
-  try {
-    (0, import_fs16.fsyncSync)(fd);
-  } finally {
-    (0, import_fs16.closeSync)(fd);
-  }
-  return true;
-}
-function requireDirectorySyncCapability(opts) {
-  if (DIRECTORY_SYNC_SUPPORTED) return;
-  if (opts.acceptUnsyncedDirectories) return;
-  if (process.env[ACCEPT_UNSYNCED_DIRECTORIES_ENV] === "1") return;
-  throw new JournalBrokenError(
-    `this platform (${process.platform}) cannot sync directory entries, so a file holding acknowledged records can lose its name in a crash. The durability guarantee is not available. Set ${ACCEPT_UNSYNCED_DIRECTORIES_ENV}=1 to proceed without it, knowingly.`
-  );
-}
-function acquireJournalLock(lockPath, now) {
-  const mine = JSON.stringify({ pid: process.pid, at: now() });
-  const lock = {
-    path: lockPath,
-    release: () => {
-      try {
-        (0, import_fs16.unlinkSync)(lockPath);
-      } catch {
-      }
-    }
-  };
-  try {
-    (0, import_fs16.writeFileSync)(lockPath, mine, { flag: "wx" });
-    return lock;
-  } catch (e) {
-    if (e.code !== "EEXIST") throw e;
-  }
-  let holder = {};
-  try {
-    holder = JSON.parse((0, import_fs16.readFileSync)(lockPath, "utf8"));
-  } catch {
-    throw new JournalBrokenError(`journal lock ${lockPath} is unreadable; not stealing it`);
-  }
-  if (typeof holder.pid !== "number") {
-    throw new JournalBrokenError(`journal lock ${lockPath} names no pid; not stealing it`);
-  }
-  if (holder.pid === process.pid) {
-    throw new JournalBrokenError("journal is already open in this process");
-  }
-  try {
-    process.kill(holder.pid, 0);
-    throw new JournalBrokenError(`journal is locked by live process ${holder.pid}`);
-  } catch (e) {
-    if (e instanceof JournalBrokenError) throw e;
-    if (e.code === "EPERM") {
-      throw new JournalBrokenError(`journal is locked by process ${holder.pid}`);
-    }
-  }
-  (0, import_fs16.unlinkSync)(lockPath);
-  (0, import_fs16.writeFileSync)(lockPath, mine, { flag: "wx" });
-  return lock;
-}
-function freeBytesFor(path) {
-  const fs = require("fs");
-  if (typeof fs.statfsSync !== "function") return null;
-  try {
-    const s = fs.statfsSync((0, import_path12.dirname)(path));
-    return s.bsize * s.bavail;
-  } catch {
-    return null;
-  }
-}
-function recoverUnterminatedTail(path, opts = {}) {
-  const now = opts.now ?? localISOString;
-  const ops = { ...defaultFsOps, ...opts.fs };
-  requireDirectorySyncCapability(opts);
-  (0, import_fs16.mkdirSync)((0, import_path12.dirname)(path), { recursive: true });
-  const lock = acquireJournalLock(`${path}.lock`, now);
-  let lockHandedOver = false;
-  try {
-    const verdict = verifyJournalFile(path);
-    const lastValidSeq = verdict.records.length ? verdict.records[verdict.records.length - 1].seq : null;
-    if (verdict.status === "corrupt") {
-      return {
-        recovered: false,
-        setAsideBytes: 0,
-        lastValidSeq,
-        reason: `interior corruption at line ${verdict.problem?.line}: ${verdict.problem?.reason}`
-      };
-    }
-    if (verdict.status !== "unterminated_tail") {
-      return {
-        recovered: false,
-        setAsideBytes: 0,
-        lastValidSeq,
-        reason: `nothing to recover: journal is ${verdict.status}`
-      };
-    }
-    const setAside = verdict.discardableBytes;
-    const preservedTailPath = `${path}.unterminated-${now().replace(/[:.]/g, "-")}`;
-    const whole = (0, import_fs16.readFileSync)(path);
-    const tail = whole.subarray(verdict.validPrefixBytes);
-    const fd = (0, import_fs16.openSync)(preservedTailPath, "wx");
-    try {
-      let off = 0;
-      while (off < tail.length) {
-        const n = ops.writeSync(fd, tail.subarray(off));
-        if (!Number.isInteger(n) || n <= 0) {
-          throw new JournalBrokenError(
-            `preserving the unterminated tail made no progress after ${off} of ${tail.length} bytes`
-          );
-        }
-        off += n;
-      }
-      ops.fsyncSync(fd);
-    } finally {
-      (0, import_fs16.closeSync)(fd);
-    }
-    let tailNameDurable;
-    try {
-      tailNameDurable = ops.fsyncDirSync((0, import_path12.dirname)(preservedTailPath));
-    } catch (e) {
-      return {
-        recovered: false,
-        setAsideBytes: 0,
-        lastValidSeq,
-        preservedTailPath,
-        reason: `the preserved tail could not be made reachable (${e instanceof Error ? e.message : String(e)}), so the journal was left unchanged`
-      };
-    }
-    if (!tailNameDurable && !(opts.acceptUnsyncedDirectories || process.env[ACCEPT_UNSYNCED_DIRECTORIES_ENV] === "1")) {
-      return {
-        recovered: false,
-        setAsideBytes: 0,
-        lastValidSeq,
-        preservedTailPath,
-        reason: "this platform cannot make the preserved tail reachable after a crash; the journal was left unchanged"
-      };
-    }
-    (0, import_fs16.truncateSync)(path, verdict.validPrefixBytes);
-    const w = JournalWriter.open(path, opts, lock);
-    lockHandedOver = true;
-    try {
-      const outage = w.appendDurable("journal.outage", {
-        establishes: "journal_outage",
-        does_not_establish: "activity during the interval",
-        detail: "the journal ended with an unterminated record. That is consistent with an interrupted write and equally with deliberate truncation; this record does not choose between them. It marks an interval in which the journal was not recording, and says nothing about what happened during it.",
-        set_aside_bytes: setAside,
-        preserved_tail_path: preservedTailPath,
-        preserved_tail_name_synced: tailNameDurable,
-        last_valid_seq: lastValidSeq,
-        last_valid_offset: verdict.validPrefixBytes
-      });
-      return { recovered: true, setAsideBytes: setAside, preservedTailPath, lastValidSeq, outage };
-    } finally {
-      w.close();
-    }
-  } finally {
-    if (!lockHandedOver) lock.release();
-  }
-}
-function journalStatus(path) {
-  return verifyJournalFile(path);
-}
-var import_fs16, import_path12, DIRECTORY_SYNC_SUPPORTED, ACCEPT_UNSYNCED_DIRECTORIES_ENV, ROTATE_BYTES_ENV, defaultFsOps, JournalBrokenError, DEFAULT_FLUSH_BYTES, DEFAULT_ROTATE_BYTES, DEFAULT_MIN_FREE_BYTES, JournalWriter, __internals;
-var init_writer = __esm({
-  "src/journal/writer.ts"() {
-    "use strict";
-    import_fs16 = require("fs");
-    import_path12 = require("path");
-    init_time();
-    init_format();
-    init_verify();
-    init_runs();
-    DIRECTORY_SYNC_SUPPORTED = process.platform !== "win32";
-    ACCEPT_UNSYNCED_DIRECTORIES_ENV = "CHRON_ACCEPT_UNSYNCED_DIRECTORIES";
-    ROTATE_BYTES_ENV = "CHRON_JOURNAL_ROTATE_BYTES";
-    defaultFsOps = {
-      openSync: import_fs16.openSync,
-      writeSync: (fd, data) => (0, import_fs16.writeSync)(fd, data),
-      fsyncSync: import_fs16.fsyncSync,
-      closeSync: import_fs16.closeSync,
-      fsyncDirSync: fsyncDirDefault,
-      renameSync: import_fs16.renameSync
-    };
-    JournalBrokenError = class extends Error {
-      constructor(message, cause) {
-        super(message);
-        this.cause = cause;
-        this.name = "JournalBrokenError";
-      }
-    };
-    DEFAULT_FLUSH_BYTES = 64 * 1024;
-    DEFAULT_ROTATE_BYTES = 32 * 1024 * 1024;
-    DEFAULT_MIN_FREE_BYTES = 16 * 1024 * 1024;
-    JournalWriter = class _JournalWriter {
-      constructor(path, opts) {
-        this.path = path;
-        this.ops = { ...defaultFsOps, ...opts.fs };
-        this.flushBytes = opts.flushBytes ?? DEFAULT_FLUSH_BYTES;
-        if (opts.rotateBytesCeiling !== void 0 && (!Number.isSafeInteger(opts.rotateBytesCeiling) || opts.rotateBytesCeiling <= 0)) {
-          throw new RangeError("journal rotation ceiling must be a positive safe integer");
-        }
-        this.rotateBytes = Math.min(
-          opts.rotateBytes ?? configuredRotateBytes() ?? DEFAULT_ROTATE_BYTES,
-          opts.rotateBytesCeiling ?? Infinity
-        );
-        this.minFreeBytes = opts.minFreeBytes ?? DEFAULT_MIN_FREE_BYTES;
-        this.now = opts.now ?? localISOString;
-        this.acceptUnsynced = opts.acceptUnsyncedDirectories === true || process.env[ACCEPT_UNSYNCED_DIRECTORIES_ENV] === "1";
-        this.lockPath = `${path}.lock`;
-      }
-      fd = null;
-      buffer = "";
-      bufferedRecords = [];
-      seq = 0;
-      prev = null;
-      bytesOnDisk = 0;
-      broken = null;
-      lockPath;
-      lock = null;
-      ops;
-      flushBytes;
-      rotateBytes;
-      minFreeBytes;
-      now;
-      acceptUnsynced;
-      /**
-       * The durability this journal committed to on open. `null` until then, so the
-       * open-time sync itself is not measured against a capability it is setting.
-       */
-      established = null;
-      /**
-       * Open a journal for appending.
-       *
-       * Refuses to open a file with interior corruption. A writer that appends past
-       * a broken link would produce a journal whose valid suffix looks intact, which
-       * is how a damaged record becomes invisible.
-       *
-       * A torn tail is also refused here rather than silently fixed, because
-       * truncating is a decision that gets recorded. `recoverTornTail` does it.
-       */
-      static open(path, opts = {}, heldLock) {
-        const w = new _JournalWriter(path, opts);
-        (0, import_fs16.mkdirSync)((0, import_path12.dirname)(path), { recursive: true });
-        requireDirectorySyncCapability(opts);
-        if (heldLock) w.lock = heldLock;
-        else w.acquireLock();
-        try {
-          const verdict = verifyJournalFile(path);
-          if (verdict.status === "corrupt") {
-            throw new JournalBrokenError(
-              `journal has interior corruption at line ${verdict.problem?.line}: ${verdict.problem?.reason}`
-            );
-          }
-          if (verdict.status === "unterminated_tail") {
-            throw new JournalBrokenError(
-              "journal ends with an unterminated record; recover it before appending"
-            );
-          }
-          if (verdict.status === "empty" && journalSegmentPaths(path, { strict: true }).length > 1) {
-            throw new JournalBrokenError(
-              "journal active file is empty or absent beside rotated history; recover the interrupted rotation before appending"
-            );
-          }
-          w.seq = verdict.records.length ? verdict.records[verdict.records.length - 1].seq + 1 : 0;
-          w.prev = lastHashOf(verdict);
-          w.bytesOnDisk = verdict.validPrefixBytes;
-          w.fd = w.ops.openSync(path, "a");
-          w.established = w.syncDirOrStop((0, import_path12.dirname)(path));
-          opts.inspectVerifiedPrefix?.(verdict.records);
-          return w;
-        } catch (e) {
-          if (w.fd !== null) {
-            try {
-              w.ops.closeSync(w.fd);
-            } catch {
-            }
-            w.fd = null;
-          }
-          w.releaseLock();
-          throw e;
-        }
-      }
-      /**
-       * Exclusive append (§5.2). Two writers appending to one journal interleave
-       * partial lines, which looks exactly like corruption and is unrecoverable.
-       */
-      acquireLock() {
-        this.lock = acquireJournalLock(this.lockPath, this.now);
-      }
-      releaseLock() {
-        this.lock?.release();
-        this.lock = null;
-      }
-      /**
-       * Write every byte, or fail closed.
-       *
-       * `writeSync` may write fewer bytes than it was given, and the first version of
-       * this code ignored the return value entirely: a 194-byte file was reported as
-       * 209 durable bytes with `durableSeq` advanced and no error raised. The wrapper
-       * would then have released output whose journal record was incomplete, which is
-       * the one thing it exists not to do.
-       *
-       * A short write that makes progress is resumed. A write that makes none cannot
-       * be retried into working, so it stops the writer rather than spinning.
-       */
-      writeAll(fd, data) {
-        let offset = 0;
-        while (offset < data.length) {
-          const n = this.ops.writeSync(fd, data.subarray(offset));
-          if (!Number.isInteger(n) || n <= 0) {
-            throw new Error(
-              `write made no progress after ${offset} of ${data.length} bytes (returned ${String(n)})`
-            );
-          }
-          offset += n;
-        }
-      }
-      /**
-       * Move to the broken state and raise. The only way the writer stops.
-       *
-       * Rotation used to run outside this transition, so a rotation failure threw
-       * without marking the writer broken and the next `appendDurable` succeeded —
-       * appending after a missing continuation record, which is precisely the
-       * fail-stop contract being violated. Reproduced: marker write returns 0, first
-       * append throws, next append succeeds.
-       */
-      fail(what, e) {
-        this.broken = new JournalBrokenError(
-          `${what}; capture has stopped: ${e instanceof Error ? e.message : String(e)}`,
-          e
-        );
-        throw this.broken;
-      }
-      /**
-       * Sync a directory entry, or stop.
-       *
-       * Three outcomes, kept distinct because collapsing them is what caused the
-       * bug. An error stops the writer. A `false` return means the operation does
-       * not exist here, which stops the writer too *unless* an operator has accepted
-       * that — because without it the durability guarantee is unavailable, and
-       * continuing would release output under a guarantee that does not hold.
-       *
-       * The platform gate in `requireDirectorySyncCapability` is an early, clearer
-       * refusal for the obvious case. This is the control: checking the platform and
-       * not the returned value was a check that looked like it covered the claim
-       * while the actual value could still say otherwise.
-       */
-      syncDirOrStop(dir) {
-        let synced;
-        try {
-          synced = this.ops.fsyncDirSync(dir);
-        } catch (e) {
-          return this.fail(`journal directory sync failed for ${dir}`, e);
-        }
-        if (!synced) {
-          if (this.established === true) {
-            this.fail(
-              `journal directory ${dir} could not be synced during rotation, and this journal opened with durable names. Capture has stopped rather than continue under a weaker guarantee than its own evidence claims`,
-              new Error("a run that starts durable stays durable or stops")
-            );
-          }
-          if (!this.acceptUnsynced) {
-            this.fail(
-              `journal directory ${dir} could not be synced on this platform, so a file holding acknowledged records can lose its name in a crash`,
-              new Error(`set ${ACCEPT_UNSYNCED_DIRECTORIES_ENV}=1 to proceed without that guarantee`)
-            );
-          }
-        }
-        return synced;
-      }
-      assertUsable() {
-        if (this.broken) throw this.broken;
-        if (this.fd === null) throw new JournalBrokenError("journal is closed");
-      }
-      /**
-       * Bytes for which fsync has returned in this process.
-       *
-       * This is the only durable position anyone has, and it is not recoverable by
-       * reading the file. A reader sees terminated records, which proves the writer
-       * emitted whole lines, not that the kernel acknowledged them — a complete record
-       * can sit in the page cache, be visible to every reader, and be gone after a
-       * power loss. So a release gate compares against this, held by the process that
-       * did the writing, and never against a verdict's `validPrefixBytes`.
-       */
-      get durableBytes() {
-        return this.bytesOnDisk;
-      }
-      /** Highest seq confirmed on disk, or null when nothing is. */
-      get durableSeq() {
-        return this.seq - this.bufferedRecords.length - 1 >= 0 ? this.seq - this.bufferedRecords.length - 1 : null;
-      }
-      /**
-       * Whether this journal's file names are durable, as measured on open.
-       *
-       * Reported rather than inferred from the platform, because the observed result
-       * is the fact. A caller releasing work under a durability guarantee has to be
-       * able to state which guarantee it actually has — an operator accepting the
-       * trade-off authorises it, and cannot make it true.
-       */
-      get namesDurable() {
-        return this.established === true;
-      }
-      get activePath() {
-        return this.path;
-      }
-      get formatVersion() {
-        return JOURNAL_FORMAT_VERSION;
-      }
-      /**
-       * Append a record. Buffered; durable only after a flush reports success.
-       *
-       * Returns the record so a caller can hold its seq and hash, but holding them
-       * is not permission to act on them — `durableSeq` is.
-       */
-      append(kind, data) {
-        this.assertUsable();
-        const rec = makeRecord(this.seq, this.now(), kind, data, this.prev);
-        this.buffer += serializeRecord(rec);
-        this.bufferedRecords.push(rec);
-        this.seq++;
-        this.prev = rec.hash;
-        if (Buffer.byteLength(this.buffer, "utf8") >= this.flushBytes) this.flush();
-        return rec;
-      }
-      /** Append and make it durable before returning. The fail-closed path. */
-      appendDurable(kind, data) {
-        const rec = this.append(kind, data);
-        this.flush();
-        return rec;
-      }
-      /**
-       * Write the buffer and fsync it.
-       *
-       * On failure the writer is marked broken and the error is thrown. The buffer is
-       * kept rather than cleared, so nothing is reported as written that was not, and
-       * a caller that catches this cannot carry on appending as though the gap were
-       * not there.
-       */
-      flush() {
-        this.assertUsable();
-        if (this.buffer.length === 0) return;
-        const pending = Buffer.byteLength(this.buffer, "utf8");
-        const free = freeBytesFor(this.path);
-        if (free !== null && free < this.minFreeBytes + pending) {
-          this.broken = new JournalBrokenError(
-            `refusing to append: ${free} bytes free, need ${this.minFreeBytes + pending}`
-          );
-          throw this.broken;
-        }
-        try {
-          this.writeAll(this.fd, Buffer.from(this.buffer, "utf8"));
-          this.ops.fsyncSync(this.fd);
-        } catch (e) {
-          this.fail("journal write failed", e);
-        }
-        this.bytesOnDisk += pending;
-        this.buffer = "";
-        this.bufferedRecords = [];
-        if (this.bytesOnDisk >= this.rotateBytes) {
-          try {
-            this.rotate();
-          } catch (e) {
-            if (e instanceof JournalBrokenError && this.broken === e) throw e;
-            this.fail("journal rotation failed", e);
-          }
-        }
-      }
-      /**
-       * Move the active file aside and continue in a fresh one.
-       *
-       * The continuation's first record carries `prev` from the last record of the
-       * rotated file, so the chain crosses the boundary. Without that, rotation is a
-       * place where a chain can be restarted and nothing in either file says so.
-       */
-      rotate() {
-        const stamp = this.now().replace(/[:.]/g, "-");
-        const rotated = `${this.path}.${stamp}.${this.seq}`;
-        this.ops.fsyncSync(this.fd);
-        this.syncDirOrStop((0, import_path12.dirname)(this.path));
-        this.ops.closeSync(this.fd);
-        this.fd = null;
-        this.ops.renameSync(this.path, rotated);
-        this.fd = this.ops.openSync(this.path, "a");
-        this.bytesOnDisk = 0;
-        this.syncDirOrStop((0, import_path12.dirname)(this.path));
-        const marker = makeRecord(this.seq, this.now(), CONTINUATION_KIND, { rotated_to: rotated }, this.prev);
-        this.seq++;
-        this.prev = marker.hash;
-        const line = Buffer.from(serializeRecord(marker), "utf8");
-        this.writeAll(this.fd, line);
-        this.ops.fsyncSync(this.fd);
-        this.syncDirOrStop((0, import_path12.dirname)(this.path));
-        this.bytesOnDisk += line.length;
-      }
-      /**
-       * Close the journal, releasing the lock unconditionally.
-       *
-       * A final flush can fail — that is the whole point of the broken state — and if
-       * the failure escaped before the lock was released, a disk error would leave the
-       * journal locked by a process that had exited. Capture would then refuse to
-       * start until someone deleted a file by hand. So the flush error is recorded on
-       * the writer and rethrown only after the lock is gone.
-       */
-      close() {
-        let pendingError;
-        if (this.fd !== null) {
-          try {
-            if (this.buffer.length > 0) this.flush();
-          } catch (e) {
-            pendingError = e;
-          } finally {
-            try {
-              this.ops.fsyncSync(this.fd);
-            } catch {
-            }
-            try {
-              this.ops.closeSync(this.fd);
-            } catch {
-            }
-            this.fd = null;
-          }
-        }
-        this.releaseLock();
-        if (pendingError !== void 0) throw pendingError;
-      }
-    };
-    __internals = { freeBytesFor, statSync: import_fs16.statSync };
-  }
-});
-
-// src/projection/project.ts
-var project_exports = {};
-__export(project_exports, {
-  projectInteractions: () => projectInteractions,
-  projectJournal: () => projectJournal,
-  projectedMetadata: () => projectedMetadata,
-  projectedTitle: () => projectedTitle
-});
-function describeError(e) {
-  if (!(e instanceof Error)) return String(e);
-  const cause = e.cause;
-  const causeText = cause instanceof Error ? cause.message : cause === void 0 ? "" : String(cause);
-  return causeText ? `${causeText} (while: ${e.message.split("\n")[0]})` : e.message;
-}
-function projectInteractions(interactions) {
-  const out = [];
-  let pendingRole = null;
-  let buffers = [];
-  let at = "";
-  let seq = 0;
-  const flush = () => {
-    if (pendingRole === null) return;
-    out.push({
-      role: pendingRole,
-      // Canonicalised before it is hashed and before it is stored, which is the
-      // ordering a NUL byte broke in v0.1.59.
-      content: canonicalContent(Buffer.concat(buffers).toString("utf8")),
-      created_at: at,
-      source_sequence: seq
-    });
-    pendingRole = null;
-    buffers = [];
-  };
-  for (const r of interactions) {
-    const role = r.kind === INTERACTION_INPUT ? "user" : "assistant";
-    const b64 = r.data.bytes_b64;
-    if (typeof b64 !== "string") continue;
-    if (role !== pendingRole) {
-      flush();
-      pendingRole = role;
-      at = r.at;
-      seq = r.seq;
-    }
-    buffers.push(Buffer.from(b64, "base64"));
-  }
-  flush();
-  return out;
-}
-function projectedTitle(run) {
-  return `chron run \u2014 ${(0, import_path13.basename)(run.command)} \u2014 ${run.started.at} (${run.run_id.slice(0, 8)})`;
-}
-function bindingOf(run, journalPath3, messageCount) {
-  return {
-    run_id: run.run_id,
-    last_record_hash: run.last_record_hash,
-    record_count: run.record_count,
-    message_count: messageCount,
-    durability: run.durability,
-    journal_path: journalPath3
-  };
-}
-function projectedMetadata(run, binding) {
-  const meta = {
-    source: EVIDENCE_SOURCE.WITNESSED,
-    journal: binding
-  };
-  if (run.durability === "durable" && run.problems.length === 0) {
-    meta.capture_mode = CAPTURE_MODE.ENFORCED_WRAPPER;
-  }
-  return meta;
-}
-async function projectJournal(db, activeJournalPath) {
-  const segments = journalSegmentPaths(activeJournalPath);
-  const verdict = verifyJournalSequence(segments);
-  const runs = collectRuns(verdict.records);
-  const outcome = { projected: [], unchanged: [], failed: [], verdict };
-  for (const run of runs) {
-    if (!run.completed) {
-      outcome.failed.push({ run_id: run.run_id, reason: "run has no completion record yet" });
-      continue;
-    }
-    if (run.problems.length > 0) {
-      outcome.failed.push({
-        run_id: run.run_id,
-        reason: `run shape is not valid: ${run.problems.join("; ")}`
-      });
-      continue;
-    }
-    const projected = projectInteractions(run.interactions);
-    const binding = bindingOf(run, activeJournalPath, projected.length);
-    try {
-      await db.run(sql.raw("BEGIN IMMEDIATE"));
-    } catch (e) {
-      const now = await db.select({ id: sessions.id }).from(sessions).where(eq(sessions.id, run.run_id)).limit(1);
-      if (now.length > 0) {
-        outcome.unchanged.push(run.run_id);
-      } else {
-        outcome.failed.push({ run_id: run.run_id, reason: describeError(e) });
-      }
-      continue;
-    }
-    try {
-      const existing = await db.select({ id: sessions.id }).from(sessions).where(eq(sessions.id, run.run_id)).limit(1);
-      if (existing.length > 0) {
-        await db.run(sql.raw("ROLLBACK"));
-        outcome.unchanged.push(run.run_id);
-        continue;
-      }
-      await db.insert(sessions).values({
-        id: run.run_id,
-        title: projectedTitle(run),
-        ai_tool: "chron-run",
-        created_at: run.started.at,
-        updated_at: run.completed.at,
-        metadata: JSON.stringify(projectedMetadata(run, binding))
-      });
-      let prev = null;
-      for (let i = 0; i < projected.length; i++) {
-        const m = projected[i];
-        const hash2 = computeContentHash(
-          run.run_id,
-          m.role,
-          m.content,
-          m.created_at,
-          prev,
-          "message"
-        );
-        await db.insert(messages).values({
-          id: `${run.run_id}-${m.source_sequence}`,
-          session_id: run.run_id,
-          role: m.role,
-          content: m.content,
-          created_at: m.created_at,
-          prev_hash: prev,
-          content_hash: hash2,
-          event_type: "message",
-          source_sequence: m.source_sequence
-        });
-        prev = hash2;
-      }
-      await db.run(sql.raw("COMMIT"));
-      outcome.projected.push(run.run_id);
-    } catch (e) {
-      try {
-        await db.run(sql.raw("ROLLBACK"));
-      } catch {
-      }
-      outcome.failed.push({ run_id: run.run_id, reason: describeError(e) });
-    }
-  }
-  return outcome;
-}
-var import_path13;
-var init_project = __esm({
-  "src/projection/project.ts"() {
-    "use strict";
-    init_drizzle_orm();
-    import_path13 = require("path");
-    init_schema();
-    init_hash();
-    init_content();
-    init_evidence();
-    init_verify();
-    init_runs();
-    init_runs();
-  }
-});
-
-// src/projection/enforcement.ts
-var enforcement_exports = {};
-__export(enforcement_exports, {
-  journalBindingOf: () => journalBindingOf2,
-  verifyEnforcement: () => verifyEnforcement
-});
-function journalBindingOf2(meta) {
-  const raw = meta.journal;
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const b = raw;
-  if (typeof b.run_id !== "string" || typeof b.last_record_hash !== "string") return null;
-  if (typeof b.record_count !== "number" || typeof b.message_count !== "number") return null;
-  return {
-    run_id: b.run_id,
-    last_record_hash: b.last_record_hash,
-    record_count: b.record_count,
-    message_count: b.message_count,
-    durability: b.durability === "names_not_durable" ? "names_not_durable" : "durable",
-    journal_path: typeof b.journal_path === "string" ? b.journal_path : ""
-  };
-}
-async function verifyEnforcement(db, sessionId, metadataRaw, journalPathOverride) {
-  const meta = parseSessionMetadata(metadataRaw);
-  const binding = journalBindingOf2(meta);
-  if (!binding) {
-    return {
-      supported: false,
-      reason: recordedCaptureMode(meta) === CAPTURE_MODE.UNENFORCED ? "this session carries no journal binding, and claims no enforcement" : "this session claims enforcement but carries no journal binding to check it against"
-    };
-  }
-  const path = journalPathOverride ?? binding.journal_path;
-  if (!path) {
-    return { supported: false, reason: "the binding names no journal to check", run_id: binding.run_id };
-  }
-  const verdict = verifyJournalSequence(journalSegmentPaths(path));
-  if (verdict.status === "corrupt") {
-    return {
-      supported: false,
-      run_id: binding.run_id,
-      reason: `the journal does not verify (${verdict.problem?.reason ?? "corrupt"}), so nothing in it supports a claim`
-    };
-  }
-  if (sessionId !== binding.run_id) {
-    return {
-      supported: false,
-      run_id: binding.run_id,
-      reason: `this session is ${sessionId.slice(0, 8)} and the binding names run ${binding.run_id.slice(0, 8)}; a binding belongs to the session it was written for`
-    };
-  }
-  const run = collectRuns(verdict.records).find((r) => r.run_id === binding.run_id);
-  if (!run) {
-    return {
-      supported: false,
-      run_id: binding.run_id,
-      reason: "the run named by this session is not in the journal"
-    };
-  }
-  if (run.last_record_hash !== binding.last_record_hash) {
-    return {
-      supported: false,
-      run_id: binding.run_id,
-      reason: "the journal's record of this run no longer matches what the session was bound to"
-    };
-  }
-  if (run.record_count !== binding.record_count) {
-    return {
-      supported: false,
-      run_id: binding.run_id,
-      reason: `the run has ${run.record_count} records; the session was bound to ${binding.record_count}`
-    };
-  }
-  const expected = projectInteractions(run.interactions);
-  if (expected.length !== binding.message_count) {
-    return {
-      supported: false,
-      run_id: binding.run_id,
-      reason: `the journal implies ${expected.length} messages; the binding records ${binding.message_count}`
-    };
-  }
-  const rows = await db.select().from(messages).where(eq(messages.session_id, sessionId)).orderBy(asc(messages.source_sequence));
-  if (rows.length !== expected.length) {
-    return {
-      supported: false,
-      run_id: binding.run_id,
-      reason: `the projection holds ${rows.length} messages; the journal implies ${expected.length}`
-    };
-  }
-  for (let i = 0; i < expected.length; i++) {
-    const want = expected[i];
-    const got = rows[i];
-    const mismatch = got.role !== want.role ? `role ${got.role} should be ${want.role}` : got.content !== want.content ? "content does not match the journal" : got.created_at !== want.created_at ? "timestamp does not match the journal" : got.source_sequence !== want.source_sequence ? `sequence ${String(got.source_sequence)} should be ${want.source_sequence}` : null;
-    if (mismatch) {
-      return {
-        supported: false,
-        run_id: binding.run_id,
-        reason: `projected message ${i + 1} does not match the journal: ${mismatch}`
-      };
-    }
-  }
-  if (run.problems.length > 0) {
-    return {
-      supported: false,
-      run_id: binding.run_id,
-      reason: `the run's shape is not valid: ${run.problems.join("; ")}`
-    };
-  }
-  if (run.durability === "unknown") {
-    return {
-      supported: false,
-      run_id: binding.run_id,
-      reason: "the durability of this run could not be read from its scope, so the guarantee it was recorded under is unknown. An unreadable claim is not a weaker claim"
-    };
-  }
-  if (run.durability !== "durable") {
-    return {
-      supported: false,
-      run_id: binding.run_id,
-      reduced: true,
-      reason: "this run was recorded under reduced durability, so it is not eligible for the full enforced:wrapper guarantee. Output was still withheld until recorded; the record's file name was never made durable"
-    };
-  }
-  return { supported: true, mode: CAPTURE_MODE.ENFORCED_WRAPPER, run_id: binding.run_id };
-}
-var init_enforcement = __esm({
-  "src/projection/enforcement.ts"() {
-    "use strict";
-    init_drizzle_orm();
-    init_schema();
-    init_project();
-    init_evidence();
-    init_verify();
-    init_runs();
   }
 });
 
@@ -25373,15 +24821,503 @@ function nativeCaptureScope(spec, durability) {
     ]
   };
 }
-var init_scope2 = __esm({
+var init_scope = __esm({
   "src/native/scope.ts"() {
     "use strict";
     init_events();
   }
 });
 
-// src/native/record.ts
-function fsyncDirDefault2(dir) {
+// src/journal/scope.ts
+function captureScope(durability, protect = privacyEnabled()) {
+  if (protect) return { scope_version: 4, content_policy: contentPolicy().mode, durability, covered: ["Durable policy receipts for the controlled streams; original content is intentionally omitted."], not_covered: ["Original stream contents", "Child files, network, subprocesses and direct terminal access"], establishes: ["Policy receipts were made durable before controlled forwarding."], does_not_establish: ["That original forwarded bytes were stored", "Original content, completeness or an enforced:wrapper exact-bytes claim"], known_limitations: ["Protected wrapper streams are omitted, including in redact mode, to avoid cross-chunk disclosure.", "Configured policy key is needed to project or verify grouped protected records."] };
+  const durableNames = durability === "durable";
+  return {
+    scope_version: CAPTURE_SCOPE_VERSION,
+    durability,
+    covered: [
+      "bytes written by the operator to this process stdin, recorded before being forwarded to the child",
+      "bytes written by the child to stdout, recorded and made durable before being released to the terminal",
+      "bytes written by the child to stderr, on the same terms as stdout, because stderr can carry interaction content",
+      "the child command line, its exit status, and the time each of those was recorded"
+    ],
+    not_covered: [
+      "files the child reads or writes",
+      "subprocesses the child spawns, and anything those do",
+      "network requests the child makes, including the model API call itself",
+      "any terminal the child opens directly rather than through the inherited pipes",
+      "side effects already committed before the wrapper observed the output describing them"
+    ],
+    establishes: [
+      durableNames ? "no byte was released to the terminal before the journal write covering it was flushed and fsynced" : "no byte was released to the terminal before the journal write covering it was flushed and fsynced \u2014 but see durability below: the file holding those records does not have a durable name",
+      "the order of releases within a single stream matches the order in which they were recorded",
+      "a journal write failure stopped forwarding in both directions and terminated the child"
+    ],
+    does_not_establish: [
+      "that the child performed no work that went unrecorded",
+      "that a person read what was released",
+      "that the interleaving of stdout and stderr matches what an unwrapped run would have produced",
+      "that the wrapper was used at all for any other invocation \u2014 that needs a control outside Chron (enforced:policy)",
+      ...durableNames ? [] : [
+        "that a released record still exists after a system crash. Its contents were fsynced; its file name was not, because this platform cannot sync a directory entry and an operator accepted that trade-off. The record can survive without a name to reach it by.",
+        "the durability guarantee a fully durable run makes. A run recorded under this capability must not be classified as `enforced:wrapper` on the same terms."
+      ]
+    ],
+    // Version 2 of this list said there was no database projection and that no
+    // session could be marked `enforced:wrapper`. Both were true when written
+    // and both became false when v0.1.62 shipped projection and the
+    // enforcement verifier — and this text is written into the journal as the
+    // run's first record, so every wrapped run since has carried limitations
+    // its own build had already lifted, contradicting what `chron verify`
+    // reported for that same run.
+    //
+    // Records already written are left exactly as they are. A journal states
+    // what was claimed when it was written, and editing that to be more
+    // flattering would destroy the one property the journal exists for. The
+    // version is bumped instead, so a reader can tell which vocabulary a
+    // record carries, and version 2 stays readable.
+    known_limitations: [
+      "`chron run` attempts projection itself when the run completes, so a successful run normally appears in `chron history` and `chron verify <session-id>` without a further command. Before that attempt, and if it fails, the run exists in the journal alone \u2014 inspect it with `chron verify --journal`.",
+      "projection is a separate step that can fail independently of capture, and a failure there changes nothing about what was captured. `chron project` is the retry: it replays the journal and is idempotent, so running it again after a failure or at any later time is safe.",
+      "`enforced:wrapper` is reported for a projected run only when `chron verify <session-id>` has followed its binding to the journal records and compared them field by field. The claim is checked on read, never taken from the session row.",
+      "nothing here establishes that the wrapper was used for any other invocation. Running the client directly bypasses it, and preventing that needs a control outside Chron (`enforced:policy`).",
+      "one client shape is supported: a child that speaks through inherited stdio pipes."
+    ]
+  };
+}
+function formatCaptureScope(durability = "durable") {
+  const scope = captureScope(durability);
+  if (scope.content_policy) return ["chron run \u2014 protected retention scope", "Original stdin/stdout/stderr content is intentionally omitted, not redacted chunk by chunk.", ...scope.establishes, ...scope.does_not_establish, ...scope.known_limitations].join("\n");
+  const bullet = (s) => `  - ${s}`;
+  return [
+    "chron run \u2014 capture scope",
+    "",
+    `Storage durability: ${durability === "durable" ? "record contents and file names both survive a crash" : "contents are fsynced; file names are NOT \u2014 a record can outlive the name that reaches it"}`,
+    "",
+    "Covered, and therefore withheld until durable:",
+    ...scope.covered.map(bullet),
+    "",
+    "Not covered. The wrapper never sees these:",
+    ...scope.not_covered.map(bullet),
+    "",
+    "What a completed run establishes:",
+    ...scope.establishes.map(bullet),
+    "",
+    "What it does not establish:",
+    ...scope.does_not_establish.map(bullet),
+    "",
+    // Was 'Not built yet:'. The list below now includes things that are built
+    // — projection, and enforcement checked on read — so the heading denied
+    // what its own items described.
+    "Limitations and what they need:",
+    ...scope.known_limitations.map(bullet),
+    ""
+  ].join("\n");
+}
+var CAPTURE_SCOPE_VERSION, CAPTURE_SCOPE;
+var init_scope2 = __esm({
+  "src/journal/scope.ts"() {
+    "use strict";
+    init_policy();
+    CAPTURE_SCOPE_VERSION = 3;
+    CAPTURE_SCOPE = captureScope("durable", false);
+  }
+});
+
+// src/privacy/journal.ts
+function checkJournalPath(path) {
+  const p = contentPolicy();
+  if (p.mode !== "raw" && redactText(path, p) !== path)
+    throw new ContentPolicyError();
+}
+function assertJournalData(kind, data) {
+  const p = contentPolicy();
+  if (p.mode === "raw")
+    return;
+  const allow = (keys) => {
+    if (Object.keys(data).some((k) => !keys.includes(k)))
+      throw new ContentPolicyError();
+  };
+  const same = (a, b) => canonicalJson2(a) === canonicalJson2(b);
+  const structural = () => {
+    if (!["claude-code", "codex"].includes(String(data.client)) || ![null, "durable", "names_not_durable"].includes(data.durability) || !(data.client_version === null || typeof data.client_version === "string" && /^\d+\.\d+\.\d+(?:-alpha\.\d+(?:\.\d+)*)?$/.test(data.client_version)))
+      throw new ContentPolicyError();
+  };
+  const runId = () => {
+    if (typeof data.run_id !== "string" || !/^[-a-f0-9]{36}$/.test(data.run_id))
+      throw new ContentPolicyError();
+  };
+  const ids = (value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      throw new ContentPolicyError();
+    for (const [k, v] of Object.entries(value)) {
+      if (!["session_id", "prompt_id", "message_id", "turn_id", "event_id", "transcript_path"].includes(k) || v !== null && (typeof v !== "string" || privateIdentifier(v) !== v))
+        throw new ContentPolicyError();
+    }
+  };
+  if (kind === "native.event") {
+    allow("client client_version event boundary scope_version invocation_id client_ids cwd durability event_metadata content_field byte_count bytes_b64 content_policy privacy_receipt".split(" "));
+    structural();
+    const spec = nativeEventSpec(String(data.event), data.client);
+    if (!spec.content_field || data.boundary !== spec.boundary || data.scope_version !== 1 || data.content_field !== spec.content_field)
+      throw new ContentPolicyError();
+    const meta = data.event_metadata;
+    if (!meta || Object.entries(meta).some(([k, v]) => !spec.metadata_fields.includes(k) || !(typeof v === "boolean" || typeof v === "number" && Number.isFinite(v) || v === "[OMITTED]")))
+      throw new ContentPolicyError();
+    ids(data.client_ids);
+    if (data.cwd !== null || typeof data.invocation_id !== "string" || privateIdentifier(data.invocation_id) !== data.invocation_id)
+      throw new ContentPolicyError();
+    if (typeof data.bytes_b64 === "string") {
+      const bytes2 = Buffer.from(data.bytes_b64, "base64");
+      if (bytes2.toString("base64") !== data.bytes_b64) throw new ContentPolicyError();
+      assertPreparedContent(bytes2.toString("utf8"));
+      if (data.byte_count !== bytes2.length || !same(data.content_policy, JSON.parse(bytes2.toString("utf8")).chron_policy))
+        throw new ContentPolicyError();
+    } else if (typeof data.privacy_receipt === "string") {
+      assertPreparedContent(data.privacy_receipt);
+      if (data.bytes_b64 !== null || data.byte_count !== null || !same(data.content_policy, JSON.parse(data.privacy_receipt).chron_policy)) throw new ContentPolicyError();
+    } else
+      throw new ContentPolicyError();
+  } else if (kind === "native.capture.scope") {
+    structural();
+    const receipt = data.content_policy;
+    if (!receipt || Object.keys(receipt).sort().join(",") !== "action,mode,policy_id,reason,schema" || receipt.schema !== "chron.content-policy.v1" || receipt.policy_id !== p.id || receipt.mode !== p.mode || !["as_supplied", "redacted", "omitted", "failed"].includes(String(receipt.action)) || !["checked", "patterns", "skip", "size_limit", "budget_exceeded", "scanner_failure", "stream_omitted", "composite"].includes(String(receipt.reason)))
+      throw new ContentPolicyError();
+    const spec = nativeEventSpec(String(data.event), data.client);
+    const scope = nativeCaptureScope(spec, data.durability);
+    const expected = { ...scope, covered: ["Only the policy-processed representation and pseudonymized client identifiers; original payloads are not retained verbatim."], establishes: ["The policy-processed representation was recorded through the configured native hook."], does_not_establish: [...scope.does_not_establish, "Original unredacted content, completeness, or client withholding."] };
+    for (const [k, v] of Object.entries(expected))
+      if (!same(data[k], v))
+        throw new ContentPolicyError();
+    ids(data.client_ids);
+    if (typeof data.privacy_receipt !== "string")
+      throw new ContentPolicyError();
+    assertPreparedContent(data.privacy_receipt);
+    if (Object.keys(data).some((k) => !["scope_version", "client", "event", "boundary", "durability", "establishes", "does_not_establish", "known_limitations", "measured", "covered", "not_covered", "client_ids", "client_version", "content_policy", "privacy_receipt"].includes(k)))
+      throw new ContentPolicyError();
+  } else if (kind === "run.started") {
+    allow(["run_id", "command", "args", "scope", "pid"]);
+    runId();
+    if (!Number.isSafeInteger(data.pid)) throw new ContentPolicyError();
+    const scope = data.scope;
+    if (!same(scope, captureScope("durable", true)) && !same(scope, captureScope("names_not_durable", true)))
+      throw new ContentPolicyError();
+    if (scope?.scope_version !== 4 || scope?.content_policy !== p.mode || typeof data.command !== "string" || privateIdentifier(data.command) !== data.command || !Array.isArray(data.args) || data.args.length)
+      throw new ContentPolicyError();
+  } else if (kind === "interaction.input" || kind === "interaction.output") {
+    runId();
+    if (kind === "interaction.output" ? !["stdout", "stderr"].includes(String(data.stream)) : data.stream !== void 0 && data.stream !== "stdin")
+      throw new ContentPolicyError();
+    allow(["run_id", "stream", "byte_count", "bytes_b64"]);
+    if (typeof data.bytes_b64 !== "string")
+      throw new ContentPolicyError();
+    const bytes2 = Buffer.from(data.bytes_b64, "base64");
+    if (bytes2.toString("base64") !== data.bytes_b64 || data.byte_count !== bytes2.length) throw new ContentPolicyError();
+    assertPreparedContent(bytes2.toString("utf8"));
+  } else if (kind === "run.completed") {
+    runId();
+    allow(["run_id", "exit_code"]);
+    if (data.exit_code !== null && !Number.isSafeInteger(data.exit_code))
+      throw new ContentPolicyError();
+  } else
+    throw new ContentPolicyError();
+}
+var init_journal = __esm({
+  "src/privacy/journal.ts"() {
+    "use strict";
+    init_format();
+    init_events();
+    init_scope();
+    init_scope2();
+    init_policy();
+  }
+});
+
+// src/journal/verify.ts
+var verify_exports = {};
+__export(verify_exports, {
+  lastHashOf: () => lastHashOf,
+  verifyJournalBytes: () => verifyJournalBytes,
+  verifyJournalFile: () => verifyJournalFile,
+  verifyJournalSequence: () => verifyJournalSequence
+});
+function verifyJournalBytes(bytes2, expectedFirstPrev = null) {
+  const text2 = bytes2.toString("utf8");
+  if (text2.length === 0) {
+    return {
+      status: "empty",
+      records: [],
+      validPrefixBytes: 0,
+      discardableBytes: 0,
+      coverage: expectedFirstPrev === null ? "whole_chain" : "segment"
+    };
+  }
+  const records = [];
+  let validPrefixBytes = 0;
+  let prev = expectedFirstPrev;
+  let expectedSeq = null;
+  let line = 0;
+  let continuesFrom;
+  const coverageSoFar = () => continuesFrom !== void 0 || expectedFirstPrev !== null ? "segment" : "whole_chain";
+  let firstRecordPending = true;
+  let cursor = 0;
+  while (cursor < text2.length) {
+    const nl = text2.indexOf("\n", cursor);
+    if (nl === -1) break;
+    line++;
+    const raw = text2.slice(cursor, nl);
+    const lineBytes = Buffer.byteLength(text2.slice(cursor, nl + 1), "utf8");
+    const fail3 = (reason, seq) => ({
+      status: "corrupt",
+      continuesFrom,
+      coverage: coverageSoFar(),
+      records,
+      validPrefixBytes,
+      discardableBytes: bytes2.length - validPrefixBytes,
+      problem: { line, seq, reason }
+    });
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return fail3("line is terminated but not valid JSON");
+    }
+    if (!isRecordShaped(parsed)) return fail3("line is JSON but not a journal record");
+    const rec = parsed;
+    if (journalRecordHash(rec) !== rec.hash) {
+      return fail3("record does not match its own hash", rec.seq);
+    }
+    if (rec.prev !== prev) {
+      const opensAsContinuation = firstRecordPending && expectedFirstPrev === null && rec.kind === CONTINUATION_KIND && typeof rec.prev === "string";
+      if (opensAsContinuation) {
+        continuesFrom = rec.prev;
+      } else {
+        return fail3(
+          prev === null ? "first record should not link to a predecessor" : "prev_hash does not match the preceding record",
+          rec.seq
+        );
+      }
+    }
+    if (expectedSeq !== null && rec.seq !== expectedSeq) {
+      return fail3(`sequence jumped from ${expectedSeq - 1} to ${rec.seq}`, rec.seq);
+    }
+    records.push(rec);
+    firstRecordPending = false;
+    validPrefixBytes += lineBytes;
+    prev = rec.hash;
+    expectedSeq = rec.seq + 1;
+    cursor = nl + 1;
+  }
+  const tail = text2.slice(cursor);
+  if (tail.length === 0) {
+    return {
+      status: "ok",
+      continuesFrom,
+      coverage: coverageSoFar(),
+      records,
+      validPrefixBytes,
+      discardableBytes: 0
+    };
+  }
+  return {
+    status: "unterminated_tail",
+    continuesFrom,
+    coverage: coverageSoFar(),
+    records,
+    validPrefixBytes,
+    discardableBytes: bytes2.length - validPrefixBytes,
+    problem: {
+      line: line + 1,
+      reason: "final line is not newline-terminated: consistent with an interrupted write, and equally with deliberate truncation"
+    }
+  };
+}
+function verifyJournalFile(path, expectedFirstPrev = null) {
+  if (!(0, import_fs15.existsSync)(path)) {
+    return {
+      status: "empty",
+      records: [],
+      validPrefixBytes: 0,
+      discardableBytes: 0,
+      coverage: expectedFirstPrev === null ? "whole_chain" : "segment"
+    };
+  }
+  return verifyJournalBytes((0, import_fs15.readFileSync)(path), expectedFirstPrev);
+}
+function verifyJournalSequence(paths) {
+  const files = [];
+  const records = [];
+  let expected = null;
+  for (let i = 0; i < paths.length; i++) {
+    const path = paths[i];
+    const last = i === paths.length - 1;
+    const verdict = verifyJournalFile(path, expected);
+    files.push({ path, verdict });
+    records.push(...verdict.records);
+    if (verdict.status === "corrupt") {
+      return { status: "corrupt", files, records, problem: { ...verdict.problem, path } };
+    }
+    if (verdict.status === "unterminated_tail" && !last) {
+      return {
+        status: "corrupt",
+        files,
+        records,
+        problem: { path, line: verdict.problem?.line ?? 0, reason: "a rotated file ends mid-record" }
+      };
+    }
+    if (verdict.status === "unterminated_tail") {
+      return { status: "unterminated_tail", files, records, problem: { ...verdict.problem, path } };
+    }
+    expected = lastHashOf(verdict) ?? expected;
+  }
+  return { status: records.length ? "ok" : "empty", files, records };
+}
+function lastHashOf(verdict) {
+  return verdict.records.length ? verdict.records[verdict.records.length - 1].hash : null;
+}
+var import_fs15;
+var init_verify = __esm({
+  "src/journal/verify.ts"() {
+    "use strict";
+    import_fs15 = require("fs");
+    init_format();
+  }
+});
+
+// src/journal/runs.ts
+var runs_exports = {};
+__export(runs_exports, {
+  INTERACTION_INPUT: () => INTERACTION_INPUT,
+  INTERACTION_OUTPUT: () => INTERACTION_OUTPUT,
+  RUN_COMPLETED: () => RUN_COMPLETED,
+  RUN_STARTED: () => RUN_STARTED,
+  SUPPORTED_SCOPE_VERSIONS: () => SUPPORTED_SCOPE_VERSIONS,
+  collectRuns: () => collectRuns,
+  journalSegmentPaths: () => journalSegmentPaths
+});
+function runIdOf(r) {
+  const id = r.data.run_id;
+  return typeof id === "string" && id.length > 0 ? id : null;
+}
+function collectRuns(records) {
+  const byRun = /* @__PURE__ */ new Map();
+  for (const r of records) {
+    const id = runIdOf(r);
+    if (!id) continue;
+    const list = byRun.get(id);
+    if (list) list.push(r);
+    else byRun.set(id, [r]);
+  }
+  const runs = [];
+  for (const [run_id, rs] of byRun) {
+    const starts = rs.filter((r) => r.kind === RUN_STARTED);
+    const completions = rs.filter((r) => r.kind === RUN_COMPLETED);
+    const started = starts[0];
+    if (!started) continue;
+    const problems = [];
+    if (starts.length !== 1) problems.push(`${starts.length} start records; a run has exactly one`);
+    if (completions.length > 1) {
+      problems.push(`${completions.length} completion records; a run has at most one`);
+    }
+    const completed = completions[0] ?? null;
+    const interactions = rs.filter((r) => r.kind === INTERACTION_INPUT || r.kind === INTERACTION_OUTPUT);
+    for (const i of interactions) {
+      if (i.seq <= started.seq) {
+        problems.push(`interaction at seq ${i.seq} precedes the run's start at ${started.seq}`);
+      }
+      if (completed && i.seq >= completed.seq) {
+        problems.push(`interaction at seq ${i.seq} follows the run's completion at ${completed.seq}`);
+      }
+    }
+    if (completed && completed.seq <= started.seq) {
+      problems.push("the completion record precedes the start record");
+    }
+    const scope = started.data.scope;
+    let durability = "unknown";
+    if (!scope || typeof scope !== "object") {
+      problems.push("the start record carries no capture scope");
+    } else if (typeof scope.scope_version !== "number" || !SUPPORTED_SCOPE_VERSIONS.includes(scope.scope_version)) {
+      problems.push(`unsupported capture scope version ${String(scope.scope_version)}`);
+    } else if (scope.durability === "durable" || scope.durability === "names_not_durable") {
+      durability = scope.durability;
+    } else {
+      problems.push(`unrecognised durability ${JSON.stringify(scope.durability)}`);
+    }
+    runs.push({
+      run_id,
+      command: String(started.data.command ?? ""),
+      args: Array.isArray(started.data.args) ? started.data.args.map(String) : [],
+      durability,
+      started,
+      completed,
+      interactions,
+      records: rs,
+      last_record_hash: rs[rs.length - 1].hash,
+      record_count: rs.length,
+      problems
+    });
+  }
+  runs.sort((a, b) => a.started.seq - b.started.seq);
+  return runs;
+}
+function journalSegmentPaths(activePath, options = {}) {
+  const dir = (0, import_path11.dirname)(activePath);
+  const name2 = (0, import_path11.basename)(activePath);
+  let entries;
+  try {
+    entries = (0, import_fs16.readdirSync)(dir);
+  } catch (e) {
+    if (options.strict) throw e;
+    return [activePath];
+  }
+  const rotated = [];
+  for (const e of entries) {
+    if (!e.startsWith(`${name2}.`)) continue;
+    if (e.endsWith(".lock")) continue;
+    if (e.slice(name2.length + 1).startsWith("unterminated-")) continue;
+    const m = /\.(\d+)$/.exec(e);
+    if (!m) continue;
+    rotated.push({ path: (0, import_path11.join)(dir, e), seq: Number(m[1]) });
+  }
+  rotated.sort((a, b) => a.seq - b.seq);
+  return [...rotated.map((r) => r.path), activePath];
+}
+var import_fs16, import_path11, RUN_STARTED, RUN_COMPLETED, INTERACTION_INPUT, INTERACTION_OUTPUT, SUPPORTED_SCOPE_VERSIONS;
+var init_runs = __esm({
+  "src/journal/runs.ts"() {
+    "use strict";
+    import_fs16 = require("fs");
+    import_path11 = require("path");
+    init_scope2();
+    RUN_STARTED = "run.started";
+    RUN_COMPLETED = "run.completed";
+    INTERACTION_INPUT = "interaction.input";
+    INTERACTION_OUTPUT = "interaction.output";
+    SUPPORTED_SCOPE_VERSIONS = [CAPTURE_SCOPE_VERSION, 2, 4];
+  }
+});
+
+// src/journal/writer.ts
+var writer_exports = {};
+__export(writer_exports, {
+  ACCEPT_UNSYNCED_DIRECTORIES_ENV: () => ACCEPT_UNSYNCED_DIRECTORIES_ENV,
+  DIRECTORY_SYNC_SUPPORTED: () => DIRECTORY_SYNC_SUPPORTED,
+  JournalBrokenError: () => JournalBrokenError,
+  JournalWriter: () => JournalWriter,
+  ROTATE_BYTES_ENV: () => ROTATE_BYTES_ENV,
+  __internals: () => __internals,
+  acquireJournalLock: () => acquireJournalLock,
+  journalStatus: () => journalStatus,
+  recoverUnterminatedTail: () => recoverUnterminatedTail,
+  requireDirectorySyncCapability: () => requireDirectorySyncCapability
+});
+function configuredRotateBytes() {
+  const raw = process.env[ROTATE_BYTES_ENV];
+  if (raw === void 0) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
+}
+function fsyncDirDefault(dir) {
   if (!DIRECTORY_SYNC_SUPPORTED) return false;
   const fd = (0, import_fs17.openSync)(dir, "r");
   try {
@@ -25391,8 +25327,853 @@ function fsyncDirDefault2(dir) {
   }
   return true;
 }
+function requireDirectorySyncCapability(opts) {
+  if (DIRECTORY_SYNC_SUPPORTED) return;
+  if (opts.acceptUnsyncedDirectories) return;
+  if (process.env[ACCEPT_UNSYNCED_DIRECTORIES_ENV] === "1") return;
+  throw new JournalBrokenError(
+    `this platform (${process.platform}) cannot sync directory entries, so a file holding acknowledged records can lose its name in a crash. The durability guarantee is not available. Set ${ACCEPT_UNSYNCED_DIRECTORIES_ENV}=1 to proceed without it, knowingly.`
+  );
+}
+function acquireJournalLock(lockPath, now) {
+  const mine = JSON.stringify({ pid: process.pid, at: now() });
+  const lock = {
+    path: lockPath,
+    release: () => {
+      try {
+        (0, import_fs17.unlinkSync)(lockPath);
+      } catch {
+      }
+    }
+  };
+  try {
+    (0, import_fs17.writeFileSync)(lockPath, mine, { flag: "wx" });
+    return lock;
+  } catch (e) {
+    if (e.code !== "EEXIST") throw e;
+  }
+  let holder = {};
+  try {
+    holder = JSON.parse((0, import_fs17.readFileSync)(lockPath, "utf8"));
+  } catch {
+    throw new JournalBrokenError(`journal lock ${lockPath} is unreadable; not stealing it`);
+  }
+  if (typeof holder.pid !== "number") {
+    throw new JournalBrokenError(`journal lock ${lockPath} names no pid; not stealing it`);
+  }
+  if (holder.pid === process.pid) {
+    throw new JournalBrokenError("journal is already open in this process");
+  }
+  try {
+    process.kill(holder.pid, 0);
+    throw new JournalBrokenError(`journal is locked by live process ${holder.pid}`);
+  } catch (e) {
+    if (e instanceof JournalBrokenError) throw e;
+    if (e.code === "EPERM") {
+      throw new JournalBrokenError(`journal is locked by process ${holder.pid}`);
+    }
+  }
+  (0, import_fs17.unlinkSync)(lockPath);
+  (0, import_fs17.writeFileSync)(lockPath, mine, { flag: "wx" });
+  return lock;
+}
+function freeBytesFor(path) {
+  const fs = require("fs");
+  if (typeof fs.statfsSync !== "function") return null;
+  try {
+    const s = fs.statfsSync((0, import_path12.dirname)(path));
+    return s.bsize * s.bavail;
+  } catch {
+    return null;
+  }
+}
+function recoverUnterminatedTail(path, opts = {}) {
+  const now = opts.now ?? localISOString;
+  const ops = { ...defaultFsOps, ...opts.fs };
+  requireDirectorySyncCapability(opts);
+  (0, import_fs17.mkdirSync)((0, import_path12.dirname)(path), { recursive: true });
+  const lock = acquireJournalLock(`${path}.lock`, now);
+  let lockHandedOver = false;
+  try {
+    const verdict = verifyJournalFile(path);
+    const lastValidSeq = verdict.records.length ? verdict.records[verdict.records.length - 1].seq : null;
+    if (verdict.status === "corrupt") {
+      return {
+        recovered: false,
+        setAsideBytes: 0,
+        lastValidSeq,
+        reason: `interior corruption at line ${verdict.problem?.line}: ${verdict.problem?.reason}`
+      };
+    }
+    if (verdict.status !== "unterminated_tail") {
+      return {
+        recovered: false,
+        setAsideBytes: 0,
+        lastValidSeq,
+        reason: `nothing to recover: journal is ${verdict.status}`
+      };
+    }
+    const setAside = verdict.discardableBytes;
+    const preservedTailPath = `${path}.unterminated-${now().replace(/[:.]/g, "-")}`;
+    const whole = (0, import_fs17.readFileSync)(path);
+    const tail = whole.subarray(verdict.validPrefixBytes);
+    const fd = (0, import_fs17.openSync)(preservedTailPath, "wx");
+    try {
+      let off = 0;
+      while (off < tail.length) {
+        const n = ops.writeSync(fd, tail.subarray(off));
+        if (!Number.isInteger(n) || n <= 0) {
+          throw new JournalBrokenError(
+            `preserving the unterminated tail made no progress after ${off} of ${tail.length} bytes`
+          );
+        }
+        off += n;
+      }
+      ops.fsyncSync(fd);
+    } finally {
+      (0, import_fs17.closeSync)(fd);
+    }
+    let tailNameDurable;
+    try {
+      tailNameDurable = ops.fsyncDirSync((0, import_path12.dirname)(preservedTailPath));
+    } catch (e) {
+      return {
+        recovered: false,
+        setAsideBytes: 0,
+        lastValidSeq,
+        preservedTailPath,
+        reason: `the preserved tail could not be made reachable (${e instanceof Error ? e.message : String(e)}), so the journal was left unchanged`
+      };
+    }
+    if (!tailNameDurable && !(opts.acceptUnsyncedDirectories || process.env[ACCEPT_UNSYNCED_DIRECTORIES_ENV] === "1")) {
+      return {
+        recovered: false,
+        setAsideBytes: 0,
+        lastValidSeq,
+        preservedTailPath,
+        reason: "this platform cannot make the preserved tail reachable after a crash; the journal was left unchanged"
+      };
+    }
+    (0, import_fs17.truncateSync)(path, verdict.validPrefixBytes);
+    const w = JournalWriter.open(path, opts, lock);
+    lockHandedOver = true;
+    try {
+      const outage = w.appendDurable("journal.outage", {
+        establishes: "journal_outage",
+        does_not_establish: "activity during the interval",
+        detail: "the journal ended with an unterminated record. That is consistent with an interrupted write and equally with deliberate truncation; this record does not choose between them. It marks an interval in which the journal was not recording, and says nothing about what happened during it.",
+        set_aside_bytes: setAside,
+        preserved_tail_path: preservedTailPath,
+        preserved_tail_name_synced: tailNameDurable,
+        last_valid_seq: lastValidSeq,
+        last_valid_offset: verdict.validPrefixBytes
+      });
+      return { recovered: true, setAsideBytes: setAside, preservedTailPath, lastValidSeq, outage };
+    } finally {
+      w.close();
+    }
+  } finally {
+    if (!lockHandedOver) lock.release();
+  }
+}
+function journalStatus(path) {
+  return verifyJournalFile(path);
+}
+var import_fs17, import_path12, DIRECTORY_SYNC_SUPPORTED, ACCEPT_UNSYNCED_DIRECTORIES_ENV, ROTATE_BYTES_ENV, defaultFsOps, JournalBrokenError, DEFAULT_FLUSH_BYTES, DEFAULT_ROTATE_BYTES, DEFAULT_MIN_FREE_BYTES, JournalWriter, __internals;
+var init_writer = __esm({
+  "src/journal/writer.ts"() {
+    "use strict";
+    init_policy();
+    init_journal();
+    import_fs17 = require("fs");
+    import_path12 = require("path");
+    init_time();
+    init_format();
+    init_verify();
+    init_runs();
+    DIRECTORY_SYNC_SUPPORTED = process.platform !== "win32";
+    ACCEPT_UNSYNCED_DIRECTORIES_ENV = "CHRON_ACCEPT_UNSYNCED_DIRECTORIES";
+    ROTATE_BYTES_ENV = "CHRON_JOURNAL_ROTATE_BYTES";
+    defaultFsOps = {
+      openSync: import_fs17.openSync,
+      writeSync: (fd, data) => (0, import_fs17.writeSync)(fd, data),
+      fsyncSync: import_fs17.fsyncSync,
+      closeSync: import_fs17.closeSync,
+      fsyncDirSync: fsyncDirDefault,
+      renameSync: import_fs17.renameSync
+    };
+    JournalBrokenError = class extends Error {
+      constructor(message, cause) {
+        super(message);
+        this.cause = cause;
+        this.name = "JournalBrokenError";
+      }
+    };
+    DEFAULT_FLUSH_BYTES = 64 * 1024;
+    DEFAULT_ROTATE_BYTES = 32 * 1024 * 1024;
+    DEFAULT_MIN_FREE_BYTES = 16 * 1024 * 1024;
+    JournalWriter = class _JournalWriter {
+      constructor(path, opts) {
+        this.path = path;
+        this.ops = { ...defaultFsOps, ...opts.fs };
+        this.flushBytes = opts.flushBytes ?? DEFAULT_FLUSH_BYTES;
+        if (opts.rotateBytesCeiling !== void 0 && (!Number.isSafeInteger(opts.rotateBytesCeiling) || opts.rotateBytesCeiling <= 0)) {
+          throw new RangeError("journal rotation ceiling must be a positive safe integer");
+        }
+        this.rotateBytes = Math.min(
+          opts.rotateBytes ?? configuredRotateBytes() ?? DEFAULT_ROTATE_BYTES,
+          opts.rotateBytesCeiling ?? Infinity
+        );
+        this.minFreeBytes = opts.minFreeBytes ?? DEFAULT_MIN_FREE_BYTES;
+        this.now = opts.now ?? localISOString;
+        this.acceptUnsynced = opts.acceptUnsyncedDirectories === true || process.env[ACCEPT_UNSYNCED_DIRECTORIES_ENV] === "1";
+        this.lockPath = `${path}.lock`;
+      }
+      fd = null;
+      buffer = "";
+      bufferedRecords = [];
+      seq = 0;
+      prev = null;
+      bytesOnDisk = 0;
+      broken = null;
+      lockPath;
+      lock = null;
+      ops;
+      flushBytes;
+      rotateBytes;
+      minFreeBytes;
+      now;
+      acceptUnsynced;
+      /**
+       * The durability this journal committed to on open. `null` until then, so the
+       * open-time sync itself is not measured against a capability it is setting.
+       */
+      established = null;
+      /**
+       * Open a journal for appending.
+       *
+       * Refuses to open a file with interior corruption. A writer that appends past
+       * a broken link would produce a journal whose valid suffix looks intact, which
+       * is how a damaged record becomes invisible.
+       *
+       * A torn tail is also refused here rather than silently fixed, because
+       * truncating is a decision that gets recorded. `recoverTornTail` does it.
+       */
+      static open(path, opts = {}, heldLock) {
+        checkJournalPath(path);
+        const w = new _JournalWriter(path, opts);
+        (0, import_fs17.mkdirSync)((0, import_path12.dirname)(path), { recursive: true });
+        requireDirectorySyncCapability(opts);
+        if (heldLock) w.lock = heldLock;
+        else w.acquireLock();
+        try {
+          const verdict = verifyJournalFile(path);
+          if (privacyEnabled()) for (const record of verdict.records) {
+            if (record.kind !== CONTINUATION_KIND) assertJournalData(record.kind, record.data);
+          }
+          if (verdict.status === "corrupt") {
+            throw new JournalBrokenError(
+              `journal has interior corruption at line ${verdict.problem?.line}: ${verdict.problem?.reason}`
+            );
+          }
+          if (verdict.status === "unterminated_tail") {
+            throw new JournalBrokenError(
+              "journal ends with an unterminated record; recover it before appending"
+            );
+          }
+          if (verdict.status === "empty" && journalSegmentPaths(path, { strict: true }).length > 1) {
+            throw new JournalBrokenError(
+              "journal active file is empty or absent beside rotated history; recover the interrupted rotation before appending"
+            );
+          }
+          w.seq = verdict.records.length ? verdict.records[verdict.records.length - 1].seq + 1 : 0;
+          w.prev = lastHashOf(verdict);
+          w.bytesOnDisk = verdict.validPrefixBytes;
+          w.fd = w.ops.openSync(path, "a");
+          w.established = w.syncDirOrStop((0, import_path12.dirname)(path));
+          opts.inspectVerifiedPrefix?.(verdict.records);
+          return w;
+        } catch (e) {
+          if (w.fd !== null) {
+            try {
+              w.ops.closeSync(w.fd);
+            } catch {
+            }
+            w.fd = null;
+          }
+          w.releaseLock();
+          throw e;
+        }
+      }
+      /**
+       * Exclusive append (§5.2). Two writers appending to one journal interleave
+       * partial lines, which looks exactly like corruption and is unrecoverable.
+       */
+      acquireLock() {
+        this.lock = acquireJournalLock(this.lockPath, this.now);
+      }
+      releaseLock() {
+        this.lock?.release();
+        this.lock = null;
+      }
+      /**
+       * Write every byte, or fail closed.
+       *
+       * `writeSync` may write fewer bytes than it was given, and the first version of
+       * this code ignored the return value entirely: a 194-byte file was reported as
+       * 209 durable bytes with `durableSeq` advanced and no error raised. The wrapper
+       * would then have released output whose journal record was incomplete, which is
+       * the one thing it exists not to do.
+       *
+       * A short write that makes progress is resumed. A write that makes none cannot
+       * be retried into working, so it stops the writer rather than spinning.
+       */
+      writeAll(fd, data) {
+        let offset = 0;
+        while (offset < data.length) {
+          const n = this.ops.writeSync(fd, data.subarray(offset));
+          if (!Number.isInteger(n) || n <= 0) {
+            throw new Error(
+              `write made no progress after ${offset} of ${data.length} bytes (returned ${String(n)})`
+            );
+          }
+          offset += n;
+        }
+      }
+      /**
+       * Move to the broken state and raise. The only way the writer stops.
+       *
+       * Rotation used to run outside this transition, so a rotation failure threw
+       * without marking the writer broken and the next `appendDurable` succeeded —
+       * appending after a missing continuation record, which is precisely the
+       * fail-stop contract being violated. Reproduced: marker write returns 0, first
+       * append throws, next append succeeds.
+       */
+      fail(what, e) {
+        this.broken = new JournalBrokenError(
+          `${what}; capture has stopped: ${e instanceof Error ? e.message : String(e)}`,
+          e
+        );
+        throw this.broken;
+      }
+      /**
+       * Sync a directory entry, or stop.
+       *
+       * Three outcomes, kept distinct because collapsing them is what caused the
+       * bug. An error stops the writer. A `false` return means the operation does
+       * not exist here, which stops the writer too *unless* an operator has accepted
+       * that — because without it the durability guarantee is unavailable, and
+       * continuing would release output under a guarantee that does not hold.
+       *
+       * The platform gate in `requireDirectorySyncCapability` is an early, clearer
+       * refusal for the obvious case. This is the control: checking the platform and
+       * not the returned value was a check that looked like it covered the claim
+       * while the actual value could still say otherwise.
+       */
+      syncDirOrStop(dir) {
+        let synced;
+        try {
+          synced = this.ops.fsyncDirSync(dir);
+        } catch (e) {
+          return this.fail(`journal directory sync failed for ${dir}`, e);
+        }
+        if (!synced) {
+          if (this.established === true) {
+            this.fail(
+              `journal directory ${dir} could not be synced during rotation, and this journal opened with durable names. Capture has stopped rather than continue under a weaker guarantee than its own evidence claims`,
+              new Error("a run that starts durable stays durable or stops")
+            );
+          }
+          if (!this.acceptUnsynced) {
+            this.fail(
+              `journal directory ${dir} could not be synced on this platform, so a file holding acknowledged records can lose its name in a crash`,
+              new Error(`set ${ACCEPT_UNSYNCED_DIRECTORIES_ENV}=1 to proceed without that guarantee`)
+            );
+          }
+        }
+        return synced;
+      }
+      assertUsable() {
+        if (this.broken) throw this.broken;
+        if (this.fd === null) throw new JournalBrokenError("journal is closed");
+      }
+      /**
+       * Bytes for which fsync has returned in this process.
+       *
+       * This is the only durable position anyone has, and it is not recoverable by
+       * reading the file. A reader sees terminated records, which proves the writer
+       * emitted whole lines, not that the kernel acknowledged them — a complete record
+       * can sit in the page cache, be visible to every reader, and be gone after a
+       * power loss. So a release gate compares against this, held by the process that
+       * did the writing, and never against a verdict's `validPrefixBytes`.
+       */
+      get durableBytes() {
+        return this.bytesOnDisk;
+      }
+      /** Highest seq confirmed on disk, or null when nothing is. */
+      get durableSeq() {
+        return this.seq - this.bufferedRecords.length - 1 >= 0 ? this.seq - this.bufferedRecords.length - 1 : null;
+      }
+      /**
+       * Whether this journal's file names are durable, as measured on open.
+       *
+       * Reported rather than inferred from the platform, because the observed result
+       * is the fact. A caller releasing work under a durability guarantee has to be
+       * able to state which guarantee it actually has — an operator accepting the
+       * trade-off authorises it, and cannot make it true.
+       */
+      get namesDurable() {
+        return this.established === true;
+      }
+      get activePath() {
+        return this.path;
+      }
+      get formatVersion() {
+        return JOURNAL_FORMAT_VERSION;
+      }
+      /**
+       * Append a record. Buffered; durable only after a flush reports success.
+       *
+       * Returns the record so a caller can hold its seq and hash, but holding them
+       * is not permission to act on them — `durableSeq` is.
+       */
+      append(kind, data) {
+        this.assertUsable();
+        assertJournalData(kind, data);
+        const rec = makeRecord(this.seq, this.now(), kind, data, this.prev);
+        this.buffer += serializeRecord(rec);
+        this.bufferedRecords.push(rec);
+        this.seq++;
+        this.prev = rec.hash;
+        if (Buffer.byteLength(this.buffer, "utf8") >= this.flushBytes) this.flush();
+        return rec;
+      }
+      /** Append and make it durable before returning. The fail-closed path. */
+      appendDurable(kind, data) {
+        const rec = this.append(kind, data);
+        this.flush();
+        return rec;
+      }
+      /**
+       * Write the buffer and fsync it.
+       *
+       * On failure the writer is marked broken and the error is thrown. The buffer is
+       * kept rather than cleared, so nothing is reported as written that was not, and
+       * a caller that catches this cannot carry on appending as though the gap were
+       * not there.
+       */
+      flush() {
+        this.assertUsable();
+        if (this.buffer.length === 0) return;
+        const pending = Buffer.byteLength(this.buffer, "utf8");
+        const free = freeBytesFor(this.path);
+        if (free !== null && free < this.minFreeBytes + pending) {
+          this.broken = new JournalBrokenError(
+            `refusing to append: ${free} bytes free, need ${this.minFreeBytes + pending}`
+          );
+          throw this.broken;
+        }
+        try {
+          this.writeAll(this.fd, Buffer.from(this.buffer, "utf8"));
+          this.ops.fsyncSync(this.fd);
+        } catch (e) {
+          this.fail("journal write failed", e);
+        }
+        this.bytesOnDisk += pending;
+        this.buffer = "";
+        this.bufferedRecords = [];
+        if (this.bytesOnDisk >= this.rotateBytes) {
+          try {
+            this.rotate();
+          } catch (e) {
+            if (e instanceof JournalBrokenError && this.broken === e) throw e;
+            this.fail("journal rotation failed", e);
+          }
+        }
+      }
+      /**
+       * Move the active file aside and continue in a fresh one.
+       *
+       * The continuation's first record carries `prev` from the last record of the
+       * rotated file, so the chain crosses the boundary. Without that, rotation is a
+       * place where a chain can be restarted and nothing in either file says so.
+       */
+      rotate() {
+        const stamp = this.now().replace(/[:.]/g, "-");
+        const rotated = `${this.path}.${stamp}.${this.seq}`;
+        this.ops.fsyncSync(this.fd);
+        this.syncDirOrStop((0, import_path12.dirname)(this.path));
+        this.ops.closeSync(this.fd);
+        this.fd = null;
+        this.ops.renameSync(this.path, rotated);
+        this.fd = this.ops.openSync(this.path, "a");
+        this.bytesOnDisk = 0;
+        this.syncDirOrStop((0, import_path12.dirname)(this.path));
+        const marker = makeRecord(this.seq, this.now(), CONTINUATION_KIND, { rotated_to: rotated }, this.prev);
+        this.seq++;
+        this.prev = marker.hash;
+        const line = Buffer.from(serializeRecord(marker), "utf8");
+        this.writeAll(this.fd, line);
+        this.ops.fsyncSync(this.fd);
+        this.syncDirOrStop((0, import_path12.dirname)(this.path));
+        this.bytesOnDisk += line.length;
+      }
+      /**
+       * Close the journal, releasing the lock unconditionally.
+       *
+       * A final flush can fail — that is the whole point of the broken state — and if
+       * the failure escaped before the lock was released, a disk error would leave the
+       * journal locked by a process that had exited. Capture would then refuse to
+       * start until someone deleted a file by hand. So the flush error is recorded on
+       * the writer and rethrown only after the lock is gone.
+       */
+      close() {
+        let pendingError;
+        if (this.fd !== null) {
+          try {
+            if (this.buffer.length > 0) this.flush();
+          } catch (e) {
+            pendingError = e;
+          } finally {
+            try {
+              this.ops.fsyncSync(this.fd);
+            } catch {
+            }
+            try {
+              this.ops.closeSync(this.fd);
+            } catch {
+            }
+            this.fd = null;
+          }
+        }
+        this.releaseLock();
+        if (pendingError !== void 0) throw pendingError;
+      }
+    };
+    __internals = { freeBytesFor, statSync: import_fs17.statSync };
+  }
+});
+
+// src/projection/project.ts
+var project_exports = {};
+__export(project_exports, {
+  projectInteractions: () => projectInteractions,
+  projectJournal: () => projectJournal,
+  projectedMetadata: () => projectedMetadata,
+  projectedTitle: () => projectedTitle
+});
+function describeError(e) {
+  if (!(e instanceof Error)) return String(e);
+  const cause = e.cause;
+  const causeText = cause instanceof Error ? cause.message : cause === void 0 ? "" : String(cause);
+  return causeText ? `${causeText} (while: ${e.message.split("\n")[0]})` : e.message;
+}
+function projectInteractions(interactions) {
+  const out = [];
+  let pendingRole = null;
+  let buffers = [];
+  let at = "";
+  let seq = 0;
+  const flush = () => {
+    if (pendingRole === null) return;
+    out.push({
+      role: pendingRole,
+      // Canonicalised before it is hashed and before it is stored, which is the
+      // ordering a NUL byte broke in v0.1.59.
+      content: mergeStoredParts(buffers),
+      created_at: at,
+      source_sequence: seq
+    });
+    pendingRole = null;
+    buffers = [];
+  };
+  for (const r of interactions) {
+    const role = r.kind === INTERACTION_INPUT ? "user" : "assistant";
+    const b64 = r.data.bytes_b64;
+    if (typeof b64 !== "string") continue;
+    if (role !== pendingRole) {
+      flush();
+      pendingRole = role;
+      at = r.at;
+      seq = r.seq;
+    }
+    buffers.push(Buffer.from(b64, "base64"));
+  }
+  flush();
+  return out;
+}
+function projectedTitle(run) {
+  return `chron run \u2014 ${(0, import_path13.basename)(run.command)} \u2014 ${run.started.at} (${run.run_id.slice(0, 8)})`;
+}
+function bindingOf(run, journalPath3, messageCount) {
+  return {
+    run_id: run.run_id,
+    last_record_hash: run.last_record_hash,
+    record_count: run.record_count,
+    message_count: messageCount,
+    durability: run.durability,
+    journal_path: journalPath3
+  };
+}
+function projectedMetadata(run, binding) {
+  const meta = {
+    ...run.started.data.scope?.content_policy ? { capture_mode: CAPTURE_MODE.UNENFORCED } : {},
+    source: EVIDENCE_SOURCE.WITNESSED,
+    journal: binding
+  };
+  if (run.durability === "durable" && run.problems.length === 0 && !run.started.data.scope?.content_policy) {
+    meta.capture_mode = CAPTURE_MODE.ENFORCED_WRAPPER;
+  }
+  return meta;
+}
+async function projectJournal(db, activeJournalPath) {
+  const segments = journalSegmentPaths(activeJournalPath);
+  const verdict = verifyJournalSequence(segments);
+  const runs = collectRuns(verdict.records);
+  const outcome = { projected: [], unchanged: [], failed: [], verdict };
+  for (const run of runs) {
+    if (!run.completed) {
+      outcome.failed.push({ run_id: run.run_id, reason: "run has no completion record yet" });
+      continue;
+    }
+    if (run.problems.length > 0) {
+      outcome.failed.push({
+        run_id: run.run_id,
+        reason: `run shape is not valid: ${run.problems.join("; ")}`
+      });
+      continue;
+    }
+    const projected = projectInteractions(run.interactions);
+    const binding = bindingOf(run, activeJournalPath, projected.length);
+    try {
+      await db.run(sql.raw("BEGIN IMMEDIATE"));
+    } catch (e) {
+      const now = await db.select({ id: sessions.id }).from(sessions).where(eq(sessions.id, run.run_id)).limit(1);
+      if (now.length > 0) {
+        outcome.unchanged.push(run.run_id);
+      } else {
+        outcome.failed.push({ run_id: run.run_id, reason: describeError(e) });
+      }
+      continue;
+    }
+    try {
+      const existing = await db.select({ id: sessions.id }).from(sessions).where(eq(sessions.id, run.run_id)).limit(1);
+      if (existing.length > 0) {
+        await db.run(sql.raw("ROLLBACK"));
+        outcome.unchanged.push(run.run_id);
+        continue;
+      }
+      await db.insert(sessions).values({
+        id: run.run_id,
+        title: projectedTitle(run),
+        ai_tool: "chron-run",
+        created_at: run.started.at,
+        updated_at: run.completed.at,
+        metadata: JSON.stringify(projectedMetadata(run, binding))
+      });
+      let prev = null;
+      for (let i = 0; i < projected.length; i++) {
+        const m = projected[i];
+        const hash2 = computeContentHash(
+          run.run_id,
+          m.role,
+          m.content,
+          m.created_at,
+          prev,
+          "message"
+        );
+        await db.insert(messages).values({
+          id: `${run.run_id}-${m.source_sequence}`,
+          session_id: run.run_id,
+          role: m.role,
+          content: m.content,
+          created_at: m.created_at,
+          prev_hash: prev,
+          content_hash: hash2,
+          event_type: "message",
+          source_sequence: m.source_sequence
+        });
+        prev = hash2;
+      }
+      await db.run(sql.raw("COMMIT"));
+      outcome.projected.push(run.run_id);
+    } catch (e) {
+      try {
+        await db.run(sql.raw("ROLLBACK"));
+      } catch {
+      }
+      outcome.failed.push({ run_id: run.run_id, reason: describeError(e) });
+    }
+  }
+  return outcome;
+}
+var import_path13;
+var init_project = __esm({
+  "src/projection/project.ts"() {
+    "use strict";
+    init_policy();
+    init_drizzle_orm();
+    import_path13 = require("path");
+    init_schema();
+    init_hash();
+    init_evidence();
+    init_verify();
+    init_runs();
+    init_runs();
+  }
+});
+
+// src/projection/enforcement.ts
+var enforcement_exports = {};
+__export(enforcement_exports, {
+  journalBindingOf: () => journalBindingOf2,
+  verifyEnforcement: () => verifyEnforcement
+});
+function journalBindingOf2(meta) {
+  const raw = meta.journal;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const b = raw;
+  if (typeof b.run_id !== "string" || typeof b.last_record_hash !== "string") return null;
+  if (typeof b.record_count !== "number" || typeof b.message_count !== "number") return null;
+  return {
+    run_id: b.run_id,
+    last_record_hash: b.last_record_hash,
+    record_count: b.record_count,
+    message_count: b.message_count,
+    durability: b.durability === "names_not_durable" ? "names_not_durable" : "durable",
+    journal_path: typeof b.journal_path === "string" ? b.journal_path : ""
+  };
+}
+async function verifyEnforcement(db, sessionId, metadataRaw, journalPathOverride) {
+  const meta = parseSessionMetadata(metadataRaw);
+  const binding = journalBindingOf2(meta);
+  if (!binding) {
+    return {
+      supported: false,
+      reason: recordedCaptureMode(meta) === CAPTURE_MODE.UNENFORCED ? "this session carries no journal binding, and claims no enforcement" : "this session claims enforcement but carries no journal binding to check it against"
+    };
+  }
+  const path = journalPathOverride ?? binding.journal_path;
+  if (!path) {
+    return { supported: false, reason: "the binding names no journal to check", run_id: binding.run_id };
+  }
+  const verdict = verifyJournalSequence(journalSegmentPaths(path));
+  if (verdict.status === "corrupt") {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: `the journal does not verify (${verdict.problem?.reason ?? "corrupt"}), so nothing in it supports a claim`
+    };
+  }
+  if (sessionId !== binding.run_id) {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: `this session is ${sessionId.slice(0, 8)} and the binding names run ${binding.run_id.slice(0, 8)}; a binding belongs to the session it was written for`
+    };
+  }
+  const run = collectRuns(verdict.records).find((r) => r.run_id === binding.run_id);
+  if (!run) {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: "the run named by this session is not in the journal"
+    };
+  }
+  if (run.last_record_hash !== binding.last_record_hash) {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: "the journal's record of this run no longer matches what the session was bound to"
+    };
+  }
+  if (run.record_count !== binding.record_count) {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: `the run has ${run.record_count} records; the session was bound to ${binding.record_count}`
+    };
+  }
+  const expected = projectInteractions(run.interactions);
+  if (expected.length !== binding.message_count) {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: `the journal implies ${expected.length} messages; the binding records ${binding.message_count}`
+    };
+  }
+  const rows = await db.select().from(messages).where(eq(messages.session_id, sessionId)).orderBy(asc(messages.source_sequence));
+  if (rows.length !== expected.length) {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: `the projection holds ${rows.length} messages; the journal implies ${expected.length}`
+    };
+  }
+  for (let i = 0; i < expected.length; i++) {
+    const want = expected[i];
+    const got = rows[i];
+    const mismatch = got.role !== want.role ? `role ${got.role} should be ${want.role}` : got.content !== want.content ? "content does not match the journal" : got.created_at !== want.created_at ? "timestamp does not match the journal" : got.source_sequence !== want.source_sequence ? `sequence ${String(got.source_sequence)} should be ${want.source_sequence}` : null;
+    if (mismatch) {
+      return {
+        supported: false,
+        run_id: binding.run_id,
+        reason: `projected message ${i + 1} does not match the journal: ${mismatch}`
+      };
+    }
+  }
+  if (run.problems.length > 0) {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: `the run's shape is not valid: ${run.problems.join("; ")}`
+    };
+  }
+  if (run.durability === "unknown") {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reason: "the durability of this run could not be read from its scope, so the guarantee it was recorded under is unknown. An unreadable claim is not a weaker claim"
+    };
+  }
+  if (run.started.data.scope?.content_policy) {
+    return { supported: false, run_id: binding.run_id, ...recordedCaptureMode(meta) === CAPTURE_MODE.UNENFORCED ? { reduced: true } : {}, reason: "Original stream content was intentionally omitted by retention policy; no exact-bytes enforced:wrapper claim is supported." };
+  }
+  if (run.durability !== "durable") {
+    return {
+      supported: false,
+      run_id: binding.run_id,
+      reduced: true,
+      reason: "this run was recorded under reduced durability, so it is not eligible for the full enforced:wrapper guarantee. Output was still withheld until recorded; the record's file name was never made durable"
+    };
+  }
+  return { supported: true, mode: CAPTURE_MODE.ENFORCED_WRAPPER, run_id: binding.run_id };
+}
+var init_enforcement = __esm({
+  "src/projection/enforcement.ts"() {
+    "use strict";
+    init_drizzle_orm();
+    init_schema();
+    init_project();
+    init_evidence();
+    init_verify();
+    init_runs();
+  }
+});
+
+// src/native/record.ts
+function fsyncDirDefault2(dir) {
+  if (!DIRECTORY_SYNC_SUPPORTED) return false;
+  const fd = (0, import_fs18.openSync)(dir, "r");
+  try {
+    (0, import_fs18.fsyncSync)(fd);
+  } finally {
+    (0, import_fs18.closeSync)(fd);
+  }
+  return true;
+}
 function messageOf(e) {
-  const text2 = e instanceof Error ? e.message : String(e);
+  const text2 = policyErrorText(e);
   return text2.length > 300 ? `${text2.slice(0, 300)}\u2026` : text2;
 }
 function stringOrNull(x) {
@@ -25410,14 +26191,14 @@ function clientIdsOf(payload) {
 }
 function endsMidLine(path) {
   try {
-    const size = (0, import_fs17.statSync)(path).size;
+    const size = (0, import_fs18.statSync)(path).size;
     if (size === 0) return false;
-    const fd = (0, import_fs17.openSync)(path, "r");
+    const fd = (0, import_fs18.openSync)(path, "r");
     try {
       const last = Buffer.alloc(1);
-      return (0, import_fs17.readSync)(fd, last, 0, 1, size - 1) === 1 && last[0] !== 10;
+      return (0, import_fs18.readSync)(fd, last, 0, 1, size - 1) === 1 && last[0] !== 10;
     } finally {
-      (0, import_fs17.closeSync)(fd);
+      (0, import_fs18.closeSync)(fd);
     }
   } catch {
     return false;
@@ -25425,7 +26206,7 @@ function endsMidLine(path) {
 }
 function markerIdPart(invocationId) {
   const cleaned = invocationId.replace(/[^A-Za-z0-9_-]+/g, "-").replace(/-{2,}/g, "-").replace(/^-+|-+$/g, "").slice(0, 64);
-  return cleaned.length > 0 ? cleaned : (0, import_crypto13.randomUUID)();
+  return cleaned.length > 0 ? cleaned : (0, import_crypto14.randomUUID)();
 }
 function ownMarkerPath(sharedPath, invocationId) {
   const name2 = (0, import_path14.basename)(sharedPath);
@@ -25442,19 +26223,19 @@ function tryMarkerLock(path, now) {
   }
 }
 function markFailure(sharedPath, entry, ops, opts) {
-  const openIt = ops.openSync ?? import_fs17.openSync;
-  const writeIt = ops.writeSync ?? ((fd, data) => (0, import_fs17.writeSync)(fd, data));
-  const syncIt = ops.fsyncSync ?? import_fs17.fsyncSync;
-  const closeIt = ops.closeSync ?? import_fs17.closeSync;
+  const openIt = ops.openSync ?? import_fs18.openSync;
+  const writeIt = ops.writeSync ?? ((fd, data) => (0, import_fs18.writeSync)(fd, data));
+  const syncIt = ops.fsyncSync ?? import_fs18.fsyncSync;
+  const closeIt = ops.closeSync ?? import_fs18.closeSync;
   const syncDir = ops.fsyncDirSync ?? fsyncDirDefault2;
   let lock = null;
   let path = sharedPath;
   try {
-    (0, import_fs17.mkdirSync)((0, import_path14.dirname)(sharedPath), { recursive: true });
+    (0, import_fs18.mkdirSync)((0, import_path14.dirname)(sharedPath), { recursive: true });
     for (const candidate of [
       sharedPath,
       ownMarkerPath(sharedPath, opts.invocationId),
-      ownMarkerPath(sharedPath, (0, import_crypto13.randomUUID)())
+      ownMarkerPath(sharedPath, (0, import_crypto14.randomUUID)())
     ]) {
       lock = tryMarkerLock(candidate, opts.now);
       if (lock !== null) {
@@ -25514,7 +26295,9 @@ function metadataOf(payload, fields) {
 function recordNativeEvent(input) {
   const now = input.now ?? localISOString;
   const client = input.client ?? NATIVE_CLIENT;
-  const invocationId = input.invocationId ?? (0, import_crypto13.randomUUID)();
+  const protectedRequest = process.env.CHRON_CONTENT_POLICY !== "raw" && !!(process.env.CHRON_CONTENT_POLICY || process.env.CHRON_CONTENT_POLICY_KEY || process.env.CHRON_CONTENT_POLICY_KEY_FILE || process.env.CHRON_CONTENT_POLICY_LITERALS);
+  let invocationId = protectedRequest ? (0, import_crypto14.randomUUID)() : input.invocationId ?? (0, import_crypto14.randomUUID)();
+  let version7 = protectedRequest ? null : input.clientVersion ?? null;
   const markerPath = input.failureMarkerPath ?? (0, import_path14.join)((0, import_path14.dirname)(input.journalPath), NATIVE_FAILURE_MARKER_NAME);
   const base = {
     recorded: false,
@@ -25539,7 +26322,7 @@ function recordNativeEvent(input) {
     };
   }
   const payload = input.payload;
-  const event = stringOrNull(payload.hook_event_name);
+  let event = stringOrNull(payload.hook_event_name);
   if (event === null || event.length === 0) {
     return {
       ...base,
@@ -25549,29 +26332,44 @@ function recordNativeEvent(input) {
       }
     };
   }
+  if (protectedRequest && !["UserPromptSubmit", "MessageDisplay", "Stop"].includes(event)) event = "unsupported_event";
   const spec = nativeEventSpec(event, client);
-  const ids = clientIdsOf(payload);
+  let ids = protectedRequest ? { session_id: null, prompt_id: null, message_id: null, turn_id: null, event_id: null, transcript_path: null } : clientIdsOf(payload);
   const scope_version = nativeCaptureScope(spec, "durable").scope_version;
   const markEntry = (stage, reason) => ({
     at: now(),
     client,
-    client_version: input.clientVersion ?? null,
+    client_version: version7,
     event,
     invocation_id: invocationId,
     client_ids: ids,
     stage,
     reason,
-    journal_path: input.journalPath,
+    journal_path: protectedRequest ? "[OMITTED]" : input.journalPath,
     recorded: false
   });
   const contentField = spec.content_field;
   const rawContent = contentField === null ? null : payload[contentField];
   const content = contentField === null || rawContent === void 0 || rawContent === null ? null : String(rawContent);
-  const bytes2 = content === null ? null : Buffer.from(content, "utf8");
+  let bytes2 = content === null ? null : Buffer.from(content, "utf8");
+  let receipt;
   let lock = null;
   let writer = null;
   try {
-    (0, import_fs17.mkdirSync)((0, import_path14.dirname)(input.journalPath), { recursive: true });
+    const policy = contentPolicy();
+    if (policy.mode !== "raw") {
+      if (!["UserPromptSubmit", "MessageDisplay", "Stop"].includes(event)) {
+        event = "unsupported_event";
+        throw new ContentPolicyError();
+      }
+      ids = Object.fromEntries(Object.entries(clientIdsOf(payload)).map(([k, v]) => [k, v === null ? null : privateIdentifier(v)]));
+      invocationId = privateIdentifier(input.invocationId ?? invocationId);
+      base.invocation_id = invocationId;
+      version7 = input.clientVersion && /^\d+\.\d+\.\d+(?:-alpha\.\d+(?:\.\d+)*)?$/.test(input.clientVersion) ? input.clientVersion : null;
+      receipt = storedContent(content ?? "", { stream: event === "MessageDisplay" });
+      bytes2 = content === null ? null : Buffer.from(receipt, "utf8");
+    }
+    (0, import_fs18.mkdirSync)((0, import_path14.dirname)(input.journalPath), { recursive: true });
     lock = acquireJournalLock(`${input.journalPath}.lock`, now);
     let existing = [];
     writer = JournalWriter.open(input.journalPath, {
@@ -25602,26 +26400,28 @@ function recordNativeEvent(input) {
     if (needsScope) {
       writer.appendDurable(NATIVE_SCOPE_KIND, {
         ...nativeCaptureScope(spec, durability),
+        ...receipt ? { content_policy: policyEnvelope(receipt).chron_policy, privacy_receipt: storedContent(""), covered: ["Only the policy-processed representation and pseudonymized client identifiers; original payloads are not retained verbatim."], establishes: ["The policy-processed representation was recorded through the configured native hook."], does_not_establish: [...nativeCaptureScope(spec, durability).does_not_establish, "Original unredacted content, completeness, or client withholding."] } : {},
         client_ids: ids,
-        client_version: input.clientVersion ?? null
+        client_version: version7
       });
       scopeWritten = true;
     }
     const record = writer.appendDurable(NATIVE_EVENT_KIND, {
       client,
-      client_version: input.clientVersion ?? null,
+      client_version: version7,
       event,
       boundary: spec.boundary,
       scope_version,
       invocation_id: invocationId,
       client_ids: ids,
-      cwd: stringOrNull(payload.cwd),
+      cwd: receipt ? null : stringOrNull(payload.cwd),
       // The capability THIS record was written under, so a reader does not
       // have to work out which scope record applies to it.
       durability,
       // Framing the content needs to be read with: the batch position and the
       // end-of-message signal, where the event documents them.
-      event_metadata: metadataOf(payload, spec.metadata_fields),
+      event_metadata: receipt ? Object.fromEntries(Object.entries(metadataOf(payload, spec.metadata_fields)).map(([k, v]) => [k, typeof v === "string" ? "[OMITTED]" : v])) : metadataOf(payload, spec.metadata_fields),
+      ...receipt ? { content_policy: policyEnvelope(receipt).chron_policy, privacy_receipt: storedContent("") } : {},
       content_field: contentField,
       byte_count: bytes2 === null ? null : bytes2.length,
       bytes_b64: bytes2 === null ? null : bytes2.toString("base64"),
@@ -25644,7 +26444,7 @@ function recordNativeEvent(input) {
       durability
     };
   } catch (e) {
-    const stage = writer === null ? "open" : "append";
+    const stage = e instanceof ContentPolicyError ? "policy" : writer === null ? "open" : "append";
     const reason = messageOf(e);
     try {
       writer?.close();
@@ -25667,17 +26467,18 @@ function recordNativeEvent(input) {
     };
   }
 }
-var import_fs17, import_crypto13, import_path14, NATIVE_EVENT_KIND, NATIVE_SCOPE_KIND, NATIVE_FAILURE_MARKER_NAME, NATIVE_ROTATE_BYTES_CEILING;
+var import_fs18, import_crypto14, import_path14, NATIVE_EVENT_KIND, NATIVE_SCOPE_KIND, NATIVE_FAILURE_MARKER_NAME, NATIVE_ROTATE_BYTES_CEILING;
 var init_record = __esm({
   "src/native/record.ts"() {
     "use strict";
-    import_fs17 = require("fs");
-    import_crypto13 = require("crypto");
+    init_policy();
+    import_fs18 = require("fs");
+    import_crypto14 = require("crypto");
     import_path14 = require("path");
     init_writer();
     init_time();
     init_events();
-    init_scope2();
+    init_scope();
     NATIVE_EVENT_KIND = "native.event";
     NATIVE_SCOPE_KIND = "native.capture.scope";
     NATIVE_FAILURE_MARKER_NAME = "native-capture-failures.jsonl";
@@ -25690,7 +26491,7 @@ function nativeAiTool(client) {
   return client === "claude-code" ? NATIVE_AI_TOOL : `${client}-hook`;
 }
 function nativeSessionId(client, clientSessionId) {
-  const h = (0, import_crypto14.createHash)("sha256").update(`chron.native_hook.v1|${client}|${clientSessionId}`, "utf8").digest("hex");
+  const h = (0, import_crypto15.createHash)("sha256").update(`chron.native_hook.v1|${client}|${clientSessionId}`, "utf8").digest("hex");
   return `native-${h.slice(0, 32)}`;
 }
 function describeError2(e) {
@@ -25826,7 +26627,7 @@ function projectNativeMessages(records) {
     }
     out.push({
       role: g.role,
-      content: canonicalContent(Buffer.concat(g.buffers).toString("utf8")),
+      content: mergeStoredParts(g.buffers),
       created_at: g.at,
       source_sequence: g.seq,
       last_sequence: g.lastSeq,
@@ -25986,15 +26787,15 @@ async function projectNativeEvents(db, activeJournalPath) {
   }
   return outcome;
 }
-var import_crypto14, NATIVE_AI_TOOL, NATIVE_DURABILITY_MIXED, NATIVE_DURABILITY_UNKNOWN;
+var import_crypto15, NATIVE_AI_TOOL, NATIVE_DURABILITY_MIXED, NATIVE_DURABILITY_UNKNOWN;
 var init_native2 = __esm({
   "src/projection/native.ts"() {
     "use strict";
+    init_policy();
     init_drizzle_orm();
-    import_crypto14 = require("crypto");
+    import_crypto15 = require("crypto");
     init_schema();
     init_hash();
-    init_content();
     init_evidence();
     init_verify();
     init_runs();
@@ -26187,23 +26988,24 @@ function note(msg2) {
 `);
 }
 async function runVerifyBundle(bundlePath) {
+  if (privacyEnabled()) throw new ContentPolicyError();
   process.stdout.write(`
 ${BOLD8}Verifying bundle${RESET9} ${bundlePath}
 
 `);
-  const tempDir = (0, import_fs18.mkdtempSync)((0, import_path15.join)((0, import_os9.tmpdir)(), "chron-verify-"));
+  const tempDir = (0, import_fs19.mkdtempSync)((0, import_path15.join)((0, import_os9.tmpdir)(), "chron-verify-"));
   try {
     (0, import_child_process2.execFileSync)("tar", ["-xzf", bundlePath, "-C", tempDir], { stdio: "pipe" });
   } catch {
     process.stderr.write(`Failed to extract bundle: ${bundlePath}
 `);
-    (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
+    (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   let allOk = true;
   try {
     const manifestPath = (0, import_path15.join)(tempDir, "manifest.json");
-    const manifestBytes = (0, import_fs18.readFileSync)(manifestPath);
+    const manifestBytes = (0, import_fs19.readFileSync)(manifestPath);
     const manifest = JSON.parse(manifestBytes.toString());
     process.stdout.write(`${BOLD8}Manifest${RESET9} (${manifest.sessions.length} session(s), generated ${manifest.generated_at})
 `);
@@ -26213,8 +27015,8 @@ ${BOLD8}File integrity${RESET9}
     for (const [rel, expectedHash] of Object.entries(manifest.files)) {
       const filePath = (0, import_path15.join)(tempDir, rel);
       try {
-        const content = (0, import_fs18.readFileSync)(filePath);
-        const actual = (0, import_crypto15.createHash)("sha256").update(content).digest("hex");
+        const content = (0, import_fs19.readFileSync)(filePath);
+        const actual = (0, import_crypto16.createHash)("sha256").update(content).digest("hex");
         if (actual === expectedHash) {
           ok(rel);
         } else {
@@ -26231,12 +27033,12 @@ ${BOLD8}Signature${RESET9}
 `);
     const sigPath = (0, import_path15.join)(tempDir, "manifest.sig");
     let sigFile = null;
-    if (!(0, import_fs18.existsSync)(sigPath)) {
+    if (!(0, import_fs19.existsSync)(sigPath)) {
       fail("No manifest.sig \u2014 this bundle is unsigned and its origin cannot be established");
       allOk = false;
     } else {
       try {
-        const parsed = JSON.parse((0, import_fs18.readFileSync)(sigPath, "utf8"));
+        const parsed = JSON.parse((0, import_fs19.readFileSync)(sigPath, "utf8"));
         if (typeof parsed !== "object" || parsed === null || parsed.chron_sig !== "v1" || typeof parsed.session_id !== "string" || parsed.algorithm !== "Ed25519-SHA256" || typeof parsed.signature !== "string" || !parsed.signature) {
           throw new Error("invalid signature envelope");
         }
@@ -26253,7 +27055,7 @@ ${BOLD8}Signature${RESET9}
       }
       const pubKeyPath2 = (0, import_path15.join)(tempDir, "pubkeys", `${sigFile.session_id}.pub`);
       try {
-        const pubKey = (0, import_fs18.readFileSync)(pubKeyPath2, "utf8");
+        const pubKey = (0, import_fs19.readFileSync)(pubKeyPath2, "utf8");
         const valid = verifyBufferSignature(pubKey, sigFile.signature, manifestBytes);
         if (valid) {
           ok(`Ed25519 signature valid (session ${sigFile.session_id.slice(0, 8)})`);
@@ -26268,7 +27070,7 @@ ${BOLD8}Signature${RESET9}
     }
     process.stdout.write("\n");
   } finally {
-    (0, import_fs18.rmSync)(tempDir, { recursive: true, force: true });
+    (0, import_fs19.rmSync)(tempDir, { recursive: true, force: true });
   }
   process.exit(allOk ? 0 : 1);
 }
@@ -26386,6 +27188,21 @@ ${BOLD8}Verifying session ${session.id.slice(0, 8)}${RESET9} \u2014 ${session.ti
 `);
   const rows = await db.select().from(messages).where(eq(messages.session_id, session.id)).orderBy(...messageOrderAsc());
   const sessionMeta = parseSessionMetadata(session.metadata);
+  let privacyOk = true;
+  const protectedRows = rows.filter((r) => claimsPolicy(r.content));
+  if (protectedRows.length) {
+    process.stdout.write("Content retention provenance\n");
+    for (const row of protectedRows) {
+      try {
+        const receipt = verifyPolicyContent(row.content).chron_policy;
+        ok(`Configured policy authenticated: ${receipt.mode} / ${receipt.action} / ${receipt.reason}`);
+      } catch {
+        fail("Content-policy claim is not authenticated by the configured profile key.");
+        privacyOk = false;
+      }
+    }
+    warn("Provenance covers the retained representation; it does not certify original content, complete detection or client withholding.");
+  }
   process.stdout.write(`${BOLD8}Hash chain${RESET9} (${rows.length} messages)
 `);
   const chained = rows.filter((r) => r.content_hash !== null);
@@ -26473,6 +27290,7 @@ ${BOLD8}Evidence boundary${RESET9}
 ${BOLD8}Clock attestation${RESET9}
 `);
   const status = sessionMeta.clock_sync_status;
+  const clockOk = status !== "not_synchronized";
   if (status === "synchronized") {
     const offset = sessionMeta.clock_offset_ms !== void 0 ? ` (offset: ${sessionMeta.clock_offset_ms > 0 ? "+" : ""}${sessionMeta.clock_offset_ms}ms)` : "";
     ok(`Clock synchronized via NTP${offset}`);
@@ -26488,6 +27306,7 @@ ${BOLD8}Clock attestation${RESET9}
   process.stdout.write(`
 ${BOLD8}Signature${RESET9}
 `);
+  let signatureOk = true;
   if (!session.public_key) {
     const absent = missingPublicKey(sessionMeta);
     warn(absent.fact);
@@ -26495,6 +27314,10 @@ ${BOLD8}Signature${RESET9}
 `);
     for (const line of absent.next) process.stdout.write(`  ${DIM7}${line}${RESET9}
 `);
+    if (session.signature) {
+      fail("Signature cannot be verified \u2014 a signature is recorded but no public key is recorded.");
+      signatureOk = false;
+    }
   } else if (!session.signature) {
     warn("Not yet signed \u2014 run: chron sign " + session.id.slice(0, 8));
   } else {
@@ -26514,19 +27337,21 @@ ${BOLD8}Signature${RESET9}
 `);
     } else {
       fail("Ed25519 signature INVALID \u2014 session data may have been altered after signing");
+      signatureOk = false;
     }
   }
   process.stdout.write("\n");
-  const allOk = chainOk && allOkEnforcement;
+  const allOk = privacyOk && chainOk && allOkEnforcement && clockOk && signatureOk;
   process.exit(allOk ? 0 : 1);
 }
-var import_fs18, import_crypto15, import_path15, import_os9, import_child_process2, RESET9, BOLD8, GREEN5, RED6, DIM7, YELLOW6;
+var import_fs19, import_crypto16, import_path15, import_os9, import_child_process2, RESET9, BOLD8, GREEN5, RED6, DIM7, YELLOW6;
 var init_verify2 = __esm({
   "src/cli/verify.ts"() {
     "use strict";
+    init_policy();
     init_drizzle_orm();
-    import_fs18 = require("fs");
-    import_crypto15 = require("crypto");
+    import_fs19 = require("fs");
+    import_crypto16 = require("crypto");
     import_path15 = require("path");
     import_os9 = require("os");
     import_child_process2 = require("child_process");
@@ -26559,9 +27384,9 @@ function checkConfigured(def, home, cwd) {
   const configs = userMcpClientConfigs(home, cwd, (0, import_os10.platform)(), process.env.APPDATA);
   return def.configNames.some((name2) => {
     const c = configs.find((mc) => mc.name === name2);
-    if (!c || !(0, import_fs19.existsSync)(c.path)) return false;
+    if (!c || !(0, import_fs20.existsSync)(c.path)) return false;
     try {
-      const content = (0, import_fs19.readFileSync)(c.path, "utf8");
+      const content = (0, import_fs20.readFileSync)(c.path, "utf8");
       return c.type === "codex-toml" ? hasChronCodexToml(content) : hasChronJsonMcp(content) === true;
     } catch {
       return false;
@@ -26903,11 +27728,11 @@ async function runCoverage(args2) {
   printCoverage(result);
   if (result.evidence_use) printEvidenceUse(result.evidence_use);
 }
-var import_fs19, import_os10, RESET10, BOLD9, DIM8, GREEN6, YELLOW7, CYAN6, RED7, KNOWN_TOOLS, MIN_CARDINALITY_SAMPLE, CONCENTRATION_THRESHOLD, SQLITE_BINDING_BATCH_SIZE;
+var import_fs20, import_os10, RESET10, BOLD9, DIM8, GREEN6, YELLOW7, CYAN6, RED7, KNOWN_TOOLS, MIN_CARDINALITY_SAMPLE, CONCENTRATION_THRESHOLD, SQLITE_BINDING_BATCH_SIZE;
 var init_coverage = __esm({
   "src/cli/coverage.ts"() {
     "use strict";
-    import_fs19 = require("fs");
+    import_fs20 = require("fs");
     import_os10 = require("os");
     init_drizzle_orm();
     init_db2();
@@ -26979,7 +27804,7 @@ function attemptOf(line) {
 function readMarkerFile(path) {
   let raw;
   try {
-    raw = (0, import_fs20.readFileSync)(path, "utf8");
+    raw = (0, import_fs21.readFileSync)(path, "utf8");
   } catch (e) {
     return { path, attempts: [], unreadable_lines: 0, read_error: messageOf2(e) };
   }
@@ -26997,7 +27822,7 @@ function surveyCaptureFailures(journalPath3) {
   const dir = (0, import_path16.dirname)(journalPath3);
   let names;
   try {
-    names = (0, import_fs20.readdirSync)(dir);
+    names = (0, import_fs21.readdirSync)(dir);
   } catch (e) {
     return {
       dir,
@@ -27061,11 +27886,11 @@ function describeCaptureFailures(s) {
   );
   return out;
 }
-var import_fs20, import_path16, CAPTURE_FAILURE_LIMIT;
+var import_fs21, import_path16, CAPTURE_FAILURE_LIMIT;
 var init_failures = __esm({
   "src/native/failures.ts"() {
     "use strict";
-    import_fs20 = require("fs");
+    import_fs21 = require("fs");
     import_path16 = require("path");
     init_record();
     CAPTURE_FAILURE_LIMIT = "A failed attempt is not a missing record and not a withhold: the handler runs once per event, so a later attempt can succeed, and neither measured event can hold content back. What a mark establishes is that one attempt to record one event failed.";
@@ -27104,7 +27929,7 @@ ${BOLD10}${title}${RESET11}
 }
 function canWrite(dir) {
   try {
-    (0, import_fs21.accessSync)(dir, import_fs21.constants.W_OK);
+    (0, import_fs22.accessSync)(dir, import_fs22.constants.W_OK);
     return true;
   } catch {
     return false;
@@ -27113,8 +27938,8 @@ function canWrite(dir) {
 function testWriteFile(path) {
   const probe = path + ".chron-probe";
   try {
-    (0, import_fs21.writeFileSync)(probe, "ok");
-    (0, import_fs21.unlinkSync)(probe);
+    (0, import_fs22.writeFileSync)(probe, "ok");
+    (0, import_fs22.unlinkSync)(probe);
     return true;
   } catch {
     return false;
@@ -27157,7 +27982,7 @@ function keysDir2() {
 }
 function loadConfig2() {
   try {
-    return JSON.parse((0, import_fs21.readFileSync)(configPath(), "utf8"));
+    return JSON.parse((0, import_fs22.readFileSync)(configPath(), "utf8"));
   } catch {
     return {};
   }
@@ -27209,17 +28034,17 @@ function mcpConfigs() {
     let instructionConfigured;
     if (instrPath) {
       try {
-        const content = (0, import_fs21.existsSync)(instrPath) ? (0, import_fs21.readFileSync)(instrPath, "utf8") : "";
+        const content = (0, import_fs22.existsSync)(instrPath) ? (0, import_fs22.readFileSync)(instrPath, "utf8") : "";
         instructionConfigured = content.includes(CHRON_INSTRUCTION_SENTINEL) || content.includes(CHRON_INSTRUCTION_BLOCK_START);
       } catch {
         instructionConfigured = false;
       }
     }
-    if (!(0, import_fs21.existsSync)(c.path)) {
+    if (!(0, import_fs22.existsSync)(c.path)) {
       return { name: c.name, path: c.path, exists: false, chronConfigured: null, connectCommand: c.connectCommand, instructionPath: instrPath, instructionConfigured };
     }
     try {
-      const content = (0, import_fs21.readFileSync)(c.path, "utf8");
+      const content = (0, import_fs22.readFileSync)(c.path, "utf8");
       const configured = c.type === "codex-toml" ? hasChronCodexToml(content) : hasChronJsonMcp(content);
       const launcher = inspectChronLauncher(content, c.type);
       return { name: c.name, path: c.path, exists: true, chronConfigured: configured, launcher, connectCommand: c.connectCommand, instructionPath: instrPath, instructionConfigured };
@@ -27353,7 +28178,7 @@ ${BOLD10}Verify Chron Logging${RESET11}  ${DIM9}${displayTool}${RESET11}
   process.stdout.write(`
 ${DIM9}Once you've done this, Chron will detect the new session below.${RESET11}
 `);
-  if (!(0, import_fs21.existsSync)(db)) {
+  if (!(0, import_fs22.existsSync)(db)) {
     process.stdout.write(`
 ${RED8}\u2717${RESET11} Chron database not found at ${db}
 `);
@@ -27455,15 +28280,15 @@ ${BOLD10}chron doctor${RESET11}  ${DIM9}v${import_package3.version}${RESET11}${f
   if (!jsonMode) section("Storage");
   const db = dbPath2();
   const dbDir = (0, import_path17.join)(db, "..");
-  const dbDirExists = (0, import_fs21.existsSync)(dbDir);
+  const dbDirExists = (0, import_fs22.existsSync)(dbDir);
   if (!dbDirExists) {
     try {
-      (0, import_fs21.mkdirSync)(dbDir, { recursive: true });
+      (0, import_fs22.mkdirSync)(dbDir, { recursive: true });
     } catch {
     }
   }
   const dbWritable = testWriteFile(dbDir);
-  const dbExists = (0, import_fs21.existsSync)(db);
+  const dbExists = (0, import_fs22.existsSync)(db);
   results.push({
     pass: dbWritable,
     label: `DB directory: ${dbDir}`,
@@ -27473,10 +28298,10 @@ ${BOLD10}chron doctor${RESET11}  ${DIM9}v${import_package3.version}${RESET11}${f
   if (!jsonMode) (dbWritable ? ok2 : fail2)(`DB: ${db}`, dbExists ? "found" : "not yet created \u2014 will init on first use");
   if (!dbWritable && !jsonMode) info("fix", `mkdir -p "${dbDir}" && chmod 700 "${dbDir}"`);
   const keys = keysDir2();
-  const keysExist = (0, import_fs21.existsSync)(keys);
+  const keysExist = (0, import_fs22.existsSync)(keys);
   if (!keysExist) {
     try {
-      (0, import_fs21.mkdirSync)(keys, { recursive: true });
+      (0, import_fs22.mkdirSync)(keys, { recursive: true });
     } catch {
     }
   }
@@ -27587,7 +28412,7 @@ ${BOLD10}chron doctor${RESET11}  ${DIM9}v${import_package3.version}${RESET11}${f
   }
   try {
     const claudePath = (0, import_path17.join)((0, import_os11.homedir)(), ".claude.json");
-    const scopes = (0, import_fs21.existsSync)(claudePath) ? findClaudeChronScopes((0, import_fs21.readFileSync)(claudePath, "utf8"), process.cwd()) : [];
+    const scopes = (0, import_fs22.existsSync)(claudePath) ? findClaudeChronScopes((0, import_fs22.readFileSync)(claudePath, "utf8"), process.cwd()) : [];
     const endpointCount = new Set(scopes.map((s) => s.endpoint)).size;
     if (scopes.length > 1 && endpointCount > 1) {
       const fixCmds = claudeChronConflictFixes(scopes);
@@ -27752,13 +28577,13 @@ ${BOLD10}chron doctor${RESET11}  ${DIM9}v${import_package3.version}${RESET11}${f
   }
   process.exit(failures.length > 0 ? 1 : 0);
 }
-var import_os11, import_path17, import_fs21, import_child_process3, import_package3, RESET11, BOLD10, DIM9, GREEN7, RED8, YELLOW8, CYAN7, CLAIIM_PREVIEW_URL, INSTRUCTION_PATHS, AI_TOOL_FOR_CLIENT, CAPTURE_FAMILY_LABEL, VERIFY_SLUG;
+var import_os11, import_path17, import_fs22, import_child_process3, import_package3, RESET11, BOLD10, DIM9, GREEN7, RED8, YELLOW8, CYAN7, CLAIIM_PREVIEW_URL, INSTRUCTION_PATHS, AI_TOOL_FOR_CLIENT, CAPTURE_FAMILY_LABEL, VERIFY_SLUG;
 var init_doctor = __esm({
   "src/cli/doctor.ts"() {
     "use strict";
     import_os11 = require("os");
     import_path17 = require("path");
-    import_fs21 = require("fs");
+    import_fs22 = require("fs");
     import_child_process3 = require("child_process");
     import_package3 = __toESM(require_package());
     init_mcp_config();
@@ -27804,307 +28629,6 @@ var init_doctor = __esm({
       "Cursor (global)": "cursor",
       "Cursor (project)": "cursor"
     };
-  }
-});
-
-// src/utils/detect.ts
-function luhnCheck(value) {
-  const digits = value.replace(/\D/g, "");
-  let sum2 = 0;
-  let alt = false;
-  for (let i = digits.length - 1; i >= 0; i--) {
-    let n = parseInt(digits[i], 10);
-    if (alt) {
-      n *= 2;
-      if (n > 9) n -= 9;
-    }
-    sum2 += n;
-    alt = !alt;
-  }
-  return sum2 % 10 === 0;
-}
-function ibanCheck(value) {
-  const normalized = value.replace(/\s/g, "").toUpperCase();
-  if (normalized.length < 15 || normalized.length > 34) return false;
-  const rearranged = normalized.slice(4) + normalized.slice(0, 4);
-  const numeric2 = rearranged.replace(/[A-Z]/g, (c) => String(c.charCodeAt(0) - 55));
-  let remainder = 0;
-  for (const ch of numeric2) {
-    remainder = (remainder * 10 + parseInt(ch, 10)) % 97;
-  }
-  return remainder === 1;
-}
-function contextMatches(kw, input, idx) {
-  const lo = Math.max(0, idx - CONTEXT_WINDOW);
-  const hi = Math.min(input.length, idx + CONTEXT_WINDOW);
-  return kw.test(input.slice(lo, hi));
-}
-function emailRegex() {
-  return new RegExp(EMAIL_SOURCE, "g");
-}
-function annotate(s) {
-  return {
-    ...s,
-    severity: SEVERITY2[s.type] ?? "low",
-    category: CATEGORY[s.type] ?? "other"
-  };
-}
-function scanForSecrets(input) {
-  const withPriority = [];
-  for (let i = 0; i < PATTERNS.length; i++) {
-    const { type, regex, validate } = PATTERNS[i];
-    regex.lastIndex = 0;
-    let match;
-    while ((match = regex.exec(input)) !== null) {
-      if (validate && !validate(match[0], input, match.index)) continue;
-      withPriority.push({
-        type,
-        value: match[0],
-        start: match.index,
-        end: match.index + match[0].length,
-        priority: i
-      });
-    }
-  }
-  withPriority.sort((a, b) => a.priority - b.priority || a.start - b.start);
-  let deduped = deduplicateOverlaps(withPriority);
-  const pairs = detectCredentialPairs(input, deduped);
-  if (pairs.length > 0) {
-    for (const pair of pairs) {
-      deduped.push({ ...pair, priority: -1 });
-    }
-    deduped.sort((a, b) => a.priority - b.priority || a.start - b.start);
-    deduped = deduplicateOverlaps(deduped);
-  }
-  const possible = detectPossibleSecrets(input);
-  if (possible.length > 0) {
-    for (const s of possible) {
-      deduped.push({ ...s, priority: PATTERNS.length + 1 });
-    }
-    deduped.sort((a, b) => a.priority - b.priority || a.start - b.start);
-    deduped = deduplicateOverlaps(deduped);
-  }
-  deduped.sort((a, b) => a.start - b.start);
-  return deduped.map(({ priority: _p, ...s }) => annotate(s));
-}
-function looksLikePassword(s) {
-  if (s.length < 8) return false;
-  const hasUpper = /[A-Z]/.test(s);
-  const hasLower = /[a-z]/.test(s);
-  const hasDigit = /[0-9]/.test(s);
-  const hasSpecial = /[@!#$%^&*\-_+=?]/.test(s);
-  const score = [hasUpper, hasLower, hasDigit, hasSpecial].filter(Boolean).length;
-  return score >= 3;
-}
-function detectCredentialPairs(input, _existing) {
-  const results = [];
-  EMAIL_RE.lastIndex = 0;
-  let match;
-  while ((match = EMAIL_RE.exec(input)) !== null) {
-    const emailStart = match.index;
-    const emailEnd = match.index + match[0].length;
-    const charBefore = emailStart > 0 ? input[emailStart - 1] : "";
-    if (charBefore === "@" || charBefore === ":") continue;
-    const windowStart = Math.max(0, emailStart - PAIR_WINDOW);
-    const windowEnd = Math.min(input.length, emailEnd + PAIR_WINDOW);
-    const surrounding = input.slice(windowStart, windowEnd);
-    const tokens = surrounding.match(/\S+/g) ?? [];
-    for (const token of tokens) {
-      if (token === match[0]) continue;
-      if (!looksLikePassword(token)) continue;
-      const tokenAbsoluteStart = windowStart + surrounding.indexOf(token);
-      const pairStart = Math.min(emailStart, tokenAbsoluteStart);
-      const pairEnd = Math.max(emailEnd, tokenAbsoluteStart + token.length);
-      results.push({
-        type: "credential_pair",
-        value: input.slice(pairStart, pairEnd),
-        start: pairStart,
-        end: pairEnd
-      });
-      break;
-    }
-  }
-  return results;
-}
-function detectPossibleSecrets(input) {
-  const results = [];
-  POSSIBLE_SECRET_RE.lastIndex = 0;
-  let match;
-  while ((match = POSSIBLE_SECRET_RE.exec(input)) !== null) {
-    const value = match[1];
-    if (!value) continue;
-    const valueStart = match.index + match[0].lastIndexOf(value);
-    results.push({
-      type: "possible_secret",
-      value,
-      start: valueStart,
-      end: valueStart + value.length
-    });
-  }
-  return results;
-}
-function deduplicateOverlaps(secrets) {
-  const kept = [];
-  for (const candidate of secrets) {
-    const overlaps = kept.some((k) => candidate.start < k.end && candidate.end > k.start);
-    if (!overlaps) kept.push(candidate);
-  }
-  return kept;
-}
-var CONTEXT_WINDOW, DOB_KEYWORDS, PASS_KEYWORDS, SSN_KEYWORDS, EMAIL_SOURCE, PATTERNS, SEVERITY2, CATEGORY, EMAIL_RE, PAIR_WINDOW, POSSIBLE_SECRET_RE, MAX_MATCH_CHARS, OWNED_CHARS;
-var init_detect = __esm({
-  "src/utils/detect.ts"() {
-    "use strict";
-    CONTEXT_WINDOW = 120;
-    DOB_KEYWORDS = /\b(?:dob|date\s+of\s+birth|birth\s+date|born\s+on|birthday)\b/i;
-    PASS_KEYWORDS = /\b(?:passport|travel\s+document|document\s+no(?:\.|\b))\b/i;
-    SSN_KEYWORDS = /\b(?:ssn|social\s+security|tin\b)\b/i;
-    EMAIL_SOURCE = "[a-zA-Z0-9._%+\\-]{1,64}@[a-zA-Z0-9.\\-]{1,255}\\.[a-zA-Z]{2,24}";
-    PATTERNS = [
-      // Private key blocks (must come first — multiline, unambiguous)
-      // Bounded so the longest possible match is a known number, which the
-      // windowed scan below needs in order to size its overlap. A PEM private key
-      // is a few KiB even at RSA-16384, so 16KiB is generous.
-      { type: "private_key", regex: /-----BEGIN [A-Z ]+ PRIVATE KEY-----[\s\S]{1,65536}?-----END [A-Z ]+ PRIVATE KEY-----/g },
-      // Cloud / AI provider keys
-      { type: "aws_access_key", regex: /AKIA[0-9A-Z]{16}/g },
-      { type: "anthropic_api_key", regex: /sk-ant-api\d{2}-[a-zA-Z0-9\-_]{40,512}/g },
-      { type: "openai_api_key", regex: /sk-proj-[a-zA-Z0-9\-_]{20,512}/g },
-      { type: "google_api_key", regex: /AIza[0-9A-Za-z\-_]{35}/g },
-      // SaaS API keys
-      { type: "github_token", regex: /gh[pousr]_[a-zA-Z0-9]{30,512}/g },
-      { type: "slack_token", regex: /xox[bpas]-[0-9]{8,13}-[0-9]{8,13}-[a-zA-Z0-9]{20,512}/g },
-      { type: "stripe_key", regex: /sk_(live|test)_[a-zA-Z0-9]{24,512}/g },
-      { type: "sendgrid_key", regex: /SG\.[a-zA-Z0-9\-_]{22,512}\.[a-zA-Z0-9\-_]{22,512}/g },
-      { type: "huggingface_token", regex: /hf_[a-zA-Z0-9]{30,512}/g },
-      // Auth / session tokens
-      // Bounded for the same reason as `private_key`. A JWT past 8KiB per segment
-      // is not a credential anybody is pasting.
-      { type: "jwt", regex: /eyJ[A-Za-z0-9\-_]{1,8192}\.[A-Za-z0-9\-_]{1,8192}\.[A-Za-z0-9\-_]{1,8192}/g },
-      // Credentials in URLs (before env_value so it wins on connection strings)
-      // Same shape as `email` above: `\w+` before the required `://` was 12.7s on
-      // 128KiB. No scheme is 32 characters, and a password field past 256 is not
-      // one.
-      { type: "url_credentials", regex: /\w{1,32}:\/\/[^:@\s\/]{1,64}:[^@\s]{4,256}@[^\s]/g },
-      // Passwords in key=value and JSON
-      { type: "password", regex: /(?:password|passwd|pwd)["']?\s*[=:]\s*["']?([^\s"',]{6,512})/gi },
-      // PII — financial
-      {
-        type: "credit_card",
-        regex: /\b\d{4}[\s\-]\d{4}[\s\-]\d{4}[\s\-]\d{4}\b/g,
-        validate: (v) => luhnCheck(v)
-      },
-      {
-        type: "iban",
-        regex: /\b[A-Z]{2}\d{2}[A-Z0-9]{4,30}\b/g,
-        validate: (v) => ibanCheck(v)
-      },
-      // PII — identity (context-aware)
-      {
-        type: "ssn",
-        regex: /\b\d{3}-\d{2}-\d{4}\b/g,
-        validate: (_v, input, idx) => {
-          if (contextMatches(SSN_KEYWORDS, input, idx)) return true;
-          const surrounding = input.slice(Math.max(0, idx - 20), idx + 20);
-          if (/(?:19|20)\d{2}/.test(surrounding)) return false;
-          return true;
-        }
-      },
-      {
-        type: "dob",
-        regex: /\b(?:0?[1-9]|1[0-2])[-\/](?:0?[1-9]|[12]\d|3[01])[-\/](?:19|20)\d{2}\b/g,
-        validate: (_v, input, idx) => contextMatches(DOB_KEYWORDS, input, idx)
-      },
-      {
-        type: "passport",
-        regex: /\b[A-Z]\d{8}\b/g,
-        validate: (_v, input, idx) => contextMatches(PASS_KEYWORDS, input, idx)
-      },
-      // PII — contact
-      // Quantifiers bounded, not decorative. `[class]+` before a required literal
-      // re-scans from every start position, which is quadratic: measured at 15.6
-      // SECONDS for this pattern alone on 128KiB of one repeated character, and
-      // ~256x that at 2MiB — the stall that held the 0.1.64 candidate. RFC 5321
-      // caps a local part at 64 characters and a domain at 255, so the bounds cost
-      // no real address.
-      { type: "email", regex: emailRegex() },
-      {
-        type: "phone_us",
-        // Requires area code starting 2-9 (excludes version numbers, dates, plain 7-digit numbers)
-        regex: /\b(?:\+?1[-.\s]?)?\(?([2-9][0-9]{2})\)?[-.\s]([2-9][0-9]{2})[-.\s]([0-9]{4})\b/g
-      },
-      {
-        type: "phone_e164",
-        // E.164 international (non-US, min 8 digits after +)
-        regex: /\+(?!1[^0-9])(?:[2-9][0-9]{1}|[1][^1])[0-9]{6,12}\b/g
-      },
-      // Network — internal RFC-1918 addresses
-      {
-        type: "internal_ip",
-        regex: /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b/g
-      },
-      // Generic env assignment (lowest priority — catches remaining secrets)
-      { type: "env_value", regex: /\b[A-Z][A-Z0-9_]{2,128}=[^\s]{8,8192}/g }
-    ];
-    SEVERITY2 = {
-      private_key: "critical",
-      credit_card: "critical",
-      ssn: "critical",
-      iban: "critical",
-      aws_access_key: "high",
-      anthropic_api_key: "high",
-      openai_api_key: "high",
-      google_api_key: "high",
-      github_token: "high",
-      slack_token: "high",
-      stripe_key: "high",
-      sendgrid_key: "high",
-      huggingface_token: "high",
-      jwt: "high",
-      url_credentials: "high",
-      password: "high",
-      credential_pair: "high",
-      possible_secret: "low",
-      passport: "high",
-      dob: "high",
-      email: "medium",
-      phone_us: "medium",
-      phone_e164: "medium",
-      internal_ip: "low",
-      env_value: "low"
-    };
-    CATEGORY = {
-      private_key: "credential",
-      credit_card: "financial",
-      ssn: "identity",
-      iban: "financial",
-      passport: "identity",
-      dob: "identity",
-      aws_access_key: "credential",
-      anthropic_api_key: "credential",
-      openai_api_key: "credential",
-      google_api_key: "credential",
-      github_token: "credential",
-      slack_token: "credential",
-      stripe_key: "credential",
-      sendgrid_key: "credential",
-      huggingface_token: "credential",
-      jwt: "credential",
-      url_credentials: "credential",
-      password: "credential",
-      credential_pair: "credential",
-      possible_secret: "credential",
-      email: "contact",
-      phone_us: "contact",
-      phone_e164: "contact",
-      internal_ip: "network",
-      env_value: "credential"
-    };
-    EMAIL_RE = emailRegex();
-    PAIR_WINDOW = 100;
-    POSSIBLE_SECRET_RE = /\b(?:api[_\s-]?key|access[_\s-]?key|secret|token|credential|password)\b\s*(?:is\s*:?|[=:])?\s*["']?([A-Za-z0-9][A-Za-z0-9._\-]{11,127})["']?/gi;
-    MAX_MATCH_CHARS = 72 * 1024;
-    OWNED_CHARS = 128 * 1024;
   }
 });
 
@@ -28175,7 +28699,7 @@ function summarizeToolResult(raw, opts = {}) {
   const { redacted } = redactSecrets(raw);
   const slice = redacted.slice(0, TOOL_OUTPUT_EXCERPT_BYTES);
   const truncated = redacted.length > slice.length;
-  const hash2 = (0, import_crypto16.createHash)("sha256").update(raw).digest("hex");
+  const hash2 = (0, import_crypto17.createHash)("sha256").update(raw).digest("hex");
   const header = `[tool output not ingested in full \u2014 ${originalBytes} bytes, sha256:${hash2.slice(0, 16)}` + (detected.length ? `, ${detected.length} secret detection(s)` : "") + "]";
   const body = truncated ? `${slice}
 [... truncated, ${originalBytes - Buffer.byteLength(slice, "utf8")} bytes not ingested]` : slice;
@@ -28327,17 +28851,17 @@ function parseTranscript(raw, opts = {}) {
     first_timestamp: first,
     last_timestamp: last,
     out_of_order_timestamps: outOfOrder,
-    content_hash: (0, import_crypto16.createHash)("sha256").update(raw).digest("hex"),
+    content_hash: (0, import_crypto17.createHash)("sha256").update(raw).digest("hex"),
     malformed_lines: malformedLines,
     secrets_found: secrets,
     secret_detections
   };
 }
-var import_crypto16, TOOL_OUTPUT_EXCERPT_BYTES, COMPACTION_BOUNDARY_TEXT;
+var import_crypto17, TOOL_OUTPUT_EXCERPT_BYTES, COMPACTION_BOUNDARY_TEXT;
 var init_claude_code = __esm({
   "src/import/claude-code.ts"() {
     "use strict";
-    import_crypto16 = require("crypto");
+    import_crypto17 = require("crypto");
     init_detect();
     init_redact();
     TOOL_OUTPUT_EXCERPT_BYTES = 400;
@@ -28356,11 +28880,11 @@ function sessionIdOf(file) {
   return id.length > 0 ? id : null;
 }
 function discoverTranscripts(root = transcriptRoot()) {
-  if (!(0, import_fs22.existsSync)(root)) return [];
+  if (!(0, import_fs23.existsSync)(root)) return [];
   const found = [];
   let projects;
   try {
-    projects = (0, import_fs22.readdirSync)(root);
+    projects = (0, import_fs23.readdirSync)(root);
   } catch {
     return [];
   }
@@ -28368,14 +28892,14 @@ function discoverTranscripts(root = transcriptRoot()) {
     const projectDir = (0, import_path18.join)(root, project);
     let stat;
     try {
-      stat = (0, import_fs22.statSync)(projectDir);
+      stat = (0, import_fs23.statSync)(projectDir);
     } catch {
       continue;
     }
     if (!stat.isDirectory()) continue;
     let entries;
     try {
-      entries = (0, import_fs22.readdirSync)(projectDir);
+      entries = (0, import_fs23.readdirSync)(projectDir);
     } catch {
       continue;
     }
@@ -28384,7 +28908,7 @@ function discoverTranscripts(root = transcriptRoot()) {
       if (!sessionId) continue;
       const path = (0, import_path18.join)(projectDir, entry);
       try {
-        const s = (0, import_fs22.statSync)(path);
+        const s = (0, import_fs23.statSync)(path);
         if (!s.isFile()) continue;
         found.push({
           path,
@@ -28400,13 +28924,13 @@ function discoverTranscripts(root = transcriptRoot()) {
   return found.sort((a, b) => b.modified_at.localeCompare(a.modified_at));
 }
 function countNestedTranscripts(root = transcriptRoot()) {
-  if (!(0, import_fs22.existsSync)(root)) return 0;
+  if (!(0, import_fs23.existsSync)(root)) return 0;
   let count2 = 0;
   const walk = (dir, depth) => {
     if (depth > 6) return;
     let entries;
     try {
-      entries = (0, import_fs22.readdirSync)(dir);
+      entries = (0, import_fs23.readdirSync)(dir);
     } catch {
       return;
     }
@@ -28414,7 +28938,7 @@ function countNestedTranscripts(root = transcriptRoot()) {
       const full = (0, import_path18.join)(dir, entry);
       let s;
       try {
-        s = (0, import_fs22.statSync)(full);
+        s = (0, import_fs23.statSync)(full);
       } catch {
         continue;
       }
@@ -28424,38 +28948,38 @@ function countNestedTranscripts(root = transcriptRoot()) {
   };
   for (const project of (() => {
     try {
-      return (0, import_fs22.readdirSync)(root);
+      return (0, import_fs23.readdirSync)(root);
     } catch {
       return [];
     }
   })()) {
     const projectDir = (0, import_path18.join)(root, project);
     try {
-      if (!(0, import_fs22.statSync)(projectDir).isDirectory()) continue;
+      if (!(0, import_fs23.statSync)(projectDir).isDirectory()) continue;
     } catch {
       continue;
     }
     for (const entry of (() => {
       try {
-        return (0, import_fs22.readdirSync)(projectDir);
+        return (0, import_fs23.readdirSync)(projectDir);
       } catch {
         return [];
       }
     })()) {
       const full = (0, import_path18.join)(projectDir, entry);
       try {
-        if ((0, import_fs22.statSync)(full).isDirectory()) walk(full, 1);
+        if ((0, import_fs23.statSync)(full).isDirectory()) walk(full, 1);
       } catch {
       }
     }
   }
   return count2;
 }
-var import_fs22, import_path18, import_os12;
+var import_fs23, import_path18, import_os12;
 var init_discover = __esm({
   "src/import/discover.ts"() {
     "use strict";
-    import_fs22 = require("fs");
+    import_fs23 = require("fs");
     import_path18 = require("path");
     import_os12 = require("os");
   }
@@ -28489,7 +29013,7 @@ async function buildPreview(db, opts = {}) {
     };
     let raw;
     try {
-      raw = (0, import_fs23.readFileSync)(f.path, "utf8");
+      raw = (0, import_fs24.readFileSync)(f.path, "utf8");
     } catch (e) {
       unreadable++;
       transcripts.push({
@@ -28558,11 +29082,11 @@ function totalExclusions(result) {
   }
   return t;
 }
-var import_fs23;
+var import_fs24;
 var init_claude_code_preview = __esm({
   "src/import/claude-code-preview.ts"() {
     "use strict";
-    import_fs23 = require("fs");
+    import_fs24 = require("fs");
     init_drizzle_orm();
     init_schema();
     init_claude_code();
@@ -28572,7 +29096,7 @@ var init_claude_code_preview = __esm({
 
 // src/import/claude-code-import.ts
 function stableId(...parts) {
-  return (0, import_crypto17.createHash)("sha256").update(parts.join("\0")).digest("hex");
+  return (0, import_crypto18.createHash)("sha256").update(parts.map((p) => privacyEnabled() ? privateIdentifier(p) : p).join("\0")).digest("hex");
 }
 function importedMessageId(transcriptSessionId, sourceUuid) {
   return stableId("claude-code", transcriptSessionId, sourceUuid);
@@ -28616,7 +29140,7 @@ function metadataFor(parsed, existing = null) {
 function prepareEvents(chronSessionId, transcriptSessionId, events) {
   let prev_hash = null;
   return events.map((event) => {
-    const content = canonicalContent(event.content);
+    const content = storedContent(event.content);
     const content_hash = computeContentHash(chronSessionId, event.role, content, event.created_at, prev_hash, event.event_type);
     const prepared = { event, id: importedMessageId(transcriptSessionId, event.source_uuid), content, prev_hash, content_hash };
     prev_hash = content_hash;
@@ -28626,14 +29150,14 @@ function prepareEvents(chronSessionId, transcriptSessionId, events) {
 async function importTranscript(db, file, includeToolOutput) {
   let raw;
   try {
-    raw = (0, import_fs24.readFileSync)(file.path, "utf8");
+    raw = (0, import_fs25.readFileSync)(file.path, "utf8");
   } catch (error) {
-    return { session_id: file.session_id, imported_events: 0, skipped_events: 0, secrets_detected: 0, status: "error", error: error instanceof Error ? error.message : String(error) };
+    return { session_id: file.session_id, imported_events: 0, skipped_events: 0, secrets_detected: 0, status: "error", error: policyErrorText(error) };
   }
   const parsed = parseTranscript(raw, { includeToolOutput });
   const validationError = validateTranscript(file, parsed);
   if (validationError) {
-    return { session_id: file.session_id, imported_events: 0, skipped_events: 0, secrets_detected: 0, status: "error", error: validationError };
+    return { session_id: file.session_id, imported_events: 0, skipped_events: 0, secrets_detected: 0, status: "error", error: privacyEnabled() ? "Transcript validation failed; input details are not repeated." : validationError };
   }
   if (parsed.events.length === 0) {
     return { session_id: file.session_id, imported_events: 0, skipped_events: 0, secrets_detected: 0, status: "skipped_empty" };
@@ -28706,7 +29230,7 @@ async function importTranscript(db, file, includeToolOutput) {
         })));
       }
       const importedSourceIds = new Set(pending.map((row) => row.event.source_uuid));
-      const detections = parsed.secret_detections.filter((detection) => importedSourceIds.has(detection.source_uuid));
+      const detections = (privacyEnabled() ? [] : parsed.secret_detections).filter((detection) => importedSourceIds.has(detection.source_uuid));
       const messageIdBySource = new Map(prepared.map((row) => [row.event.source_uuid, row.id]));
       if (detections.length > 0) {
         const occurrences = /* @__PURE__ */ new Map();
@@ -28742,7 +29266,7 @@ async function importTranscript(db, file, includeToolOutput) {
       };
     });
   } catch (error) {
-    return { session_id: file.session_id, imported_events: 0, skipped_events: 0, secrets_detected: 0, status: "error", error: error instanceof Error ? error.message : String(error) };
+    return { session_id: file.session_id, imported_events: 0, skipped_events: 0, secrets_detected: 0, status: "error", error: policyErrorText(error) };
   }
 }
 async function importClaudeCodeTranscripts(db, opts = {}) {
@@ -28758,7 +29282,7 @@ async function importClaudeCodeTranscripts(db, opts = {}) {
   };
   for (const file of discoverTranscripts(opts.root)) {
     const item = await importTranscript(db, file, opts.includeToolOutput === true);
-    result.items.push(item);
+    result.items.push(privacyEnabled() ? { ...item, session_id: privateIdentifier(item.session_id) } : item);
     result.imported_events += item.imported_events;
     result.skipped_events += item.skipped_events;
     result.secrets_detected += item.secrets_detected;
@@ -28769,17 +29293,17 @@ async function importClaudeCodeTranscripts(db, opts = {}) {
   }
   return result;
 }
-var import_crypto17, import_fs24, INSERT_BATCH_SIZE;
+var import_crypto18, import_fs25, INSERT_BATCH_SIZE;
 var init_claude_code_import = __esm({
   "src/import/claude-code-import.ts"() {
     "use strict";
-    import_crypto17 = require("crypto");
-    import_fs24 = require("fs");
+    import_crypto18 = require("crypto");
+    import_fs25 = require("fs");
     init_drizzle_orm();
     init_esm();
     init_schema();
     init_hash();
-    init_content();
+    init_policy();
     init_time();
     init_signing();
     init_evidence();
@@ -28885,6 +29409,7 @@ ${DIM10}Nothing was written. To import after reviewing this preview, run 'chron 
   return out.join("");
 }
 async function runClaudeCodeDryRun(args2) {
+  if (privacyEnabled()) throw new ContentPolicyError();
   const includeToolOutput = args2.includes("--include-tool-output");
   const root = transcriptRoot();
   process.stderr.write(
@@ -28944,7 +29469,7 @@ async function runClaudeCodeImport(args2) {
   );
   if (includeToolOutput) {
     process.stderr.write(
-      "Warning: --include-tool-output stores raw tool output from Claude Code transcripts. Review your dry run first.\n"
+      privacyEnabled() ? "Tool output will be processed by the explicit retention profile before storage.\n" : "Warning: --include-tool-output stores raw tool output from Claude Code transcripts. Review your dry run first.\n"
     );
   }
   const db = await initDb();
@@ -28955,6 +29480,7 @@ var RESET12, BOLD11, DIM10, GREEN8, YELLOW9, CYAN8;
 var init_import_claude_code = __esm({
   "src/cli/import-claude-code.ts"() {
     "use strict";
+    init_policy();
     init_db2();
     init_db2();
     init_readonly();
@@ -29017,10 +29543,10 @@ function messagesFromConversation(conv) {
   return result;
 }
 function findFile(dir, name2) {
-  for (const entry of (0, import_fs25.readdirSync)(dir)) {
+  for (const entry of (0, import_fs26.readdirSync)(dir)) {
     const full = (0, import_path19.join)(dir, entry);
     try {
-      if ((0, import_fs25.statSync)(full).isDirectory()) {
+      if ((0, import_fs26.statSync)(full).isDirectory()) {
         const found = findFile(full, name2);
         if (found) return found;
       } else if (entry === name2) {
@@ -29037,7 +29563,8 @@ async function importGptConversations(db, conversations) {
   let totalMessages = 0;
   let totalSecrets = 0;
   const errors = [];
-  for (const conv of conversations) {
+  for (const original of conversations) {
+    const conv = privacyEnabled() ? { ...original, title: privateIdentifier(original.title) } : original;
     const externalRef = `chatgpt:${conv.id}`;
     const displayTitle = (conv.title ?? "Untitled").slice(0, 60);
     const [existing] = await db.select({ id: sessions.id }).from(sessions).where(eq(sessions.external_ref, externalRef)).limit(1);
@@ -29082,7 +29609,7 @@ async function importGptConversations(db, conversations) {
         let prevHash = null;
         for (const m of msgs) {
           const msgId = v4_default();
-          const stored = canonicalContent(m.content);
+          const stored = storedContent(m.content);
           const hash2 = computeContentHash(sessionId, m.role, stored, m.ts, prevHash, "message");
           await tx.insert(messages).values({
             id: msgId,
@@ -29095,7 +29622,7 @@ async function importGptConversations(db, conversations) {
             event_type: "message"
           });
           if (m.role === "user") {
-            const found = scanForSecrets(m.content);
+            const found = privacyEnabled() ? [] : scanForSecrets(m.content);
             if (found.length > 0) {
               const now = (/* @__PURE__ */ new Date()).toISOString().replace("Z", "+00:00");
               await tx.insert(secrets_detected).values(
@@ -29119,7 +29646,7 @@ async function importGptConversations(db, conversations) {
       imported++;
       void sessionSecrets;
     } catch (err) {
-      errors.push({ title: displayTitle, error: err?.message ?? String(err) });
+      errors.push({ title: displayTitle, error: policyErrorText(err) });
     }
   }
   return { imported, skipped, totalMessages, totalSecrets, errors };
@@ -29128,10 +29655,11 @@ async function importConversations(filePath) {
   const db = await initDb();
   let raw;
   let tempDir = null;
+  if (privacyEnabled() && (0, import_path19.extname)(filePath).toLowerCase() === ".zip") throw new Error("Protected profiles require a direct JSON import; ZIP extraction would create raw temporary files.");
   const ext = (0, import_path19.extname)(filePath).toLowerCase();
   if (ext === ".zip") {
     tempDir = (0, import_path19.join)((0, import_os13.tmpdir)(), `chron-import-${Date.now()}`);
-    (0, import_fs25.mkdirSync)(tempDir, { recursive: true });
+    (0, import_fs26.mkdirSync)(tempDir, { recursive: true });
     try {
       (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "conversations.json", "-d", tempDir], { stdio: "pipe" });
     } catch {
@@ -29140,7 +29668,7 @@ async function importConversations(filePath) {
       } catch {
         process.stderr.write(`Failed to extract ${filePath}. Make sure 'unzip' is installed.
 `);
-        (0, import_fs25.rmSync)(tempDir, { recursive: true, force: true });
+        (0, import_fs26.rmSync)(tempDir, { recursive: true, force: true });
         process.exit(1);
       }
     }
@@ -29148,12 +29676,12 @@ async function importConversations(filePath) {
     if (!found) {
       process.stderr.write(`conversations.json not found inside the ZIP.
 `);
-      (0, import_fs25.rmSync)(tempDir, { recursive: true, force: true });
+      (0, import_fs26.rmSync)(tempDir, { recursive: true, force: true });
       process.exit(1);
     }
-    raw = (0, import_fs25.readFileSync)(found, "utf8");
+    raw = (0, import_fs26.readFileSync)(found, "utf8");
   } else if (ext === ".json") {
-    raw = (0, import_fs25.readFileSync)(filePath, "utf8");
+    raw = (0, import_fs26.readFileSync)(filePath, "utf8");
   } else {
     process.stderr.write(`Unsupported file type: ${ext}. Pass a .zip export or a conversations.json file.
 `);
@@ -29166,11 +29694,11 @@ async function importConversations(filePath) {
   } catch {
     process.stderr.write(`Failed to parse conversations JSON.
 `);
-    if (tempDir) (0, import_fs25.rmSync)(tempDir, { recursive: true, force: true });
+    if (tempDir) (0, import_fs26.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   process.stdout.write(`
-${BOLD12}chron import chatgpt${RESET13}  ${DIM11}${filePath}${RESET13}
+${BOLD12}chron import chatgpt${RESET13}  ${DIM11}${privacyEnabled() ? "[protected input path]" : filePath}${RESET13}
 `);
   process.stdout.write(`${DIM11}${conversations.length} conversation(s) found${RESET13}
 
@@ -29180,7 +29708,7 @@ ${BOLD12}chron import chatgpt${RESET13}  ${DIM11}${filePath}${RESET13}
     process.stderr.write(`  ${YELLOW10}!${RESET13} Failed to import "${e.title}": ${e.error}
 `);
   }
-  if (tempDir) (0, import_fs25.rmSync)(tempDir, { recursive: true, force: true });
+  if (tempDir) (0, import_fs26.rmSync)(tempDir, { recursive: true, force: true });
   process.stdout.write("\n");
   process.stdout.write(`${BOLD12}Done.${RESET13}  `);
   process.stdout.write(`${GREEN9}${result.imported} imported${RESET13}`);
@@ -29199,7 +29727,8 @@ async function importClaudeAiConversations(db, conversations) {
   let totalMessages = 0;
   let totalSecrets = 0;
   const errors = [];
-  for (const conv of conversations) {
+  for (const original of conversations) {
+    const conv = privacyEnabled() ? { ...original, name: privateIdentifier(original.name) } : original;
     const externalRef = `claudeai:${conv.uuid}`;
     const displayTitle = (conv.name ?? "Untitled").slice(0, 60);
     const [existing] = await db.select({ id: sessions.id }).from(sessions).where(eq(sessions.external_ref, externalRef)).limit(1);
@@ -29246,7 +29775,7 @@ async function importClaudeAiConversations(db, conversations) {
         let prevHash = null;
         for (const m of msgs) {
           const msgId = v4_default();
-          const stored = canonicalContent(m.content);
+          const stored = storedContent(m.content);
           const hash2 = computeContentHash(sessionId, m.role, stored, m.ts, prevHash, "message");
           await tx.insert(messages).values({
             id: msgId,
@@ -29259,7 +29788,7 @@ async function importClaudeAiConversations(db, conversations) {
             event_type: "message"
           });
           if (m.role === "user") {
-            const found = scanForSecrets(m.content);
+            const found = privacyEnabled() ? [] : scanForSecrets(m.content);
             if (found.length > 0) {
               const now = (/* @__PURE__ */ new Date()).toISOString().replace("Z", "+00:00");
               await tx.insert(secrets_detected).values(
@@ -29283,7 +29812,7 @@ async function importClaudeAiConversations(db, conversations) {
       imported++;
       void sessionSecrets;
     } catch (err) {
-      errors.push({ title: displayTitle, error: err?.message ?? String(err) });
+      errors.push({ title: displayTitle, error: policyErrorText(err) });
     }
   }
   return { imported, skipped, totalMessages, totalSecrets, errors };
@@ -29292,10 +29821,11 @@ async function importClaudeAi(filePath) {
   const db = await initDb();
   let raw;
   let tempDir = null;
+  if (privacyEnabled() && (0, import_path19.extname)(filePath).toLowerCase() === ".zip") throw new Error("Protected profiles require a direct JSON import; ZIP extraction would create raw temporary files.");
   const ext = (0, import_path19.extname)(filePath).toLowerCase();
   if (ext === ".zip") {
     tempDir = (0, import_path19.join)((0, import_os13.tmpdir)(), `chron-import-${Date.now()}`);
-    (0, import_fs25.mkdirSync)(tempDir, { recursive: true });
+    (0, import_fs26.mkdirSync)(tempDir, { recursive: true });
     try {
       (0, import_child_process4.execFileSync)("unzip", ["-q", "-o", filePath, "conversations.json", "-d", tempDir], { stdio: "pipe" });
     } catch {
@@ -29304,7 +29834,7 @@ async function importClaudeAi(filePath) {
       } catch {
         process.stderr.write(`Failed to extract ${filePath}. Make sure 'unzip' is installed.
 `);
-        if (tempDir) (0, import_fs25.rmSync)(tempDir, { recursive: true, force: true });
+        if (tempDir) (0, import_fs26.rmSync)(tempDir, { recursive: true, force: true });
         process.exit(1);
       }
     }
@@ -29312,12 +29842,12 @@ async function importClaudeAi(filePath) {
     if (!found) {
       process.stderr.write(`conversations.json not found inside the ZIP.
 `);
-      if (tempDir) (0, import_fs25.rmSync)(tempDir, { recursive: true, force: true });
+      if (tempDir) (0, import_fs26.rmSync)(tempDir, { recursive: true, force: true });
       process.exit(1);
     }
-    raw = (0, import_fs25.readFileSync)(found, "utf8");
+    raw = (0, import_fs26.readFileSync)(found, "utf8");
   } else if (ext === ".json") {
-    raw = (0, import_fs25.readFileSync)(filePath, "utf8");
+    raw = (0, import_fs26.readFileSync)(filePath, "utf8");
   } else {
     process.stderr.write(`Unsupported file type: ${ext}. Pass the claude-ai-export-*.zip or conversations.json.
 `);
@@ -29330,11 +29860,11 @@ async function importClaudeAi(filePath) {
   } catch {
     process.stderr.write(`Failed to parse conversations JSON.
 `);
-    if (tempDir) (0, import_fs25.rmSync)(tempDir, { recursive: true, force: true });
+    if (tempDir) (0, import_fs26.rmSync)(tempDir, { recursive: true, force: true });
     process.exit(1);
   }
   process.stdout.write(`
-${BOLD12}chron import claude${RESET13}  ${DIM11}${filePath}${RESET13}
+${BOLD12}chron import claude${RESET13}  ${DIM11}${privacyEnabled() ? "[protected input path]" : filePath}${RESET13}
 `);
   process.stdout.write(`${DIM11}${conversations.length} conversation(s) found${RESET13}
 `);
@@ -29346,7 +29876,7 @@ ${BOLD12}chron import claude${RESET13}  ${DIM11}${filePath}${RESET13}
     process.stderr.write(`  ${YELLOW10}!${RESET13} Failed to import "${e.title}": ${e.error}
 `);
   }
-  if (tempDir) (0, import_fs25.rmSync)(tempDir, { recursive: true, force: true });
+  if (tempDir) (0, import_fs26.rmSync)(tempDir, { recursive: true, force: true });
   process.stdout.write("\n");
   process.stdout.write(`${BOLD12}Done.${RESET13}  `);
   process.stdout.write(`${GREEN9}${result.imported} imported${RESET13}`);
@@ -29371,7 +29901,7 @@ async function runImport(args2) {
       process.exit(1);
     }
     const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
-    if (!(0, import_fs25.existsSync)(resolved)) {
+    if (!(0, import_fs26.existsSync)(resolved)) {
       process.stderr.write(`File not found: ${resolved}
 `);
       process.exit(1);
@@ -29387,7 +29917,7 @@ async function runImport(args2) {
       process.exit(1);
     }
     const resolved = filePath.replace(/^~/, process.env.HOME ?? "");
-    if (!(0, import_fs25.existsSync)(resolved)) {
+    if (!(0, import_fs26.existsSync)(resolved)) {
       process.stderr.write(`File not found: ${resolved}
 `);
       process.exit(1);
@@ -29426,11 +29956,11 @@ Available importers: chatgpt, claude
   );
   process.exit(1);
 }
-var import_fs25, import_path19, import_os13, import_child_process4, RESET13, BOLD12, DIM11, GREEN9, YELLOW10, CYAN9;
+var import_fs26, import_path19, import_os13, import_child_process4, RESET13, BOLD12, DIM11, GREEN9, YELLOW10, CYAN9;
 var init_import = __esm({
   "src/cli/import.ts"() {
     "use strict";
-    import_fs25 = require("fs");
+    import_fs26 = require("fs");
     import_path19 = require("path");
     import_os13 = require("os");
     import_child_process4 = require("child_process");
@@ -29439,7 +29969,7 @@ var init_import = __esm({
     init_db2();
     init_schema();
     init_hash();
-    init_content();
+    init_policy();
     init_detect();
     init_signing();
     RESET13 = "\x1B[0m";
@@ -29453,7 +29983,7 @@ var init_import = __esm({
 
 // src/review/workflow.ts
 function findingId(ruleId, sessionId) {
-  return (0, import_crypto18.createHash)("sha256").update(`${ruleId}:${sessionId}`).digest("hex");
+  return (0, import_crypto19.createHash)("sha256").update(`${ruleId}:${sessionId}`).digest("hex");
 }
 async function hydrateFindingStatuses(db, findings) {
   if (findings.length === 0) return findings;
@@ -29525,11 +30055,11 @@ async function loadFindingStates(client, ids) {
     reviewed_at: row.reviewed_at == null ? null : String(row.reviewed_at)
   }));
 }
-var import_crypto18;
+var import_crypto19;
 var init_workflow = __esm({
   "src/review/workflow.ts"() {
     "use strict";
-    import_crypto18 = require("crypto");
+    import_crypto19 = require("crypto");
   }
 });
 
@@ -30112,7 +30642,7 @@ async function runReview2(args2) {
       findings,
       coverageMapHtml
     });
-    (0, import_fs26.writeFileSync)(outputArg, html, "utf8");
+    (0, import_fs27.writeFileSync)(outputArg, html, "utf8");
     process.stdout.write(`Review report written to ${outputArg}
 `);
   }
@@ -30144,11 +30674,11 @@ async function runReviewAction(action, args2) {
     process.exit(1);
   }
 }
-var import_fs26, import_os14, RESET14, BOLD13, DIM12, RED9, YELLOW11, CYAN10, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
+var import_fs27, import_os14, RESET14, BOLD13, DIM12, RED9, YELLOW11, CYAN10, MAGENTA2, SEV_COLOR, STATUS_COLOR, REPORT_CSS, COV_LABELS, COV_ORDER;
 var init_review = __esm({
   "src/cli/review.ts"() {
     "use strict";
-    import_fs26 = require("fs");
+    import_fs27 = require("fs");
     import_os14 = require("os");
     init_db2();
     init_report();
@@ -30735,7 +31265,7 @@ async function runSessionDetail(prefix, outputArg) {
   const html = buildDetailHtml(session, msgs, secretsByMsg, findings, risk, tamper, generatedAt);
   const defaultOut = `chron-session-${session.id.slice(0, 8)}.html`;
   const outFile = outputArg !== "chron-dashboard.html" ? outputArg : defaultOut;
-  (0, import_fs27.writeFileSync)(outFile, html, "utf8");
+  (0, import_fs28.writeFileSync)(outFile, html, "utf8");
   const openCount = findings.filter((f) => f.status === "open").length;
   process.stdout.write(
     `
@@ -30749,11 +31279,11 @@ async function runSessionDetail(prefix, outputArg) {
 `
   );
 }
-var import_fs27, RULE_META3, FW_LABELS3, DETAIL_CSS;
+var import_fs28, RULE_META3, FW_LABELS3, DETAIL_CSS;
 var init_session_detail = __esm({
   "src/cli/session-detail.ts"() {
     "use strict";
-    import_fs27 = require("fs");
+    import_fs28 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_roles();
@@ -31233,7 +31763,7 @@ async function runDashboard(args2) {
     minute: "2-digit"
   });
   const html = buildDashboardHtml(rows, findings, requirements, sessionIds.length, since, sinceArg, generatedAt, now);
-  (0, import_fs28.writeFileSync)(outputArg, html, "utf8");
+  (0, import_fs29.writeFileSync)(outputArg, html, "utf8");
   const criticalCount = rows.filter((r) => r.risk.band === "critical").length;
   const highCount = rows.filter((r) => r.risk.band === "high").length;
   process.stdout.write(
@@ -31247,11 +31777,11 @@ async function runDashboard(args2) {
 `
   );
 }
-var import_fs28, RULE_META4, FW_LABELS4, DASHBOARD_CSS, REASON_LABEL;
+var import_fs29, RULE_META4, FW_LABELS4, DASHBOARD_CSS, REASON_LABEL;
 var init_dashboard = __esm({
   "src/cli/dashboard.ts"() {
     "use strict";
-    import_fs28 = require("fs");
+    import_fs29 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -31474,7 +32004,7 @@ function getSplunkConfig() {
   _splunkCacheExpiry = now + 1e4;
   _splunkCachePath = path;
   try {
-    const cfg = JSON.parse((0, import_fs29.readFileSync)(path, "utf8"));
+    const cfg = JSON.parse((0, import_fs30.readFileSync)(path, "utf8"));
     const s = cfg?.splunk;
     _splunkCache = s?.url && s?.token ? { url: s.url, token: s.token, insecure: s.insecure ?? false } : null;
   } catch {
@@ -31498,7 +32028,7 @@ function getSentinelConfig() {
   _sentinelCacheExpiry = now + 1e4;
   _sentinelCachePath = path;
   try {
-    const cfg = JSON.parse((0, import_fs29.readFileSync)(path, "utf8"));
+    const cfg = JSON.parse((0, import_fs30.readFileSync)(path, "utf8"));
     const s = cfg?.sentinel;
     _sentinelCache = s?.dce && s?.dcrId && s?.stream && s?.tenantId && s?.clientId && s?.clientSecret ? { dce: s.dce, dcrId: s.dcrId, stream: s.stream, tenantId: s.tenantId, clientId: s.clientId, clientSecret: s.clientSecret } : null;
   } catch {
@@ -31546,7 +32076,7 @@ async function getAzureToken(tenantId, clientId, clientSecret) {
 }
 function getMachineId() {
   if (!_machineId) {
-    _machineId = "sha256:" + (0, import_crypto19.createHash)("sha256").update((0, import_os15.hostname)()).digest("hex").slice(0, 16);
+    _machineId = "sha256:" + (0, import_crypto20.createHash)("sha256").update((0, import_os15.hostname)()).digest("hex").slice(0, 16);
   }
   return _machineId;
 }
@@ -31664,6 +32194,7 @@ function emitToLogScale(payload) {
   );
 }
 function emitEvent(payload) {
+  if (privacyEnabled()) return;
   const url = process.env.CHRON_RELAY_URL;
   const token = process.env.CHRON_RELAY_TOKEN;
   if (url && token) {
@@ -31832,12 +32363,13 @@ async function emitRiskEvent(payload) {
   }
   return Promise.all(deliveries);
 }
-var import_fs29, import_crypto19, import_os15, import_package4, _splunkCache, _splunkCacheExpiry, _splunkCachePath, _sentinelCache, _sentinelCacheExpiry, _sentinelCachePath, _azureTokenCache, _machineId;
+var import_fs30, import_crypto20, import_os15, import_package4, _splunkCache, _splunkCacheExpiry, _splunkCachePath, _sentinelCache, _sentinelCacheExpiry, _sentinelCachePath, _azureTokenCache, _machineId;
 var init_relay = __esm({
   "src/utils/relay.ts"() {
     "use strict";
-    import_fs29 = require("fs");
-    import_crypto19 = require("crypto");
+    init_policy();
+    import_fs30 = require("fs");
+    import_crypto20 = require("crypto");
     import_os15 = require("os");
     import_package4 = __toESM(require_package());
     init_config_path();
@@ -32094,7 +32626,7 @@ __export(evidence_exports, {
   runEvidence: () => runEvidence
 });
 function hash(input) {
-  return (0, import_crypto20.createHash)("sha256").update(input).digest("hex");
+  return (0, import_crypto21.createHash)("sha256").update(input).digest("hex");
 }
 function argValue(args2, name2) {
   const prefix = `--${name2}=`;
@@ -32160,9 +32692,10 @@ async function createEvidenceLink(db, evidenceId, targetType, targetId, now, not
   return id;
 }
 async function importEvidenceDocument(db, params) {
+  if (privacyEnabled()) throw new ContentPolicyError();
   const filePath = (0, import_path20.resolve)(params.file);
-  const buf = (0, import_fs30.readFileSync)(filePath);
-  const stat = (0, import_fs30.statSync)(filePath);
+  const buf = (0, import_fs31.readFileSync)(filePath);
+  const stat = (0, import_fs31.statSync)(filePath);
   const sha256 = hash(buf);
   const now = params.now ?? (/* @__PURE__ */ new Date()).toISOString();
   const title = (0, import_path20.basename)(filePath);
@@ -32326,13 +32859,14 @@ async function runEvidence(args2) {
   }
   throw new Error(`Unknown evidence command: ${subcommand}`);
 }
-var import_crypto20, import_path20, import_fs30, FW_LABELS5;
+var import_crypto21, import_path20, import_fs31, FW_LABELS5;
 var init_evidence2 = __esm({
   "src/cli/evidence.ts"() {
     "use strict";
-    import_crypto20 = require("crypto");
+    init_policy();
+    import_crypto21 = require("crypto");
     import_path20 = require("path");
-    import_fs30 = require("fs");
+    import_fs31 = require("fs");
     init_drizzle_orm();
     init_db2();
     init_schema();
@@ -32621,7 +33155,7 @@ var init_semconv = __esm({
 
 // src/otel/spans.ts
 function deriveId(input, bytes2) {
-  const hex = (0, import_crypto21.createHash)("sha256").update(input).digest("hex").slice(0, bytes2 * 2);
+  const hex = (0, import_crypto22.createHash)("sha256").update(input).digest("hex").slice(0, bytes2 * 2);
   return /^0+$/.test(hex) ? hex.slice(0, -1) + "1" : hex;
 }
 function traceIdForSession(sessionId) {
@@ -32710,11 +33244,11 @@ function buildSessionTrace(session, messages3, opts = {}) {
     ...messages3.map((m, i) => buildMessageSpan(m, session, messages3[i - 1], opts))
   ];
 }
-var import_crypto21;
+var import_crypto22;
 var init_spans = __esm({
   "src/otel/spans.ts"() {
     "use strict";
-    import_crypto21 = require("crypto");
+    import_crypto22 = require("crypto");
     init_semconv();
   }
 });
@@ -32855,7 +33389,7 @@ async function exportSpans(spans, config, resource, deps = {}) {
     const remainingBatches = allBatches.slice(index + 1);
     const body = JSON.stringify(toResourceSpans(batch, resource));
     const payload = {
-      payloadDigest: (0, import_crypto22.createHash)("sha256").update(body).digest("hex"),
+      payloadDigest: (0, import_crypto23.createHash)("sha256").update(body).digest("hex"),
       payloadBytes: Buffer.byteLength(body, "utf8")
     };
     if (deps.onBatchStart) {
@@ -32894,11 +33428,11 @@ async function exportSpans(spans, config, resource, deps = {}) {
   result.complete = !gateHeld && result.sent === spans.length && result.rejected === 0 && result.failed === 0 && result.unknown === 0;
   return result;
 }
-var import_crypto22, CODE_CATEGORIES, ESTABLISHED_NON_DELIVERY2, defaultSleep;
+var import_crypto23, CODE_CATEGORIES, ESTABLISHED_NON_DELIVERY2, defaultSleep;
 var init_exporter = __esm({
   "src/otel/exporter.ts"() {
     "use strict";
-    import_crypto22 = require("crypto");
+    import_crypto23 = require("crypto");
     init_error_codes();
     init_otlp();
     CODE_CATEGORIES = [
@@ -33383,7 +33917,7 @@ async function readTranscript(path, onLine, opts = {}) {
   const maxLineChars = opts.maxLineChars ?? DEFAULT_MAX_LINE_CHARS;
   const recordTypes = new Set(opts.recordTypes ?? CLAUDE_CODE_RECORD_TYPES);
   const metadataTypes = new Set(opts.metadataTypes ?? CLAUDE_CODE_METADATA_TYPES);
-  const hash2 = (0, import_crypto23.createHash)("sha256");
+  const hash2 = (0, import_crypto24.createHash)("sha256");
   const decoder = new import_string_decoder.StringDecoder("utf8");
   const counts = {
     bytes: 0,
@@ -33480,12 +34014,12 @@ async function readTranscript(path, onLine, opts = {}) {
   };
   let before = null;
   try {
-    const st = (0, import_fs31.statSync)(path);
+    const st = (0, import_fs32.statSync)(path);
     before = { size: st.size, mtimeMs: st.mtimeMs, ino: st.ino };
   } catch {
   }
   try {
-    const stream = (0, import_fs31.createReadStream)(path, { highWaterMark: opts.chunkSize ?? DEFAULT_CHUNK });
+    const stream = (0, import_fs32.createReadStream)(path, { highWaterMark: opts.chunkSize ?? DEFAULT_CHUNK });
     for await (const chunk2 of stream) {
       hash2.update(chunk2);
       counts.bytes += chunk2.length;
@@ -33505,7 +34039,7 @@ async function readTranscript(path, onLine, opts = {}) {
   let changed = null;
   if (before !== null) {
     try {
-      const st = (0, import_fs31.statSync)(path);
+      const st = (0, import_fs32.statSync)(path);
       changed = st.size !== before.size || st.mtimeMs !== before.mtimeMs || st.ino !== before.ino;
     } catch {
       changed = true;
@@ -33519,12 +34053,12 @@ async function readTranscript(path, onLine, opts = {}) {
     ...readError === void 0 ? {} : { read_error: readError }
   };
 }
-var import_fs31, import_crypto23, import_string_decoder, DEFAULT_MAX_LINE_CHARS, DEFAULT_CHUNK, CLAUDE_CODE_RECORD_TYPES, CLAUDE_CODE_METADATA_TYPES;
+var import_fs32, import_crypto24, import_string_decoder, DEFAULT_MAX_LINE_CHARS, DEFAULT_CHUNK, CLAUDE_CODE_RECORD_TYPES, CLAUDE_CODE_METADATA_TYPES;
 var init_transcript_reader = __esm({
   "src/stream/transcript-reader.ts"() {
     "use strict";
-    import_fs31 = require("fs");
-    import_crypto23 = require("crypto");
+    import_fs32 = require("fs");
+    import_crypto24 = require("crypto");
     import_string_decoder = require("string_decoder");
     DEFAULT_MAX_LINE_CHARS = 4 * 1024 * 1024;
     DEFAULT_CHUNK = 256 * 1024;
@@ -33570,12 +34104,12 @@ var init_claude_code_messages = __esm({
 function discoverWithFailures(root) {
   const files = [];
   const failures = [];
-  if (!(0, import_fs32.existsSync)(root)) {
+  if (!(0, import_fs33.existsSync)(root)) {
     return { root, root_exists: false, files, failures };
   }
   let projects;
   try {
-    projects = (0, import_fs32.readdirSync)(root);
+    projects = (0, import_fs33.readdirSync)(root);
   } catch (e) {
     failures.push({ path: root, reason: `could not list the transcript root: ${msg(e)}` });
     return { root, root_exists: true, files, failures };
@@ -33584,7 +34118,7 @@ function discoverWithFailures(root) {
     const projectDir = (0, import_path21.join)(root, project);
     let stat;
     try {
-      stat = (0, import_fs32.statSync)(projectDir);
+      stat = (0, import_fs33.statSync)(projectDir);
     } catch (e) {
       failures.push({ path: projectDir, reason: `could not stat: ${msg(e)}` });
       continue;
@@ -33592,7 +34126,7 @@ function discoverWithFailures(root) {
     if (!stat.isDirectory()) continue;
     let entries;
     try {
-      entries = (0, import_fs32.readdirSync)(projectDir);
+      entries = (0, import_fs33.readdirSync)(projectDir);
     } catch (e) {
       failures.push({ path: projectDir, reason: `could not list this project: ${msg(e)}` });
       continue;
@@ -33602,7 +34136,7 @@ function discoverWithFailures(root) {
       if (!sessionId) continue;
       const path = (0, import_path21.join)(projectDir, entry);
       try {
-        const s = (0, import_fs32.statSync)(path);
+        const s = (0, import_fs33.statSync)(path);
         if (!s.isFile()) continue;
         files.push({
           path,
@@ -33621,11 +34155,11 @@ function discoverWithFailures(root) {
 function msg(e) {
   return e instanceof Error ? e.message : String(e);
 }
-var import_fs32, import_path21;
+var import_fs33, import_path21;
 var init_discover2 = __esm({
   "src/reconcile/discover.ts"() {
     "use strict";
-    import_fs32 = require("fs");
+    import_fs33 = require("fs");
     import_path21 = require("path");
     init_discover();
   }
@@ -33633,7 +34167,7 @@ var init_discover2 = __esm({
 
 // src/reconcile/reconcile.ts
 function fingerprint(normalised) {
-  return (0, import_crypto24.createHash)("sha256").update(normalised).digest("hex").slice(0, 32);
+  return (0, import_crypto25.createHash)("sha256").update(normalised).digest("hex").slice(0, 32);
 }
 function comparable(text2) {
   return canonicalContent(text2).replace(/\s+/g, " ").trim().toLowerCase();
@@ -33787,7 +34321,7 @@ async function reconcileClaudeCode(opts = {}) {
   let sessions2 = [];
   const sessionPrints = /* @__PURE__ */ new Map();
   let dbReadable = false;
-  if (dbPath3 && (0, import_fs33.existsSync)(dbPath3)) {
+  if (dbPath3 && (0, import_fs34.existsSync)(dbPath3)) {
     const handle = openUntouched(dbPath3);
     if (handle) {
       try {
@@ -34070,12 +34604,12 @@ async function reconcileClaudeCode(opts = {}) {
     discovery_failures: discovery.failures
   };
 }
-var import_fs33, import_crypto24, import_string_decoder2, import_os16, import_path22, DEFAULT_MAX_TRANSCRIPT_BYTES, DEFAULT_MAX_LINE_CHARS2, CLAUDE_CODE_REF, MAX_COMPARED, MIN_MESSAGE_CHARS;
+var import_fs34, import_crypto25, import_string_decoder2, import_os16, import_path22, DEFAULT_MAX_TRANSCRIPT_BYTES, DEFAULT_MAX_LINE_CHARS2, CLAUDE_CODE_REF, MAX_COMPARED, MIN_MESSAGE_CHARS;
 var init_reconcile = __esm({
   "src/reconcile/reconcile.ts"() {
     "use strict";
-    import_fs33 = require("fs");
-    import_crypto24 = require("crypto");
+    import_fs34 = require("fs");
+    import_crypto25 = require("crypto");
     import_string_decoder2 = require("string_decoder");
     init_drizzle_orm();
     init_transcript_reader();
@@ -34407,6 +34941,7 @@ function journalPath2() {
   return guardedJournalPath(process.env.CHRON_JOURNAL_PATH ?? (0, import_path24.join)(process.env.CHRON_HOME ?? (0, import_path24.join)((0, import_os18.homedir)(), ".chron"), "capture.jsonl"));
 }
 async function runWrapped(argv, deps = {}) {
+  const protect = privacyEnabled();
   const path = deps.journalPath ?? journalPath2();
   const releaseOut = deps.releaseOut ?? ((b) => {
     process.stdout.write(b);
@@ -34417,9 +34952,10 @@ async function runWrapped(argv, deps = {}) {
   const diagnostic2 = deps.diagnostic ?? ((s) => {
     process.stderr.write(s);
   });
+  if (protect) diagnostic2("Chron protected retention: original stream contents are intentionally omitted. Durable receipts do not establish exact-byte capture.\n");
   const [cmd, ...args2] = argv;
   if (!cmd) throw new Error("chron run: no command given");
-  const runId = deps.runId ?? (0, import_crypto25.randomUUID)();
+  const runId = deps.runId ?? (0, import_crypto26.randomUUID)();
   const writer = JournalWriter.open(path, {
     flushBytes: deps.flushBytes ?? 1,
     // Not overridden here. An earlier version passed `minFreeBytes: 0`, which was
@@ -34447,11 +34983,12 @@ async function runWrapped(argv, deps = {}) {
     }
     let accounted = false;
     try {
+      const retained = protect ? Buffer.from(storedContent("", { stream: true }), "utf8") : bytes2;
       const rec = writer.append("interaction.output", {
         run_id: runId,
         stream,
-        byte_count: bytes2.length,
-        bytes_b64: bytes2.toString("base64")
+        byte_count: retained.length,
+        bytes_b64: retained.toString("base64")
       });
       pending.push({ stream, bytes: bytes2, seq: rec.seq });
       accounted = true;
@@ -34469,7 +35006,7 @@ async function runWrapped(argv, deps = {}) {
   };
   const failClosed = (e) => {
     if (captureError !== null) return;
-    captureError = e instanceof Error ? e.message : String(e);
+    captureError = policyErrorText(e);
     for (const p of pending) withheld[p.stream] += p.bytes.length;
     pending.length = 0;
     try {
@@ -34484,7 +35021,7 @@ async function runWrapped(argv, deps = {}) {
       `
 ${RED17}chron run: capture failed \u2014 output withheld${RESET23}
   ${captureError}
-  ${DIM21}The child was terminated. Interaction content that was not made durable
+  ${DIM21}${protect ? "The child was terminated. Bytes without a durable omission receipt" : "The child was terminated. Interaction content that was not made durable"}
   has not been printed. Journal: ${path}${RESET23}
 `
     );
@@ -34500,8 +35037,8 @@ ${RED17}chron run: capture failed \u2014 output withheld${RESET23}
   try {
     writer.appendDurable("run.started", {
       run_id: runId,
-      command: cmd,
-      args: args2,
+      command: protect ? privateIdentifier(cmd) : cmd,
+      args: protect ? [] : args2,
       scope: captureScope(durability),
       pid: process.pid
     });
@@ -34529,10 +35066,11 @@ ${RED17}chron run: capture failed \u2014 output withheld${RESET23}
   const onInput = (b) => {
     if (captureError !== null) return;
     try {
+      const retained = protect ? Buffer.from(storedContent("", { stream: true }), "utf8") : b;
       writer.appendDurable("interaction.input", {
         run_id: runId,
-        byte_count: b.length,
-        bytes_b64: b.toString("base64")
+        byte_count: retained.length,
+        bytes_b64: retained.toString("base64")
       });
       child.stdin.write(b);
     } catch (e) {
@@ -34550,8 +35088,8 @@ ${RED17}chron run: capture failed \u2014 output withheld${RESET23}
   child.stdin.on("error", (e) => {
     if (e.code === "EPIPE" || e.code === "ERR_STREAM_DESTROYED") return;
     diagnostic2(
-      `${DIM21}chron run: could not forward input to the child (${e.code ?? e.message}).
-  It was recorded before the attempt, so the journal holds it.${RESET23}
+      `${DIM21}chron run: could not forward input to the child (${protect ? "forwarding failed; details omitted" : e.code ?? e.message}).
+  ${protect ? "An omission receipt was recorded; original input is not retained." : "It was recorded before the attempt, so the journal holds it."}${RESET23}
 `
     );
   });
@@ -34636,7 +35174,7 @@ Durability is measured per run and recorded in that run's first journal record.
     process.stderr.write(
       `
 ${RED17}chron run: capture could not start \u2014 the command was not run${RESET23}
-  ${e instanceof Error ? e.message : String(e)}
+  ${policyErrorText(e)}
   ${DIM21}No output was released, because nothing could be recorded.${RESET23}
 `
     );
@@ -34670,23 +35208,24 @@ ${RED17}chron run: capture could not start \u2014 the command was not run${RESET
   } catch (e) {
     process.stderr.write(
       `${DIM21}chron run: this run was captured; projecting it into the database failed.
-  ${e instanceof Error ? e.message : String(e)}
+  ${policyErrorText(e)}
   The journal holds the evidence. Retry with: chron project${RESET23}
 `
     );
   }
   process.exit(outcome.exitCode);
 }
-var import_child_process6, import_crypto25, import_path24, import_os18, CAPTURE_FAILED_EXIT, RESET23, RED17, DIM21;
+var import_child_process6, import_crypto26, import_path24, import_os18, CAPTURE_FAILED_EXIT, RESET23, RED17, DIM21;
 var init_run = __esm({
   "src/cli/run.ts"() {
     "use strict";
+    init_policy();
     import_child_process6 = require("child_process");
-    import_crypto25 = require("crypto");
+    import_crypto26 = require("crypto");
     import_path24 = require("path");
     import_os18 = require("os");
     init_writer();
-    init_scope();
+    init_scope2();
     init_config_path();
     init_writer();
     CAPTURE_FAILED_EXIT = 99;
@@ -34700,22 +35239,22 @@ var init_run = __esm({
 function beginLaunchNotice(env = process.env) {
   const dir = env[LAUNCH_DIR], token = env[LAUNCH_TOKEN];
   if (!dir || !token || !/^[a-f0-9]{64}$/.test(token)) return null;
-  const id = (0, import_crypto26.randomUUID)();
+  const id = (0, import_crypto27.randomUUID)();
   const publish = (state) => {
     let tmp;
     try {
       guardTestRoot("a Codex launch notification", dir, LAUNCH_DIR);
-      const stat = (0, import_fs34.lstatSync)(dir);
+      const stat = (0, import_fs35.lstatSync)(dir);
       if (!stat.isDirectory() || stat.isSymbolicLink()) return;
-      const manifest = JSON.parse((0, import_fs34.readFileSync)((0, import_path25.join)(dir, "launch.json"), "utf8"));
+      const manifest = JSON.parse((0, import_fs35.readFileSync)((0, import_path25.join)(dir, "launch.json"), "utf8"));
       if (manifest.token !== token) return;
-      tmp = (0, import_path25.join)(dir, `${id}.${(0, import_crypto26.randomUUID)()}.tmp`);
-      (0, import_fs34.writeFileSync)(tmp, JSON.stringify({ schema: NOTICE_SCHEMA, token, id, state }), { flag: "wx", mode: 384 });
-      (0, import_fs34.renameSync)(tmp, (0, import_path25.join)(dir, `${id}.json`));
+      tmp = (0, import_path25.join)(dir, `${id}.${(0, import_crypto27.randomUUID)()}.tmp`);
+      (0, import_fs35.writeFileSync)(tmp, JSON.stringify({ schema: NOTICE_SCHEMA, token, id, state }), { flag: "wx", mode: 384 });
+      (0, import_fs35.renameSync)(tmp, (0, import_path25.join)(dir, `${id}.json`));
     } catch {
     } finally {
       if (tmp) try {
-        (0, import_fs34.unlinkSync)(tmp);
+        (0, import_fs35.unlinkSync)(tmp);
       } catch {
       }
     }
@@ -34723,13 +35262,13 @@ function beginLaunchNotice(env = process.env) {
   publish("started");
   return { finish: (state) => publish(state) };
 }
-var import_fs34, import_path25, import_crypto26, LAUNCH_DIR, LAUNCH_TOKEN, NOTICE_SCHEMA;
+var import_fs35, import_path25, import_crypto27, LAUNCH_DIR, LAUNCH_TOKEN, NOTICE_SCHEMA;
 var init_launch_notices = __esm({
   "src/native/launch-notices.ts"() {
     "use strict";
-    import_fs34 = require("fs");
+    import_fs35 = require("fs");
     import_path25 = require("path");
-    import_crypto26 = require("crypto");
+    import_crypto27 = require("crypto");
     init_config_path();
     LAUNCH_DIR = "CHRON_CODEX_LAUNCH_DIR";
     LAUNCH_TOKEN = "CHRON_CODEX_LAUNCH_TOKEN";
@@ -34751,7 +35290,7 @@ function diagnostic(text2) {
   try {
     let offset = 0;
     while (offset < bytes2.length) {
-      const written = (0, import_fs35.writeSync)(2, bytes2, offset, bytes2.length - offset);
+      const written = (0, import_fs36.writeSync)(2, bytes2, offset, bytes2.length - offset);
       if (written <= 0) return;
       offset += written;
     }
@@ -34786,10 +35325,10 @@ async function launchCodex(args2) {
   delete env[LAUNCH_DIR];
   delete env[LAUNCH_TOKEN];
   try {
-    dir = (0, import_fs35.mkdtempSync)((0, import_path26.join)(process.env.CHRON_TEST_ROOT || (0, import_os19.tmpdir)(), "chron-codex-launch-"));
-    (0, import_fs35.chmodSync)(dir, 448);
-    const token = (0, import_crypto27.randomBytes)(32).toString("hex");
-    (0, import_fs35.writeFileSync)((0, import_path26.join)(dir, "launch.json"), JSON.stringify({ token }), { flag: "wx", mode: 384 });
+    dir = (0, import_fs36.mkdtempSync)((0, import_path26.join)(process.env.CHRON_TEST_ROOT || (0, import_os19.tmpdir)(), "chron-codex-launch-"));
+    (0, import_fs36.chmodSync)(dir, 448);
+    const token = (0, import_crypto28.randomBytes)(32).toString("hex");
+    (0, import_fs36.writeFileSync)((0, import_path26.join)(dir, "launch.json"), JSON.stringify({ token }), { flag: "wx", mode: 384 });
     env[LAUNCH_DIR] = dir;
     env[LAUNCH_TOKEN] = token;
     observer = new LaunchObserver(dir, token, diagnostic);
@@ -34822,18 +35361,18 @@ async function launchCodex(args2) {
     if (timer) clearInterval(timer);
     for (const [signal, handler] of forwards) process.removeListener(signal, handler);
     if (dir) try {
-      (0, import_fs35.rmSync)(dir, { recursive: true, force: true });
+      (0, import_fs36.rmSync)(dir, { recursive: true, force: true });
     } catch {
     }
   }
 }
-var import_child_process7, import_fs35, import_crypto27, import_path26, import_os19, CAPTURE_WARNING, UNKNOWN_WARNING, LaunchObserver;
+var import_child_process7, import_fs36, import_crypto28, import_path26, import_os19, CAPTURE_WARNING, UNKNOWN_WARNING, LaunchObserver;
 var init_codex = __esm({
   "src/cli/codex.ts"() {
     "use strict";
     import_child_process7 = require("child_process");
-    import_fs35 = require("fs");
-    import_crypto27 = require("crypto");
+    import_fs36 = require("fs");
+    import_crypto28 = require("crypto");
     import_path26 = require("path");
     import_os19 = require("os");
     init_config_path();
@@ -34858,16 +35397,16 @@ var init_codex = __esm({
       }
       scan(final = false) {
         try {
-          for (const name2 of (0, import_fs35.readdirSync)(this.dir)) {
+          for (const name2 of (0, import_fs36.readdirSync)(this.dir)) {
             if (name2 === "launch.json" || name2.endsWith(".tmp")) continue;
             if (!/^[a-f0-9-]{36}\.json$/.test(name2)) {
               this.unreadable = true;
               continue;
             }
             try {
-              const path = (0, import_path26.join)(this.dir, name2), stat = (0, import_fs35.lstatSync)(path);
+              const path = (0, import_path26.join)(this.dir, name2), stat = (0, import_fs36.lstatSync)(path);
               if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 2048) throw new Error("unreadable");
-              const notice = JSON.parse((0, import_fs35.readFileSync)(path, "utf8"));
+              const notice = JSON.parse((0, import_fs36.readFileSync)(path, "utf8"));
               if (notice.schema !== NOTICE_SCHEMA || notice.token !== this.token || `${notice.id}.json` !== name2 || !["started", "recorded", "failed", "unknown"].includes(notice.state)) throw new Error("unattributed");
               const before = this.states.get(notice.id);
               if (before && before !== "started" && before !== notice.state) this.unreadable = true;
@@ -34981,13 +35520,14 @@ function terminalAudit(message, level = "message") {
   const mode = resolvedLevel();
   if (mode === "off") return;
   if (mode === "summary" && level === "message") return;
-  process.stderr.write(`[chron] ${message}
+  process.stderr.write(privacyEnabled() ? "[chron] protected capture operation; inspect authenticated policy records for details.\n" : `[chron] ${message}
 `);
 }
 var DISABLE_VALUES;
 var init_terminal = __esm({
   "src/utils/terminal.ts"() {
     "use strict";
+    init_policy();
     DISABLE_VALUES = /* @__PURE__ */ new Set(["0", "false", "off", "no"]);
   }
 });
@@ -35029,6 +35569,8 @@ function resolveEvidenceMetadata(attach, metadata) {
 }
 function initSession(db) {
   return async (args2) => {
+    contentPolicy();
+    if (privacyEnabled()) args2 = { ...args2, title: privateIdentifier(args2.title), ai_tool: args2.ai_tool ? clientLabel(args2.ai_tool) : void 0, external_ref: args2.external_ref ? privateIdentifier(args2.external_ref) : void 0, ..."metadata" in args2 && args2.metadata ? { metadata: JSON.parse(metadataJSON(JSON.stringify(args2.metadata))) } : {} };
     const rejection = rejectPlaceholderTool(args2.ai_tool);
     if (rejection) return rejection;
     const id = v4_default();
@@ -35143,6 +35685,8 @@ function initSession(db) {
 var init_sessions = __esm({
   "src/tools/sessions.ts"() {
     "use strict";
+    init_policy();
+    init_metadata();
     init_drizzle_orm();
     init_esm();
     init_schema();
@@ -35185,9 +35729,9 @@ async function runAttach(args2) {
 
 Tools: ${Object.keys(KNOWN_TOOLS2).join(", ")}
 
-Starts recording a conversation that is already in progress. Everything
-from this point forward is captured; earlier turns are not, and the
-session is marked as partial evidence to say so.
+Creates a partial-evidence session for a conversation already in progress.
+Recording still requires the client to call Chron; this command does not
+install capture hooks or establish that future exchanges are captured.
 `
     );
     process.exit(1);
@@ -35525,9 +36069,12 @@ var init_version2 = __esm({
 });
 
 // src/cli/index.ts
+init_policy();
 var import_package6 = __toESM(require_package());
 var [, , command, ...args] = process.argv;
 async function main() {
+  contentPolicy();
+  if (privacyEnabled() && ["reconcile", "backup", "restore", "evidence", "connect", "setup", "unsetup", "bootstrap", "update", "otel"].includes(command ?? "")) throw new ContentPolicyError();
   switch (command) {
     case void 0:
     case "help":
@@ -35864,7 +36411,7 @@ Options (dashboard):
   );
 }
 main().catch((err) => {
-  process.stderr.write(`Error: ${err.message}
+  process.stderr.write(`Error: ${policyErrorText(err)}
 `);
   process.exit(1);
 });

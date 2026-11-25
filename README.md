@@ -4,15 +4,21 @@
   <p>Local-first, tamper-evident audit trails for AI conversations, tool calls, code changes, and secrets — with deterministic compliance review across SOC 2, ISO 27001, EU AI Act, and NIST AI RMF.</p>
 </div>
 
-AI tools show when you sent a message. Chron logs when the AI responded too — and keeps a permanent, queryable, tamper-evident record of the AI work happening across your tools.
+Chron keeps timestamped, queryable evidence of the AI interactions it records.
+Capture depends on the configured integration; it does not establish that every
+conversation or exchange was captured. Records remain subject to retention,
+deletion and the verification limits described below.
 
-Works with Claude Desktop, Claude Code, Cursor, Windsurf, Codex, Gemini CLI, and any MCP-compatible AI tool.
+Chron connects through MCP. Configuration examples cover Claude Desktop, Claude
+Code, Cursor, Windsurf, Codex and Gemini CLI; examples are not client acceptance
+results. Native hooks currently support Claude Code and Codex at the documented
+event boundaries. Findings remain specific to the tested client version and mode.
 
 ---
 
 ## Why
 
-AI tools produce no audit trail by default. You cannot answer:
+Client transcripts alone may not provide the independent evidence needed to answer:
 - What did the AI say, and when exactly?
 - How long did the AI take to respond?
 - What was the full conversation that produced this output?
@@ -21,7 +27,12 @@ AI tools produce no audit trail by default. You cannot answer:
 - Has this audit record been edited after the fact?
 - What did I ask Claude last week about this codebase?
 
-Chron fixes that. Every exchange is logged with a precise local datetime (including timezone offset) to a SQLite file you own. It can hash-chain every event, sign sessions with Ed25519, detect secrets/PII, run deterministic compliance review across four frameworks, and stream metadata-only events to your SIEM. No cloud, no vendor lock-in, no message content leaving your machine.
+Chron records captured exchanges with a local datetime and timezone offset in a
+SQLite file you own. It can hash-chain recorded events, sign sessions with
+Ed25519, detect secrets/PII, run deterministic compliance review across four
+frameworks, and send configured SIEM metadata. Storage is local by default;
+external AI clients, explicit exports and configured integrations have their own
+data paths. A timestamp alone is not proof of clock accuracy.
 
 ---
 
@@ -178,12 +189,12 @@ Use `chron run` for the narrower forwarding guarantee over the channels it contr
 **CLI + MCP server:**
 
 ```bash
-npm install -g chron-mcp@0.1.70
+npm install -g chron-mcp@0.1.72
 chron setup --client=claude          # preview exact files
 chron setup --client=claude --apply  # explicitly apply that configuration
 ```
 
-> `npx chron-mcp@0.1.70` starts the MCP server only — it does not put the `chron` CLI command in your PATH. You need a global install for the CLI.
+> `npx chron-mcp@0.1.72` starts the MCP server only — it does not put the `chron` CLI command in your PATH. You need a global install for the CLI.
 
 Installation and ordinary MCP-server startup do not edit agent configuration,
 instruction files or shell profiles. `chron setup`, client `chron connect`
@@ -243,7 +254,7 @@ Manual MCP config, if you need it:
   "mcpServers": {
     "chron": {
       "command": "npx",
-      "args": ["-y", "chron-mcp@0.1.70"]
+      "args": ["-y", "chron-mcp@0.1.72"]
     }
   }
 }
@@ -253,7 +264,7 @@ Manual MCP config, if you need it:
 
 ## CLI
 
-After `npm install -g chron-mcp@0.1.70`, the `chron` command is available globally:
+After `npm install -g chron-mcp@0.1.72`, the `chron` command is available globally:
 
 ```
 Usage: chron <command> [options]
@@ -496,7 +507,7 @@ file's location does not establish who installed it.
 The skill is separate from the MCP server's initialization instructions. The server
 advertises its logging lifecycle; it does not load these skill files automatically.
 
-Examples here pin npm resolution to `chron-mcp@0.1.70`. Review the selected release
+Examples here pin npm resolution to `chron-mcp@0.1.72`. Review the selected release
 before running it. Pins select a version, not a security certification. Changing
 the package version requires updating these recipes; regression tests check the
 skills, README examples and Smithery launcher against `package.json`.
@@ -621,8 +632,9 @@ Chron ships with `skills/chron.skill.md` — a plain-text instruction file that 
 | `log_code_change` | Record a file edit with operation and unified diff |
 | `log_exchange` | Log a user/assistant pair atomically (for batch imports) |
 | `list_sessions` | List all sessions ordered by most recently active |
+| `search_sessions` | Search recorded session messages using full-text queries |
 | `get_session_history` | Retrieve the full timestamped log for a session |
-| `verify_session` | Verify the tamper-evident hash chain — detects any post-log edits |
+| `verify_session` | Check the stored message hash chain for edits or broken links; this does not verify a session signature |
 | `scan_prompt` | Scan text for secrets (API keys, credentials) before logging — returns masked detections |
 | `rehydrate_response` | Restore redacted placeholders in an assistant response back to their original values |
 | `delete_session` | Delete a session and cascade its messages/secrets |
@@ -639,10 +651,17 @@ content_hash = SHA256(session_id | role | content | created_at | prev_hash | eve
 ```
 
 `verify_session` walks the chain and returns:
-- `valid: true` — no messages were modified after logging
+- `valid: true` — stored messages and links match their recorded hashes
 - `valid: false, first_break: <id>` — exact row ID of the first tampered message
 
-This turns your local log into a verifiable audit artifact. Any edit to a stored message — content, timestamp, or role — breaks the chain and is detected immediately.
+Changing a covered message field without updating the hashes breaks verification.
+An unsigned chain does not prove immutability: someone able to edit the database
+can recompute following hashes, and removing its tail can leave a valid prefix.
+`verify_session` checks the chain, not the Ed25519 signature. Use `chron verify`
+for signature verification. A valid signature protects the signed message digest
+when its public key is trusted independently; a key stored only beside the data
+does not establish signer identity. Neither check certifies capture completeness
+or the truth of the conversation.
 
 Chron also generates an Ed25519 keypair per new session when possible. The private key stays under `~/.chron/keys`. Use:
 
@@ -726,7 +745,7 @@ https://<your-cluster>.humio.com/api/v1/ingest/humio-structured
 **2. Install the CLI and run the onboarding wizard**
 
 ```bash
-npm install -g chron-mcp@0.1.70
+npm install -g chron-mcp@0.1.72
 chron connect crowdstrike
 # Paste your ingest URL and token when prompted
 # The wizard sends a test event and confirms before saving
@@ -741,7 +760,7 @@ The wizard prints the exact block to paste. For Claude Code, add to the `chron` 
   "mcpServers": {
     "chron": {
       "command": "npx",
-      "args": ["-y", "chron-mcp@0.1.70"],
+      "args": ["-y", "chron-mcp@0.1.72"],
       "env": {
         "CHRON_LOGSCALE_URL": "https://<your-cluster>.humio.com/api/v1/ingest/humio-structured",
         "CHRON_LOGSCALE_TOKEN": "<your-ingest-token>"
@@ -805,7 +824,7 @@ Settings → **Data Inputs** → **HTTP Event Collector** → **New Token** → 
 **2. Install the CLI and run the onboarding wizard**
 
 ```bash
-npm install -g chron-mcp@0.1.70
+npm install -g chron-mcp@0.1.72
 chron connect splunk
 # For local Docker: URL = https://localhost:8088, Token = chron-test-token
 # For a self-signed local receiver only: chron connect splunk --insecure
@@ -820,7 +839,7 @@ The wizard prints the exact block to paste. For Claude Code, add to `~/.claude.j
   "mcpServers": {
     "chron": {
       "command": "npx",
-      "args": ["-y", "chron-mcp@0.1.70"],
+      "args": ["-y", "chron-mcp@0.1.72"],
       "env": {
         "CHRON_SPLUNK_URL": "https://localhost:8088",
         "CHRON_SPLUNK_TOKEN": "chron-test-token",
@@ -907,7 +926,7 @@ Open the DCR → **Overview** → **JSON view** → copy the `immutableId` field
 **5. Install the CLI and run the onboarding wizard**
 
 ```bash
-npm install -g chron-mcp@0.1.70
+npm install -g chron-mcp@0.1.72
 chron connect sentinel
 # Enter tenant ID, client ID, client secret, DCE URL, DCR immutable ID, and stream name
 # The wizard authenticates with Azure AD and sends a test event before saving
@@ -922,7 +941,7 @@ The wizard prints the exact block to paste. For Claude Code, add to `~/.claude.j
   "mcpServers": {
     "chron": {
       "command": "npx",
-      "args": ["-y", "chron-mcp@0.1.70"],
+      "args": ["-y", "chron-mcp@0.1.72"],
       "env": {
         "CHRON_SENTINEL_TENANT_ID": "<your-tenant-id>",
         "CHRON_SENTINEL_CLIENT_ID": "<your-client-id>",
@@ -996,7 +1015,7 @@ All six must be set for events to flow. Token refresh is automatic (1-hour Azure
 For teams or remote use, run Chron as an HTTP server:
 
 ```bash
-CHRON_TRANSPORT=http CHRON_API_KEY=your-key PORT=3001 npx chron-mcp@0.1.70
+CHRON_TRANSPORT=http CHRON_API_KEY=your-key PORT=3001 npx chron-mcp@0.1.72
 ```
 
 Point your MCP config at the URL:
@@ -1085,3 +1104,28 @@ Clock attestation
 Copyright (c) 2026 Nivaya. All rights reserved.
 
 Source code is public for transparency only. Cloning, forking, modification, and redistribution are not permitted without explicit written permission. See [LICENSE](LICENSE) for full terms.
+
+
+### Pre-write retention policy (0.1.72)
+
+0.1.72 adds explicit `CHRON_CONTENT_POLICY=redact|skip` profiles before
+Chron-managed content writes. The default remains **raw**; upgrading alone does
+not enable protection or remove older plaintext. Protected profiles require a
+dedicated private key and new database/journal paths; no agent configuration or
+custom hook is changed automatically.
+
+`redact` uses bounded pattern/literal checks and can miss secrets. `skip` omits
+content without depending on detection. Scanner failures and over-budget scans
+retain an empty, authenticated failed outcome rather than original content.
+Claude display batches and wrapper streams are fully omitted in **both** modes
+to avoid secrets split across chunks. Wrapper omission receipts do **not** mean
+the exact original forwarded bytes were recorded. Native hooks still make no
+withholding or complete-capture guarantee.
+
+History exposes the retained JSON envelope and its provenance. Policy claims
+need the configured profile key to authenticate; an embedded public key alone
+is insufficient. Protected profiles refuse legacy stores, ZIP extraction,
+backup/restore, raw-copy previews and unsupported administration. Existing data,
+client transcripts, child files and upstream model requests are outside this
+protection. See the candidate's `docs/security/priv-001-implementation.md` source
+record for the supported-path inventory, limits and upgrade instructions.

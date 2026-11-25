@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.SirinivasK/chron",
-  "description": "Timestamped audit log for every AI conversation — stored locally in SQLite, owned by you.",
+  "description": "Timestamped local audit logs for recorded AI interactions, with verifiable evidence exports.",
   "repository": {
     "url": "https://github.com/SirinivasK/chron",
     "source": "github"
   },
-  "version": "0.1.70",
+  "version": "0.1.72",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "chron-mcp",
-      "version": "0.1.70",
+      "version": "0.1.72",
       "transport": {
         "type": "stdio"
       },
